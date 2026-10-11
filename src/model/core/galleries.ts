@@ -9,19 +9,24 @@ import { GALLERY_CEILING_Y, L1, L2, PARTITION, ROOF_Y, SLAB, VAUX_HALL_EAST_Z, V
 import { INTERIOR, LIGHT_WELLS, galleriesIn, intersect, subtractRects, type BlockId, type Rect } from './layout.js';
 import { GALLERY_RUNS, MAIN_FLOOR_RUNS, type Run } from './plan-data.js';
 import { laylightFrame, laylightGlass, skylightFrames, skylightGlass } from './skylights.js';
-import { addBox } from './shapes.js';
+import { addBox, runsBetween } from './shapes.js';
 
-/** The part of a run inside a block's interior, as a plan rectangle `PARTITION` thick, or null. */
-function runRect(run: Run, block: BlockId): Rect | null {
+/** The parts of a run inside a block's interior and outside its light wells (with their walls), as plan rectangles `PARTITION` thick. */
+function runRects(run: Run, block: BlockId): Rect[] {
   const [axis, fixed, from, to] = run;
   const half = PARTITION / 2;
   const r: Rect = axis === 0 ? [from, fixed - half, to, fixed + half] : [fixed - half, from, fixed + half, to];
   const inside = intersect(r, INTERIOR[block]);
-  if (inside === null) return null;
+  if (inside === null) return [];
   // A run must keep its own thickness: one clipped across its width belongs to the next block.
   const thick = axis === 0 ? inside[3] - inside[1] : inside[2] - inside[0];
-  const long = axis === 0 ? inside[2] - inside[0] : inside[3] - inside[1];
-  return thick > PARTITION - 1e-6 && long > 0.6 ? inside : null;
+  if (thick < PARTITION - 1e-6) return [];
+  const gaps = LIGHT_WELLS[block]
+    .map(([x0, z0, x1, z1]): Rect => [x0 - 0.45, z0 - 0.45, x1 + 0.45, z1 + 0.45])
+    .filter((w) => intersect(w, inside) !== null)
+    .map((w) => (axis === 0 ? ([w[0], w[2]] as const) : ([w[1], w[3]] as const)));
+  const [lo, hi] = axis === 0 ? [inside[0], inside[2]] : [inside[1], inside[3]];
+  return runsBetween(lo, hi, gaps, 0.6).map(([a, b]): Rect => (axis === 0 ? [a, inside[1], b, inside[3]] : [inside[0], a, inside[2], b]));
 }
 
 /** Runs that would double the hall's end walls in block A. */
@@ -35,18 +40,17 @@ function nearHallEnds(r: Rect): boolean {
 /** Second-floor gallery walls of a block, from the floor to the laylight ceiling (plaster). */
 export function galleryWalls(kit: Kit, block: BlockId): void {
   for (const run of GALLERY_RUNS) {
-    const r = runRect(run, block);
-    if (r === null || (block === 'a' && nearHallEnds(r))) continue;
-    addBox(kit, palette.plaster, r[0], L2, r[1], r[2], GALLERY_CEILING_Y, r[3], Math.round(r[1]));
+    for (const r of runRects(run, block)) {
+      if (block === 'a' && nearHallEnds(r)) continue;
+      addBox(kit, palette.plaster, r[0], L2, r[1], r[2], GALLERY_CEILING_Y, r[3], Math.round(r[1]));
+    }
   }
 }
 
 /** Main-floor walls of a wing (blocks B and C), from the floor to the second-floor slab (plaster). */
 export function mainFloorWalls(kit: Kit, block: BlockId): void {
   for (const run of MAIN_FLOOR_RUNS) {
-    const r = runRect(run, block);
-    if (r === null) continue;
-    addBox(kit, palette.plaster, r[0], L1, r[1], r[2], L2 - SLAB, r[3], Math.round(r[1]));
+    for (const r of runRects(run, block)) addBox(kit, palette.plaster, r[0], L1, r[1], r[2], L2 - SLAB, r[3], Math.round(r[1]));
   }
 }
 

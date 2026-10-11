@@ -12,7 +12,7 @@ import { MeshBuilder } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { GALLERY_CEILING_Y, ROOF_Y, SKYLIGHT_CURB, SKYLIGHT_PITCH_DEG } from './constants.js';
 import { ridgesOver, type Gallery, type Rect } from './layout.js';
-import { glassBoth } from './materials.js';
+import { core, glassBoth } from './materials.js';
 import { UNIT_BOX, addBox } from './shapes.js';
 
 const BAR = 0.07;
@@ -82,7 +82,7 @@ export function skylightFrames(kit: Kit, gallery: Gallery, order: number): void 
   addBox(kit, palette.roofLead, x0 - t, y0, z1, x1 + t, y1, z1 + t, order);
   addBox(kit, palette.roofLead, x0 - t, y0, z0, x0, y1, z1, order);
   addBox(kit, palette.roofLead, x1, y0, z0, x1 + t, y1, z1, order);
-  const metal = palette.metalDark;
+  const metal = core.aluminium;
   for (const ridge of ridgesOver(o)) {
     const { ends, half, up } = ridgeFrame(ridge);
     const [a, b] = ends;
@@ -146,7 +146,7 @@ export function laylightFrame(kit: Kit, gallery: Gallery, order: number): void {
   if (o === null) return;
   const [x0, z0, x1, z1] = o;
   const y = GALLERY_CEILING_Y;
-  const metal = palette.metalDark;
+  const metal = core.aluminium;
   const nx = Math.max(1, Math.round((x1 - x0) / LAYLIGHT_SPACING));
   const nz = Math.max(1, Math.round((z1 - z0) / LAYLIGHT_SPACING));
   for (let i = 0; i <= nx; i++) {

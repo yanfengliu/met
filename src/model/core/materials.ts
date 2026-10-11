@@ -31,6 +31,8 @@ export const core = Object.freeze({
   footing: standard('core.footing', '#7d776e', 0.95),
   /** Cast iron of Radford's frame, columns and stairs. */
   castIron: standard('core.castIron', '#34393b', 0.5, 0.7),
+  /** Light aluminium of the gallery skylights and laylights (exterior.md [R2]: glass in aluminium frames; the 2018 orthophoto shows light frames). */
+  aluminium: standard('core.aluminium', '#c3c7ca', 0.45, 0.6),
 });
 
 /** Glass that must read from both sides (skylight and laylight panes face one way). */
