@@ -1,6 +1,6 @@
 /**
  * Sequence integrity and budgets over whatever src/build/sequence.ts exports (docs/design/spec.md, Build-step API, Budgets, Verification).
- * These keep guarding unchanged when the real chapters replace the demo: nothing here names a demo step or chapter.
+ * They hold for whatever the areas add: nothing here names a step or chapter of any area.
  * Site bounds: X and Z from src/model/frame.ts (SITE_MIN_X..SITE_MAX_X, SITE_MIN_Z..SITE_MAX_Z); Y from -30 m (below the ground floor and any
  * foundation) to +120 m (well above the Great Hall ridge), this test's own choice.
  * Bound: geometry is built in Node without WebGL, so triangle and mesh counts are exact but build time is not measured here (the e2e suite does that).

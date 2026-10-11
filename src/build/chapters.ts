@@ -2,7 +2,6 @@
  * The chapter list, in build order (docs/design/spec.md, Build-step API). `src/build/sequence.ts` composes each chapter's steps in this order.
  * Owner: the coordinator. Chapters are historical eras (docs/research/history.md); a chapter may have no steps yet, and the page shows it disabled.
  * `site` is special: `solo=<chapter>` builds that chapter plus `site` (docs/design/spec.md, Query contract).
- * `demo` is the engine's temporary toy building (src/model/demo/), last until real content lands; the coordinator removes it.
  */
 import type { Chapter } from './types.js';
 
@@ -16,7 +15,6 @@ export const CHAPTERS = [
   { id: 'roche-north-1980', title: 'North on the park', years: '1975–1981', summary: "The Sackler Wing for the Temple of Dendur, the American Wing's glass court and the Astor Court." },
   { id: 'roche-south-1990', title: 'South on the park', years: '1979–1991', summary: 'The Rockefeller, Wallace and Kravis wings close the south side, with the roof garden on top.' },
   { id: 'koch-plaza-2014', title: 'The plaza and renewals', years: '2007–2023', summary: "The Greek and Roman court's upper storey, the new plaza and the renewed skylights finish the present-day building." },
-  { id: 'demo', title: 'Demo building (temporary)', years: '1880–1975', summary: 'A toy building that exercises the engine until the real chapters are modelled.' },
 ] as const satisfies readonly Chapter[];
 
 export type ChapterId = (typeof CHAPTERS)[number]['id'];

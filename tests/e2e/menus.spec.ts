@@ -1,6 +1,6 @@
 /**
  * Chapter menu and view menu through real input (docs/design/spec.md, Page): chapters in order (empty ones disabled), presets, the follow camera
- * (a drag turns it off) and the section cut (toggle and slider). Facts come from `window.__met`; nothing names a demo step or chapter.
+ * (a drag turns it off) and the section cut (toggle and slider). Facts come from `window.__met`; nothing names a step or chapter.
  * Bound: canvas checks compare coarse luminance grids, proving the drawing changed, not that the new view is right.
  */
 import { expect, test } from '@playwright/test';
