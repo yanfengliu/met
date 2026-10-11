@@ -50,6 +50,7 @@ describe('site steps', () => {
       'site-sidewalks',
       'site-east-sidewalk',
       'site-park-paths',
+      'site-park-lamps',
       'site-trees-park',
       'steps-landing',
       'steps-flight',

@@ -266,10 +266,10 @@ export const furnitureStep: StepDef = {
 // ---------------------------------------------------------------- trees
 
 const GROVE_TREES = [tree({ height: 11, spread: 7.5, seed: 52, detail: 'medium' }), tree({ height: 11, spread: 7.5, seed: 77, detail: 'medium' })];
-/** Southern magnolias (Hałun 2023): a dense, glossy, tapering evergreen crown 4.6 m wide and 8.5 m tall on a short trunk. */
-const MAGNOLIA_CROWN = lumpy(5, 2, 9, 0.22, (p) => {
+/** Southern magnolias (Hałun 2023): a dense, glossy, oval evergreen crown 4.6 m wide and 9 m tall on a short trunk. */
+const MAGNOLIA_CROWN = lumpy(5, 3, 11, 0.2, (p) => {
   const t = (p.y + 1) / 2;
-  const w = 0.5 * (1 - 0.5 * t ** 1.6);
+  const w = 0.5 * Math.sqrt(Math.max(0, 1 - 0.3 * t * t));
   return new Vector3(p.x * w, t, p.z * w);
 });
 const MAGNOLIA_Z = 1.2;
@@ -302,7 +302,7 @@ export const groveTreesStep: StepDef = {
       const x = s * MAGNOLIA_X;
       const y = plazaY(x, MAGNOLIA_Z) + 0.35;
       kit.add(UNIT_BLOCK, palette.bark, blockMatrix(x, y, MAGNOLIA_Z, 0.3, 1.6, 0.3), order);
-      kit.add(MAGNOLIA_CROWN, siteMaterials.foliageDark, new Matrix4().makeRotationY(s > 0 ? 0.4 : 2.1).scale(new Vector3(4.6, 8.5, 4.6)).setPosition(x, y + 0.9, MAGNOLIA_Z), order);
+      kit.add(MAGNOLIA_CROWN, siteMaterials.foliageDark, new Matrix4().makeRotationY(s > 0 ? 0.4 : 2.1).scale(new Vector3(4.6, 9, 4.6)).setPosition(x, y + 0.9, MAGNOLIA_Z), order);
       order += 1;
     }
   },

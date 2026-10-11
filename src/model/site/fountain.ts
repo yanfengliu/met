@@ -98,7 +98,7 @@ function buildJets(): BufferGeometry {
   const b = new MeshBuilder();
   const steps = 10;
   const sides = 4;
-  const width = 0.05;
+  const width = 0.07;
   for (let k = 0; k < FOUNTAIN_JETS; k += 1) {
     const a = (2 * Math.PI * (k + 0.5)) / FOUNTAIN_JETS;
     const c = Math.cos(a);

@@ -29,6 +29,11 @@ const PAINT_LIFT = 0.006;
 const PARK_WALL_THICKNESS = 0.45;
 const PARK_WALL_HEIGHT = 0.9;
 
+/** Pieces stop this far inside the site's ends, where a slab turned to the avenue's slope would otherwise lean out of the bounds. */
+const EDGE_INSET = 0.05;
+/** Gutters: a 40 cm darker strip of the roadway along each curb (E). */
+const GUTTER = 0.4;
+
 function tileZones(kit: Kit, zones: readonly Zone[], material: Parameters<Kit['add']>[1]): void {
   for (const cell of CELLS) {
     if (cell.zone === null || cell.cut !== null || !zones.includes(cell.zone)) continue;
@@ -38,9 +43,6 @@ function tileZones(kit: Kit, zones: readonly Zone[], material: Parameters<Kit['a
     kit.add(UNIT_TILE, material, surfaceMatrix(x0, x1, cell.z0, cell.z1, (x, z) => surfaceY(zone, x, z)));
   }
 }
-
-/** Pieces stop this far inside the site's ends, where a slab turned to the avenue's slope would otherwise lean out of the bounds. */
-const EDGE_INSET = 0.05;
 
 /** Grid intervals along X over [from, to] (kept inside the site's ends), so pieces follow the profile's breakpoints. */
 function spans(from: number, to: number): [number, number][] {
@@ -75,6 +77,14 @@ function curbs(kit: Kit): void {
   }
 }
 
+function gutters(kit: Kit): void {
+  const road = (x: number, z: number): number => roadY(x, z);
+  for (const [x0, x1] of spans(SITE_MIN_X, SITE_MAX_X)) {
+    if (!(x0 >= TRANSVERSE_MOUTH.x0 - 1e-6 && x1 <= TRANSVERSE_MOUTH.x1 + 1e-6)) kit.add(UNIT_TILE, siteMaterials.gutter, surfaceMatrix(x0, x1, CURB_WEST_Z, CURB_WEST_Z + GUTTER, road, 0.004));
+    if (!onCrossStreet(x0, x1)) kit.add(UNIT_TILE, siteMaterials.gutter, surfaceMatrix(x0, x1, CURB_EAST_Z - GUTTER, CURB_EAST_Z, road, 0.004));
+  }
+}
+
 function markings(kit: Kit): void {
   const road = (x: number, z: number): number => roadY(x, z);
   const inCrosswalk = (x0: number, x1: number): boolean => CROSSWALKS_X.some((c) => x1 > c - CROSSWALK_WIDTH && x0 < c + CROSSWALK_WIDTH);
@@ -95,11 +105,12 @@ export const fifthAvenueStep: StepDef = {
   id: 'site-fifth-avenue',
   chapter: 'site',
   title: 'Pave Fifth Avenue',
-  detail: 'One way south, 14 m from curb to curb between granite curbs, with lane lines and the crosswalks at 80th to 84th Street.',
+  detail: 'One way south, 14 m from curb to curb, with granite curbs and gutters, lane lines and the crosswalks at 80th to 84th Street.',
   motion: { kind: 'rise', distance: 0.5 },
   stagger: 'x',
   build(kit) {
     tileZones(kit, ['road', 'mouth'], palette.asphalt);
+    gutters(kit);
     curbs(kit);
     markings(kit);
   },

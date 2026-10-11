@@ -6,6 +6,7 @@
 import type { StepDef } from '../../build/types.js';
 import { eastSidewalkStep, fifthAvenueStep, sidewalksStep } from './avenue.js';
 import { drivesStep } from './drives.js';
+import { parkLampsStep } from './lamps.js';
 import { parkTreesStep, rockStep } from './park.js';
 import { pathsStep } from './paths.js';
 import { alleesStep, fountainWaterStep, fountainsStep, furnitureStep, groveTreesStep, grovesStep, pavingStep } from './plaza.js';
@@ -13,7 +14,7 @@ import { flightStep, landingStep, railingsStep } from './steps.js';
 import { padStep, terrainStep } from './terrain.js';
 
 /** Chapter `site`: the park's terrain, Fifth Avenue and its sidewalks. */
-export const siteSteps: readonly StepDef[] = [terrainStep, padStep, rockStep, drivesStep, fifthAvenueStep, sidewalksStep, eastSidewalkStep, pathsStep, parkTreesStep];
+export const siteSteps: readonly StepDef[] = [terrainStep, padStep, rockStep, drivesStep, fifthAvenueStep, sidewalksStep, eastSidewalkStep, pathsStep, parkLampsStep, parkTreesStep];
 
 /** Chapter `roche-steps-lehman-1975`: Roche Dinkeloo's rebuilt front steps (1970). */
 export const frontSteps1970: readonly StepDef[] = [landingStep, flightStep, railingsStep];

@@ -24,9 +24,12 @@ export const EAST_DRIVE: Line = [
 ];
 const EAST_DRIVE_WIDTH = 9;
 
-/** The 86th Street transverse road from 84th Street (OSM 489090277), from the sidewalk's park edge north-west; about 15 m wide. */
-export const TRANSVERSE: Line = [[167, 21.5], [172, 7], [179, -11], [184, -23], [189, -35], [194, -46], [197, -53], [202, -62], [207, -71]];
-const TRANSVERSE_WIDTH = 15;
+/**
+ * The 86th Street transverse road from 84th Street (OSM 489090277), from the sidewalk's park edge north-west, about 12 m wide (orthophoto).
+ * Its line is moved 3 m east of the OSM way so that the footway along its west side (OSM 739699911) fits between it and the north drive's fence (E).
+ */
+export const TRANSVERSE: Line = [[170.5, 21.45], [175, 7], [182, -11], [187, -23], [192, -35], [197, -46], [200, -53], [205, -62], [210, -71]];
+const TRANSVERSE_WIDTH = 12;
 
 /** Footpaths (OSM highway=footway and steps in the park), about 4 m wide. */
 export const FOOTPATHS: readonly Line[] = [

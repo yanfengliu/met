@@ -11,7 +11,7 @@ function surface(name: string, colour: string, roughness: number, castShadow: bo
   return material;
 }
 
-const jet = new MeshStandardMaterial({ name: 'siteJet', color: new Color('#eef5f8'), roughness: 0.15, metalness: 0, transparent: true, opacity: 0.55, depthWrite: false });
+const jet = new MeshStandardMaterial({ name: 'siteJet', color: new Color('#eef5f8'), roughness: 0.15, metalness: 0, transparent: true, opacity: 0.7, depthWrite: false });
 jet.userData['castShadow'] = false;
 
 export const siteMaterials = Object.freeze({
@@ -27,10 +27,14 @@ export const siteMaterials = Object.freeze({
   wallStone: surface('siteWallStone', '#8a847a', 0.9, true),
   /** Lane markings, crosswalk bars and stop lines. */
   paint: surface('sitePaint', '#e6e4dd', 0.7, false),
+  /** The roadway's gutters along the curbs, darker than the lanes. */
+  gutter: surface('siteGutter', '#454b4e', 0.9, false),
+  /** The frosted globes of the park's cast-iron lamp posts. */
+  lampGlobe: surface('siteLampGlobe', '#f1eee4', 0.35, true),
   /** Park paths: the light asphalt of the orthophoto. */
   pathAsphalt: surface('sitePathAsphalt', '#7b7974', 0.95, false),
-  /** The 2014 plaza's light granite paving (Schneider 2019, dry). */
-  plazaGranite: surface('sitePlazaGranite', '#a7a39b', 0.75, false),
+  /** The 2014 plaza's granite paving: a cool mid grey, about 0.7 of the limestone's lightness in Schneider 2019 (paving #7c7f84 by columns #bdb5a8). */
+  plazaGranite: surface('sitePlazaGranite', '#979a9d', 0.75, false),
   /** The fountains' dark granite squares (Hałun 2023). */
   darkGranite: surface('siteDarkGranite', '#3b3d3e', 0.4, false),
   /** Fountain jets: clear water. Transparent, so it never casts shadows. */
@@ -39,8 +43,8 @@ export const siteMaterials = Object.freeze({
   parasolRed: surface('siteParasolRed', '#c3302a', 0.6, true),
   /** Decomposed granite under the grove trees (orthophoto 2018). */
   gravel: surface('siteGravel', '#958f85', 1, false),
-  /** The front steps' treads: lighter than the risers (palette granite), as the granite reads in Schneider 2019 with the treads lit and the risers in shade. */
-  stepTread: surface('siteStepTread', '#b4afa5', 0.7, true),
+  /** The front steps' treads, a shade lighter than the risers (palette granite); Schneider 2019 reads the flight at #716c65..#84827b by columns #bdb5a8. */
+  stepTread: surface('siteStepTread', '#a39e94', 0.7, true),
   /** A deeper green for some park crowns. */
   foliageDeep: surface('siteFoliageDeep', '#3d5f2a', 0.9, true),
   /** A second, yellower foliage green, so the park's trees are not all one colour. */

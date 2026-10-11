@@ -13,7 +13,7 @@ import { tree } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { footprintClearance } from './footprint.js';
 import type { Point } from './footprint.js';
-import { parkY, zoneAt } from './ground.js';
+import { parkY, terrainY, zoneAt } from './ground.js';
 import { lumpy } from './lumps.js';
 import { siteMaterials } from './materials.js';
 import { EAST_DRIVE, FOOTPATHS, TRANSVERSE } from './paths.js';
@@ -23,7 +23,11 @@ import { seeded } from './random.js';
 
 /** A chunky, flattened lump of schist 1 m across and 1 m tall (y from 0), coarsely faceted; the matrix gives each outcrop its size. */
 function rockGeometry(seed: number): BufferGeometry {
-  return lumpy(seed, 1, 6, 0.45, (p) => new Vector3(p.x * 0.5, (Math.max(-0.25, p.y) + 0.25) / 1.45, p.z * 0.5));
+  // Glacier-smoothed sheets (King of Hearts 2013): a flattened lump whose top tilts along x, like a bedding plane breaking the lawn.
+  return lumpy(seed, 2, 7, 0.35, (p) => {
+    const y = (Math.max(-0.2, p.y) + 0.2) / 1.4;
+    return new Vector3(p.x * 0.5, y * (0.75 + 0.25 * p.x), p.z * 0.5);
+  });
 }
 
 const ROCKS: readonly BufferGeometry[] = [rockGeometry(11), rockGeometry(23), rockGeometry(37)];
@@ -77,6 +81,8 @@ const GROVES: readonly { readonly polygon: readonly Point[]; readonly spacing: n
   { polygon: [[-150, -170], [-100, -185], [-130, -205], [-170, -215], [-200, -222], [-200, -190]], spacing: 13 },
   // North and north-east of the American Wing, past the path.
   { polygon: [[172, -95], [200, -80], [200, -200], [182, -200], [176, -160], [170, -125]], spacing: 11 },
+  // The planted island inside the garage drive's loop (orthophoto 2018).
+  { polygon: [[-178, -22], [-165.5, -22], [-165.5, 14], [-178, 14]], spacing: 8 },
   // The park north of the building, east of the transverse road.
   { polygon: [[190, 18], [200, 18], [200, -60], [196, -40]], spacing: 9 },
   // West of the building beyond East Drive: open lawns with clumps.
@@ -116,11 +122,16 @@ function insidePolygon(polygon: readonly Point[], x: number, z: number): boolean
   return inside;
 }
 
-/** Whether a tree of crown radius `r` may stand at p: crown inside the site, in the park, off the paths, clear of the building, the outcrops and the sight lines. */
+/**
+ * Whether a tree of crown radius `r` may stand at p: in the park, off the paths, clear of the building, the outcrops and the sight lines, and with its
+ * crown's box inside the site (a turned crown's box reaches √2 r).
+ */
 function open(p: Point, r: number): boolean {
   const [x, z] = p;
-  if (x < SITE_MIN_X + r + 0.5 || x > SITE_MAX_X - r - 0.5 || z < SITE_MIN_Z + r + 0.5) return false;
-  if (zoneAt(x, z) !== 'park') return false;
+  const box = r * Math.SQRT2 + 0.5;
+  if (x < SITE_MIN_X + box || x > SITE_MAX_X - box || z < SITE_MIN_Z + box) return false;
+  const zone = zoneAt(x, z);
+  if (zone !== 'park' && zone !== 'islandSouth') return false;
   if (footprintClearance(x, z) < r + 2) return false;
   if (polylineDistance(p, EAST_DRIVE) < 6.5 || polylineDistance(p, TRANSVERSE) < 10) return false;
   if (FOOTPATHS.some((line) => polylineDistance(p, line) < 3.5)) return false;
@@ -153,8 +164,7 @@ function scatter(): PlacedTree[] {
     const scale = 0.7 + 0.65 * random();
     const yaw = random() * Math.PI * 2;
     const variant = Math.floor(random() * VARIANTS.length);
-    // A turned crown's box reaches √2 times its half-spread.
-    const radius = ((VARIANT_HEIGHT * 0.8 * scale) / 2) * Math.SQRT2;
+    const radius = (VARIANT_HEIGHT * 0.8 * scale) / 2;
     if (open([x, z], radius) && far(x, z, spacing)) placed.push({ x, z, scale, yaw, variant });
   };
   for (const [x, z] of OSM_TREES) tryAdd(x, z, 5);
@@ -190,7 +200,7 @@ export const parkTreesStep: StepDef = {
     PARK_TREES.forEach((t, k) => {
       const variant = VARIANTS[t.variant] ?? VARIANTS[0];
       if (variant === undefined) return;
-      const y = parkY(t.x, t.z) - 0.15;
+      const y = terrainY(zoneAt(t.x, t.z), t.x, t.z) - 0.15;
       const m = new Matrix4().makeRotationY(t.yaw).scale(new Vector3(t.scale, t.scale, t.scale)).setPosition(t.x, y, t.z);
       const crown: Material = variant.crown;
       kit.add(variant.shape.trunk, palette.bark, m, k);
