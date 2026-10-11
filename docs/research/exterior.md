@@ -1,0 +1,153 @@
+# The Met Fifth Avenue — exterior research
+
+What a modeller needs to build the outside of the present-day building, in the world frame of `docs/design/spec.md`: metres, +Y up, +X = Manhattan north (up Fifth Avenue), +Z = Manhattan east (toward Fifth Avenue), origin at Fifth Avenue sidewalk grade on the central entrance axis, in the plane of the Hunt facade's main wall face.
+
+Every number carries a tag: **M** measured (source named), **D** derived (working shown), **E** estimated (photo or reasoning named, with a confidence). Fact ids in square brackets (for example [F3]) are what `src/model/frame.ts` cites.
+
+Research run 2026-10-11 by the `research-exterior` worker. Scratch data (OSM, NYC and USGS extracts, scripts) stayed under the ignored temp folder; nothing downloaded is committed.
+
+## Sources
+
+- [S1] OpenStreetMap, relation 3698894 "The Metropolitan Museum of Art" (outer way 278363061, 74 nodes, `source=bing`), Fifth Avenue ways 68668532 and 1530324517, fountains 552699591/552699597, plaza beds 552699593/595/600/602, 52 tree nodes; Overpass extract of 2026-10-11. © OpenStreetMap contributors (ODbL).
+- [S2] NYC Open Data, Building Footprints (dataset 5zhs-2jue), BIN 1083810: photogrammetric outline (135-vertex outer ring plus 5 open light wells), `height_roof` 87.77 ft, `ground_elevation` 100 ft, last edited 2017-08-22.
+- [S3] NYC Open Data, NYC Planimetric Database: Curbs (dataset 5xvt-8cbk), curb lines between 79th and 86th Streets.
+- [S4] USGS 3DEP 1 m bare-earth DEM (project NY_CMPG_2013, NAVD88) through the Elevation Point Query Service, about 150 sample points.
+- [S5] NYC orthophotos 2018 (maps.nyc.gov tiles, zoom 19–20, 0.5 ft source), viewed rotated into the grid frame with S1, S2 and S3 overlaid.
+- [S6] The Met's Living Map (maps.metmuseum.org), vector floor plans: per-floor outlines, departmental "section" polygons and named galleries, read in the browser and converted to the world frame.
+- [S7] Photo, "Metropolitan Museum of Art (The Met) - Central Park, NYC.jpg", Hugo Schneider, 2019-09-09, CC BY-SA 2.0, 2666×1488: near-orthographic frontal view of the whole Hunt pavilion.
+- [S8] Photo, "Metropolitan Museum of Art - Main Building.jpg", Yair Haklai, 2012-05-26, CC BY-SA 4.0, 3264×2448: level street-level frontal view of the centre of the pavilion and the steps.
+- [S9] Photo, "5 Av Apr 2023 30.jpg" (Commons), April 2023: oblique close-up of the north outer column pair, entablature break and attic block.
+- [S10] Photo, "Entrance to The Met Fifth Avenue (2022).jpg" (Commons): worm's-eye view of the central arch and the column screen.
+- [S11] Wikipedia, "The Met Fifth Avenue" and "Metropolitan Museum of Art" (Architecture sections), read 2026-10-11.
+- [S12] The Met, "The Museum, Constructed" (metmuseum.org/perspectives, 2010), and its reference: M. H. Heckscher, "The Metropolitan Museum of Art: An Architectural History", MMA Bulletin 53:1, Summer 1995 (the PDF was too large to fetch in this run; it is the best source for a follow-up).
+- [S13] Published figures gathered by a dimensions subagent (pages read or quoted in search extracts): NHL nomination text https://npgallery.nps.gov/NRHP/GetAsset/NHLS/86003556_text (quotes the 1967 LPC report); Project for Public Spaces, Met steps https://pps.org/places/metropolitan-museum-steps; Community Board 8 resolution on the Rockefeller Wing wall, Dec 2020 https://www.cb8m.com/wp-content/uploads/2020/11/1220-1000-Fifth-Avenue-Resolution.pdf; Met plaza press release 2014 https://www.metmuseum.org/press-releases/plaza-opening-2014-news (via search extracts and Topos reprint https://toposmagazine.com/?p=311); artnet news 2014 on the fountains; 6sqft on the plaza furniture; WJE restoration profile https://www.wje.com/projects/detail/metropolitan-museum-of-art; Beyer Blinder Belle skylights project page; AI-AP article quoting Christopher Gray (NYT) on the uncarved blocks https://www.ai-ap.com/publications/article/3465/uncarved-masterpieces-at-the-met.html.
+
+## 1. World frame and site
+
+- [F1] Grid bearing 29.03° clockwise from true north. **M** S3: total-least-squares fit of the Met-side curb of Fifth Avenue, 60 vertices between X −120 and +70, rms 0.024 m (29.029° over X −160..+140, rms 0.039 m). Cross-checks: Fifth Avenue centreline in S1 fits 28.967° (rms 0.13 m); long edges of the S1 outline cluster at 28.97°.
+- [F2] Origin at latitude 40.7791100, longitude −73.9626733 (WGS84). **D** from F1, F3 and F4 with a local tangent plane on the WGS84 ellipsoid centred at 40.7794 N, 73.9632 W.
+- [F3] Central entrance axis X = 0. **M** S1/S2/S5: the Hunt pavilion's outline in S2 is symmetric about this line to 0.01 m (X ±32.06); the S1 pavilion (±30.42), the Lehman Wing (−29.05..+29.01), the two fountains (centres −38.55 and +38.49) and the four plaza beds agree within 0.05 m; the Met's own Great Hall polygon (S6) spans X ±31.6.
+- [F4] Facade plane Z = 0 = main wall face of the Hunt central pavilion behind the column screen. **E** confidence medium, ±1.0 m. Evidence: S1 pavilion line at Z +1.2 and S2 pavilion roofline at Z −0.7 (both photogrammetric/traced roof lines, which include cornices); in S5 the strip of pedestals and their shadows runs Z +1.1..+3.4 in front of it; the Great Hall's inner face in S6 is at Z −2.0, giving a 2.0 m wall, consistent with the deep arch reveals in S10.
+- [F5] Y = 0 is NAVD88 25.92 m, the sidewalk on the axis. **M** S4: 25.92, 25.95, 25.90 m at Z +23.5..+25.5 on the axis.
+- [F6] Fifth Avenue sidewalk grade along the frontage. **M** S4 at Z +24.5: Y −1.66 at X −113 (80th Street end), −0.77 at X −73, −0.16 at X −33, +0.04 at X +7, +0.31 at X +67, −0.05 at X +97, +0.21 at X +147, +1.12 at X +167. The avenue rises about 1.9 m from the south end of the building to the north end.
+- [F7] West (Met-side) curb line Z = +28.92 at the axis; +28.89..+29.03 along the frontage, swinging to +29.35 at the north corner. **M** S3.
+- [F8] East curb Z ≈ +42.9 (+42.6..+43.7 with bus bulbs). **M** S3.
+- [F9] Carriageway width 14.0 m curb to curb. **D** F8 − F7.
+- [F10] Fifth Avenue centreline (S1 way, one-way southbound) Z = +36.3..+36.7, mean +36.5. **M** S1. Roadway level about −0.15 relative to the sidewalk. **E** typical NYC 6–7 in curb; the 1 m DEM smooths it (gutter reads −0.18 at Z +28.5).
+- [F11] Park ground around the building (relative to F5). **M** S4: west of the Lehman Wing +8.6 at Z −185 falling to +4.9..+5.3 (mean +5.2) at Z −195..−225; west of the American Wing +6.9..+7.1 (mean +7.0, Z −170); west of the Kravis and Wallace wings +1.5..+2.9 (mean +2.3, Z −170, X −118..−43); north side +4.0..+4.4 (mean +4.2, X +163, Z −135..−55); south side +1.1..+4.1 (X −161). The garage driveway on the south side and the service road on the north side cut down to −2.2 at Z −34.5. Conclusion: the park side sits 1–9 m above the Fifth Avenue sidewalk, highest behind the Lehman Wing.
+- [F12] Site bounds for the model: X −200..+200, Z −260..+60 covers the building, the plaza, Fifth Avenue and the near park; the land grant runs from the 79th Street to the 85th Street transverse roads and from East Drive to Fifth Avenue (S11).
+
+## 2. Massing: footprint and blocks
+
+- [B0] Building extents X −151.61..+153.13 (304.7 m along Fifth Avenue), Z −179.81..+9.91 (189.7 m deep). **M** S1. The Met's map (S6) uses the same outline (its "outdoor museum" polygon has identical extents). S2 is slightly larger: X −152.97..+154.60, Z −179.99..+10.22 (307.6 × 190.2 m).
+- [B00] Footprint area 46,470 m² (500,200 sq ft, 11.48 acres). **M** S1 outline. S2: 45,279 m² outer ring, 44,767 m² net of light wells. Published floor area "more than 2 million square feet (190,000 m²)" (S11; 2.1 million sq ft in 21 attached structures, Architectural Record 2024; 1,800,000 sq ft in the 1985 NHL nomination), so the floor-area ratio is about 4.1, which fits G, 1, 1M, 2 over most of the plan plus floors 3–5 over parts.
+
+The blocks below tile the S1 outline exactly: their areas sum to 46,470.5 m², the outline's area, with zero difference (computed by clipping the outline with a strict column-by-row partition). Cut lines come from S6 department and gallery polygons, S5 roof joints and the S1/S2 vertices; inner cut lines are **E** (confidence low to medium) and should be reconciled with the interior research. Polygons are counter-clockwise lists of (X, Z).
+
+| id | name | years, architect | polygon (X, Z) | area m² |
+|---|---|---|---|---|
+| hunt-d | Hunt Fifth Avenue pavilion, flanking extensions, Great Hall and Grand Staircase (Wing D) | 1894–1902, Richard Morris Hunt, completed by Richard Howland Hunt | (−49.7,−69.0) (49.4,−69.0) (49.4,−2.0) (30.4,−2.0) (30.4,1.2) (−30.4,1.2) (−30.4,−1.9) (−49.7,−1.9) | 6,839 |
+| mmw-north-e | McKim, Mead & White north link along Fifth Avenue | 1906–1911 (Wing E), MMW | rectangle X 49.4..88.6, Z −38.5..−2.0 | 1,431 |
+| mmw-north-h | MMW north end pavilion (Egyptian galleries) | 1910–1913 (Wing H), MMW | rectangle X 88.6..153.1, Z −41.3..9.8 | 3,295 |
+| mmw-north-f | MMW north rear wings (Arms and Armor, floor 2 Asian/Musical Instruments) | 1908–1910 (J. Pierpont Morgan Wing and rear wings, placement inferred), MMW | (49.4,−38.5) (88.6,−38.5) (88.6,−41.3) (118.0,−41.3) (118.0,−96.0) (49.4,−96.0) | 3,862 |
+| mmw-south-j | MMW south link along Fifth Avenue | 1914–1917 (Wing J), MMW | rectangle X −88.1..−49.7, Z −69.0..−1.9 | 2,576 |
+| mmw-south-k | MMW south end pavilion (Greek and Roman, Leon Levy and Shelby White Court) | 1914–1926 (Wing K; Pompeian Court opened 6 Apr 1926), MMW | rectangle X −151.5..−88.1, Z −38.5..9.9 | 3,070 |
+| core-1880-a | Vaux & Mould building (Wing A), west facade surviving inside the Lehman Wing | 1874–1880 (opened 30 Mar 1880), Calvert Vaux and Jacob Wrey Mould | rectangle X −14.5..14.5, Z −138.3..−69.0 | 2,010 |
+| core-1888-b | South wing (Wing B); its south facade survives inside the Petrie Court | 1884–1888, Theodore Weston with Arthur L. Tuckerman | rectangle X −49.7..−14.5, Z −138.3..−69.0 | 2,437 |
+| core-1894-c | North wing (Wing C) | 1889–1894, Weston with Tuckerman (L77) or Tuckerman alone (NHL) | rectangle X 14.5..49.4, Z −138.3..−69.0 | 2,418 |
+| lehman | Robert Lehman Wing, glass pyramid | 1975, Kevin Roche John Dinkeloo and Associates (KRJDA) | (−17.5,−138.3) (−16.3,−139.4) (−16.3,−143.1) (−19.1,−146.0) (−29.1,−145.9) (−29.1,−156.4) (−5.6,−179.8) (5.5,−179.8) (29.0,−156.3) (29.0,−145.9) (19.0,−145.9) (16.2,−143.1) (16.2,−139.4) (17.5,−138.3) | 1,672 |
+| sackler | Sackler Wing, Temple of Dendur gallery, sloped glass north wall | 1978, KRJDA | rectangle X 118.0..153.1, Z −103.0..−41.3 | 2,162 |
+| american-wing | American Wing with the Charles Engelhard Court (encloses the 1924 Grosvenor Atterbury wing) | 1980, KRJDA (1924 core by Grosvenor Atterbury); renovated 2009–2012 | (49.4,−96.0) (118.0,−96.0) (118.0,−103.0) (140.6,−103.0) (140.5,−161.0) (87.6,−161.0) (87.6,−138.3) (49.4,−138.3) | 4,901 |
+| rockefeller | Michael C. Rockefeller Wing, glass south wall; floor 2 skylit 19th-century European paintings | 1982, KRJDA; glass wall rebuilt 2021–2025 by WHY with Beyer Blinder Belle | rectangle X −151.6..−88.1, Z −97.2..−38.5 | 3,725 |
+| wallace | Lila Acheson Wallace Wing, Cantor Roof Garden on top | 1987, KRJDA; being replaced by the Tang Wing (ground broken 15 Sep 2026) | (−88.1,−97.2) (−151.6,−97.2) (−151.6,−104.7) (−141.2,−104.7) (−141.2,−160.1) (−88.2,−160.1) | 3,415 |
+| kravis-petrie | Henry R. Kravis Wing and the Carroll and Milton Petrie European Sculpture Court | 1990–1991, KRJDA | rectangle X −88.1..−49.7, Z −138.2..−69.0 | 2,657 |
+
+Notes on the block table:
+
+- Years and architects are from the history research (`history.md`); where the history file disagrees with a date here, `history.md` wins.
+- Anchors from S6 (world frame, floor 1 unless noted): Great Hall X ±31.6, Z −36.5..−2.0; Greek and Roman X −150.4..−30.4, Z −38.4..+8.8; Leon Levy and Shelby White Court X −139.3..−99.3, Z −32.0..−2.5; Egyptian Art X +30.4..+152.0, Z −98.3..+8.6; Temple of Dendur gallery X +118.0..+148.9, Z −95.3..−41.3; Arms and Armor X +50.3..+100.4, Z −95.7..−54.1; Medieval Sculpture Hall X ±14.2, Z −117.7..−83.3; European Paintings 1250–1800 (floor 2) X −51.3..+53.9, Z −135.2..−65.6; Michael C. Rockefeller Wing X −150.4..−83.8, Z −97.3..−32.0; Modern and Contemporary Art X −140.0..−88.1, Z −158.9..−97.2; American Wing X +50.3..+139.4, Z −159.9..−93.5; Robert Lehman Wing X −27.9..+27.8, Z −178.7..−135.1; Roof Garden (floor 5) X −136.7..−89.3, Z −126.8..−103.9.
+- Upper floors (S6 floor outlines): floors G, 1 and 2 cover nearly the whole plan; floor 1M (mezzanines) X −150.4..+145.5; floor 3 only X +94.3..+152.0, Z −129.2..+8.6 (north end and American Wing); floor 4 X −140.0..−61.5, Z −132.3..−96.3; floor 5 (Roof Garden) X −136.7..−81.6, Z −126.8..−103.9.
+- The 1880/1888/1894 split is the weakest part: A is placed on the axis because the Medieval Sculpture Hall and the Lehman Wing (built against A's west front) are both centred there; its 29 m width matches the hall; B and C fill out to the Hunt-era cut lines. Treat these three as placeholders until a dated plan (S12) is read.
+- Light wells open to the sky, from S2 (not in S1): (1) X −60.4..−51.5, Z −61.0..−38.4, 202 m²; (2) X +24.2..+36.7, Z −95.5..−84.4, 134 m²; (3) X +76.2..+85.1, Z −18.8..−11.0, 68 m²; (4) X −30.1..−25.0, Z −97.2..−84.5, 66 m²; (5) X +95.6..+98.8, Z −53.6..−40.0, 42 m². **M** S2. They are small; model them as recesses in the roof.
+
+## 3. Hunt central pavilion (Fifth Avenue facade)
+
+Scale: in S7 the bay between column-pair centres is 687 px. Taking S1's pavilion width (60.84 m) as the base outline (pedestal level, 3.375 bays in S8) and S2's (64.12 m) as the roof outline (cornice level, 3.6 bays in S7), they give bays of 18.0 m and 17.8 m; 18.0 m is adopted, so 38.2 px/m in S7 at the column plane. **D**, ±0.6 m on the bay (reading both outlines as the same line would give 18.0–19.0 m). Heights below are Y above F5; the landing is measured, everything above it scales with the bay, so heights carry about ±5 % plus ±0.3 m reading error.
+
+- [H1] Pavilion width 60.8 m at the base (X ±30.42, S1 **M**), 64.1 m at the roof outline (X ±32.06, S2 **M**). Front projection: about 3 m in front of the flanking extensions, whose face is at Z ≈ −2.0 (S1 extension line Z −1.9, S2 −2.1; pavilion line +1.2 in S1, −0.7 in S2). **M**.
+- [H2] Three equal bays, 18.0 m between column-pair centres. **D** (above). Column-pair centres at X = ±9.0 and ±27.0. **D**.
+- [H3] Eight colossal Corinthian columns in four coupled pairs, fluted, freestanding, each with a fluted pilaster on the wall behind it (S9, S10). Axis spacing within a pair 4.13 m (157.7 px in S7; 0.22–0.23 of the bay in S7 and S8). **D**. Column axes therefore at X = ±6.9, ±11.1, ±24.9, ±29.1. **D**.
+- [H4] Lower shaft diameter 1.55 m, upper about 1.33 m (entasis ratio 0.86 measured in S8; mid-height diameter 56.6 px = 1.48 m in S7). **E** confidence medium. Column height including base and capital 13.1 m (500 px in S7; 782 px in S8 gives 13.0 m at the same bay). **E** confidence medium; height/diameter ≈ 8.5, stockier than the canonical 10, so check against the published figure if one turns up.
+- [H5] Column axes in plan at Z ≈ +1.9; pedestal front at Z +3.4 (S5 strip). **E** confidence medium.
+- [H6] Pedestals: one block under each pair, 7.1 m wide (0.375 bay in S8) and 1.7 m tall (64 px in S7, 96 px in S8), with a small die between the two column bases; it stands on the landing. **E**. Column base bottom Y +5.3, capital top Y +18.4. **D** (landing + pedestal + column).
+- [H7] Entablature 4.1 m (capital top to cornice top), breaking forward over each pair and returning to the wall (S9); cornice with lion-head spouts; modillions; cornice top Y +22.5. **D** from S7 (158 px).
+- [H8] Attic: plain wall 3.5 m above the entablature, its cornice top at Y +26.0; above it Hunt's ornamental cresting (chéneau) of masks and shells to Y +27.6, with acroteria peaks to about Y +28.4. **D** S7 (pixel rows 330, 270, 238).
+- [H9] The four uncarved blocks: over each column pair, a plinth from the cornice to Y +24.0, then a stepped pile of five or six courses of rough-hewn limestone to about Y +26.2, roughly the width of the pedestal (7 m) and about 3 m deep (S9 shows the side). **D**/**E**. They are the unexecuted sculpture groups for four periods of art (S11).
+- [H10] Three great arches, one per bay, semicircular: clear span 8.9 m (0.495 bay in S8), springing at Y +12.9, crown of the intrados Y +17.4, with a carved keystone head of Athena at each crown (S13, AI-AP) reaching about Y +19.5. **D** S8.
+- [H11] Each arch holds, bottom to top: a doorway screen of two small columns between pilasters forming three openings (central arch; doors about 5 m tall, heads at Y +8.6), a door entablature with Greek-key frieze to about Y +9.6, a flat panel (banner field) to Y +12.2, and a three-light lunette window with a square-grid metal grille up to the intrados (S7, S8, S10). The side arches have windows instead of doors and a railing on the landing in front of them. **E** confidence medium.
+- [H12] Six portrait medallions (Raphael, Michelangelo, Dürer, Rembrandt, Bramante, Velázquez, by Karl Bitter; S11), one in each spandrel beside each arch crown, diameter about 1.7 m, centres about Y +18.2. **D** S8 (105 px of a 1086 px bay).
+- [H13] Four niches, one in the pier between the two columns of each pair, round-headed with a small hood, sill about Y +9 (S7). Hunt planned copies of famous sculpture for them (S13, AI-AP); they stayed empty until 2019 and now hold the Met's annual Facade Commission sculptures (S7 shows Wangechi Mutu's bronzes of September 2019). Model them empty. **E**.
+- [H14] Flanking extensions: X ±30.4..±49.6 (S1 vertices at X −49.72 and +49.43, symmetric about the axis), face at Z ≈ −2.0, lower than the pavilion: main cornice top about Y +20.7, a pedimented aedicule window and two caryatids each (painting, sculpture, architecture, music; S11); S9 shows their entablature and a caryatid. **E** confidence low on heights.
+- [H15] Base plinth: the landing (Y +3.63) runs across the pavilion; below it the steps (section 5) cover the base, so no rusticated basement is visible at the centre. Rustication appears only as banded joints on the arch piers' lower courses and on the pedestals (S7). **E**.
+
+## 4. McKim, Mead & White wings
+
+- [W1] Total Fifth Avenue frontage 304.7 m (1,000 ft). **M** S1 (S2: 307.6 m). Conflicts: the NHL nomination calls the completed MMW front "the new 900-foot facade" (274 m); S11 says the Met "measures almost 1/4-mile (400 m) long", which matches no straight dimension of the outline; the 2014 plaza is quoted at 1,021 ft (311 m), close to the measured frontage (sources in `history.md`).
+- [W2] Links between the Hunt extensions and the end pavilions, set back in line with the extensions (face Z ≈ −2.0): north X +49.4..+88.6 (39.2 m), south X −88.1..−49.7 (38.4 m). **M** S1.
+- [W3] End pavilions projecting 11.8 m toward the avenue (face Z +9.8..+9.9): north X +88.6..+153.1 (64.5 m), south X −151.5..−88.1 (63.4 m). **M** S1. The sides of the projections face north and south across the plaza.
+- [W4] Height: cornice level with the Hunt extensions, main cornice top about Y +20.7, parapet or balustrade to about Y +22.5; the north end pavilion has a third floor (S6 floor 3 at X +94..+152). **E** confidence low; the NYC roof height (S2: 87.77 ft above its ground elevation of 100 ft, i.e. NAVD88 57.2 m = Y +31.3) is one figure for the whole complex and probably the highest roof, not these cornices.
+- [W5] Facade treatment: limestone in the Corinthian order, "though simpler, ... in complete harmony with Hunt's classic central portion" (LPC 1967 via S13), with monumental bronze windows and Monel gutters (WJE, S13); the wings wrap round the north and south corners (S13). Roche's 1970 work ran new rusticated courses in an unbroken line across the base (S13). Bay count and pilaster rhythm were not measured in this run. **E** confidence low; measure from the wing images in `exterior-images.md` before modelling detail.
+- [W6] The Fifth Avenue sidewalk drops toward 80th Street, so the south end pavilion shows more base (Y −1.7 at its front, F6) and the 81st Street ground-floor entrance (Uris Center, floor G under the south wing in S6) is at street level.
+
+## 5. Front steps and plaza
+
+- [P1] Landing (top of the steps, in front of the doors) Y +3.63, flat from Z +3.5 to +8.5 on the axis. **M** S4 (NAVD88 29.52–29.56). Main floor is at the landing level within about 0.3 m. **E**.
+- [P2] Steps on the axis run from Z +20.0 (bottom, Y +0.05) to Z +9.0 (top), 11.0 m of run for 3.6 m of rise. **M** S4 profile (1 m DEM; individual steps are smoothed).
+- [P3] Number of risers 22 ± 2 in one broad flight; riser about 0.165 m, tread about 0.52 m. **E** from S8 (counting tread edges in the flight below pair 3) and **D** from P1–P2. Conflict: the steps are published as 13½ ft (4.11 m) high (PPS, S13), which with 6 in risers would mean 27 risers; the DEM gives 3.63 m from the sidewalk on the axis to the landing, so the published height probably counts from the lower sidewalk toward 80th Street or to the door sills. The S4 profile shows short flats near Y +1.2 and +1.8, so an intermediate landing cannot be ruled out; check in the primary images.
+- [P4] Flight width 46.9 m (154 ft, PPS, S13 **M**; S5 reads 47 m, X −24.3..+22.8, taken as ±23.47 about the axis), granite, designed by KRJDA (1968–70), with railings: two central handrails and one at each third of the width (S7, S8). The lowest steps run wider than the upper flight at the ends (S7). **E** confidence low to medium. Conflict: the S4 profile at X −18 and +22 shows ground at Y +1.0..+1.6 between Z +3 and +15 instead of the landing, probably misclassified step points; the photos show the steps continuous across the central bays.
+- [P5] Plaza (David H. Koch Plaza, 2014) between the facade and the curb: Z −2 (links) or +9.9 (end pavilions) to the curb at +28.9, X −151.5..+153.1 along the whole frontage. **M** S1/S3.
+- [P6] Two fountains, square granite basins 13.8 × 13.8 m, centres (X −38.55, Z +13.27) and (+38.49, +13.34), so X ±38.5, Z +13.3, each with a ring of jets arcing inward from the rim (S5 shows the spray; Hałun 2023 in `exterior-images.md` shows the jets). Each is a square stone block with a circular basin cut into it, revealing a shallow stone dome, with 48 inward-pointing jets around the rim, about 21,000 gallons each, heated to run all year (S13). Fountains by Fluidity Design Consultants for OLIN. **M** S1 (S5 reads 14.5 m).
+- [P7] Four planted groves beside the fountains, each 13.2 × 11.7 m, centres X ±57.0 and ±78.6, Z +11.9 (Z +6.0..+17.7). **M** S1. They are bosques of London plane on a square grid turned 45° to the street, flanking the 81st and 83rd Street crossings, with movable tables and chairs (30 tables, 120 chairs) (S13).
+- [P8] Two allées in front of each end pavilion: 13 trees per row, rows at Z +20.3 and +25.2, spacing 4.9 m; south X −149.2..−90.4, north X +90.8..+150.2. 52 trees in all. **M** S1 tree nodes. The plaza has 106 trees in all (Met press release, snippet), so about 54 stand in the four groves, 13–14 each. **D**. The allées are little-leaf linden, to be pruned as aerial hedges, with rows lined up with the facade windows (S13).
+- [P9] Red, angular cantilevered parasols over benches beside the allées (Spatial Affairs Bureau, S13); food vendors stand on the plaza in front of the south end pavilion (S5 shows a row of red squares at X −140..−102, Z ≈ +16). **E**.
+- [P10] Lighting by L'Observatoire (2014); benches not surveyed; S5 shows linear seats along the groves. **E** confidence low.
+
+## 6. Park side
+
+- [K1] West faces (toward the park): Wallace Wing Z −160.1 (X −141.2..−88.2); Kravis Wing and the old core Z −138.2 (X −88.2..−17.5); Lehman Wing to Z −179.8 on the axis; American Wing Z −138.3 (X +17.5..+87.6) and Z −161.0 (X +87.6..+140.5). **M** S1.
+- [K2] Robert Lehman Wing: a square pavilion 58.1 m across (X −29.1..+29.0, half-width 29.05) with its two western corners cut at 45° (the west face X −5.6..+5.5, 11.1 m wide, at Z −179.8), joined to the main building by a narrow link (X ±16..±19, Z −138.3..−146), roofed by a glass pyramid over the central court; floor G holds the collection galleries at park level. **M** S1 plan, **E** pyramid: apex about Y +20, a multi-faceted glazed pyramid following the chamfered plan (S5). Confidence low on height.
+- [K3] Sackler Wing (Temple of Dendur): glass roof and a sloped glass wall facing north to the park along X +153.1, Z −102.7..−41.3 (61 m); the S5 roof view shows the glazing sloping down to this face. Slope and height not measured. **E**: wall rises from the park grade (about Y +4) to about Y +22.
+- [K4] American Wing: the Charles Engelhard Court's glass wall faces west to the park along Z −138.3 (X +17.5..+87.6), with a glazed roof (S5: ribbed glazing X +52..+94, Z −133..−103); a second ribbed glass roof at X +90..+141, Z −161..−120. **M** S1/S5 plan, **E** heights.
+- [K5] Michael C. Rockefeller Wing: sloping glass wall on the south face along X −151.6, Z −97.2..−38.5 (58.7 m in plan); published as 200 ft (61.0 m) long and 60 ft tall with a 70° slope, about 12,000 sq ft (CB8 2020, S13; NHL); the 60 ft is the sloped length, so the wall rises about 17.1 m over a 6.3 m run (**D**), matching a 5–6 m glazed strip along the south face in S5. Rebuilt 2021–2025 as a triple-glazed wall eight panels high, each panel 3 ft 7 in × 7 ft (1.09 × 2.13 m), with flush outside joints, a bird-safe frit thinning toward the top and an opaque top row (S13). The floor 2 galleries above carry the long ridge skylights (section 7).
+- [K6] Wallace Wing and Cantor Roof Garden: four floors plus the roof terrace (floor 5) at X −136.7..−89.3, Z −126.8..−103.9 with planters and a pergola (S5). The roof garden closed in October 2025; the Tang Wing broke ground on 15 Sep 2026 within the Wallace Wing's footprint and height (Hyperallergic, see `history.md`). **M** plan.
+- [K7] Visible older facades: none from the outside today. Inside: the Vaux & Mould west front (red brick with granite bands, pointed arches) in the Lehman Wing; Weston's 1888 south facade inside the Petrie Court; a Vaux banded-granite pointed arch near the top of the Grand Staircase (S12).
+
+## 7. Roofscape
+
+- [R1] Great Hall block: a long rectangular glazed skylight over the hall at about X ±22, Z −23.5..−10.7, set in a low hipped roof, with a glazed hip skylight over each end block at X ±34..±44, Z −29..−2. **E** from S5 (pixel reading ±1 m).
+- [R2] European Paintings galleries (floor 2, X −51..+54, Z −135..−66): a field of skylights over the central blocks A, B, C with flat roofs between; 30,000 sq ft (2,790 m²) of laminated insulated glass in aluminium frames over Wings A, B and C (S13, Beyer Blinder Belle), galleries 600–644, replaced 2018–2023 (first built 1907, replaced 1939–52). **M** extent from S6 and published area, **E** pattern.
+- [R3] 19th-century European paintings over the Rockefeller Wing (X −145..−90, Z −98..−32): 14 parallel glass ridges running north–south, pitch about 4.4 m, each about 3 m wide. **E** counted in S5.
+- [R4] Roman court skylight (Leon Levy and Shelby White Court) X −133..−108, Z −25.5..−9.8, inside the court's plan (S6); a hipped glazed skylight in the north end pavilion near X +122, Z −19. **E** S5.
+- [R5] Sackler Wing glass roof over the whole temple gallery (X +118..+153, Z −103..−41), sloping down to the north wall. **E** S5.
+- [R6] Elsewhere flat roofs with mechanical penthouses (largest behind the south link, X −89..−51, Z −65..−35). Roof pitches for the ridge skylights about 30–35°. **E** confidence low.
+
+## 8. Materials and colours
+
+Colours are means of 17×17 px patches read from the image file in the browser, under daylight; they are sRGB as photographed (camera white balance, no correction).
+
+- [C1] Indiana limestone, pavilion attic wall, overcast light: #E4E0D7 (S8). Arch piers #D5D4CF (S8). Column shafts #CBC8C2 to #D0CBC4 (S8). **M** (photo).
+- [C2] Pedestals and landing edge (granite): #918B81, #8C867D (S8). Steps in shade #626866. **M** (photo).
+- [C3] Weathered cresting #89857D (S8). **M** (photo).
+- [C4] Door glazing and bronze frames, dark: #3B4346 (S8). Lunette grilles read near-black (#2E3338 by eye). **M**/**E**.
+- [C5] Sidewalk concrete #787878, asphalt #67757B (S8). **M** (photo).
+- [C6] Roofs: brownish membrane or lead roofs about #8A7867, skylight glass blue-grey about #6F8FA8, park-side glass walls blue-grey about #7A93A6. **E** by eye from S5.
+- [C7] Red brick of the 1880 west front about #9A4B3A with grey-white granite bands about #B9B4AA. **E** (no sample in this run).
+
+## 9. Conflicts and open questions
+
+- Facade plane F4 rests on roof outlines and an orthophoto; a published plan or a measured side view would tighten it from ±1 m.
+- Column proportion H4 (height/diameter 8.5) is lower than canonical; both photos agree, so the published dimension (if any) decides.
+- Bay width H2 depends on reading S1 as the base outline and S2 as the cornice outline; reading both as the same line gives 18.0–19.0 m.
+- Overall length: 304.7 m measured versus "almost 1/4-mile (400 m)" (S11).
+- Wing letters and the 1880/1888/1894 split: placeholders until the 1995 Bulletin plan is read.
+- Present-day state of the southwest corner: the Tang Wing broke ground on 15 Sep 2026 inside the Wallace Wing's envelope (completion 2029–2030); how to show the corner is a coordinator decision (see `history.md`).
