@@ -41,7 +41,10 @@ export const WEST_FACE_Z_AMERICAN = -161.0; // [K1] M: American Wing outer west 
 
 // --- Levels ---------------------------------------------------------------------------------
 export const LANDING_Y = 3.63; // [P1] M: top of the front steps, flat Z +3.5..+8.5
-export const MAIN_FLOOR_Y = 3.63; // [P1] E ±0.3: Great Hall floor taken at the landing level
+export const MAIN_FLOOR_Y = 4.11; // D: LANDING_Y plus the three steps inside the central doorway (interior.md, Floor levels); the total rise matches the published 13½ ft (4.115 m)
+export const GROUND_FLOOR_Y = -2.34; // D: MAIN_FLOOR_Y − 21'-2" (interior.md, Floor levels; Tang drawing labels), low-medium
+export const SECOND_FLOOR_Y = 10.97; // D: MAIN_FLOOR_Y + 22'-6" (interior.md, Floor levels), Hunt core only; other wings' second floors differ
+export const GREAT_HALL_RIDGE_Y = 33.37; // D: MAIN_FLOOR_Y + 96'-0" (interior.md, Floor levels), medium-low
 
 // --- Hunt central pavilion ------------------------------------------------------------------
 export const HUNT_PAVILION_HALF_WIDTH_BASE = 30.42; // [H1] M: OSM, base outline
@@ -49,6 +52,8 @@ export const HUNT_PAVILION_HALF_WIDTH_ROOF = 32.06; // [H1] M: NYC, roof outline
 export const HUNT_PAVILION_FRONT_Z = 1.2; // [H1] M: OSM pavilion line (cornice and breaks)
 export const HUNT_EXTENSION_FACE_Z = -2.0; // [H1] M: flanking extensions and MMW links
 export const HUNT_EXTENSION_HALF_WIDTH = 49.6; // [H14] M: end of Hunt's facade, both sides
+// Conflict, unresolved: the Met floor map (interior.md, Plan source) puts the column centres at X ±6.98, ±10.30, ±24.87, ±28.20
+// (pairs at ±8.64 and ±26.54, 3.32 m apart within a pair) with axes at Z +2.74; the hunt modeller settles it against photographs.
 export const HUNT_BAY = 18.0; // [H2] D ±0.6: column-pair centre to centre
 export const HUNT_PAIR_CENTRE_X_INNER = 9.0; // [H2] D: inner pairs at X = ±9.0
 export const HUNT_PAIR_CENTRE_X_OUTER = 27.0; // [H2] D: outer pairs at X = ±27.0
