@@ -2,6 +2,8 @@
  * Capture tooling (docs/design/spec.md, Verification), run by Node's own TypeScript support:
  *   npm run shots                         the standard set: every preset at the finished state, the aerial preset at t = 0 and at each chapter boundary,
  *                                         the section cut, and the page UI at 1280x720 and 390x844, into .shots/shots/
+ *   npm run shots -- [--solo <chapter>] [--presets id,id]
+ *                                         the same set for one chapter (into .shots/shots-<chapter>/) and/or only the named presets
  *   npm run sweep -- --t 6.5 [--count 12] [--seed 7] [--solo <chapter>]
  *                                         seeded random cameras around the model's bounds at one t, into .shots/sweep-<seed>-t<t>/
  * Each run starts its own Vite dev server on this worktree's MET_PORT through Vite's JS API (strict port: a taken port fails the run instead of
@@ -162,14 +164,20 @@ async function capture(origin: string, shots: readonly Shot[], dir: string): Pro
   writeFileSync(join(dir, 'shots.json'), JSON.stringify({ ...revision(), origin, shots }, null, 2));
 }
 
-async function shots(origin: string): Promise<void> {
-  const probe = await open(origin, 'shot=1&noui=1', MODEL_VIEWPORT);
+async function shots(origin: string, args: Map<string, string>): Promise<void> {
+  const solo = args.get('solo');
+  const extra = solo === undefined ? '' : `&solo=${encodeURIComponent(solo)}`;
+  const probe = await open(origin, `shot=1&noui=1${extra}`, MODEL_VIEWPORT);
   const f = await facts(probe);
   await probe.close();
+  const only = args.get('presets')?.split(',').filter((id) => id !== '');
+  const missing = only?.filter((id) => !f.presets.some((p) => p.id === id)) ?? [];
+  if (missing.length > 0) throw new Error(`--presets names unknown preset(s) ${missing.join(', ')}; known: ${f.presets.map((p) => p.id).join(', ')}.`);
+  const presets = only === undefined ? f.presets : f.presets.filter((p) => only.includes(p.id));
   const n = f.n;
   const cut = Math.round(Math.max(1, f.bounds.max[1] * 0.35) * 2) / 2;
   const list: Shot[] = [
-    ...f.presets.map((p) => ({ name: `preset-${p.id}`, query: `shot=1&noui=1&t=${String(n)}&view=${p.id}`, viewport: MODEL_VIEWPORT })),
+    ...presets.map((p) => ({ name: `preset-${p.id}`, query: `shot=1&noui=1&t=${String(n)}&view=${p.id}`, viewport: MODEL_VIEWPORT })),
     { name: 'chapter-00-start', query: 'shot=1&noui=1&t=0&view=aerial-ne', viewport: MODEL_VIEWPORT },
     // The end of each chapter that has steps; chapters without steps share their boundary with the one before.
     ...f.chapters.flatMap((c, i) => (c.count === 0 ? [] : [{ name: `chapter-${String(i + 1).padStart(2, '0')}-${c.id}`, query: `shot=1&noui=1&t=${String(c.first + c.count)}&view=aerial-ne`, viewport: MODEL_VIEWPORT }])),
@@ -178,8 +186,9 @@ async function shots(origin: string): Promise<void> {
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-${v.name}`, query: `shot=1&t=${String(n)}`, viewport: v })),
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-mid-${v.name}`, query: `shot=1&t=${String(Math.floor(n / 2) + 0.5)}`, viewport: v })),
   ];
-  console.log(`Standard set: ${String(list.length)} images.`);
-  await capture(origin, list, join(OUT, 'shots'));
+  const scoped = list.map((s) => ({ ...s, query: `${s.query}${extra}` }));
+  console.log(`Standard set${solo === undefined ? '' : ` (solo ${solo})`}: ${String(scoped.length)} images.`);
+  await capture(origin, scoped, join(OUT, solo === undefined ? 'shots' : `shots-${solo}`));
   console.log(`GPU: ${f.gpu}`);
   console.log(`Model: ${String(f.stats.pieces)} pieces, ${String(f.stats.meshes)} meshes, ${String(f.stats.triangles)} triangles at t = N.`);
   console.log(`Build ${f.perf.buildMs.toFixed(0)} ms; ready ${f.perf.readyMs?.toFixed(0) ?? '?'} ms after navigation (first probe page, cold).`);
@@ -210,7 +219,7 @@ async function sweep(origin: string, args: Map<string, string>): Promise<void> {
 async function main(): Promise<number> {
   const [command, ...rest] = process.argv.slice(2);
   if (command !== 'shots' && command !== 'sweep') {
-    console.error('Usage: node scripts/capture.ts shots | sweep --t <t> [--count 12] [--seed <n>] [--solo <chapter>]');
+    console.error('Usage: node scripts/capture.ts shots [--solo <chapter>] [--presets id,id] | sweep --t <t> [--count 12] [--seed <n>] [--solo <chapter>]');
     return 2;
   }
   const args = parseArgs(rest);
@@ -218,7 +227,7 @@ async function main(): Promise<number> {
   console.log(`Revision ${rev}${dirty ? ' (dirty: uncommitted changes are in these images)' : ' (clean)'}`);
   const origin = await start();
   console.log(`Dev server ${origin}`);
-  if (command === 'shots') await shots(origin);
+  if (command === 'shots') await shots(origin, args);
   else await sweep(origin, args);
   if (problems.length > 0) {
     console.error(`The page reported ${String(problems.length)} problem(s):\n${problems.join('\n')}`);

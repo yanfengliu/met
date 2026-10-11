@@ -43,7 +43,7 @@ Modelling split: each area worker owns one folder and exports one step array per
 - [x] Repo docs base, fleet census, work folder (coordinator).
 - [x] Scaffold: toolchain, configs, gates, AGENTS.md Gates section (worker `scaffold`; merged `aa7852a`: three 0.186.1, vite 8.3.4, vitest 5.0.3, TypeScript 6.0.3, Playwright 1.64.0 on system Chrome; verify green, audits 0).
 - [x] Research: exterior, footprint and history (worker `research-exterior`, merged `cd61ea4`). Interior: done (worker `research-interior`, merged `ca3c6af`; floor-map decode cached under ignored `research/cache/`).
-- [ ] Engine: viewer, build API, timeline, player, page, capture, e2e (worker `engine`; needs scaffold).
+- [x] Engine: viewer, build API, timeline, player, page, capture, e2e (worker `engine`, merged `4ea291f`; verify green on main: 110 unit, 16 e2e; demo 2,105 pieces build 13 ms, frame 1.2 ms).
 - [ ] Parts library and gallery page (worker `parts`; needs scaffold).
 - [ ] Chapter list, `frame.ts`, chapter stubs from research (coordinator).
 - [ ] Modelling by chapter (workers named per chapter; need engine, parts, research).
@@ -53,3 +53,10 @@ Modelling split: each area worker owns one folder and exports one step array per
 ## Outcome
 
 Pending.
+
+## Handoff (2026-10-11, session stopped at the usage limit)
+
+- Parts library: worker `parts` was stopped mid-way through its visual inspection; its work is preserved, unmerged, in worktree `../met-worktrees/parts` (branch `parts`, 0 commits ahead of main, 9 uncommitted paths at stop). Next: resume or review it, run `MET_PORT=5330 npm run verify` there, inspect the gallery shots (`MET_PORT=5330 node scripts/shots-parts.ts`), merge to main, remove the worktree.
+- Then spawn the six modelling workers per "Modelling split" above, one worktree each under `../met-worktrees/<area>` from main, ports 5340/5350/…/5390, each filling only `src/model/<area>/` (stub exports listed in `docs/design/spec.md`); remove the `demo` chapter in the integration commit that lands the first real steps.
+- Then integration, the visual audit against `docs/research/*-images.md`, the budgets, an independent review (codex 0.158.0 and claude 2.1.281 are installed; see `../fleet/docs/skills/multi-cli-review.md`), docs and devlog.
+- `npm run shots` now takes `--solo <chapter>` and `--presets id,id` (coordinator, this commit).
