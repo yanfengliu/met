@@ -52,7 +52,8 @@ export const PRESETS: readonly ViewPreset[] = [
   { id: 'ref-fountain-north', label: 'Photo: from the north fountain', group: 'exterior', camera: look([46, 1.4, 21], [5, 9, 2], 55) },
   { id: 'ref-park-south', label: 'Photo: south side from the park', group: 'exterior', camera: look([-200, 3, -92], [-151.6, 9, -68], 50) },
   { id: 'ref-park-northwest', label: 'Photo: American Wing from the park', group: 'exterior', camera: look([175, 6, -140], [140, 12, -125], 50) },
-  { id: 'ref-park-north', label: 'Photo: north side from the park', group: 'exterior', camera: look([230, 6, -110], [153, 12, -72], 55) },
+  // Moved inside the site (SITE_MAX_X 200) from the research's (230, 6, -110); the fov narrows from 55 so the Sackler glass round the target keeps its size.
+  { id: 'ref-park-north', label: 'Photo: north side from the park', group: 'exterior', camera: look([198, 6, -104], [153, 12, -72], 37) },
   // Park at the top, Fifth Avenue at the bottom, north to the right.
   { id: 'ref-plan-ortho', label: 'Photo: plan from above', group: 'exterior', camera: look([0, 600, -85], [0, 0, -85], 30, [0, 0, -1]) },
   { id: 'int-great-hall-balcony-south', label: 'Great Hall from the north balcony', group: 'interior', camera: mapLook([28.5, L2 + EYE, -14.5], [-30, L1 + 4, -14.5], 46) },

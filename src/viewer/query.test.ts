@@ -7,8 +7,8 @@ import { parseQuery, shouldAutoplay, startPosition } from './query.js';
 
 describe('parseQuery', () => {
   it('reads every parameter', () => {
-    const q = parseQuery('?shot=1&t=3.5&step=demo&view=top&cam=1,2,3,4,5,6&cut=8.5&solo=hunt-1902&autoplay=0&noui=1');
-    expect(q).toMatchObject({ shot: true, t: 3.5, step: 'demo', view: 'top', cam: [1, 2, 3, 4, 5, 6], cut: 8.5, solo: 'hunt-1902', autoplay: false, noui: true, warnings: [] });
+    const q = parseQuery('?shot=1&t=3.5&step=steps-flight&view=top&cam=1,2,3,4,5,6&cut=8.5&solo=hunt-1902&autoplay=0&noui=1');
+    expect(q).toMatchObject({ shot: true, t: 3.5, step: 'steps-flight', view: 'top', cam: [1, 2, 3, 4, 5, 6], cut: 8.5, solo: 'hunt-1902', autoplay: false, noui: true, warnings: [] });
   });
 
   it('defaults to nothing set', () => {

@@ -4,7 +4,6 @@
  * its array is composed into, which src/build/sequence.test.ts checks.
  */
 import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from '../model/core/index.js';
-import { demoSteps } from '../model/demo/index.js';
 import { huntSteps } from '../model/hunt/index.js';
 import { greekRomanCourt2007Steps, mmwSteps } from '../model/mmw/index.js';
 import { americanWing1924Steps, rocheNorthSteps } from '../model/roche-north/index.js';
@@ -25,7 +24,6 @@ export const COMPOSITION: { readonly [K in ChapterId]: readonly (readonly StepDe
   'roche-north-1980': [rocheNorthSteps],
   'roche-south-1990': [rocheSouthSteps],
   'koch-plaza-2014': [greekRomanCourt2007Steps, plaza2014Steps, europeanPaintingsGlazing2023Steps],
-  demo: [demoSteps],
 };
 
 export const SEQUENCE: readonly StepDef[] = CHAPTERS.flatMap((chapter) => COMPOSITION[chapter.id].flat());

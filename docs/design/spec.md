@@ -113,7 +113,6 @@ The renderer keeps `preserveDrawingBuffer: true`, or headless capture reads a bl
 | `src/model/palette.ts` | shared materials | engine creates; others request changes |
 | `src/model/lib/` | parametric architectural parts | parts library |
 | `src/model/<area>/` | one folder per area (`site`, `core`, `hunt`, `mmw`, `roche-north`, `roche-south`), each exporting the step arrays `sequence.ts` composes | that area's modelling worker |
-| `src/model/demo/` | temporary toy building, the last chapter until real content lands | engine (coordinator removes) |
 | `parts.html`, `src/parts/` | parts gallery page for the library | parts library |
 | `scripts/` | capture and sweep tooling | engine |
 | `tests/e2e/` | Playwright control tests | engine |
