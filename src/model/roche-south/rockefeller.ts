@@ -217,7 +217,7 @@ export const rockefellerSteps: readonly StepDef[] = [
   { id: 'rockefeller-floors', chapter: CHAPTER, year: YEAR, title: 'Main and second floors', detail: 'The main floor runs out to the glass; the second floor stops 5.5 m short of it, so the hall behind the glass is two storeys high.', motion: { kind: 'rise' }, stagger: 'order', focus: FOCUS_WING, build: floors },
   { id: 'rockefeller-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries on two floors', detail: 'Gallery walls of the Oceania hall and the African and American galleries, and above them the nineteenth-century European paintings.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: galleries },
   { id: 'rockefeller-roof', chapter: CHAPTER, year: YEAR, title: 'Roof deck over the paintings galleries', detail: 'The roof over the second floor, open in ten long bays for skylights, and the stone fascia along the top of the south face.', motion: { kind: 'drop' }, stagger: 'order', focus: FOCUS_WING, build: roof },
-  { id: 'rockefeller-skylights', chapter: CHAPTER, year: YEAR, title: 'Ridge skylights over the galleries', detail: 'Ten glass ridges running north–south light the second-floor galleries; an eleventh continues over the Greek and Roman wing.', motion: { kind: 'drop' }, stagger: 'z', focus: FOCUS_WING, build: skylights },
+  { id: 'rockefeller-skylights', chapter: CHAPTER, year: YEAR, title: 'Ridge skylights over the galleries', detail: 'Glass ridges running north–south over the second-floor galleries of nineteenth-century European paintings, with laylights under them.', motion: { kind: 'drop' }, stagger: 'z', focus: FOCUS_WING, build: skylights },
   {
     id: 'rockefeller-glass-wall',
     chapter: CHAPTER,
