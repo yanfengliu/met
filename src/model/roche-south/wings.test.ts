@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import { collectStep } from '../../build/kit.js';
 import type { StepDef } from '../../build/types.js';
-import { LEHMAN_PYRAMID_APEX_Y, ROCKEFELLER_GLASS_FACE_X, ROCKEFELLER_GLASS_RISE, ROCKEFELLER_GLASS_SLOPE_DEG } from '../frame.js';
+import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, ROCKEFELLER_GLASS_FACE_X, ROCKEFELLER_GLASS_RISE, ROCKEFELLER_GLASS_SLOPE_DEG } from '../frame.js';
 import { palette } from '../palette.js';
 import { lehmanSteps, rocheSouthSteps } from './index.js';
 import { COURT_OCTAGON, LEHMAN_EAVE_Y } from './lehman-plan.js';
@@ -95,6 +95,22 @@ describe('walls', () => {
         if (thickness < 0.4 || thickness > 1.5) bad.push(`${def.id} piece ${String(i)}: ${thickness.toFixed(2)} m`);
       });
     }
+    expect(bad).toEqual([]);
+  });
+});
+
+describe('exterior walls', () => {
+  it('start at or below the excavated pad (GROUND_FLOOR_Y − 0.1) wherever they reach near the ground, so no gap shows under the terrain', () => {
+    const ids = ['lehman-walls', 'rockefeller-walls', 'wallace-facades', 'kravis-park-face'];
+    const bad: string[] = [];
+    for (const def of [...lehmanSteps, ...rocheSouthSteps].filter((s) => ids.includes(s.id))) {
+      collectStep(def).pieces.forEach((piece, i) => {
+        if (piece.geometry.boundingBox === null) piece.geometry.computeBoundingBox();
+        const box = (piece.geometry.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
+        if (box.min.y < 3 && box.min.y > GROUND_FLOOR_Y - 0.1) bad.push(`${def.id} piece ${String(i)} starts at ${box.min.y.toFixed(2)}`);
+      });
+    }
+    expect(ids.every((id) => [...lehmanSteps, ...rocheSouthSteps].some((s) => s.id === id))).toBe(true);
     expect(bad).toEqual([]);
   });
 });
