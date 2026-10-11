@@ -80,7 +80,8 @@ function foundations(kit: Kit): void {
 function walls(kit: Kit): void {
   // The stone base under the glass wall, the west wall (later inside the Wallace Wing) and the north wall up to the Kravis Wing.
   kit.add(UNIT_BOX, palette.limestone, wallAlong([X0, Z_EAST], [X0, Z_IN], GROUND_FLOOR_Y - SLAB, RF_GLASS_FOOT_Y, OUTER_WALL), 0);
-  kit.add(UNIT_BOX, palette.limestone, wallAlong([X0, Z_WEST], [X1, Z_WEST], GROUND_FLOOR_Y - SLAB, PARAPET_Y, OUTER_WALL), 1);
+  // The west wall stops 1 m short of the south face: photo ref-park-south shows a dark reveal between the glass and the stone block west of it.
+  kit.add(UNIT_BOX, palette.limestone, wallAlong([X0 + 1.0, Z_WEST], [X1, Z_WEST], GROUND_FLOOR_Y - SLAB, PARAPET_Y, OUTER_WALL), 1);
   kit.add(UNIT_BOX, palette.limestone, wallAlong([X1, Z_WEST], [X1, Z_KRAVIS], GROUND_FLOOR_Y - SLAB, PARAPET_Y, OUTER_WALL), 2);
 }
 
@@ -202,8 +203,8 @@ function glassWall(kit: Kit): void {
       const b = lifted(glassPoint(s, z1));
       const c = lifted(glassPoint(s1, z1));
       const d = lifted(glassPoint(s1, z));
-      kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(a, b, c));
-      kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(a, c, d));
+      kit.add(UNIT_TRIANGLE, mat.glassFritted, paneMatrix(a, b, c));
+      kit.add(UNIT_TRIANGLE, mat.glassFritted, paneMatrix(a, c, d));
     }
   }
 }

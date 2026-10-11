@@ -35,8 +35,8 @@ const SLAB = 0.6;
 const FOOTING_Y = GROUND_FLOOR_Y - SLAB - 1.0;
 const BASE_Y = GROUND_FLOOR_Y - SLAB;
 const PARAPET_Y = WALLACE_ROOF_Y + 1.0;
-/** E: top of the stone block at the wing's south-east corner, taller than the glass wall beside it (photo ref-park-south). */
-const TOWER_Y = 24.0;
+/** E: top of the stone block at the wing's south-east corner, about 1.5 m over the Rockefeller glass wall's top beside it (photo ref-park-south). */
+const TOWER_Y = 22.0;
 
 export const WALLACE_OUTLINE: readonly P2[] = ccw(WALLACE_BLOCK);
 /** Edge 0 runs along Z −97.2, the Rockefeller Wing's wall. */
@@ -95,8 +95,8 @@ const WEST_FACE = wall({
   thickness: OUTER_WALL,
   openings: [{ x: -((WEST_GLASS_X0 + WEST_GLASS_X1) / 2 - (-141.2 - 88.2) / 2), y: WEST_OPENING_BOTTOM - BASE_Y, width: WEST_GLASS_X1 - WEST_GLASS_X0, height: WEST_OPENING_TOP - WEST_OPENING_BOTTOM }],
 });
-/** The south face: a row of small square windows at the second floor (photo ref-park-south shows a row of them). */
-const SOUTH_WINDOWS = [-150, -142, -134, -126, -118, -110].map((z) => ({ x: z - (-104.7 - 160.1) / 2, y: WALLACE_SECOND_Y + 1.6 - BASE_Y, width: 1.4, height: 1.4 }));
+/** The south face: a row of small square windows at the mezzanine, about mid-height of the face (photo ref-park-south shows a row of them). */
+const SOUTH_WINDOWS = [-152, -146, -140, -134, -128, -122, -116, -110].map((z) => ({ x: z - (-104.7 - 160.1) / 2, y: WALLACE_MEZZANINE_Y + 0.6 - BASE_Y, width: 1.4, height: 1.4 }));
 const SOUTH_FACE = wall({ width: 160.1 - 104.7, height: PARAPET_Y - BASE_Y, thickness: OUTER_WALL, openings: SOUTH_WINDOWS });
 
 function facades(kit: Kit): void {

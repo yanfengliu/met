@@ -178,6 +178,22 @@ export function libraryWallOn(a: P2, b: P2, y0: number, forward = 0): Matrix4 {
   return new Matrix4().makeBasis(x, UP.clone(), z).setPosition(cx, y0, cz);
 }
 
+/**
+ * Unit-box matrices of a small closed room (a roof plant house, a stair house): four walls `wall` thick inside the plan rectangle and a roof slab,
+ * so a section cut shows it hollow rather than as a solid block.
+ */
+export function hollowBoxes(min: V3, max: V3, wall: number, roof = 0.4): Matrix4[] {
+  const [x0, y0, z0] = min;
+  const [x1, y1, z1] = max;
+  return [
+    boxAt([x0, y0, z0], [x1, y1 - roof, z0 + wall]),
+    boxAt([x0, y0, z1 - wall], [x1, y1 - roof, z1]),
+    boxAt([x0, y0, z0 + wall], [x0 + wall, y1 - roof, z1 - wall]),
+    boxAt([x1 - wall, y0, z0 + wall], [x1, y1 - roof, z1 - wall]),
+    boxAt([x0, y1 - roof, z0], [x1, y1, z1]),
+  ];
+}
+
 /** A translation matrix. */
 export function at(x: number, y: number, z: number): Matrix4 {
   return new Matrix4().makeTranslation(x, y, z);

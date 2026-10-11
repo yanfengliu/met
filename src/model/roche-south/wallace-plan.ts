@@ -13,10 +13,13 @@ import type { Room } from './rooms.js';
 /** E: the mezzanine (map floor 1M) over the west galleries, about 4.3 m above the main floor. */
 export const WALLACE_MEZZANINE_Y = MAIN_FLOOR_Y + 4.3;
 export const WALLACE_SECOND_Y = ROCHE_SECOND_FLOOR_Y;
-/** E: roof over the second-floor galleries; the Patrons Lounge (map floor 4) stands on it. */
-export const WALLACE_ROOF_Y = 18.6;
-/** E: the roof garden deck (map floor 5), one storey over the lounge. */
-export const ROOF_GARDEN_Y = 22.4;
+/** E: roof over the second-floor galleries (5 m galleries on the second floor); the Patrons Lounge (map floor 4) stands on it. */
+export const WALLACE_ROOF_Y = 18.0;
+/**
+ * E: the roof garden deck (map floor 5), one storey over the lounge. Photo ref-park-south (Peel 2024, EXIF 17 mm on APS-C) shows nothing of the garden
+ * over the south face near the tower, which keeps its parapet within about a metre of the sight line over that face; this is the lowest storey that fits.
+ */
+export const ROOF_GARDEN_Y = 21.6;
 /** E: top of the park facade, under the glazed roof strip that rises from it to the main roof. */
 export const WALLACE_FACADE_TOP_Y = 16.0;
 

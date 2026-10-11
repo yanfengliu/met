@@ -53,10 +53,13 @@ const GRID_BAR = [0.07, 0.16] as const;
 /** Panes sit inside the bars' depth, never on a bar face. */
 const PANE_LIFT = 0.03;
 
-/** Height courses of the pyramid's grid, and rafter bays along each broad and narrow eave (P9: three bays on a narrow face). */
-export const PYRAMID_COURSES = 9;
-export const BROAD_BAYS = 9;
-export const NARROW_BAYS = 3;
+/**
+ * The pyramid's grid (P9): purlins at these fractions of the way from the eave to the apex (a short course at the eave, then even courses, as the
+ * fit to the seven purlins of the nearest narrow face gives), and rafter bays of about 1.1 m along each eave (four on a narrow face).
+ */
+export const PURLINS: readonly number[] = [0.071, 0.201, 0.331, 0.461, 0.591, 0.721, 0.851];
+export const BROAD_BAYS = 12;
+export const NARROW_BAYS = 4;
 
 interface Piece {
   readonly matrix: ReturnType<typeof bar>;
@@ -80,20 +83,19 @@ export function pyramidPieces(): Piece[] {
     const before = base[(i - 1 + n) % n] ?? apex;
     const hipNormal = unit(add(normal, upNormal(before, a, apex)));
     pieces.push({ matrix: bar(a, apex, HIP_BAR[0], HIP_BAR[1], hipNormal), glass: false, order: 1 });
-    for (let k = 1; k < PYRAMID_COURSES; k++) {
-      const h = k / PYRAMID_COURSES;
-      pieces.push({ matrix: bar(mix(a, apex, h), mix(b, apex, h), GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: 1 + k });
-    }
+    PURLINS.forEach((h, k) => {
+      pieces.push({ matrix: bar(mix(a, apex, h), mix(b, apex, h), GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: 2 + k });
+    });
     // Rafters square to the eave: one from eave fraction s ends on the near hip at fraction 2s (or 2(1 − s)).
     const bays = broad ? BROAD_BAYS : NARROW_BAYS;
     for (let j = 1; j < bays; j++) {
       const s = j / bays;
       const foot = mix(a, b, s);
       const end = Math.abs(s - 0.5) < 1e-9 ? apex : s < 0.5 ? mix(a, apex, 2 * s) : mix(b, apex, 2 * (1 - s));
-      pieces.push({ matrix: bar(foot, end, GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: PYRAMID_COURSES + 1 });
+      pieces.push({ matrix: bar(foot, end, GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: PURLINS.length + 2 });
     }
     const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
-    pieces.push({ matrix: paneMatrix(lifted(a), lifted(b), lifted(apex)), glass: true, order: PYRAMID_COURSES + 2 + i });
+    pieces.push({ matrix: paneMatrix(lifted(a), lifted(b), lifted(apex)), glass: true, order: PURLINS.length + 3 + i });
   }
   return pieces;
 }
@@ -179,7 +181,7 @@ export const lehmanGlassSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     year: YEAR,
     title: 'The glass pyramid over the court',
-    detail: 'Eight glazed faces on a light steel grid rise from the court walls to one apex about 21 m above Fifth Avenue grade.',
+    detail: 'Eight glazed faces on a light steel grid rise about 11 m from the court walls to one apex, some 27 m above Fifth Avenue grade.',
     motion: { kind: 'drop' },
     stagger: 'order',
     weight: 1.5,

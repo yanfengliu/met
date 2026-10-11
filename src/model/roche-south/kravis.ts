@@ -5,15 +5,17 @@
  * court's south wall is limestone; a long glass roof with a central ridge spans the court (orthophoto: ridge at X −56.2, hipped ends near Z −128 and
  * −85, flatter glazing beyond them). Every line of this block but the park face Z −138.2 belongs to an older block, which builds the wall there.
  */
+import { Matrix4 } from 'three';
+
 import type { Kit, StepDef } from '../../build/types.js';
 import { GROUND_FLOOR_Y, MAIN_FLOOR_Y } from '../frame.js';
-import { hippedSkylight, laylight, wall } from '../lib/index.js';
+import { hippedSkylight, laylight, ridgeSkylight, wall } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { OUTER_WALL, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
 import { mat } from './materials.js';
 import type { P2 } from './poly.js';
 import { clipEdges, partitionBoxes, sharedEdges, type Room } from './rooms.js';
-import { at, boxAt, libraryWallOn, paneMatrix, prism, UNIT_BOX, UNIT_TRIANGLE, wallAlong } from './shapes.js';
+import { at, boxAt, hollowBoxes, libraryWallOn, paneMatrix, prism, UNIT_BOX, UNIT_TRIANGLE, wallAlong } from './shapes.js';
 
 const CHAPTER = 'roche-south-1990' as const;
 const YEAR = '1990';
@@ -37,13 +39,35 @@ const RIDGE_Z1 = -85.0;
 /** E: roof over the galleries south of the court; the map's floor 4 (plant and offices) stands on part of it. */
 export const KRAVIS_ROOF_Y = 18.6;
 const PARAPET_Y = KRAVIS_ROOF_Y + 1.0;
-const PENTHOUSE: readonly [number, number, number, number] = [-87.9, -132.3, -62.4, -104.3];
+/** The map's floor 4 (plant), kept east of the glazed strips the orthophoto shows over the west end. */
+const PENTHOUSE: readonly [number, number, number, number] = [-87.9, -121.6, -62.4, -104.3];
+/** Orthophoto: two glazed strips over the west end of the galleries (Z −134.6..−128.2 and −127.4..−122.4, X −87.6..−62.6), each built 5 m wide. */
+const WEST_LIGHTS: readonly (readonly [number, number, number, number])[] = [
+  [-87.6, -134.6, -63.0, -129.6],
+  [-87.6, -127.4, -63.0, -122.4],
+];
+/** Orthophoto: small plant units on the flat roof east of the plant floor. */
+const UNITS: readonly (readonly [number, number])[] = [
+  [-84.0, -98.0],
+  [-79.0, -98.0],
+  [-74.0, -98.0],
+  [-69.0, -98.0],
+  [-84.0, -90.0],
+  [-74.0, -90.0],
+  [-69.0, -90.0],
+  [-84.0, -82.0],
+  [-79.0, -82.0],
+  [-69.0, -82.0],
+  [-79.0, -75.0],
+  [-69.0, -75.0],
+];
 const PENTHOUSE_TOP_Y = KRAVIS_ROOF_Y + 4.2;
 
 /** The court's glass roof: a hipped ridge over its middle and flat glazing over its two ends. */
 const COURT_SPAN = X1 - 0.2 - COURT_X0;
 const COURT_RIDGE = hippedSkylight({ width: COURT_SPAN, length: RIDGE_Z1 - RIDGE_Z0, pitch: 25, curbHeight: 0.3, bays: 18, bar: 0.08, barDepth: 0.14 });
 const END_WEST = laylight({ width: COURT_SPAN, length: RIDGE_Z0 - Z_IN, cols: 6, rows: 5, frameWidth: 0.1, frameDepth: 0.14 });
+const WEST_LIGHT = ridgeSkylight({ width: 5.0, length: 24.6, pitch: 25, curbHeight: 0.4, bays: 12, bar: 0.07, barDepth: 0.12 });
 const END_EAST = laylight({ width: COURT_SPAN, length: Z_EAST - RIDGE_Z1, cols: 6, rows: 8, frameWidth: 0.1, frameDepth: 0.14 });
 
 function structure(kit: Kit): void {
@@ -117,15 +141,22 @@ function galleries(kit: Kit): void {
 }
 
 function roof(kit: Kit): void {
-  kit.add(UNIT_BOX, mat.roof, boxAt([X0, KRAVIS_ROOF_Y - SLAB, Z_IN], [COURT_X0 - COURT_WALL, KRAVIS_ROOF_Y, Z_EAST]), 0);
-  const [px0, pz0, px1, pz1] = PENTHOUSE;
   const outline: P2[] = [
-    [px0, pz0],
-    [px1, pz0],
-    [px1, pz1],
-    [px0, pz1],
+    [X0, Z_IN],
+    [COURT_X0 - COURT_WALL, Z_IN],
+    [COURT_X0 - COURT_WALL, Z_EAST],
+    [X0, Z_EAST],
   ];
-  kit.add(prism(outline, [], KRAVIS_ROOF_Y, PENTHOUSE_TOP_Y), palette.limestone, at(0, 0, 0), 1);
+  const holes = WEST_LIGHTS.map(([x0, z0, x1, z1]): P2[] => [
+    [x0 + 0.2, z0 + 0.2],
+    [x1 - 0.2, z0 + 0.2],
+    [x1 - 0.2, z1 - 0.2],
+    [x0 + 0.2, z1 - 0.2],
+  ]);
+  kit.add(prism(outline, holes, KRAVIS_ROOF_Y - SLAB, KRAVIS_ROOF_Y), mat.roof, at(0, 0, 0), 0);
+  for (const [x, z] of UNITS) kit.add(UNIT_BOX, palette.metalDark, boxAt([x - 0.8, KRAVIS_ROOF_Y, z - 0.8], [x + 0.8, KRAVIS_ROOF_Y + 1.2, z + 0.8]), 3);
+  const [px0, pz0, px1, pz1] = PENTHOUSE;
+  for (const m of hollowBoxes([px0, KRAVIS_ROOF_Y, pz0], [px1, PENTHOUSE_TOP_Y, pz1], 0.6)) kit.add(UNIT_BOX, palette.limestone, m, 1);
   // The beam along the old front that carries the court roof's north eave.
   kit.add(UNIT_BOX, mat.steel, boxAt([X1 - 0.6, PETRIE_EAVE_Y - 0.7, Z_IN], [X1 - 0.1, PETRIE_EAVE_Y, Z_EAST]), 2);
 }
@@ -153,6 +184,13 @@ function courtGlass(kit: Kit): void {
     kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x0, y0, z], [x1, y1, z], [x0, y1, z]), order);
   };
   glassEnd(COURT_X0 + 1.2, X1 - 1.0, MAIN_FLOOR_Y, PETRIE_EAVE_Y, 6, 3);
+  // The two glazed strips over the west end of the galleries, with diffusing laylights under them.
+  WEST_LIGHTS.forEach(([x0, z0, x1, z1], k) => {
+    const m = at((x0 + x1) / 2, KRAVIS_ROOF_Y, (z0 + z1) / 2).multiply(new Matrix4().makeRotationY(Math.PI / 2));
+    kit.add(WEST_LIGHT.frame, mat.steel, m, 5 + k);
+    kit.add(WEST_LIGHT.glass, mat.glass, m, 5 + k);
+    kit.add(UNIT_BOX, mat.laylight, boxAt([x0 + 0.2, KRAVIS_ROOF_Y - SLAB - 0.08, z0 + 0.2], [x1 - 0.2, KRAVIS_ROOF_Y - SLAB, z1 - 0.2]), 5 + k);
+  });
   glassEnd(X0 + 2.5, COURT_X0 - 2.5, MAIN_FLOOR_Y + 0.6, MAIN_FLOOR_Y + 6.0, 10, 4);
 }
 

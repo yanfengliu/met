@@ -30,12 +30,31 @@ const glassClear = new MeshPhysicalMaterial({
 });
 glassClear.userData['castShadow'] = false;
 
+/**
+ * The Rockefeller Wing's rebuilt wall (2025): triple glazing with a bird-safe frit, which in photo ref-park-south reads as pale blue and hides most of
+ * the hall behind it. Shared look of the palette's glass, denser and paler.
+ */
+const glassFritted = new MeshPhysicalMaterial({
+  name: 'rocheSouthGlassFritted',
+  color: new Color('#a8bccb'),
+  roughness: 0.12,
+  metalness: 0,
+  transparent: true,
+  opacity: 0.62,
+  depthWrite: false,
+  envMapIntensity: 1.6,
+  specularIntensity: 1,
+  side: DoubleSide,
+});
+glassFritted.userData['castShadow'] = false;
+
 /** Diffusing laylight panels under the gallery skylights: opaque to the eye, seen from both sides, but letting the sun through (no shadow). */
 const laylight = new MeshStandardMaterial({ name: 'rocheSouthLaylight', color: new Color('#ebece6'), roughness: 0.85, side: DoubleSide });
 laylight.userData['castShadow'] = false;
 
 export const mat = Object.freeze({
   glass: glassClear,
+  glassFritted,
   /** Light grey painted steel of the Roche glazing frames (P9: #cfd2d4). */
   steel: standard('rocheSouthSteel', '#cfd2d4', 0.45, 0.55),
   /** Flat roof membrane and pavers, grey as in the orthophoto. */

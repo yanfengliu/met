@@ -182,12 +182,12 @@ const RING_H = LEHMAN_EAVE_Y - G;
 const MAIN_UP = M - G;
 const CORNER = Math.tan(Math.PI / 8);
 /**
- * Inner ring, long sides: three tall openings over a 1 m sill at the main floor, looking down on the flights. Over them a solid band about 3 m
- * deep carries the pyramid (photo P9 shows unbroken walls under its eave); on the east sides, where the galleries have a flat roof, the openings
- * stop just under that roof.
+ * Inner ring, long sides: three tall openings over a 1 m sill at the main floor, looking down on the flights. Over them a solid band 5 m deep
+ * carries the pyramid (photo P9, seen from the court floor, shows unbroken walls for that depth under its eave); on the east sides, where the
+ * galleries have a flat roof, the openings stop just under that roof.
  */
 const SILL = MAIN_UP + 1;
-const UNDER_GLASS = LEHMAN_EAVE_Y - 2.9 - G - SILL;
+const UNDER_GLASS = LEHMAN_EAVE_Y - 5.0 - G - SILL;
 const UNDER_ROOF = LEHMAN_ROOF_Y - MAIN_SLAB - 0.3 - G - SILL;
 const longSide = (height: number): ReturnType<typeof wall> =>
   wall({

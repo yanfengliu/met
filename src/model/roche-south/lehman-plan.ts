@@ -3,8 +3,11 @@
  * Plan: the Met floor map (docs/research/interior.md, "The Robert Lehman Wing court and the Vaux facade"; map features shifted by MAP_Z), checked
  * against the 2018 orthophoto (docs/research/exterior-images.md, primary 9), where the pyramid's apex sits at X −0.4, Z −150.7 and the inner
  * octagon, the glazed gallery ring and the skylight strip along the 1880 front all fall on these lines within about 0.5 m.
- * Section: tagged E (estimates). The eave and apex come from a camera fit to photo P9 (int-lehman-pyramid-up): eave 13–17 m and apex 20–23 m
- * above a camera 1.5 m over the court floor; the gallery ring's sloped glass ceiling from the 2011 gallery photograph (interior-images.md, item 30).
+ * Section: tagged E (estimates). The eave and apex come from a camera fit to photo P9 (int-lehman-pyramid-up) on the octagon's corners, the eave
+ * lines, the apex and seven purlins of the narrow face the camera faces: the pyramid rises 11.1 m (10.3–11.2 m over every fit) over its eave;
+ * the eave's height scales with the lens, and the photo's EXIF (Samsung SGH-T959, 3.79 mm, about 2,430 px) puts it 17.1 m over the camera,
+ * which stands 1.5 m over the court floor at its south end, tilted 29.5° north. The gallery ring's sloped glass ceiling is from the 2011 gallery
+ * photograph (interior-images.md, item 30).
  */
 import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, MAIN_FLOOR_Y } from '../frame.js';
 import { LEHMAN_BLOCK, MAP_Z, OUTER_WALL } from './blocks.js';
@@ -24,7 +27,7 @@ export const LEHMAN_PARAPET_Y = 12.8;
 /** E: low edge of the glazed ceiling over the gallery ring (galleries 961 and 962), on the outer ring wall. */
 export const LEHMAN_BAND_LOW_Y = 11.5;
 /** E: top of the inner ring wall, where the pyramid starts (P9 fit). */
-export const LEHMAN_EAVE_Y = 14.5;
+export const LEHMAN_EAVE_Y = 16.3;
 /** Apex of the pyramid (frame.ts, refined from the P9 fit). */
 export const LEHMAN_APEX_Y = LEHMAN_PYRAMID_APEX_Y;
 /** Ground-floor slab: top at the court floor, 0.6 m deep; footings 1 m under it. */

@@ -11,7 +11,7 @@ import { hedge, ridgeSkylight, tree } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { mat } from './materials.js';
 import { ccw, inset, type P2 } from './poly.js';
-import { at, bar, boxAt, paneMatrix, prism, quadPanes, UNIT_BOX, UNIT_TRIANGLE, type V3 } from './shapes.js';
+import { at, bar, boxAt, hollowBoxes, paneMatrix, prism, quadPanes, UNIT_BOX, UNIT_TRIANGLE, type V3 } from './shapes.js';
 import { ROOF_LIGHTS } from './wallace.js';
 import {
   GARDEN,
@@ -87,11 +87,10 @@ function garden(kit: Kit): void {
     kit.add(UNIT_BOX, mat.steel, boxAt([x - 0.05, top + 0.4, pz0 - 0.4], [x + 0.05, top + 0.6, pz1 + 0.4]), 42);
   }
   // The stair and lift house on the garden's east side, and small trees in big pots.
-  kit.add(UNIT_BOX, palette.limestone, boxAt([-121.2, ROOF_GARDEN_Y, -107.0], [-111.6, ROOF_GARDEN_Y + 4.0, -104.4]), 43);
+  for (const m of hollowBoxes([-121.2, ROOF_GARDEN_Y, -107.0], [-111.6, ROOF_GARDEN_Y + 4.0, -104.4], 0.5)) kit.add(UNIT_BOX, palette.limestone, m, 43);
   for (const [x, z] of [
-    [-132.5, -111.0],
-    [-127.0, -111.0],
-    [-104.0, -123.0],
+    [-116.0, -122.5],
+    [-104.0, -122.5],
   ] as const) {
     kit.add(UNIT_BOX, palette.granite, boxAt([x - 0.7, ROOF_GARDEN_Y, z - 0.7], [x + 0.7, ROOF_GARDEN_Y + 0.8, z + 0.7]), 44);
     kit.add(POT_TREE.trunk, palette.bark, at(x, ROOF_GARDEN_Y + 0.8, z), 45);
