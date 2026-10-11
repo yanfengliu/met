@@ -1,0 +1,107 @@
+/**
+ * Shared helpers for the control tests. Tests drive the page only through real input (clicks, drags, keys); they read state from the read-only
+ * `window.__met` and the canvas pixels, and never write either. Nothing here names a demo step or chapter: facts come from `window.__met`.
+ */
+import { expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import type { MetFacts } from '../../src/viewer/facts.js';
+
+export type Facts = Omit<MetFacts, 'benchmark'>;
+
+/** Collects console errors and uncaught exceptions; `expectClean` fails the test if any arrived. */
+export function watchErrors(page: Page): { expectClean: () => void } {
+  const problems: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') problems.push(`console error: ${message.text()}`);
+  });
+  page.on('pageerror', (error) => problems.push(`uncaught exception: ${error.message}`));
+  return {
+    expectClean: () => {
+      expect(problems, 'console errors and uncaught exceptions').toEqual([]);
+    },
+  };
+}
+
+/** Opens the page with `query` and waits for the capture contract's ready flag. */
+export async function open(page: Page, query = 'autoplay=0'): Promise<Facts> {
+  await page.goto(`/?${query}`);
+  await page.waitForFunction(() => window.__shotReady === true);
+  return facts(page);
+}
+
+export async function facts(page: Page): Promise<Facts> {
+  return (await page.evaluate(() => JSON.parse(JSON.stringify(window.__met)) as unknown)) as Facts;
+}
+
+export async function currentT(page: Page): Promise<number> {
+  return page.evaluate(() => window.__met?.t ?? Number.NaN);
+}
+
+/** Waits until `window.__met.t` equals `value` exactly (the player lands on integers exactly). */
+export async function waitForT(page: Page, value: number, timeout = 20_000): Promise<void> {
+  await page.waitForFunction((v) => window.__met?.t === v, value, { timeout });
+}
+
+/** Waits for two animation frames, so the frame after the last input has been drawn. */
+export async function settle(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise<void>((resolve) => { requestAnimationFrame(() => { requestAnimationFrame(() => { resolve(); }); }); }));
+}
+
+/** Mean luminance (0-255) of each cell of a `cols` x `rows` grid over the canvas, top row first, read from the drawing buffer. */
+export async function lumaGrid(page: Page, cols = 16, rows = 9): Promise<number[]> {
+  await settle(page);
+  return page.evaluate(
+    ([c, r]) => {
+      const canvas = document.querySelector('canvas');
+      const gl = canvas?.getContext('webgl2');
+      if (!canvas || !gl) throw new Error('lumaGrid: the page has no WebGL2 canvas.');
+      const w = gl.drawingBufferWidth;
+      const h = gl.drawingBufferHeight;
+      const px = new Uint8Array(w * h * 4);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      const sums = new Array<number>(c * r).fill(0);
+      const counts = new Array<number>(c * r).fill(0);
+      for (let y = 0; y < h; y += 2) {
+        const row = Math.min(r - 1, Math.floor(((h - 1 - y) / h) * r));
+        for (let x = 0; x < w; x += 2) {
+          const i = (y * w + x) * 4;
+          const cell = row * c + Math.min(c - 1, Math.floor((x / w) * c));
+          sums[cell] = (sums[cell] ?? 0) + 0.2126 * (px[i] ?? 0) + 0.7152 * (px[i + 1] ?? 0) + 0.0722 * (px[i + 2] ?? 0);
+          counts[cell] = (counts[cell] ?? 0) + 1;
+        }
+      }
+      return sums.map((s, k) => s / Math.max(1, counts[k] ?? 1));
+    },
+    [cols, rows] as const,
+  );
+}
+
+/** Indices of cells whose luminance differs by more than `threshold`. */
+export function changedCells(a: readonly number[], b: readonly number[], threshold = 3): number[] {
+  return a.flatMap((value, i) => (Math.abs(value - (b[i] ?? value)) > threshold ? [i] : []));
+}
+
+/** The four corner cells of a `cols` x `rows` grid. */
+export function cornerCells(cols = 16, rows = 9): number[] {
+  return [0, cols - 1, (rows - 1) * cols, rows * cols - 1];
+}
+
+/** Clicks a control the way a person does: moves there and presses the primary button. */
+export async function press(page: Page, testid: string): Promise<void> {
+  await page.getByTestId(testid).click();
+}
+
+/** Opens a menu by its button if it is closed. */
+export async function openMenu(page: Page, menu: 'chapter-menu' | 'view-menu'): Promise<void> {
+  if (await page.getByTestId(menu).isHidden()) await press(page, `${menu}-button`);
+  await expect(page.getByTestId(menu)).toBeVisible();
+}
+
+/** The label's step number k from `Step k / N`. */
+export async function labelStep(page: Page): Promise<number> {
+  const text = (await page.getByTestId('step-label').textContent()) ?? '';
+  const match = /^Step (\d+) \/ (\d+)/.exec(text);
+  if (match === null) throw new Error(`The step label "${text}" does not start with "Step k / N".`);
+  return Number(match[1]);
+}

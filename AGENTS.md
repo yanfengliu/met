@@ -78,7 +78,10 @@ Node 24 (`.nvmrc`), npm, Vite, strict TypeScript, Vitest, ESLint and Playwright 
 - `npm run typecheck`: `tsc --noEmit`, strict plus `noUncheckedIndexedAccess`, over `src/`, `scripts/`, `tests/` and the root configs.
 - `npm run lint`: ESLint with typescript-eslint strict type-checked rules, `--max-warnings 0`.
 - `npm run build`: `tsc --noEmit && vite build`, the two-page site (`index.html`, `parts.html`) into `dist/`.
-- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts; the smoke test checks that both pages load, draw one canvas, reach `window.__shotReady` and log no console error.
+- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts; the smoke test checks that both pages load, draw one canvas, reach `window.__shotReady` and log no console error; `controls`, `menus` and `layout` drive every button, shortcut, the scrubber and cut slider by mouse, both menus and the follow toggle through real input, check the label, the scrubber, `window.__met` and canvas pixels, the layout at 1280×720 and 390×844, and the 4 s build budget.
+- Unit tests also guard the engine: timeline determinism over seeded random histories (fixture and the real sequence), rest positions, motion endpoints, stagger order, the player, batching, and the integrity, composition and budgets of whatever `src/build/sequence.ts` exports.
+
+Capture (not part of `verify`; run before a visual handoff and read every image at native resolution): `MET_PORT=<port> npm run shots` writes the standard set to `.shots/shots/` and prints the revision, dirty flag, GPU, build, ready and frame times; `npm run sweep -- --t <t> [--count 12] [--seed <n>] [--solo <chapter>]` writes seeded random cameras to `.shots/sweep-<seed>-t<t>/` and prints the seed. Both start and stop their own Vite server on `MET_PORT` and drive the system Chrome.
 
 Dependency audit gate: `npm run audit:runtime` (`npm audit --omit=dev --audit-level=high`) and `npm run audit:full` (`npm audit --audit-level=high`) must both report 0 vulnerabilities; rerun both on every dependency change.
 
@@ -87,6 +90,8 @@ Ports: each worktree sets its own `MET_PORT` (default 5310) for `npm run dev` an
 ## Invariants & boundaries
 
 - Reference photos are never committed. `docs/research/` records each one's URL, licence and what it shows; local copies, renders and captures live only under ignored paths (`.shots/`, `output/`, `tmp/`, `research/cache/`).
+- Screenshot contract: `?shot=1` renders the requested state with no autoplay, follow or animation and sets `window.__shotReady` after at least 5 frames; the renderer keeps `preserveDrawingBuffer: true`; capture reads state only from the read-only `window.__met`.
+- Determinism contract: the scene at `t` is a pure function of `t` (instance matrices, colours, counts, visibility, light intensities), whatever the history of plays, steps and scrubs; caching may only skip redundant writes, and `src/build/timeline.test.ts` asserts it byte for byte.
 
 ## Conventions
 

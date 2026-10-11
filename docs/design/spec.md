@@ -19,7 +19,7 @@ Interior spaces are reached in two ways: interior camera presets, and a horizont
 
 ## Build-step API
 
-A chapter module exports its steps; `src/build/sequence.ts` concatenates chapters in the order of `src/build/chapters.ts`. Step ids are unique, stable and kebab-case, because URLs and tests name them.
+Area modules (`src/model/site/`, `core/`, `hunt/`, `mmw/`, `roche-north/`, `roche-south/`) export named step arrays; `src/build/sequence.ts` composes each chapter of `src/build/chapters.ts`, in that order, from those arrays (its `COMPOSITION` table), so a modeller adds steps without touching it. A step's `chapter` must name the chapter its array is composed into (a test checks it); a chapter may have no steps yet. Step ids are unique, stable and kebab-case, because URLs and tests name them. The types live in `src/build/types.ts`.
 
 ```ts
 interface StepDef {
@@ -42,6 +42,14 @@ interface Kit {
   light(light: PointLight | SpotLight): void;
 }
 
+interface Chapter { id: string; title: string; years: string; summary: string } // src/build/chapters.ts
+
+type CameraFocus =                                         // default { kind: 'pieces' }
+  | { kind: 'pieces' }                                     // this step's piece bounds, from the current viewing direction
+  | { kind: 'box'; min: Vec3; max: Vec3 }                  // this world box, from the current viewing direction
+  | { kind: 'view'; position: Vec3; target: Vec3 }         // this exact camera
+  | { kind: 'preset'; id: string };                        // a preset of src/viewer/presets.ts
+
 type Motion =
   | { kind: 'rise'; distance?: number }                    // slides up from below its final place
   | { kind: 'drop'; distance?: number }                    // slides down from above
@@ -50,19 +58,25 @@ type Motion =
   | { kind: 'slide'; from: readonly [number, number, number] }; // arrives from this world offset
 
 type Stagger = 'order' | 'x' | '-x' | 'z' | '-z' | 'y' | 'radial' | 'none';
+
+type Vec3 = readonly [number, number, number];
 ```
 
 - **Batching.** Within one step, pieces that share the same geometry object and the same material object become one `InstancedMesh`. Steps never share a mesh, so each step shows and hides independently. Builders therefore create one geometry per distinct shape and reuse it, and take materials from the shared palette (`src/model/palette.ts`) or their own module, never cloning a material per piece.
-- **Composite pieces.** A part made of several materials (a window: frame and glass) is several `add` calls with the same `order`; pieces with equal stagger keys arrive together. Spatial staggers key on the piece's world bounding-box centre.
+- **Composite pieces.** A part made of several materials (a window: frame and glass) is several `add` calls with the same `order`; pieces with equal stagger keys arrive together. Spatial staggers key on the piece's world bounding-box centre, rounded to 1 cm; `radial` keys on the horizontal distance from the centre of the step's bounds; `order` defaults to the call's index within the step.
+- **Motion details.** `rise` and `drop` travel `distance` metres, by default the piece's own height but at least 3 m; `grow` scales world Y about the bottom of the piece's world box; `pop` scales about its centre with a slight overshoot. Windows are paced by rank: of R distinct keys, rank r starts at `r / (R − 1) × (1 − d)` and lasts `d = max(0.25, 1 / R)`.
+- **Materials.** A material with `userData.castShadow === false`, or any transparent one, never casts shadows (glass, water and the flat ground materials of the palette). The engine gives every model material the section-cut clipping plane; builders never set `clippingPlanes`.
+- **Lights.** A step light's intensity follows its step's progress (0 at `f = 0`, its own intensity at `f = 1`); lights never toggle visibility, so shaders never recompile during playback.
 - **Timeline position.** With N steps, the position `t` runs over `[0, N]`. Step `i` (0-based) has local progress `f = clamp(t − i, 0, 1)`. At `f = 0` none of its pieces is visible; at `f = 1` every piece sits exactly at its final matrix; in between, each piece moves through its own window of `f` according to `motion` and `stagger`, and an arriving piece is briefly tinted so the eye finds it. An integer `t = k` is a rest position: steps 1..k (1-based) are complete and nothing is moving.
 - **Determinism.** The scene state at `t` is a pure function of `t`. Evaluating `t` after any history of plays, reversals, steps and scrubs gives byte-identical instance matrices, colours and visibilities to evaluating it fresh. Caching may skip rewriting unchanged values; it may never make the result depend on the path. This is what makes backward playback exact, and a test asserts it.
-- **Playback.** Play forward and play backward run `t` continuously at `weight × BASE_SECONDS / speed` seconds per step and stop at 0 or N. Step forward animates to the next integer, step back to the previous one; a second press while moving retargets. Scrubbing sets `t` directly. Speed is 0.5×, 1×, 2× or 4×. The player is pure logic with no DOM and is unit-tested on its own.
+- **Playback.** Play forward and play backward run `t` continuously at `weight × BASE_SECONDS / speed` seconds per step and stop at 0 or N. Step forward animates to the next integer, step back to the previous one; a second press while moving retargets. Scrubbing sets `t` directly. Speed is 0.5×, 1×, 2× or 4×. Play forward at N starts again from 0, and play backward at 0 from N. The player is pure logic with no DOM and is unit-tested on its own.
 
 ## Page
 
-- **Timeline bar** (bottom): buttons for start, step back, play backward, play/pause, step forward, end; a speed control; a scrubber over `[0, N]` with chapter boundaries marked; a label `Step k / N · <year> · <chapter> — <title>` with the step's detail beneath. Every control has an accessible name and a `data-testid`.
-- **Chapter menu**: the chapters in order; choosing one moves to the start of its first step.
-- **View menu**: exterior and interior camera presets (named in `src/viewer/presets.ts`), a follow-camera toggle that frames each step's `focus` during playback and switches off when the user drags, and a section-cut slider.
+- **Timeline bar** (bottom): buttons for start, step back, play backward, play/pause, step forward, end; a speed control; a scrubber over `[0, N]` with chapter boundaries marked; a label `Step k / N · <year> · <chapter> — <title>` with the step's detail beneath, where k = ⌈t⌉ (the step just completed at a rest position, the step playing in between) and k = 0 reads `— Empty site`. Every control has an accessible name and a `data-testid`.
+- **Chapter menu**: the chapters in order, with their years and summary; choosing one moves to the start of its first step; a chapter with no steps is shown disabled.
+- **View menu**: exterior and interior camera presets (named in `src/viewer/presets.ts`: `fit` presets frame the model's bounds from a direction; `look` presets are explicit cameras with an optional `fov` and, for straight-down views, `up`), a follow-camera toggle that frames each step's `focus` during playback and switches off when the user drags, and a section cut (an on/off toggle and a height slider). The cut keeps `y < cut` for every model material, shadows included, and draws the back faces of cut solids in one flat colour so cut walls read as solid from above.
+- **Camera framing**: presets and the follow camera frame the part of the canvas above the timeline bar. The neutral workspace ground, not part of the model, lies 0.5 m below the lower of grade and the model's lowest point, so model terrain always lies on top of it.
 - **Keyboard**: Space play/pause, → step forward, ← step back, Shift+Space play backward, Home start, End end.
 - **First load**: the page starts at `t = 0` and plays forward, unless the query sets a position or `autoplay=0`.
 
@@ -82,7 +96,7 @@ type Stagger = 'order' | 'x' | '-x' | 'z' | '-z' | 'y' | 'radial' | 'none';
 | `autoplay=0` | Do not start playing on load |
 | `noui=1` | Hide the page chrome |
 
-The renderer keeps `preserveDrawingBuffer: true`, or headless capture reads a blank canvas. `window.__met` exposes read-only facts for tests (step ids, titles, chapters, `N`, current `t`); tests drive the page through its real controls, never by writing state.
+The renderer keeps `preserveDrawingBuffer: true`, or headless capture reads a blank canvas. `window.__met` exposes read-only facts for tests (step ids, titles, chapters with their first step and count, presets, bounds, `N`, current `t`, mode, speed, follow, cut, view, camera, budget stats, and `perf.buildMs` / `perf.readyMs` from `performance` marks; type in `src/viewer/facts.ts`); tests drive the page through its real controls, never by writing state.
 
 ## Modules and ownership
 
@@ -96,7 +110,8 @@ The renderer keeps `preserveDrawingBuffer: true`, or headless capture reads a bl
 | `src/model/frame.ts` | world-frame constants from research | coordinator |
 | `src/model/palette.ts` | shared materials | engine creates; others request changes |
 | `src/model/lib/` | parametric architectural parts | parts library |
-| `src/model/<chapter>/` | one folder per chapter | that chapter's modelling worker |
+| `src/model/<area>/` | one folder per area (`site`, `core`, `hunt`, `mmw`, `roche-north`, `roche-south`), each exporting the step arrays `sequence.ts` composes | that area's modelling worker |
+| `src/model/demo/` | temporary toy building, the last chapter until real content lands | engine (coordinator removes) |
 | `parts.html`, `src/parts/` | parts gallery page for the library | parts library |
 | `scripts/` | capture and sweep tooling | engine |
 | `tests/e2e/` | Playwright control tests | engine |
@@ -114,4 +129,4 @@ The finished model: at most 3,000,000 triangles per frame counting instances, at
 ## Verification
 
 - Automated: unit tests for the timeline (determinism, forward/backward symmetry, rest positions), the player, batching, sequence integrity (unique ids, every step adds at least one piece, every piece inside the site bounds, no NaN matrix) and the budgets; Playwright tests that drive every control and the keyboard and check the label, the scrubber and the canvas.
-- Visual: `npm run shots` captures the standard set (every preset at the finished state, the aerial preset at each chapter boundary) into `.shots/`; authors inspect each image at native resolution and compare it with the reference photographs named in `docs/research/`. Sweeps add random camera angles for exploration.
+- Visual: `npm run shots` captures the standard set (every preset at the finished state, the aerial preset at t = 0 and at the end of each chapter with steps, the section cut, and the page at 1280×720 and 390×844) into `.shots/shots/`; `npm run sweep -- --t <t> [--seed <n>]` adds seeded random cameras; authors inspect each image at native resolution and compare it with the reference photographs named in `docs/research/`. Sweeps add random camera angles for exploration.
