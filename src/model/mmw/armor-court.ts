@@ -13,7 +13,6 @@ import type { BufferGeometry } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
 import { balustrade, column, MeshBuilder, moulding, surround, wall, windowUnit } from '../lib/index.js';
-import type { V3 } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { banner, chandelier, mountedArmour, organCase } from './armor-figures.js';
 import { extrudeOutline } from './facade-parts.js';
@@ -22,7 +21,7 @@ import { merged } from './merge.js';
 import { LEVEL_1, LEVEL_2_NORTH, MORGAN_ROOF_Y, SLAB } from './dims.js';
 import { mmwMaterials } from './materials.js';
 import { ARMOR_ROOF } from './roofs.js';
-import { addBox, placed } from './shapes.js';
+import { addBox, inwardLoop, placed } from './shapes.js';
 import { ARMOR_COURT } from './wings.js';
 
 const [X0, Z0, X1, Z1] = ARMOR_COURT;
@@ -78,13 +77,8 @@ function buildArcades(kit: Kit): void {
     kit.add(door, palette.limestone, placed(x, LEVEL_1, Z1, Math.PI), order);
     order += 1;
   }
-  // Inside the court a loop wound clockwise seen from above hangs its profile inward.
-  const loop = (y: number): V3[] => [
-    [X0, y, Z0],
-    [X0, y, Z1],
-    [X1, y, Z1],
-    [X1, y, Z0],
-  ];
+  // Inside the court the mouldings hang inward from a clockwise loop.
+  const loop = (y: number): [number, number, number][] => inwardLoop(ARMOR_COURT, y);
   const identity = new Matrix4();
   const lines = merged('armor-court-mouldings', [
     [moulding({ profile: 'string-course', path: loop(LEVEL_2_NORTH - SLAB - 0.15), closed: true, height: 0.75, projection: 0.35 })],

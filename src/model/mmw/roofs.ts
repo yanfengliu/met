@@ -175,5 +175,8 @@ export function buildSouthRoofs(kit: Kit): void {
   kit.add(southHip, palette.roofLead, placed(0, 0, 0), 11);
   // The second-floor galleries' ceiling under the hip, open over the court's light well.
   deck(kit, mmwMaterials.roofDeck, [outer], [ROMAN_WELL], ROOF_Y, 10);
-  lining(kit, ROMAN_WELL, ROOF_Y - SLAB, ROOF_Y + 0.4 + SOUTH_HIP_RISE, 12);
+  // Lining the well up to the hip's opening, its inner faces flush with the second floor's well walls (0.225 m inside the line).
+  const [wx0, wz0, wx1, wz1] = ROMAN_WELL;
+  const grow = WELL_WALL - 0.225;
+  lining(kit, [wx0 - grow, wz0 - grow, wx1 + grow, wz1 + grow], ROOF_Y - SLAB, ROOF_Y + 0.4 + SOUTH_HIP_RISE, 12);
 }

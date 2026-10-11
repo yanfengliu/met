@@ -39,6 +39,8 @@ export const mmwMaterials = Object.freeze({
   pedestalGrey: standard('mmwPedestalGrey', '#5b5f63', 0.5),
   /** Arms and Armor Court floor, warm brown (interior.md, P7: #a88a6a). */
   armorFloor: standard('mmwArmorFloor', '#a88a6a', 0.7),
+  /** Flat plaster ceilings of the courts' porticoes, with the same bounce light as the vault. */
+  ceilingPlaster: ceiling('mmwCeilingPlaster', '#e4dccd', 0.45),
   /** Arms and Armor Court vault, cream-white (interior.md, P7: vault #ece6da; Robinson 1910). */
   vaultCream: twoSided(ceiling('mmwVaultCream', '#ece6da', 0.62)),
   /** The low platform under the mounted figures (interior.md, P7: edge #4a3a2c). */

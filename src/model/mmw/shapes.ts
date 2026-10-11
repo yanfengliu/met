@@ -42,6 +42,19 @@ export function boxMatrix(x0: number, y0: number, z0: number, x1: number, y1: nu
   return placed((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, Math.abs(x1 - x0), Math.abs(y1 - y0), Math.abs(z1 - z0));
 }
 
+/**
+ * A closed loop round the rectangle [x0, z0, x1, z1] at height y, wound clockwise seen from above, so a profile swept along it (parts library, sweep.ts:
+ * it hangs to the right of travel) faces into the rectangle: the inside faces of a court.
+ */
+export function inwardLoop([x0, z0, x1, z1]: readonly [number, number, number, number], y: number): [number, number, number][] {
+  return [
+    [x1, y, z0],
+    [x1, y, z1],
+    [x0, y, z1],
+    [x0, y, z0],
+  ];
+}
+
 /** Adds UNIT_BOX spanning the world corners; zero-size boxes are skipped. */
 export function addBox(kit: Kit, material: Material, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, order?: number): void {
   if (Math.abs(x1 - x0) < 1e-6 || Math.abs(y1 - y0) < 1e-6 || Math.abs(z1 - z0) < 1e-6) return;
