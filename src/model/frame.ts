@@ -124,7 +124,7 @@ export const ALLEE_SOUTH_MAX_X = -90.4; // [P8] M: south allées X -149.2..-90.4
 // --- Park side ------------------------------------------------------------------------------
 export const LEHMAN_HALF_WIDTH = 29.05; // [K2] M: square pavilion, chamfered west corners
 export const LEHMAN_WEST_FACE_HALF_WIDTH = 5.55; // [K2] M: west face X -5.6..5.5 at BUILDING_MIN_Z
-export const LEHMAN_PYRAMID_APEX_Y = 20; // [K2] E: low confidence
+export const LEHMAN_PYRAMID_APEX_Y = 27.4; // [K2] E: camera fit to photo P9 (int-lehman-pyramid-up; EXIF lens), corners, apex, 7 purlins: 11.1 m over an eave at +16.3; medium-low
 export const SACKLER_NORTH_FACE_X = 153.13; // [K3] M: sloped glass wall faces north
 export const SACKLER_MIN_Z = -102.7; // [K3] M
 export const SACKLER_MAX_Z = -41.3; // [K3] D: block cut line from the Met map
