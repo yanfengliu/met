@@ -1,7 +1,7 @@
 /**
  * Parts gallery (parts.html): every part of src/model/lib on a labelled grid, with orbit controls.
  *
- * Query: `part=<id>` shows one exhibit alone and frames it; `view=<three-quarter|front|side|back|rear-quarter|top|low>` picks the angle (default three-quarter);
+ * Query: `part=<id>` shows one exhibit alone and frames it; `view=<three-quarter|front|side|back|rear-quarter|top|low|up>` picks the angle (default three-quarter; `up` stands inside under it looking up);
  * `closeup=<name>` frames one of the exhibit's named close-up boxes; `shot=1` is capture mode (no animation, no controls, `window.__shotReady = true` once at least 5 frames have rendered);
  * `noui=1` hides the labels. `window.__parts` lists every exhibit for capture scripts.
  */
@@ -10,7 +10,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { catalogue } from './catalogue.js';
 import type { PartEntry } from './entry.js';
-import { boundsOf, buildExhibit, createStage, frame, light, VIEWS, type ViewName } from './stage.js';
+import { boundsOf, buildExhibit, createStage, frame, light, lookUp, VIEWS, type ViewName } from './stage.js';
 
 declare global {
   interface Window {
@@ -25,7 +25,7 @@ const READY_FRAMES = 5;
 /** Overview cells: each exhibit is scaled to fit this many metres, on this pitch. */
 const CELL = 4.5;
 const PITCH = 6.5;
-const PER_ROW = 8;
+const PER_ROW = 12;
 
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot') === '1';
@@ -47,7 +47,7 @@ function label(text: string, anchor: THREE.Vector3, strong = false): void {
   if (noUi) return;
   const element = document.createElement('div');
   element.textContent = text;
-  element.style.cssText = `position:absolute;transform:translate(-50%,0);white-space:pre;text-align:center;padding:1px 4px;background:rgba(255,255,255,0.72);border-radius:3px;${strong ? 'font-weight:600;font-size:14px;' : 'font-size:10px;'}`;
+  element.style.cssText = `position:absolute;transform:translate(-50%,0);white-space:pre;text-align:center;padding:1px 4px;background:rgba(255,255,255,0.72);border-radius:3px;font-size:10px;${strong ? 'font-weight:600;' : ''}`;
   overlay.appendChild(element);
   labels.push({ element, anchor });
 }
@@ -76,47 +76,46 @@ function showOne(entry: PartEntry): THREE.Box3 {
     message(`Exhibit "${entry.id}" has no close-up "${closeup}"; it has: ${names.length > 0 ? names.join(', ') : 'none'}.`);
   }
   const framed = target !== undefined ? new THREE.Box3(new THREE.Vector3(...target.min), new THREE.Vector3(...target.max)) : box;
-  frame(stage, framed, view[0], view[1], target !== undefined ? 0.95 : 0.85);
+  if (viewName === 'up') lookUp(stage, box);
+  else frame(stage, framed, view[0], view[1], target !== undefined ? 0.95 : 0.85);
   label(`${entry.label} — ${sizeText(box)}`, new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, box.max.z));
   return framed;
 }
 
+/** Every exhibit on one grid, in catalogue order, `PER_ROW` across; the first exhibit of each group carries the group's name. */
 function showAll(): THREE.Box3 {
-  const groups = [...new Set(catalogue.map((entry) => entry.group))];
   const gallery = new THREE.Group();
   stage.scene.add(gallery);
-  let row = 0;
-  for (const name of groups) {
-    const members = catalogue.filter((entry) => entry.group === name);
-    label(name, new THREE.Vector3(-PITCH * 0.9, 0, -row * PITCH + 1), true);
-    members.forEach((entry, index) => {
-      if (index > 0 && index % PER_ROW === 0) row++;
-      let exhibit: THREE.Group;
-      try {
-        exhibit = buildExhibit(entry);
-      } catch (error) {
-        // One broken exhibit must not blank the gallery; the console error fails the capture script.
-        console.error(`Exhibit "${entry.id}" failed to build: ${error instanceof Error ? error.message : String(error)}`);
-        return;
-      }
-      const box = boundsOf(exhibit);
-      const size = box.getSize(new THREE.Vector3());
-      const scale = CELL / Math.max(size.x, size.y, size.z, 1e-3);
-      const centre = box.getCenter(new THREE.Vector3());
-      const holder = new THREE.Group();
-      holder.add(exhibit);
-      exhibit.position.set(-centre.x, -box.min.y, -centre.z);
-      holder.scale.setScalar(scale);
-      holder.position.set((index % PER_ROW) * PITCH, 0, -row * PITCH);
-      gallery.add(holder);
-      label(`${entry.id}
-${sizeText(box)}`, new THREE.Vector3((index % PER_ROW) * PITCH, 0, -row * PITCH + CELL / 2 + 0.3));
-    });
-    row++;
-  }
+  let previous = '';
+  catalogue.forEach((entry, index) => {
+    const x = (index % PER_ROW) * PITCH;
+    const z = -Math.floor(index / PER_ROW) * PITCH;
+    let exhibit: THREE.Group;
+    try {
+      exhibit = buildExhibit(entry);
+    } catch (error) {
+      // One broken exhibit must not blank the gallery; the console error fails the capture script.
+      console.error(`Exhibit "${entry.id}" failed to build: ${error instanceof Error ? error.message : String(error)}`);
+      return;
+    }
+    const box = boundsOf(exhibit);
+    const size = box.getSize(new THREE.Vector3());
+    const scale = CELL / Math.max(size.x, size.y, size.z, 1e-3);
+    const centre = box.getCenter(new THREE.Vector3());
+    const holder = new THREE.Group();
+    holder.add(exhibit);
+    exhibit.position.set(-centre.x, -box.min.y, -centre.z);
+    holder.scale.setScalar(scale);
+    holder.position.set(x, 0, z);
+    gallery.add(holder);
+    const heading = entry.group !== previous ? `${entry.group}
+` : '';
+    previous = entry.group;
+    label(`${heading}${entry.id}`, new THREE.Vector3(x, 0, z + CELL / 2 + 0.2), heading !== '');
+  });
   const all = boundsOf(gallery);
   light(stage, all);
-  frame(stage, all, 0, 50, 1.1);
+  frame(stage, all, 0, 50, 1.45);
   return all;
 }
 

@@ -102,7 +102,7 @@ export function boundsOf(object: THREE.Object3D): THREE.Box3 {
   return box;
 }
 
-export type ViewName = 'three-quarter' | 'front' | 'side' | 'back' | 'top' | 'low' | 'rear-quarter';
+export type ViewName = 'three-quarter' | 'front' | 'side' | 'back' | 'top' | 'low' | 'rear-quarter' | 'up';
 
 /** Azimuth from +Z toward +X and elevation, degrees. */
 export const VIEWS: Readonly<Record<ViewName, readonly [number, number]>> = {
@@ -113,7 +113,26 @@ export const VIEWS: Readonly<Record<ViewName, readonly [number, number]>> = {
   'rear-quarter': [215, 30],
   top: [20, 72],
   low: [25, -12],
+  // Standing inside under the exhibit's centre, looking up (domes, vaults, laylights); see `lookUp`.
+  up: [0, 90],
 };
+
+/** Places the camera 1.6 m above the floor under `box`'s centre, looking straight up with +Z (the front) at the bottom of the view. */
+export function lookUp(stage: Stage, box: THREE.Box3): void {
+  const { camera } = stage;
+  const centre = box.getCenter(new THREE.Vector3());
+  camera.position.set(centre.x, box.min.y + 1.6, centre.z);
+  camera.up.set(0, 0, -1);
+  camera.near = 0.05;
+  camera.far = box.getSize(new THREE.Vector3()).length() * 4 + 10;
+  camera.fov = 100;
+  camera.lookAt(centre.x, box.max.y, centre.z);
+  camera.updateProjectionMatrix();
+  // The sun cannot reach under a dome; a soft light at the eye shows the interior's forms.
+  const fill = new THREE.PointLight(0xfff4e6, 22, 0, 1.2);
+  fill.position.copy(camera.position);
+  stage.scene.add(fill);
+}
 
 /** Places the camera to frame `box` from azimuth/elevation (degrees), filling about `fill` of the view. */
 export function frame(stage: Stage, box: THREE.Box3, azimuthDeg: number, elevationDeg: number, fill = 0.85): void {

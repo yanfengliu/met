@@ -6,6 +6,7 @@
  * Never mutate or dispose a returned geometry: place it with the piece's matrix.
  */
 export { along, type AlongOptions } from './along.js';
+export { baluster, balustrade, type Balustrade, type BalusterParams, type BalustradeParams } from './balustrade.js';
 export { archivolt, keystone, spandrel, voussoirs, type ArchivoltParams, type KeystoneParams, type SpandrelParams, type VoussoirParams } from './arch.js';
 export { MeshBuilder, type V2, type V3 } from './builder.js';
 export { cacheSize } from './cache.js';
@@ -29,6 +30,21 @@ export {
 export { corniceRun, dentil, entablature, modillion, moulding, type CorniceRun, type CorniceRunParams, type DentilParams, type EntablatureParams, type ModillionParams, type MouldingParams, type ProfileName } from './cornice.js';
 export { barrelVault, dome, drum, pendentives, type BarrelVaultParams, type DomeParams, type DrumParams, type PendentiveParams } from './dome.js';
 export { cavettoCorniceProfile, papyriformColumn, pylon, type CavettoCorniceParams, type PapyriformColumnParams, type PapyrusCapital, type PylonDoor, type PylonParams } from './egyptian.js';
+export {
+  curtainWall,
+  hippedSkylight,
+  laylight,
+  oculusLight,
+  pyramidSkylight,
+  ridgeSkylight,
+  type CurtainWallParams,
+  type Glazing,
+  type HippedSkylightParams,
+  type LaylightParams,
+  type OculusLightParams,
+  type PyramidSkylightParams,
+  type RidgeSkylightParams,
+} from './glazing.js';
 export { bench, lampPost, urn, type Bench, type BenchParams, type LampPost, type LampPostParams, type Urn, type UrnParams } from './fittings.js';
 export { fountain, hedge, tree, type Fountain, type FountainJets, type FountainParams, type HedgeParams, type Tree, type TreeParams } from './landscape.js';
 export { type Detail } from './params.js';
@@ -47,6 +63,7 @@ export {
   type ParapetCapParams,
   type ProfileSize,
 } from './profiles.js';
+export { stairFlight, stairLanding, type StairFlight, type StairFlightParams, type StairLandingParams } from './stair.js';
 export { surround, type HeadKind, type SurroundParams } from './surround.js';
 export { lathe, sweep, type LatheOptions, type SweepOptions } from './sweep.js';
 export { openingOutline, wall, type Opening, type OpeningShape, type Rustication, type WallParams } from './wall.js';
