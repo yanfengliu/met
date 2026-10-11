@@ -51,16 +51,17 @@ export const PRESETS: readonly ViewPreset[] = [
   { id: 'ref-entrance-up', label: 'Photo: central arch from the landing', group: 'exterior', camera: look([-2, 5.3, 7], [0, 17, 0], 70) },
   { id: 'ref-fountain-north', label: 'Photo: from the north fountain', group: 'exterior', camera: look([46, 1.4, 21], [5, 9, 2], 55) },
   { id: 'ref-park-south', label: 'Photo: south side from the park', group: 'exterior', camera: look([-207, 3.5, -104], [-151.6, 9.5, -96.7], 47.3) },
-  { id: 'ref-park-northwest', label: 'Photo: American Wing from the park', group: 'exterior', camera: look([175, 6, -140], [140, 12, -125], 50) },
-  // Moved inside the site (SITE_MAX_X 200) from the research's (230, 6, -110); the fov narrows from 55 so the Sackler glass round the target keeps its size.
-  { id: 'ref-park-north', label: 'Photo: north side from the park', group: 'exterior', camera: look([198, 6, -104], [153, 12, -72], 37) },
+  { id: 'ref-park-northwest', label: 'Photo: American Wing from the park', group: 'exterior', camera: look([163.2, 6.5, -144], [144.3, 16.0, -98.7], 40.7) },
+  // The research's (230, 6, -110) stood outside the site (SITE_MAX_X 200); this camera is the roche-north modeller's fit to the Sackler glass.
+  // ref-park-south, ref-park-northwest, int-dendur-se, int-engelhard-north, int-lehman-pyramid-up, int-medieval-hall-east and both Great Hall views were refitted against their photos by the modellers (2026-10-11).
+  { id: 'ref-park-north', label: 'Photo: north side from the park', group: 'exterior', camera: look([178, 7, -118], [145, 12, -68], 45) },
   // Park at the top, Fifth Avenue at the bottom, north to the right.
   { id: 'ref-plan-ortho', label: 'Photo: plan from above', group: 'exterior', camera: look([0, 600, -85], [0, 0, -85], 30, [0, 0, -1]) },
-  { id: 'int-great-hall-balcony-south', label: 'Great Hall from the north balcony', group: 'interior', camera: mapLook([28.5, L2 + EYE, -14.5], [-30, L1 + 4, -14.5], 46) },
-  { id: 'int-great-hall-floor-north', label: 'Great Hall floor, looking north', group: 'interior', camera: mapLook([-2, L1 + EYE, -12], [30, L1 + 9, -14.5], 55) },
+  { id: 'int-great-hall-balcony-south', label: 'Great Hall from the north balcony', group: 'interior', camera: look([26.3, L2 + EYE, -17.6], [-30, L1 + 2.6, -17.6], 46) },
+  { id: 'int-great-hall-floor-north', label: 'Great Hall floor, looking north', group: 'interior', camera: look([6, L1 + EYE, -15.6], [30, 13.1, -17.6], 55) },
   { id: 'int-grand-stair-west', label: 'Grand Staircase, looking west', group: 'interior', camera: mapLook([0, L2 + EYE, -27], [0, L2 + 3, -62], 68) },
-  { id: 'int-dendur-se', label: 'Temple of Dendur from the south-east', group: 'interior', camera: mapLook([116, L1 + EYE, -55], [138, L1 + 5, -84], 46) },
-  { id: 'int-engelhard-north', label: 'American Wing court, looking north', group: 'interior', camera: mapLook([60, L1 + EYE, -112.4], [94, L1 + 8, -112.4], 55) },
+  { id: 'int-dendur-se', label: 'Temple of Dendur from the south-east', group: 'interior', camera: look([118.8, 6.7, -71.5], [141, 9.5, -90], 35) },
+  { id: 'int-engelhard-north', label: 'American Wing court, looking north', group: 'interior', camera: look([58, 5.71, -115.5], [94, 12.6, -115.5], 50) },
   { id: 'int-greek-roman-court', label: 'Greek and Roman court', group: 'interior', camera: mapLook([-136, L1 + EYE, -3], [-104, L1 + 2.5, -11], 45) },
   { id: 'int-arms-armor-court', label: 'Arms and Armor court', group: 'interior', camera: mapLook([58.5, L1 + EYE, -76.3], [93, L1 + 4.5, -76.3], 50) },
   { id: 'int-medieval-hall-east', label: 'Medieval Sculpture Hall, looking east', group: 'interior', camera: look([0, L1 + EYE, -112.9], [0, L1 + 10.4, -92.9], 62) },
