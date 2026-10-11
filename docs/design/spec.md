@@ -1,0 +1,117 @@
+# The Met — design spec
+
+The contract every part of this repo builds against. Change it here first, in the same commit as the code that needs the change.
+
+## Product
+
+One page, `index.html`. It shows a procedural model of The Metropolitan Museum of Art's main building on Fifth Avenue, New York, in its present-day form, outside and inside. The model is never simply loaded: it is assembled by an ordered list of build steps, and the viewer plays that build forward or backward, one step at a time or continuously, scrubs it, jumps between chapters, and orbits and zooms freely at any point.
+
+The order of the build is the order the real building grew: chapters are historical eras (the 1880 Vaux building, the 1902 Hunt facade and Great Hall, the McKim, Mead & White wings, the Roche-Dinkeloo additions, the 2014 plaza). Within a chapter, steps follow the order a builder would raise it: ground and footprint, structure and walls, openings and ornament, interior, roof. Only parts that exist today are modelled; each appears in the era it was built. The research behind the chapter list is in `docs/research/`.
+
+Interior spaces are reached in two ways: interior camera presets, and a horizontal section cut that removes everything above a chosen height.
+
+## World frame
+
+- 1 unit = 1 metre. +Y is up. +X is Manhattan north (up Fifth Avenue). +Z is Manhattan east (toward Fifth Avenue, so the main facade faces +Z). Right-handed.
+- The Manhattan grid is rotated about 29° clockwise from true north. Only the sun direction uses true compass bearings; everything else is in grid axes.
+- Origin: Fifth Avenue sidewalk grade, on the axis of the central entrance (the Great Hall's east-west axis), in the plane of the Hunt facade's main wall face behind the column screen.
+- Named levels, extents and key dimensions live in `src/model/frame.ts`, one constant per fact, each with a comment naming its source in `docs/research/`. Builders read them from there and never restate a number another builder depends on.
+
+## Build-step API
+
+A chapter module exports its steps; `src/build/sequence.ts` concatenates chapters in the order of `src/build/chapters.ts`. Step ids are unique, stable and kebab-case, because URLs and tests name them.
+
+```ts
+interface StepDef {
+  id: string;              // unique, stable, kebab-case
+  chapter: ChapterId;      // from src/build/chapters.ts
+  title: string;           // at most 48 characters, shown in the timeline
+  detail?: string;         // at most 200 characters, shown under the title
+  year?: string;           // overrides the chapter's years in the label, e.g. '1975'
+  motion: Motion;          // how this step's pieces arrive
+  stagger?: Stagger;       // the order pieces arrive in within the step; default 'order'
+  weight?: number;         // playback duration multiplier; default 1
+  focus?: CameraFocus;     // what the follow camera frames during this step
+  build(kit: Kit): void;   // adds this step's pieces
+}
+
+interface Kit {
+  // One piece: a shared geometry, a shared material and its final world matrix.
+  add(geometry: BufferGeometry, material: Material, matrix: Matrix4, order?: number): void;
+  // A light that switches on with the step; at most 8 in the whole sequence, never shadow-casting.
+  light(light: PointLight | SpotLight): void;
+}
+
+type Motion =
+  | { kind: 'rise'; distance?: number }                    // slides up from below its final place
+  | { kind: 'drop'; distance?: number }                    // slides down from above
+  | { kind: 'grow' }                                       // scales up in Y from its own base
+  | { kind: 'pop' }                                        // scales up from its own centre
+  | { kind: 'slide'; from: readonly [number, number, number] }; // arrives from this world offset
+
+type Stagger = 'order' | 'x' | '-x' | 'z' | '-z' | 'y' | 'radial' | 'none';
+```
+
+- **Batching.** Within one step, pieces that share the same geometry object and the same material object become one `InstancedMesh`. Steps never share a mesh, so each step shows and hides independently. Builders therefore create one geometry per distinct shape and reuse it, and take materials from the shared palette (`src/model/palette.ts`) or their own module, never cloning a material per piece.
+- **Composite pieces.** A part made of several materials (a window: frame and glass) is several `add` calls with the same `order`; pieces with equal stagger keys arrive together. Spatial staggers key on the piece's world bounding-box centre.
+- **Timeline position.** With N steps, the position `t` runs over `[0, N]`. Step `i` (0-based) has local progress `f = clamp(t − i, 0, 1)`. At `f = 0` none of its pieces is visible; at `f = 1` every piece sits exactly at its final matrix; in between, each piece moves through its own window of `f` according to `motion` and `stagger`, and an arriving piece is briefly tinted so the eye finds it. An integer `t = k` is a rest position: steps 1..k (1-based) are complete and nothing is moving.
+- **Determinism.** The scene state at `t` is a pure function of `t`. Evaluating `t` after any history of plays, reversals, steps and scrubs gives byte-identical instance matrices, colours and visibilities to evaluating it fresh. Caching may skip rewriting unchanged values; it may never make the result depend on the path. This is what makes backward playback exact, and a test asserts it.
+- **Playback.** Play forward and play backward run `t` continuously at `weight × BASE_SECONDS / speed` seconds per step and stop at 0 or N. Step forward animates to the next integer, step back to the previous one; a second press while moving retargets. Scrubbing sets `t` directly. Speed is 0.5×, 1×, 2× or 4×. The player is pure logic with no DOM and is unit-tested on its own.
+
+## Page
+
+- **Timeline bar** (bottom): buttons for start, step back, play backward, play/pause, step forward, end; a speed control; a scrubber over `[0, N]` with chapter boundaries marked; a label `Step k / N · <year> · <chapter> — <title>` with the step's detail beneath. Every control has an accessible name and a `data-testid`.
+- **Chapter menu**: the chapters in order; choosing one moves to the start of its first step.
+- **View menu**: exterior and interior camera presets (named in `src/viewer/presets.ts`), a follow-camera toggle that frames each step's `focus` during playback and switches off when the user drags, and a section-cut slider.
+- **Keyboard**: Space play/pause, → step forward, ← step back, Shift+Space play backward, Home start, End end.
+- **First load**: the page starts at `t = 0` and plays forward, unless the query sets a position or `autoplay=0`.
+
+## Query contract
+
+`src/viewer/query.ts` is the only reader of the page URL.
+
+| Parameter | Effect |
+|---|---|
+| `shot=1` | Capture mode: no autoplay, no follow camera, no animation; `window.__shotReady = true` once at least 5 frames have rendered at the requested state |
+| `t=<number>` | Timeline position in `[0, N]` |
+| `step=<id or 1-based index>` | Position at the end of that step; wins over `t` |
+| `view=<preset id>` | Camera preset |
+| `cam=px,py,pz,tx,ty,tz` | Explicit camera position and target, for sweeps |
+| `cut=<metres>` | Section-cut height |
+| `solo=<chapter id>` | Build only that chapter (plus `site`), for fast isolated checks |
+| `autoplay=0` | Do not start playing on load |
+| `noui=1` | Hide the page chrome |
+
+The renderer keeps `preserveDrawingBuffer: true`, or headless capture reads a blank canvas. `window.__met` exposes read-only facts for tests (step ids, titles, chapters, `N`, current `t`); tests drive the page through its real controls, never by writing state.
+
+## Modules and ownership
+
+| Path | Contents | Owner |
+|---|---|---|
+| `src/main.ts` | boot: query, viewer, sequence, player, UI | engine |
+| `src/viewer/` | renderer, scene, sky, lights, camera and controls, presets, section cut | engine |
+| `src/build/` | types, kit and batching, timeline evaluation, player | engine |
+| `src/build/chapters.ts`, `src/build/sequence.ts` | chapter list and order | coordinator |
+| `src/ui/` | timeline bar, chapter and view menus | engine |
+| `src/model/frame.ts` | world-frame constants from research | coordinator |
+| `src/model/palette.ts` | shared materials | engine creates; others request changes |
+| `src/model/lib/` | parametric architectural parts | parts library |
+| `src/model/<chapter>/` | one folder per chapter | that chapter's modelling worker |
+| `parts.html`, `src/parts/` | parts gallery page for the library | parts library |
+| `scripts/` | capture and sweep tooling | engine |
+| `tests/e2e/` | Playwright control tests | engine |
+
+A worker edits only paths it owns. A change another owner's path needs is requested in the handoff, not made.
+
+## Parts library
+
+`src/model/lib/` exports pure functions that return `BufferGeometry` in local coordinates: origin at the part's base centre unless its header says otherwise, +Y up, the part's front facing +Z. Each function's header states its parameters' units and its origin. The set covers what the building repeats: classical column and pilaster (base, shaft, Corinthian capital), entablature and cornice profiles swept along a path, round-arched and flat openings in a wall, windows (frame, mullions, glass as separate geometries), balustrade runs, stairs, domes and saucer domes with or without an oculus, coffered vaults, skylights (ridge and pyramid), glass curtain walls, trees, fountains. Geometry is cached per parameter set so equal calls return the same object, which is what lets the kit instance it.
+
+## Budgets
+
+The finished model: at most 3,000,000 triangles per frame counting instances, at most 900 instanced meshes, all geometry built in under 4 seconds on this machine. A unit test computes the first two from the sequence without WebGL; the e2e suite measures the third.
+
+## Verification
+
+- Automated: unit tests for the timeline (determinism, forward/backward symmetry, rest positions), the player, batching, sequence integrity (unique ids, every step adds at least one piece, every piece inside the site bounds, no NaN matrix) and the budgets; Playwright tests that drive every control and the keyboard and check the label, the scrubber and the canvas.
+- Visual: `npm run shots` captures the standard set (every preset at the finished state, the aerial preset at each chapter boundary) into `.shots/`; authors inspect each image at native resolution and compare it with the reference photographs named in `docs/research/`. Sweeps add random camera angles for exploration.

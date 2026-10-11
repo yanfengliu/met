@@ -147,3 +147,13 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# met: task-run evidence and local caches (never tracked; see AGENTS.md)
+.shots/
+output/
+tmp/
+test-results/
+playwright-report/
+research/cache/
+.claude/worktrees/
+.claude/settings.local.json
