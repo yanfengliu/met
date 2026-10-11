@@ -6,7 +6,7 @@
  * No texture is fetched. Shadows: a material with `userData.castShadow === false`, or any transparent one, never casts shadows (see `castsShadow` in src/build/batch.ts):
  * glass and water because they are clear, and the flat ground materials because a slab on the ground shades nothing and would only widen the sun's shadow camera.
  */
-import { Color, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
+import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 import type { Material } from 'three';
 
 interface Surface {
@@ -37,6 +37,8 @@ function glass(name: string, colour: string, opacity: number, roughness: number)
     transparent: true,
     opacity,
     depthWrite: false,
+    // The parts library's glazing is a single pane, seen from both sides (src/model/lib/index.ts, glazing).
+    side: DoubleSide,
     envMapIntensity: 1.4,
     specularIntensity: 1,
   });

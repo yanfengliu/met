@@ -23,7 +23,7 @@ export const PARK_GROUND_Y_NORTH = 4.2; // [F11] M: park beside the north end (X
 export const PARK_GROUND_Y_WEST_LEHMAN = 5.2; // [F11] M: park west of the Lehman Wing (Z -195..-225), mean
 export const PARK_GROUND_Y_WEST_SOUTH = 2.3; // [F11] M: park west of Kravis/Wallace (Z -170), mean
 export const PARK_GROUND_Y_WEST_AMERICAN = 7.0; // [F11] M: park west of the American Wing (Z -170), mean
-export const SITE_MIN_X = -200; // [F12] D: model site bounds
+export const SITE_MIN_X = -215; // [F12] D: model site bounds; widened from -200 on 2026-10-11 so the ref-park-south camera (X -207, fitted from the photo's EXIF) stands on the park
 export const SITE_MAX_X = 200; // [F12] D
 export const SITE_MIN_Z = -260; // [F12] D
 export const SITE_MAX_Z = 60; // [F12] D
@@ -52,38 +52,40 @@ export const HUNT_PAVILION_HALF_WIDTH_ROOF = 32.06; // [H1] M: NYC, roof outline
 export const HUNT_PAVILION_FRONT_Z = 1.2; // [H1] M: OSM pavilion line (cornice and breaks)
 export const HUNT_EXTENSION_FACE_Z = -2.0; // [H1] M: flanking extensions and MMW links
 export const HUNT_EXTENSION_HALF_WIDTH = 49.6; // [H14] M: end of Hunt's facade, both sides
-// Conflict, unresolved: the Met floor map (interior.md, Plan source) puts the column centres at X ±6.98, ±10.30, ±24.87, ±28.20
-// (pairs at ±8.64 and ±26.54, 3.32 m apart within a pair) with axes at Z +2.74; the hunt modeller settles it against photographs.
-export const HUNT_BAY = 18.0; // [H2] D ±0.6: column-pair centre to centre
-export const HUNT_PAIR_CENTRE_X_INNER = 9.0; // [H2] D: inner pairs at X = ±9.0
-export const HUNT_PAIR_CENTRE_X_OUTER = 27.0; // [H2] D: outer pairs at X = ±27.0
+// Column positions settled 2026-10-11 by the hunt modeller against S7 at 1:1 and renders of both readings: S7 shows equal bays (outer to inner pair-centre
+// distance 2.996) and pairs 0.225 bay apart (156 of 692 px). The floor map's 3.32 m spacing (0.19 bay), unequal bays (17.28, 17.9) and Z (-0.36 after its
+// -3.1 m shift, inside the wall) are schematic; its pair centres (X 8.64, 26.54) fit equal bays of 17.64 m. Heights below re-read in S7 with the camera at
+// (0, 1.7, 44), each feature at its own depth, from the measured landing.
+export const HUNT_BAY = 17.6; // [H2] D ±0.3: S7 corner pier at 1.70 bay from the axis on the block corner X 30.4; map fit 17.64
+export const HUNT_PAIR_CENTRE_X_INNER = 8.8; // [H2] D: inner pairs at X = ±HUNT_BAY / 2
+export const HUNT_PAIR_CENTRE_X_OUTER = 26.4; // [H2] D: outer pairs at X = ±1.5 HUNT_BAY
 export const HUNT_COLUMN_COUNT = 8; // [H3] M: four coupled pairs (photos S7, S8)
-export const HUNT_PAIR_AXIS_SPACING = 4.13; // [H3] D: axis to axis within a pair
-export const HUNT_COLUMN_AXIS_Z = 1.9; // [H5] E: column axes in plan
-export const HUNT_COLUMN_DIAMETER_LOWER = 1.55; // [H4] E: lower shaft
-export const HUNT_COLUMN_DIAMETER_UPPER = 1.33; // [H4] E: entasis ratio 0.86 (S8)
-export const HUNT_COLUMN_HEIGHT = 13.1; // [H4] E: base + shaft + capital
-export const HUNT_PEDESTAL_WIDTH = 7.1; // [H6] E: one block per pair
-export const HUNT_PEDESTAL_HEIGHT = 1.7; // [H6] E
+export const HUNT_PAIR_AXIS_SPACING = 3.97; // [H3] D: 0.2254 bay in S7 (156 px of 692)
+export const HUNT_COLUMN_AXIS_Z = 2.1; // [H5] D: S7 parallax puts the pilaster faces 2.0 m behind the axes; pedestal front Z +3.4
+export const HUNT_COLUMN_DIAMETER_LOWER = 1.5; // [H4] D: S7, 58.5 px at 39.2 px/m
+export const HUNT_COLUMN_DIAMETER_UPPER = 1.29; // [H4] E: entasis ratio 0.86 (S8)
+export const HUNT_COLUMN_HEIGHT = 12.75; // [H4] D: S7, 510 px plinth to abacus
+export const HUNT_PEDESTAL_WIDTH = 6.6; // [H6] D: S7, die 0.375 bay (base course 0.40 bay)
+export const HUNT_PEDESTAL_HEIGHT = 1.65; // [H6] D: S7, 66 px over the measured landing
 export const HUNT_PEDESTAL_FRONT_Z = 3.4; // [H5] E: from the 2018 orthophoto strip
-export const HUNT_COLUMN_BASE_Y = 5.3; // [H6] D: LANDING_Y + HUNT_PEDESTAL_HEIGHT
-export const HUNT_CAPITAL_TOP_Y = 18.4; // [H6] D: column base + column height
-export const HUNT_ENTABLATURE_HEIGHT = 4.1; // [H7] D
-export const HUNT_CORNICE_TOP_Y = 22.5; // [H7] D: main entablature cornice top
-export const HUNT_ATTIC_TOP_Y = 26.0; // [H8] D: attic cornice top
-export const HUNT_CRESTING_TOP_Y = 27.6; // [H8] D: top of the mask-and-shell cresting
-export const HUNT_ACROTERION_TOP_Y = 28.4; // [H8] D: peaks of the cresting
-export const HUNT_BLOCK_PLINTH_TOP_Y = 24.0; // [H9] D: plinth under each uncarved block
-export const HUNT_BLOCK_TOP_Y = 26.2; // [H9] D: top of each stepped rough-stone pile
+export const HUNT_COLUMN_BASE_Y = 5.28; // [H6] D: LANDING_Y + HUNT_PEDESTAL_HEIGHT
+export const HUNT_CAPITAL_TOP_Y = 18.03; // [H6] D: column base + column height
+export const HUNT_ENTABLATURE_HEIGHT = 3.67; // [H7] D: S7, the breaks' 155 px at their depth
+export const HUNT_CORNICE_TOP_Y = 21.7; // [H7] D: S7, main run and breaks meet at Y 21.7 with the breaks' front at Z +3.4
+export const HUNT_ATTIC_TOP_Y = 25.7; // [H8] D: S7, attic cornice top
+export const HUNT_CRESTING_TOP_Y = 27.4; // [H8] D: S7, top of the mask-and-shell cresting
+export const HUNT_ACROTERION_TOP_Y = 28.3; // [H8] D: S7, peaks of the cresting
+export const HUNT_BLOCK_PLINTH_TOP_Y = 23.4; // [H9] D: S7, plinth under each uncarved block
+export const HUNT_BLOCK_TOP_Y = 25.9; // [H9] D: S7, top of each stepped rough-stone pile
 export const HUNT_BLOCK_DEPTH = 3.0; // [H9] E
-export const HUNT_ARCH_SPAN = 8.9; // [H10] D: clear span, three equal arches
-export const HUNT_ARCH_SPRING_Y = 12.9; // [H10] D
-export const HUNT_ARCH_CROWN_Y = 17.4; // [H10] D: semicircular intrados
-export const HUNT_DOOR_HEAD_Y = 8.6; // [H11] E: central arch doorway heads
-export const HUNT_LUNETTE_SILL_Y = 12.2; // [H11] E: transom under the lunette
+export const HUNT_ARCH_SPAN = 8.3; // [H10] D: S7, inner order (the screen's opening); the outer order spans 10.2
+export const HUNT_ARCH_SPRING_Y = 13.3; // [H10] D: S7, impost tops
+export const HUNT_ARCH_CROWN_Y = 17.45; // [H10] D: semicircular intrados of the inner order
+export const HUNT_DOOR_HEAD_Y = 8.9; // [H11] D: S7, doorway screen capitals
+export const HUNT_LUNETTE_SILL_Y = 13.25; // [H11] D: S7, transom under the lunette
 export const HUNT_MEDALLION_COUNT = 6; // [H12] M: Bitter's portrait medallions
-export const HUNT_MEDALLION_DIAMETER = 1.7; // [H12] D
-export const HUNT_MEDALLION_CENTRE_Y = 18.2; // [H12] D
+export const HUNT_MEDALLION_DIAMETER = 1.8; // [H12] D: S7, 69 px at the wall
+export const HUNT_MEDALLION_CENTRE_Y = 18.6; // [H12] D: S7
 export const HUNT_NICHE_COUNT = 4; // [H13] M: one between the columns of each pair
 export const HUNT_EXTENSION_CORNICE_Y = 20.7; // [H14] E: flanking extensions' main cornice
 
@@ -128,7 +130,7 @@ export const LEHMAN_PYRAMID_APEX_Y = 27.4; // [K2] E: camera fit to photo P9 (in
 export const SACKLER_NORTH_FACE_X = 153.13; // [K3] M: sloped glass wall faces north
 export const SACKLER_MIN_Z = -102.7; // [K3] M
 export const SACKLER_MAX_Z = -41.3; // [K3] D: block cut line from the Met map
-export const SACKLER_GLASS_TOP_Y = 22; // [K3] E: low confidence
+export const SACKLER_GLASS_TOP_Y = 20.6; // [K3] D: low-medium; camera solve of exterior photo 7 (head 20.2 at X 145.8), ceiling 20.0-21.1 in interior photos 13 and 16
 export const ROCKEFELLER_GLASS_FACE_X = -151.61; // [K5] M: sloping south glass wall
 export const ROCKEFELLER_GLASS_LENGTH = 61.0; // [K5] M: published 200 ft
 export const ROCKEFELLER_GLASS_SLOPE_DEG = 70; // [K5] M: published slope from horizontal
