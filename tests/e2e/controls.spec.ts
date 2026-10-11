@@ -128,6 +128,14 @@ test.describe('timeline controls', () => {
     expect(Number(await page.getByTestId('scrubber').inputValue())).toBeCloseTo(t, 6);
     expect(await labelStep(page)).toBe(Math.ceil(t));
     expect(await page.evaluate(() => window.__met?.mode)).toBe('paused');
+    // How much of the frame has changed by 0.6 N depends on where content sits in time and space, so the canvas check drags on to the end, where the whole model stands.
+    const at = box.x + thumb + ((box.width - 2 * thumb) * t) / f.n;
+    await page.mouse.move(at, y);
+    await page.mouse.down();
+    for (let k = 1; k <= 5; k += 1) await page.mouse.move(at + ((box.x + box.width - thumb - at) * k) / 5, y);
+    await page.mouse.up();
+    await settle(page);
+    expect(await currentT(page)).toBeGreaterThan(f.n * 0.97);
     expect(changedCells(before, await lumaGrid(page)).length).toBeGreaterThan(4);
   });
 
