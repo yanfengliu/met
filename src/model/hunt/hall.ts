@@ -9,7 +9,7 @@ import * as THREE from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';
-import { columnParts, surround, wall } from '../lib/index.js';
+import { balustrade, columnParts, pilasterParts, surround, wall } from '../lib/index.js';
 import {
   BALCONY_RAIL_H,
   CENTRE_COLUMN_X,
@@ -25,6 +25,7 @@ import {
   PIER_X,
   SECOND,
   SLAB,
+  STAIR_HALF,
   WALL_BACK_Z,
 } from './dims.js';
 import { hunt } from './materials.js';
@@ -58,6 +59,9 @@ export function bayOpenings(): (readonly [number, number])[] {
 }
 
 const pierHeight = HALL_ARCH_SPRING_Y - 0.6 - MAIN;
+/** The piers' pilasters: 0.5 m faces at ±1.0 m from each pier's middle, clear of the niches. */
+const PIER_PILASTER_X = 1.0;
+const pierPilaster = lazy(() => pilasterParts({ width: 0.5, height: pierHeight, projection: 0.1, detail: 'low' }));
 const plainPier = lazy(() => wall({ width: PIER_W, height: pierHeight, thickness: PIER_DEPTH }));
 const nichePier = lazy(() =>
   wall({ width: PIER_W, height: pierHeight, thickness: PIER_DEPTH, openings: [{ shape: 'arch', x: 0, y: HALL_NICHE.sill, width: HALL_NICHE.width, height: HALL_NICHE.height, depth: HALL_NICHE.depth }] }),
@@ -88,6 +92,13 @@ function piers(kit: Kit): void {
       if (niche) {
         const hood = surround({ width: HALL_NICHE.width, height: HALL_NICHE.height, shape: 'arch', head: 'triangular', trim: 0.16, projection: 0.1, sill: true, pitch: 24 });
         kit.add(hood, hunt.hallStone, at(x, MAIN + HALL_NICHE.sill, side.z, angle), 0);
+      }
+      // Two pilasters on each pier's nave face, either side of the niche zone, up to the impost (P1, P2).
+      for (const dx of [-PIER_PILASTER_X, PIER_PILASTER_X]) {
+        const m = at(x + dx, MAIN, side.z, angle);
+        if (pierPilaster().base !== undefined) kit.add(pierPilaster().base as THREE.BufferGeometry, hunt.hallStone, m, Math.abs(x) < 10 ? 0 : 1);
+        kit.add(pierPilaster().shaft, hunt.hallStone, m, Math.abs(x) < 10 ? 0 : 1);
+        kit.add(pierPilaster().capital, hunt.hallStone, m, Math.abs(x) < 10 ? 0 : 1);
       }
     }
     // Main-floor walls of the side bays (two doors each) and the short returns beside the central openings.
@@ -176,6 +187,13 @@ function balcony(kit: Kit): void {
     for (const [a, b] of bayOpenings()) parapet(kit, v(a, z), v(b, z), 4);
   }
   for (const s of [-1, 1]) parapet(kit, v(s * (26.05 - 0.2), NAVE_WEST_Z + 0.2), v(s * (26.05 - 0.2), NAVE_EAST_Z - 0.2), 5);
+  // A balustrade across the Grand Staircase's opening at the west balcony's edge (P3: balusters in the foreground).
+  const rail = balustrade({ length: 2 * STAIR_HALF, height: BALCONY_RAIL_H, balusterSpacing: 0.32, postEvery: 2.6, detail: 'low' });
+  const m = at(0, SECOND, HALL_WEST_Z + 0.25);
+  kit.add(rail.rail, hunt.hallStone, m, 5);
+  kit.add(rail.plinth, hunt.hallStone, m, 5);
+  kit.add(rail.posts, hunt.hallStone, m, 5);
+  for (const b of rail.balusters) kit.add(rail.baluster, hunt.hallStone, m.clone().multiply(b), 5);
 }
 
 export const hallSteps: readonly StepDef[] = [

@@ -15,8 +15,8 @@ export const hunt = Object.freeze({
   domeStone: stone('huntDomeStone', '#cdc2a8', 0.88),
   /** The painted half-domes over the end bays (suggested base #b0663a). */
   halfDome: stone('huntHalfDome', '#b0663a', 0.8),
-  /** The darker marble bands framing the floor's fields (Heckscher: strips of yellow marble). */
-  floorBand: new MeshStandardMaterial({ name: 'huntFloorBand', color: new Color('#a8915f'), roughness: 0.3, metalness: 0 }),
+  /** The darker marble bands framing the floor's fields (Heckscher: strips of yellow marble; P1 shows them a darker buff than the field). */
+  floorBand: new MeshStandardMaterial({ name: 'huntFloorBand', color: new Color('#9a8a70'), roughness: 0.3, metalness: 0 }),
   /** Grey stone of the Grand Staircase's walls and columns (suggested base #a8a49c). */
   stairStone: stone('huntStairStone', '#b4afa5', 0.8),
   /** Foundations and footings below grade. */

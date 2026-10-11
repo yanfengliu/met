@@ -40,7 +40,7 @@ function bouquet(width: number, height: number): THREE.BufferGeometry {
 }
 
 const nicheFlowers = lazy(() => bouquet(1.1, 1.5));
-const deskFlowers = lazy(() => bouquet(1.7, 2.6));
+const deskFlowers = lazy(() => bouquet(1.3, 2.7));
 
 /** The desk: a ring counter round a raised round core (P1), outer radius 3.0 m. */
 const deskBody = lazy(() => {

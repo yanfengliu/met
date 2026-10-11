@@ -10,37 +10,41 @@ import type { StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';
 import { GREAT_HALL_RIDGE_Y } from '../frame.js';
 import { hippedSkylight, MeshBuilder, ridgeSkylight } from '../lib/index.js';
-import { BACK_Z, CROSS_HALL_FRONT_Z, EXT_FACE_Z, EXT_NORTH_X, EXT_PARAPET_Y, EXT_SOUTH_X, EXT_WALL_T, HALL_END_WALL_X, HALL_WEST_WALL_Z, WALL_BACK_Z } from './dims.js';
+import { ATTIC_BACK_Z, BACK_Z, CROSS_HALL_FRONT_Z, EXT_FACE_Z, EXT_NORTH_X, EXT_PARAPET_Y, EXT_SOUTH_X, EXT_WALL_T, HALL_END_WALL_X, HALL_WEST_WALL_Z } from './dims.js';
 import { at, box } from './shapes.js';
 import { STAIR_HALL_OUTER_X, STAIR_WALL_TOP_Y } from './stair.js';
 import { HALL_EAVES_Y } from './walls.js';
 
-/** The hall roof's flat top round the skylight's curb, and the skylight itself (exterior.md R1). */
-const CURB = { x: 22.8, z0: -24.3, z1: -9.9, y: GREAT_HALL_RIDGE_Y - 2.0 } as const;
+/** The hall roof's flat top round the skylight's curb (exterior.md R1), above the domes' oculi (Y 26.7); the glazed lantern rises to GREAT_HALL_RIDGE_Y. */
+const CURB = { x: 22.8, z0: -24.3, z1: -9.9, y: 28.0, height: 0.35 } as const;
 /** Flat roofs of the wings and of the galleries behind the hall. */
 export const WING_ROOF_Y = EXT_PARAPET_Y - 1.4;
 export const GALLERY_ROOF_Y = 20.5;
 
-/** A hipped roof from the eaves rectangle up to an inner flat rectangle (a frustum of four planes), open in the middle for the skylight curb. */
+/**
+ * A hipped roof from the eaves rectangle up to an inner flat rectangle (a frustum of four planes), open in the middle for the skylight curb:
+ * the lead top and, 0.3 m under it, the plastered underside seen from the hall's upper spaces, as two geometries (two materials).
+ */
 const hallRoof = (() => {
-  let made: THREE.BufferGeometry | undefined;
-  return (): THREE.BufferGeometry => {
+  let made: { top: THREE.BufferGeometry; under: THREE.BufferGeometry } | undefined;
+  return (): { top: THREE.BufferGeometry; under: THREE.BufferGeometry } => {
     if (made !== undefined) return made;
-    const b = new MeshBuilder();
-    const e = { x0: -HALL_END_WALL_X - 0.4, x1: HALL_END_WALL_X + 0.4, z0: HALL_WEST_WALL_Z - 0.4, z1: WALL_BACK_Z + 0.4, y: HALL_EAVES_Y };
+    const top = new MeshBuilder();
+    const under = new MeshBuilder();
+    const e = { x0: -HALL_END_WALL_X - 0.4, x1: HALL_END_WALL_X + 0.4, z0: HALL_WEST_WALL_Z - 0.4, z1: ATTIC_BACK_Z, y: HALL_EAVES_Y };
     const t = { x0: -CURB.x, x1: CURB.x, z0: CURB.z0, z1: CURB.z1, y: CURB.y };
     const v = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z);
     // Four sloping planes, each wound to face up and out.
-    b.polygon([v(e.x0, e.y, e.z1), v(e.x1, e.y, e.z1), v(t.x1, t.y, t.z1), v(t.x0, t.y, t.z1)]);
-    b.polygon([v(e.x1, e.y, e.z0), v(e.x0, e.y, e.z0), v(t.x0, t.y, t.z0), v(t.x1, t.y, t.z0)]);
-    b.polygon([v(e.x1, e.y, e.z1), v(e.x1, e.y, e.z0), v(t.x1, t.y, t.z0), v(t.x1, t.y, t.z1)]);
-    b.polygon([v(e.x0, e.y, e.z0), v(e.x0, e.y, e.z1), v(t.x0, t.y, t.z1), v(t.x0, t.y, t.z0)]);
-    // The underside (the roof's ceiling over the hall's vaults), facing down.
-    b.polygon([v(e.x0, e.y - 0.3, e.z1), v(t.x0, t.y - 0.3, t.z1), v(t.x1, t.y - 0.3, t.z1), v(e.x1, e.y - 0.3, e.z1)]);
-    b.polygon([v(e.x1, e.y - 0.3, e.z0), v(t.x1, t.y - 0.3, t.z0), v(t.x0, t.y - 0.3, t.z0), v(e.x0, e.y - 0.3, e.z0)]);
-    b.polygon([v(e.x1, e.y - 0.3, e.z1), v(t.x1, t.y - 0.3, t.z1), v(t.x1, t.y - 0.3, t.z0), v(e.x1, e.y - 0.3, e.z0)]);
-    b.polygon([v(e.x0, e.y - 0.3, e.z0), v(t.x0, t.y - 0.3, t.z0), v(t.x0, t.y - 0.3, t.z1), v(e.x0, e.y - 0.3, e.z1)]);
-    made = b.build();
+    top.polygon([v(e.x0, e.y, e.z1), v(e.x1, e.y, e.z1), v(t.x1, t.y, t.z1), v(t.x0, t.y, t.z1)]);
+    top.polygon([v(e.x1, e.y, e.z0), v(e.x0, e.y, e.z0), v(t.x0, t.y, t.z0), v(t.x1, t.y, t.z0)]);
+    top.polygon([v(e.x1, e.y, e.z1), v(e.x1, e.y, e.z0), v(t.x1, t.y, t.z0), v(t.x1, t.y, t.z1)]);
+    top.polygon([v(e.x0, e.y, e.z0), v(e.x0, e.y, e.z1), v(t.x0, t.y, t.z1), v(t.x0, t.y, t.z0)]);
+    // The underside, facing down.
+    under.polygon([v(e.x0, e.y - 0.3, e.z1), v(t.x0, t.y - 0.3, t.z1), v(t.x1, t.y - 0.3, t.z1), v(e.x1, e.y - 0.3, e.z1)]);
+    under.polygon([v(e.x1, e.y - 0.3, e.z0), v(t.x1, t.y - 0.3, t.z0), v(t.x0, t.y - 0.3, t.z0), v(e.x0, e.y - 0.3, e.z0)]);
+    under.polygon([v(e.x1, e.y - 0.3, e.z1), v(t.x1, t.y - 0.3, t.z1), v(t.x1, t.y - 0.3, t.z0), v(e.x1, e.y - 0.3, e.z0)]);
+    under.polygon([v(e.x0, e.y - 0.3, e.z0), v(t.x0, t.y - 0.3, t.z0), v(t.x0, t.y - 0.3, t.z1), v(e.x0, e.y - 0.3, e.z1)]);
+    made = { top: top.build(), under: under.build() };
     return made;
   };
 })();
@@ -80,9 +84,11 @@ export const roofSteps: readonly StepDef[] = [
         kit.add(wing.glass, palette.glass, m, 2);
       }
       // The Great Hall: the hipped roof, its curb and the long skylight over the domes.
-      kit.add(hallRoof(), palette.roofLead, new THREE.Matrix4(), 3);
-      // Pitched so its ridge meets GREAT_HALL_RIDGE_Y: curb 0.35 m, then 1.65 m over a half-width of 7.2 m.
-      const sky = hippedSkylight({ width: CURB.z1 - CURB.z0, length: 2 * CURB.x, pitch: 12.9, curbHeight: 0.35, bays: 12 });
+      kit.add(hallRoof().top, palette.roofLead, new THREE.Matrix4(), 3);
+      kit.add(hallRoof().under, palette.plaster, new THREE.Matrix4(), 3);
+      // Pitched so its ridge meets GREAT_HALL_RIDGE_Y over a half-width of 7.2 m.
+      const pitch = (Math.atan((GREAT_HALL_RIDGE_Y - CURB.y - CURB.height) / ((CURB.z1 - CURB.z0) / 2)) * 180) / Math.PI;
+      const sky = hippedSkylight({ width: CURB.z1 - CURB.z0, length: 2 * CURB.x, pitch, curbHeight: CURB.height, bays: 12 });
       const m = at(0, CURB.y, (CURB.z0 + CURB.z1) / 2, Math.PI / 2);
       kit.add(sky.frame, palette.metalDark, m, 4);
       kit.add(sky.glass, palette.glass, m, 4);

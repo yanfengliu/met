@@ -142,17 +142,20 @@ function addRun(kit: Kit, r: Run, x: number, y: number, order: number): void {
 const antefix = lazy(() => {
   const b = new MeshBuilder();
   const h = HUNT_ACROTERION_TOP_Y - ATTIC_TOP_Y;
+  // A scalloped shell fanning out behind the mask (S7: masks with shell headdresses), on a short neck.
   const outline: [number, number][] = [
-    [-0.32, 0],
-    [0.32, 0],
-    [0.36, 0.35 * h],
+    [-0.26, 0],
+    [0.26, 0],
+    [0.3, 0.22 * h],
+    [0.5, 0.36 * h],
   ];
-  const steps = 10;
-  for (let k = 0; k <= steps; k++) {
+  const steps = 18;
+  for (let k = 1; k < steps; k++) {
     const a = (k / steps) * Math.PI;
-    outline.push([0.62 * Math.cos(a), 0.55 * h + 0.45 * h * Math.sin(a)]);
+    const scallop = 1 - 0.07 * Math.abs(Math.sin(k * Math.PI * 0.5));
+    outline.push([0.66 * scallop * Math.cos(a), 0.4 * h + 0.6 * h * scallop * Math.sin(a)]);
   }
-  outline.push([-0.36, 0.35 * h]);
+  outline.push([-0.5, 0.36 * h], [-0.3, 0.22 * h]);
   b.planar(outline, [], new THREE.Vector3(0, 0, 0.16), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0));
   b.planar(outline.map(([x, y]) => [-x, y] as const), [], new THREE.Vector3(0, 0, -0.16), new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0));
   for (let k = 0; k < outline.length; k++) {

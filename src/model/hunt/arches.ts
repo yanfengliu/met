@@ -8,11 +8,12 @@ import * as THREE from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';
-import { archivolt, columnParts, MeshBuilder, moulding, surround, windowUnit } from '../lib/index.js';
+import { archivolt, barrelVault, columnParts, MeshBuilder, moulding, surround, windowUnit } from '../lib/index.js';
 import {
   ARCH_CROWN_Y,
   ARCH_INNER_SPAN,
   ARCH_OUTER_SPAN,
+  ARCH_SKIN,
   ARCH_SPRING_Y,
   ARCHIVOLT_BAND,
   BAY_X,
@@ -72,8 +73,13 @@ function intradosAt(dx: number): number {
   return Math.sqrt(Math.max(0, HALF * HALF - dx * dx));
 }
 
+/** The coffered soffit of each arch's inner order, from the outer order's face back to the screen (S10: deep coffers in the soffit). */
+const SOFFIT_LENGTH = -SCREEN_Z - ARCH_SKIN - 0.05;
+
 function arch(kit: Kit, x: number, order: number): void {
   kit.add(archivolt({ span: ARCH_OUTER_SPAN, band: ARCHIVOLT_BAND, projection: 0.22 }), palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z), order);
+  const soffit = barrelVault({ span: ARCH_INNER_SPAN - 0.16, length: SOFFIT_LENGTH, thickness: 0.06, coffers: { across: 11, along: 1, depth: 0.1, rib: 0.16 } });
+  kit.add(soffit, palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z - ARCH_SKIN - SOFFIT_LENGTH / 2), order);
   const impost = moulding({
     profile: 'cornice-plain',
     path: [

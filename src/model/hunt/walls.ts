@@ -43,13 +43,18 @@ import {
 } from './dims.js';
 import { at, box } from './shapes.js';
 
-/** Banded rustication: courses of 0.6 m with 7 cm channels (S7, S9). */
-const RUSTICATION = { course: 0.6, joint: 0.07, depth: 0.05 } as const;
+/** Banded rustication: courses of 0.6 m with 9 cm channels 8 cm deep (S7, S9: the end piers' bands read from across the avenue). */
+const RUSTICATION = { course: 0.6, joint: 0.09, depth: 0.08 } as const;
 
-/** Top of the Great Hall's walls under its roof: behind the cresting from the street (S7 shows only sky above it). */
-export const HALL_EAVES_Y = 27.6;
+/**
+ * Eaves of the Great Hall's roof on its end and west walls and behind the attic: just under the sight lines over the wings' parapets (S9 from the
+ * north-east and S7 from the avenue show only sky beside and above the pavilion), so the roof rises from here toward its skylight.
+ */
+export const HALL_EAVES_Y = 22.8;
 /** The Grand Staircase's barrel vault (X ±3.69) springs here and the hall's west wall opens to its crown. */
 export const STAIR_VAULT_SPRING_Y = 22.4;
+/** Top of the stair hall's walls, where its pitched roof sits. */
+export const STAIR_GABLE_TOP_Y = STAIR_VAULT_SPRING_Y + 3.69 + 0.3;
 
 /** The niches in the piers between the columns of each pair (S7: round-headed, 1.5 m wide, from Y 6.5 to 10.5). */
 export const NICHE = { width: 1.5, sill: 6.5, top: 10.5 } as const;
@@ -132,16 +137,17 @@ function hallWalls(kit: Kit, floor: number, wingTop: number): void {
   });
   kit.add(end, palette.limestone, at(-HALL_X, floor, mid, Math.PI / 2), 5);
   kit.add(end, palette.limestone, at(HALL_X, floor, mid, -Math.PI / 2), 5);
-  // Above the wings' parapets, the hall's ends close the pavilion's sides back from the front wall.
+  // Over the wings' parapets the pavilion's sides close back from the front wall to the hall's end walls.
   box(kit, palette.limestone, [-HALL_END_WALL_X, wingTop, WALL_BACK_Z], [-PAVILION_HALF, HALL_EAVES_Y, EXT_FACE_Z - 0.02], 5);
   box(kit, palette.limestone, [PAVILION_HALF, wingTop, WALL_BACK_Z], [HALL_END_WALL_X, HALL_EAVES_Y, EXT_FACE_Z - 0.02], 5);
-  // West wall: the Grand Staircase's arched opening and doors to the galleries behind on both floors.
+  // West wall: the Grand Staircase's opening to the eaves and doors to the galleries behind on both floors; over the opening the stair hall's
+  // end wall rises above the eaves with the arch of its barrel vault.
   const west = wall({
     width: 2 * HALL_END_WALL_X,
     height,
     thickness: HALL_WEST_Z - HALL_WEST_WALL_Z,
     openings: [
-      { shape: 'arch', x: 0, y: lift, width: 2 * STAIR_HALF, height: STAIR_VAULT_SPRING_Y + STAIR_HALF - MAIN },
+      { x: 0, y: lift, width: 2 * STAIR_HALF, height: height - lift - 0.01 },
       { x: -16, y: lift, width: 2.0, height: 4.4 },
       { x: 16, y: lift, width: 2.0, height: 4.4 },
       { x: -16, y: SECOND - floor, width: 2.0, height: 3.8 },
@@ -149,6 +155,13 @@ function hallWalls(kit: Kit, floor: number, wingTop: number): void {
     ],
   });
   kit.add(west, palette.limestone, at(0, floor, HALL_WEST_Z), 6);
+  const gable = wall({
+    width: 2 * STAIR_HALF + 2.9,
+    height: STAIR_GABLE_TOP_Y - STAIR_VAULT_SPRING_Y,
+    thickness: HALL_WEST_Z - HALL_WEST_WALL_Z,
+    openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * STAIR_HALF, height: STAIR_HALF + 0.02 }],
+  });
+  kit.add(gable, palette.limestone, at(0, STAIR_VAULT_SPRING_Y, HALL_WEST_Z), 6);
   // The front wall's body rises behind the attic to the eaves, where the hall's roof sits.
   box(kit, palette.limestone, [-PAVILION_HALF + 0.02, CORNICE_TOP_Y, WALL_BACK_Z], [PAVILION_HALF - 0.02, HALL_EAVES_Y, ATTIC_BACK_Z], 7);
 }

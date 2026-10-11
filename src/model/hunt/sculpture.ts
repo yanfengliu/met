@@ -130,7 +130,7 @@ export const sculptureSteps: readonly StepDef[] = [
         for (const s of [-1, 1]) {
           const x = cx + s * 3.55;
           box(kit, palette.limestone, [x - 0.5, 13.4, EXT_FACE_Z], [x + 0.5, 13.9, EXT_FACE_Z + 0.75]);
-          kit.add(caryatid(), palette.limestone, scaled(x, 13.9, EXT_FACE_Z + 0.42, 1, 1, 1));
+          kit.add(caryatid(), palette.limestone, scaled(x, 13.9, EXT_FACE_Z + 0.42, 1.45, 1, 1.1));
         }
       }
     },

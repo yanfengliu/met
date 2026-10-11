@@ -42,8 +42,11 @@ const endArch = lazy(() => wall({ width: NAVE, height: TOP - HALL_ARCH_SPRING_Y,
 
 function arches(kit: Kit): void {
   const y = HALL_ARCH_SPRING_Y;
+  // The transverse arches' coffered soffits (P2), a ring of coffers just inside each opening, its axis across the arch.
+  const soffit = barrelVault({ span: NAVE - 0.2, length: PIER_W - 0.04, thickness: 0.08, coffers: { across: 15, along: 2, depth: 0.12, rib: 0.2 } });
   PIER_X.forEach((x, i) => {
     kit.add(transverse(), hunt.hallStone, at(x + PIER_W / 2, y, NAVE_MID_Z, Math.PI / 2), i);
+    kit.add(soffit, hunt.hallStone, at(x, y + 0.045, NAVE_MID_Z, Math.PI / 2), i);
     const band = archivolt({ span: NAVE, band: 0.85, projection: 0.12 });
     kit.add(band, hunt.hallStone, at(x + PIER_W / 2, y + 0.045, NAVE_MID_Z, Math.PI / 2), i);
     kit.add(band, hunt.hallStone, at(x - PIER_W / 2, y + 0.045, NAVE_MID_Z, -Math.PI / 2), i);
@@ -91,8 +94,8 @@ function endVaults(kit: Kit): void {
     if (s > 0) m.multiply(new THREE.Matrix4().makeRotationY(Math.PI));
     m.multiply(new THREE.Matrix4().makeScale(depth / (END.span / 2), 1, 1));
     kit.add(shell, hunt.halfDome, m, s > 0 ? 1 : 0);
-    // The end balcony's ceiling under the half-dome's springing (P1: a cornice over the balcony's cases).
-    box(kit, hunt.hallStone, [s > 0 ? face : -HALL_X, HALL_ARCH_SPRING_Y, NAVE_WEST_Z], [s > 0 ? HALL_X : -face, END.spring, NAVE_EAST_Z], s > 0 ? 1 : 0);
+    // The end balcony's ceiling under the half-dome's springing (P1: a cornice over the balcony's cases), run on over the ends of both aisles.
+    box(kit, hunt.hallStone, [s > 0 ? face : -HALL_X, HALL_ARCH_SPRING_Y, HALL_WEST_Z], [s > 0 ? HALL_X : -face, END.spring, WALL_BACK_Z], s > 0 ? 1 : 0);
   }
 }
 

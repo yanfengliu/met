@@ -26,7 +26,7 @@ import {
 } from './dims.js';
 import { hunt } from './materials.js';
 import { at, box } from './shapes.js';
-import { STAIR_VAULT_SPRING_Y } from './walls.js';
+import { STAIR_GABLE_TOP_Y, STAIR_VAULT_SPRING_Y } from './walls.js';
 
 /** The landing's level: 27 of the 46 risers. */
 const LANDING_Y = MAIN + ((SECOND - MAIN) * 27) / 46;
@@ -48,7 +48,7 @@ const PIER_Z: readonly number[] = Array.from({ length: 6 }, (_, k) => ARCADE_Z0 
 const HALL_LENGTH = HALL_WEST_WALL_Z - CROSS_HALL_FRONT_Z;
 const HALL_MID_Z = (HALL_WEST_WALL_Z + CROSS_HALL_FRONT_Z) / 2;
 /** The stair hall's side walls rise past the vault to the pitched roof. */
-export const STAIR_WALL_TOP_Y = STAIR_VAULT_SPRING_Y + STAIR_HALF + 0.3;
+export const STAIR_WALL_TOP_Y = STAIR_GABLE_TOP_Y;
 
 const lazy = <T>(make: () => T): (() => T) => {
   let value: T | undefined;
