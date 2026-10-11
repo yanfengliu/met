@@ -1,7 +1,7 @@
 /**
  * Parts gallery (parts.html): every part of src/model/lib on a labelled grid, with orbit controls.
  *
- * Query: `part=<id>` shows one exhibit alone and frames it; `view=<three-quarter|front|side|back|rear-quarter|top|low>` picks the angle (default three-quarter);
+ * Query: `part=<id>` shows one exhibit alone and frames it; `view=<three-quarter|front|side|back|rear-quarter|top|low|up>` picks the angle (default three-quarter; `up` stands inside under it looking up);
  * `closeup=<name>` frames one of the exhibit's named close-up boxes; `shot=1` is capture mode (no animation, no controls, `window.__shotReady = true` once at least 5 frames have rendered);
  * `noui=1` hides the labels. `window.__parts` lists every exhibit for capture scripts.
  */
@@ -10,7 +10,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { catalogue } from './catalogue.js';
 import type { PartEntry } from './entry.js';
-import { boundsOf, buildExhibit, createStage, frame, light, VIEWS, type ViewName } from './stage.js';
+import { boundsOf, buildExhibit, createStage, frame, light, lookUp, VIEWS, type ViewName } from './stage.js';
 
 declare global {
   interface Window {
@@ -76,7 +76,8 @@ function showOne(entry: PartEntry): THREE.Box3 {
     message(`Exhibit "${entry.id}" has no close-up "${closeup}"; it has: ${names.length > 0 ? names.join(', ') : 'none'}.`);
   }
   const framed = target !== undefined ? new THREE.Box3(new THREE.Vector3(...target.min), new THREE.Vector3(...target.max)) : box;
-  frame(stage, framed, view[0], view[1], target !== undefined ? 0.95 : 0.85);
+  if (viewName === 'up') lookUp(stage, box);
+  else frame(stage, framed, view[0], view[1], target !== undefined ? 0.95 : 0.85);
   label(`${entry.label} — ${sizeText(box)}`, new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, box.max.z));
   return framed;
 }

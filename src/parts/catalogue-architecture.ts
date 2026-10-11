@@ -8,6 +8,7 @@ import { archivolt, keystone, spandrel, voussoirs } from '../model/lib/arch.js';
 import type { V3 } from '../model/lib/builder.js';
 import { corniceRun, entablature, moulding, type CorniceRun, type ProfileName } from '../model/lib/cornice.js';
 import { barrelVault, dome, drum, pendentives } from '../model/lib/dome.js';
+import { oculusLight } from '../model/lib/glazing.js';
 import { surround } from '../model/lib/surround.js';
 import { wall } from '../model/lib/wall.js';
 import { doorUnit, windowUnit } from '../model/lib/window.js';
@@ -221,7 +222,18 @@ export const architectureEntries: PartEntry[] = [
     id: 'dome-saucer-bay',
     label: 'Saucer dome with oculus on pendentives (Great Hall bay, 14 m)',
     group: 'Domes and vaults',
-    build: () => [stone(pendentives({ span: 14 })), stone(dome({ radius: 7, rise: 2.4, oculus: 1.4, thickness: 0.4 }), [at(0, 7, 0)])],
+    build: () => {
+      // The Great Hall: saucer dome on pendentives, a moulded ring at its springing, a glazed oculus at the crown.
+      const ring: [number, number, number][] = Array.from({ length: 64 }, (_, k) => [7 * Math.cos((k / 64) * Math.PI * 2), 0, -7 * Math.sin((k / 64) * Math.PI * 2)]);
+      const light = oculusLight({ radius: 1.5, bars: 12 });
+      return [
+        stone(pendentives({ span: 14 })),
+        stone(dome({ radius: 7, rise: 2.4, oculus: 1.4, thickness: 0.4 }), [at(0, 7, 0)]),
+        stone(moulding({ profile: 'cornice-plain', path: [...ring].reverse(), closed: true, height: 0.5, projection: 0.35 }), [at(0, 6.5, 0)]),
+        { geometry: light.frame, role: 'frame', matrices: [at(0, 9.35, 0)] },
+        { geometry: light.glass, role: 'glass', matrices: [at(0, 9.35, 0)] },
+      ];
+    },
     closeups: { oculus: { min: [-4, 7, -4], max: [4, 10, 4] } },
   },
   { id: 'dome-saucer', label: 'Saucer dome with oculus and inside ribs', group: 'Domes and vaults', build: () => [stone(dome({ radius: 7, rise: 2.4, oculus: 1.4, ribs: { count: 12 }, ribsInside: true }))] },

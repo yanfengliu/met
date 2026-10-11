@@ -1,9 +1,9 @@
 /**
- * Glazing: ridge, hipped and pyramid skylights on a curb, flat laylights, and vertical or sloped curtain walls with a mullion grid.
+ * Glazing: ridge, hipped and pyramid skylights on a curb, flat laylights, round oculus lights, and vertical or sloped curtain walls with a mullion grid.
  *
  * Every part returns `{ frame, glass }`: `frame` is the curb, bars and mullions (metal), `glass` the panes, each a single sheet set inside the bars' depth (never on a bar face) and facing outward
  * (up and out for skylights, down for a laylight, +Z for a curtain wall). Render glass double-sided. Units metres.
- * Skylights: origin at the bottom centre of the curb, ridge along Z. Laylight: origin at its bottom centre. Curtain wall: origin at the bottom centre of the glass plane, which leans back (top toward −Z) by `slope`.
+ * Skylights: origin at the bottom centre of the curb, ridge along Z. Laylight and oculus light: origin at their bottom centre. Curtain wall: origin at the bottom centre of the glass plane, which leans back (top toward −Z) by `slope`.
  */
 import * as THREE from 'three';
 
@@ -332,6 +332,71 @@ export function curtainWall(params: CurtainWallParams): Glazing {
       frame.transform(0, lean);
       glass.transform(0, lean);
     }
+    return Object.freeze({ frame: frame.build(), glass: glass.build() });
+  });
+}
+
+export interface OculusLightParams {
+  /** Outer radius of the ring, metres. */
+  radius: number;
+  /** Radial glazing bars. Default 12. */
+  bars?: number;
+  /** Ring width, metres. Default radius / 8. */
+  ring?: number;
+  /** Frame depth, metres. Default 0.1. */
+  depth?: number;
+}
+
+/**
+ * A round glazed oculus, as in the Great Hall's saucer domes: a ring, a hub and radial bars over one disc of glass, laid flat.
+ * Origin at the centre of its underside (y = 0); the glass lies at half the depth and faces down into the room. Seat it in a dome's oculus at the crown.
+ */
+export function oculusLight(params: OculusLightParams): Glazing {
+  const radius = positive('oculusLight', 'radius', params.radius);
+  const full = { radius, bars: integer('oculusLight', 'bars', params.bars ?? 12, 3, 96), ring: positive('oculusLight', 'ring', params.ring ?? radius / 8), depth: positive('oculusLight', 'depth', params.depth ?? 0.1) };
+  require('oculusLight', full.ring < radius * 0.5, `ring ${String(full.ring)} must be under half the radius ${String(radius)}.`);
+  return cached('oculusLight', full, () => {
+    const frame = new MeshBuilder();
+    const inner = full.radius - full.ring;
+    const hub = Math.min(inner * 0.3, full.radius * 0.12);
+    const segments = Math.max(24, full.bars * 4);
+    const band = (r0: number, r1: number): void => {
+      sweepInto(frame, { closed: true, points: [[-(r1 - r0), 0], [0, 0], [0, full.depth], [-(r1 - r0), full.depth]] }, Array.from({ length: segments }, (_, k) => {
+        const a = (k / segments) * Math.PI * 2;
+        return [r1 * Math.cos(a), 0, -r1 * Math.sin(a)] as const;
+      }), { closed: true });
+    };
+    band(inner, full.radius);
+    const width = Math.max(0.03, full.radius / 40);
+    for (let k = 0; k < full.bars; k++) {
+      const a = (k / full.bars) * Math.PI * 2;
+      const dir = new THREE.Vector3(Math.cos(a), 0, -Math.sin(a));
+      barInto(frame, dir.clone().multiplyScalar(hub * 0.9).setY(full.depth / 2), dir.clone().multiplyScalar(inner + 0.002).setY(full.depth / 2), width, full.depth * 0.8, new THREE.Vector3(0, 1, 0));
+    }
+    // The hub: a short solid drum.
+    const disc: THREE.Vector3[] = [];
+    const top: THREE.Vector3[] = [];
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      disc.push(new THREE.Vector3(hub * Math.cos(a), 0, -hub * Math.sin(a)));
+      top.push(new THREE.Vector3(hub * Math.cos(a), full.depth, -hub * Math.sin(a)));
+    }
+    frame.polygon(top);
+    frame.polygon([...disc].reverse());
+    for (let k = 0; k < 16; k++) {
+      const a = disc[k];
+      const b = disc[(k + 1) % 16];
+      const c = top[(k + 1) % 16];
+      const d = top[k];
+      if (a !== undefined && b !== undefined && c !== undefined && d !== undefined) frame.polygon([a, b, c, d]);
+    }
+    const glass = new MeshBuilder();
+    const pane: THREE.Vector3[] = [];
+    for (let k = 0; k < segments; k++) {
+      const a = (k / segments) * Math.PI * 2;
+      pane.push(new THREE.Vector3(inner * Math.cos(a), 0, -inner * Math.sin(a)));
+    }
+    paneInto(glass, pane, new THREE.Vector3(0, -1, 0), -full.depth / 2);
     return Object.freeze({ frame: frame.build(), glass: glass.build() });
   });
 }

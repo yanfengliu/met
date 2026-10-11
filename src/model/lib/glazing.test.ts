@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { baluster, balustrade } from './balustrade.js';
 import { attributeProblems, backfaceFraction, boxOf, boxProblems, centredProblems, invertedFraction, roleGeometries, totalTriangles, triangles, unionBox } from './check.js';
-import { curtainWall, hippedSkylight, laylight, pyramidSkylight, ridgeSkylight } from './glazing.js';
+import { curtainWall, hippedSkylight, laylight, oculusLight, pyramidSkylight, ridgeSkylight } from './glazing.js';
 import { stairFlight, stairLanding } from './stair.js';
 
 /** The brief caps a baluster at about 300 triangles: a roof line repeats it by the thousand. */
@@ -48,7 +48,17 @@ describe('skylights', () => {
   });
 });
 
-describe('laylight and curtain walls', () => {
+describe('laylight, oculus light and curtain walls', () => {
+  it('oculus light: ring, hub and bars over a disc facing down, radius as asked', () => {
+    const part = oculusLight({ radius: 1.4 });
+    sound(part, 'oculus');
+    expect(backfaceFraction(part.frame, 300)).toBe(0);
+    expect(boxProblems(boxOf(part.frame), { min: [-1.4, 0, -1.4], max: [1.4, 0.1, 1.4] }, 0.01)).toEqual([]);
+    expect(part.glass.getAttribute('normal').getY(0)).toBeCloseTo(-1, 6);
+    expect(totalTriangles(part)).toBeLessThanOrEqual(GLAZING_BUDGET);
+    expect(oculusLight({ radius: 1.4 })).toBe(part);
+  });
+
   it('laylight: a grid with its underside on y = 0 and its pane facing down', () => {
     const part = laylight({ width: 10, length: 20, cols: 5, rows: 10 });
     sound(part, 'laylight');
