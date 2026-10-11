@@ -1,6 +1,6 @@
 /**
  * Shared helpers for the control tests. Tests drive the page only through real input (clicks, drags, keys); they read state from the read-only
- * `window.__met` and the canvas pixels, and never write either. Nothing here names a demo step or chapter: facts come from `window.__met`.
+ * `window.__met` and the canvas pixels, and never write either. Nothing here names a step or chapter: facts come from `window.__met`.
  */
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
