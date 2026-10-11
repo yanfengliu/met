@@ -15,6 +15,8 @@ Interior spaces are reached in two ways: interior camera presets, and a horizont
 - 1 unit = 1 metre. +Y is up. +X is Manhattan north (up Fifth Avenue). +Z is Manhattan east (toward Fifth Avenue, so the main facade faces +Z). Right-handed.
 - The Manhattan grid is rotated about 29° clockwise from true north. Only the sun direction uses true compass bearings; everything else is in grid axes.
 - Origin: Fifth Avenue sidewalk grade, on the axis of the central entrance (the Great Hall's east-west axis), in the plane of the Hunt facade's main wall face behind the column screen.
+- The block polygons in `docs/research/exterior.md` section 2 are the walls' outer faces (the OSM outline). On a line two blocks share, the older block builds the wall, inside its own polygon, and the newer builds none there. On the building's outer outline, mouldings (cornices, string courses, sills, copings and their modillions) may project up to 1.5 m beyond the line; walls and glass never do (coordinator, 2026-10-11).
+- The decoded floor map (ignored, under `research/cache/`) and every plan position in `docs/research/interior.md` sit 3.1 m +Z of this frame; subtract 3.1 m from their Z (correction of 2026-10-11, recorded in `interior.md`).
 - Named levels, extents and key dimensions live in `src/model/frame.ts`, one constant per fact, each with a comment naming its source in `docs/research/`. Builders read them from there and never restate a number another builder depends on.
 
 ## Build-step API
