@@ -69,7 +69,13 @@ function walls(kit: Kit): void {
   // Y 17.6..18.5). Its local x runs along world −Z from the wall's centre at Z −132.
   const centre = (AW_WEST_Z_NORTH - 103.0) / 2;
   const band = { x: centre + 111.5, y: 17.6 - y0, width: 13.0, height: 0.9 };
-  const northWall = wall({ width: -103.0 - AW_WEST_Z_NORTH, height: AW_PARAPET_Y - y0, thickness: T, openings: [{ x: band.x, y: band.y, width: band.width, height: band.height }] });
+  // A tall slot window, a small window and a low window below them (the same camera solve: Z −115.0, −109.2 and −115.6).
+  const lights = [
+    { x: centre + 115.03, y: 11.4 - y0, width: 0.65, height: 3.3 },
+    { x: centre + 109.23, y: 11.2 - y0, width: 0.55, height: 2.45 },
+    { x: centre + 115.6, y: 4.5 - y0, width: 2.9, height: 1.65 },
+  ];
+  const northWall = wall({ width: -103.0 - AW_WEST_Z_NORTH, height: AW_PARAPET_Y - y0, thickness: T, openings: [band, ...lights] });
   const northAt = facingMatrix('+x', [AW_NORTH_X, y0, centre]);
   kit.add(northWall, palette.limestone, northAt);
   const strip = windowUnit({ width: band.width, height: band.height, cols: 9, rows: 1, frame: 0.08 });
@@ -77,6 +83,13 @@ function walls(kit: Kit): void {
   kit.add(strip.frame, palette.metalDark, stripAt);
   kit.add(strip.bars, palette.metalDark, stripAt);
   kit.add(strip.glass, palette.glassDark, stripAt);
+  for (const light of lights) {
+    const unit = windowUnit({ width: light.width, height: light.height, cols: light.width > 1 ? 3 : 1, rows: light.height > 2 ? 3 : 1, frame: 0.07 });
+    const at = northAt.clone().multiply(new Matrix4().makeTranslation(light.x, light.y, -0.3));
+    kit.add(unit.frame, palette.metalDark, at);
+    kit.add(unit.bars, palette.metalDark, at);
+    kit.add(unit.glass, palette.glassDark, at);
+  }
   boxAt(kit, palette.limestoneDark, [AW_NORTH_X - T - 0.05, AW_PARAPET_Y, AW_WEST_Z_NORTH - 0.05], [AW_NORTH_X + 0.12, AW_PARAPET_Y + 0.3, -103.0]);
   // West wall on Z −161 up to the foot of the glazed lean-to, with its coping; the wall of the step at X 87.6.
   boxAt(kit, palette.limestone, [AW_STEP_X, y0, AW_WEST_Z_NORTH], [AW_NORTH_X - T, WEST_WALL_TOP, AW_WEST_Z_NORTH + T]);
