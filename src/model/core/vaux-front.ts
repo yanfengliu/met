@@ -73,6 +73,12 @@ export function westFrontTrim(kit: Kit): void {
     const facing = FACING.west;
     if (x === 0) kit.add(door, core.granite, placed(x, LG + 3.3 - 0.5, WEST_Z, facing), 1);
     else kit.add(ground, core.granite, placed(x, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT - GROUND_RISE, WEST_Z, facing), 1);
+    // Granite jambs flank the opening below the springing (Lehman-court photo: light stone round each window).
+    const sill = x === 0 ? L1 : L1 + VAUX_ARCH_SILL;
+    for (const side of [-1, 1]) {
+      const edge = x + side * (VAUX_ARCH_SPAN / 2);
+      addBox(kit, core.granite, edge, sill, WEST_Z - 0.05, edge + side * 0.16, spring - VAUX_BAND, WEST_Z, 4);
+    }
     // A granite transom through the wall at the springing closes the gap between window head and tympanum.
     addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, spring - VAUX_BAND, WEST_Z, x + VAUX_ARCH_SPAN / 2, spring, WEST_Z + WEST_WALL, 4);
     kit.add(ring(0), core.granite, placed(x, spring, WEST_Z, facing), 5);
