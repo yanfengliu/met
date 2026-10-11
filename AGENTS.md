@@ -70,7 +70,19 @@ Obtain independent, preferably read-only review for substantial or high-risk cha
 
 ## Gates
 
-Pending: the scaffold task in `docs/work/0_met-model/` lands the toolchain and replaces this line with the real commands.
+Node 24 (`.nvmrc`), npm, Vite, strict TypeScript, Vitest, ESLint and Playwright on the installed system Chrome (no browser download).
+
+`npm run verify` is the pre-commit gate: the five commands below, in this order.
+
+- `npm test`: Vitest over `src/**/*.test.ts` and `scripts/**/*.test.ts`, including `src/repo-conventions.test.ts`, which fails on a file over 500 lines under `src/`, `scripts/` or `tests/` and on an `import.meta.env` or `process.env` read under `src/`.
+- `npm run typecheck`: `tsc --noEmit`, strict plus `noUncheckedIndexedAccess`, over `src/`, `scripts/`, `tests/` and the root configs.
+- `npm run lint`: ESLint with typescript-eslint strict type-checked rules, `--max-warnings 0`.
+- `npm run build`: `tsc --noEmit && vite build`, the two-page site (`index.html`, `parts.html`) into `dist/`.
+- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts; the smoke test checks that both pages load, draw one canvas, reach `window.__shotReady` and log no console error.
+
+Dependency audit gate: `npm run audit:runtime` (`npm audit --omit=dev --audit-level=high`) and `npm run audit:full` (`npm audit --audit-level=high`) must both report 0 vulnerabilities; rerun both on every dependency change.
+
+Ports: each worktree sets its own `MET_PORT` (default 5310) for `npm run dev` and `npm run test:e2e`, and a server is never reused across worktrees; a taken port fails the run.
 
 ## Invariants & boundaries
 
