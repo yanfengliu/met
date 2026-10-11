@@ -50,7 +50,7 @@ export const PRESETS: readonly ViewPreset[] = [
   { id: 'ref-column-pair-north', label: 'Photo: north column pair', group: 'exterior', camera: look([60, 1.6, 40], [27, 20, 2], 14) },
   { id: 'ref-entrance-up', label: 'Photo: central arch from the landing', group: 'exterior', camera: look([-2, 5.3, 7], [0, 17, 0], 70) },
   { id: 'ref-fountain-north', label: 'Photo: from the north fountain', group: 'exterior', camera: look([46, 1.4, 21], [5, 9, 2], 55) },
-  { id: 'ref-park-south', label: 'Photo: south side from the park', group: 'exterior', camera: look([-200, 3, -92], [-151.6, 9, -68], 50) },
+  { id: 'ref-park-south', label: 'Photo: south side from the park', group: 'exterior', camera: look([-207, 3.5, -104], [-151.6, 9.5, -96.7], 47.3) },
   { id: 'ref-park-northwest', label: 'Photo: American Wing from the park', group: 'exterior', camera: look([175, 6, -140], [140, 12, -125], 50) },
   // Moved inside the site (SITE_MAX_X 200) from the research's (230, 6, -110); the fov narrows from 55 so the Sackler glass round the target keeps its size.
   { id: 'ref-park-north', label: 'Photo: north side from the park', group: 'exterior', camera: look([198, 6, -104], [153, 12, -72], 37) },
@@ -63,8 +63,8 @@ export const PRESETS: readonly ViewPreset[] = [
   { id: 'int-engelhard-north', label: 'American Wing court, looking north', group: 'interior', camera: mapLook([60, L1 + EYE, -112.4], [94, L1 + 8, -112.4], 55) },
   { id: 'int-greek-roman-court', label: 'Greek and Roman court', group: 'interior', camera: mapLook([-136, L1 + EYE, -3], [-104, L1 + 2.5, -11], 45) },
   { id: 'int-arms-armor-court', label: 'Arms and Armor court', group: 'interior', camera: mapLook([58.5, L1 + EYE, -76.3], [93, L1 + 4.5, -76.3], 50) },
-  { id: 'int-medieval-hall-east', label: 'Medieval Sculpture Hall, looking east', group: 'interior', camera: mapLook([0, L1 + EYE, -117], [0, L1 + 7, -80], 60) },
-  { id: 'int-lehman-pyramid-up', label: 'Lehman Wing court, looking up', group: 'interior', camera: mapLook([0, LG + EYE, -147.7], [0.01, LG + 30, -147.69], 60) },
+  { id: 'int-medieval-hall-east', label: 'Medieval Sculpture Hall, looking east', group: 'interior', camera: look([0, L1 + EYE, -112.9], [0, L1 + 10.4, -92.9], 62) },
+  { id: 'int-lehman-pyramid-up', label: 'Lehman Wing court, looking up', group: 'interior', camera: look([-11.3, LG + 1.5, -150.8], [3.5, 25.3, -150.8], 55.5) },
 ];
 
 /** The preset the page opens with when the query names none. */

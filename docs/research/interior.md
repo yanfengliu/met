@@ -242,7 +242,7 @@ Sourced facts:
 - Vaux facade, measured: at the main-floor level Vaux's entire west facade forms the Lehman Wing's entrance wall (Heckscher p. 18; photographs looking south and east toward it, figs. 105 and 107). Conflict on level: Heckscher says main floor, Wikipedia says the collection is on the ground floor and the basement level; the map shows both, with galleries on the main floor around a court sunk to the ground floor.
 - Not found: the court's size from a source, the pyramid's base, height, sides and glazing, the facade's height, width and bay count, and the number of steps down to the court.
 
-Elements (P9): a glazed hipped pyramid over the court with a short ridge at the top, glazed in a diagonal grid on light grey steel; cream walls with clipped corners at its base. Estimate: the pyramid rises about 6 to 8 m over the court (P9, low). Colours by eye (P9): steel #cfd2d4, walls #e2d6bf; Vaux brick red and granite grey not photographed here. Confidence medium. Lighting: daylight through the pyramid.
+Elements (P9): a glazed hipped pyramid over the court with a short ridge at the top, glazed in a diagonal grid on light grey steel; cream walls with clipped corners at its base. Estimate: the pyramid rises about 6 to 8 m over the court (P9, low). Correction (roche-south modeller, 2026-10-11): fitting P9's camera from its EXIF lens gives a rise of about 11.1 m above an eave at +16.3, apex +27.4 (`LEHMAN_PYRAMID_APEX_Y`). Colours by eye (P9): steel #cfd2d4, walls #e2d6bf; Vaux brick red and granite grey not photographed here. Confidence medium. Lighting: daylight through the pyramid.
 
 ## Second-floor European Paintings galleries
 
