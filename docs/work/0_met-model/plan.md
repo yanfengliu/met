@@ -35,8 +35,8 @@ Build order is historical by chapter and constructional within a chapter, using 
 ## Implementation steps
 
 - [x] Repo docs base, fleet census, work folder (coordinator).
-- [ ] Scaffold: toolchain, configs, gates, AGENTS.md Gates section (worker `scaffold`).
-- [ ] Research: exterior, footprint and history (worker `research-exterior`); interior (worker `research-interior`).
+- [x] Scaffold: toolchain, configs, gates, AGENTS.md Gates section (worker `scaffold`; merged `aa7852a`: three 0.186.1, vite 8.3.4, vitest 5.0.3, TypeScript 6.0.3, Playwright 1.64.0 on system Chrome; verify green, audits 0).
+- [ ] Research: exterior, footprint and history (worker `research-exterior`, running). Interior: done (worker `research-interior`, merged `ca3c6af`; floor-map decode cached under ignored `research/cache/`).
 - [ ] Engine: viewer, build API, timeline, player, page, capture, e2e (worker `engine`; needs scaffold).
 - [ ] Parts library and gallery page (worker `parts`; needs scaffold).
 - [ ] Chapter list, `frame.ts`, chapter stubs from research (coordinator).
