@@ -161,8 +161,9 @@ function statue(kit: Kit, x: number, z: number, height: number, pedestal: number
 
 function sculpture(kit: Kit): void {
   // Saint-Gaudens' Diana (1892–93, cast 1928, 101¾ in), gilded, high on a white pedestal; the marbles round the court; the lamp standards.
-  const dx = 68.6;
-  const dz = COURT_AXIS_Z - 1.4;
+  // P5: about 11 m in front of the camera at the court's south end and 2 m west of the centre line, with the facade 33 m away.
+  const dx = 71.0;
+  const dz = COURT_AXIS_Z - 2.2;
   boxAt(kit, areaMaterials.whiteMarble, [dx - 0.75, F, dz - 0.75], [dx + 0.75, F + 0.5, dz + 0.75]);
   boxAt(kit, areaMaterials.whiteMarble, [dx - 0.5, F + 0.5, dz - 0.5], [dx + 0.5, F + 4.1, dz + 0.5]);
   boxAt(kit, areaMaterials.whiteMarble, [dx - 0.62, F + 4.1, dz - 0.62], [dx + 0.62, F + 4.3, dz + 0.62]);

@@ -17,8 +17,8 @@ function sheet(name: string, colour: string, opacity: number, roughness: number)
 }
 
 export const areaMaterials = Object.freeze({
-  /** The Sackler's stippled north glass: clear enough to see the park through, milky in the light (Aramco World 1980; P4). */
-  stippledGlass: sheet('rn-stippledGlass', '#c9d6de', 0.4, 0.12),
+  /** The Sackler's stippled north glass: clear enough to see the park through from inside (P4), a blue-grey mirror of the sky from the park (Jfcapdet 2013). */
+  stippledGlass: sheet('rn-stippledGlass', '#9fb4c3', 0.5, 0.06),
   /** The hung stippled glass ceiling, a diffuser: interior.md suggests #c9ccc4. */
   ceilingGlass: sheet('rn-ceilingGlass', '#d4d8d0', 0.9, 0.55),
   /** Clear glazing seen from inside and out: roofs, the west curtain wall, balcony fronts. */

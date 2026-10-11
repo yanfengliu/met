@@ -5,7 +5,7 @@
  * Tags as in frame.ts: M measured (source named), D derived (working named), E estimated (photograph named, docs/research/*-images.md).
  * Data only.
  */
-import { MAIN_FLOOR_Y, SACKLER_GLASS_TOP_Y, SACKLER_MAX_Z, SACKLER_NORTH_FACE_X } from '../frame.js';
+import { GROUND_FLOOR_Y, MAIN_FLOOR_Y, SACKLER_GLASS_TOP_Y, SACKLER_MAX_Z, SACKLER_NORTH_FACE_X } from '../frame.js';
 
 // --- Blocks (exterior.md section 2) ---------------------------------------------------------
 /** The `sackler` block: X 118.0..153.1, Z −103.0..−41.3. */
@@ -45,8 +45,8 @@ export const DENDUR_CEILING_Y = 19.9;
 export const SACKLER_ROOF_Y = SACKLER_GLASS_TOP_Y;
 /** D: the limestone tower at the wall's west end, wall top under its coping (camera solve of King of Hearts 2013: coping top 23.0; orthophoto: its long shadow). */
 export const SACKLER_TOWER_TOP_Y = 22.7;
-/** D: foundations and the service level under the gallery (Aldred pp. 71–72: the platform stands over a service area and garage). */
-export const SACKLER_FOOTING_Y = -4.0;
+/** D: the mat's top, over the site's pad at GROUND_FLOOR_Y − 0.1; the service level and garage under the gallery rise from it (Aldred pp. 71–72). */
+export const SACKLER_FOOTING_Y = GROUND_FLOOR_Y + 0.45;
 
 // --- Sackler plan (map floor 1, shifted) --------------------------------------------------------
 /** D: the gallery floor (exterior.md S6 anchor, Temple of Dendur gallery X +118.0..+148.9, Z −95.3..−41.3). */

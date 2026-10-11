@@ -8,13 +8,12 @@ import { Matrix4 } from 'three';
 
 import { wall, windowUnit } from '../lib/index.js';
 import type { Kit, StepDef } from '../../build/types.js';
-import { MAIN_FLOOR_Y } from '../frame.js';
+import { GROUND_FLOOR_Y, MAIN_FLOOR_Y } from '../frame.js';
 import { palette } from '../palette.js';
-import { BANK_FRONT_X, COURT } from './plan.js';
-import { AW1924 } from './plan.js';
+import { AW1924, BANK_FRONT_X, COURT } from './plan.js';
 import { addBankFacade } from './bank.js';
 import { areaMaterials } from './materials.js';
-import { boxAt, facingMatrix } from './shapes.js';
+import { boxAt, facingMatrix, merge } from './shapes.js';
 
 const CHAPTER = 'mckim-mead-white-1926';
 const STOREY = 4.9;
@@ -23,7 +22,8 @@ const LEVELS: readonly number[] = [MAIN_FLOOR_Y, MAIN_FLOOR_Y + STOREY, MAIN_FLO
 export const AW1924_ROOF_Y = MAIN_FLOOR_Y + 3 * STOREY;
 export const AW1924_PARAPET_Y = AW1924_ROOF_Y + 0.8;
 const T = 0.6;
-const FOOTING_Y = MAIN_FLOOR_Y - 6.5;
+/** The footing's underside, just into the site's pad at GROUND_FLOOR_Y − 0.1. */
+const FOOTING_Y = GROUND_FLOOR_Y - 0.15;
 const { minX: X0, maxX: X1, minZ: Z0, maxZ: Z1 } = AW1924;
 /** The wing's south wall behind and beside the facade starts at the facade's back. */
 const SOUTH_X = BANK_FRONT_X + 1.38;
@@ -80,12 +80,9 @@ function windowedWall(kit: Kit, facing: '+x' | '-z' | '+z', position: readonly [
   const frame = facingMatrix(facing, position);
   kit.add(body, areaMaterials.buffWall, frame);
   const unit = windowUnit({ width: 1.3, height: 2.5, cols: 2, rows: 3 });
-  for (const o of openings) {
-    const at = frame.clone().multiply(new Matrix4().makeTranslation(o.x, o.y, -0.15));
-    kit.add(unit.frame, areaMaterials.whiteSteel, at);
-    kit.add(unit.bars, areaMaterials.whiteSteel, at);
-    kit.add(unit.glass, palette.glassDark, at);
-  }
+  const ats = openings.map((o) => new Matrix4().makeTranslation(o.x, o.y, -0.15));
+  kit.add(merge(`rn-1924-${facing}-metal`, () => ats.flatMap((at) => [[unit.frame, at] as const, [unit.bars, at] as const])), areaMaterials.whiteSteel, frame.clone());
+  kit.add(merge(`rn-1924-${facing}-glass`, () => ats.map((at) => [unit.glass, at] as const)), palette.glassDark, frame.clone());
 }
 
 function walls(kit: Kit): void {

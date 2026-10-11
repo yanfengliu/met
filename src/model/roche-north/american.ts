@@ -9,15 +9,16 @@ import { Matrix4 } from 'three';
 
 import { ridgeSkylight, wall, windowUnit } from '../lib/index.js';
 import type { Kit } from '../../build/types.js';
-import { MAIN_FLOOR_Y } from '../frame.js';
+import { GROUND_FLOOR_Y, MAIN_FLOOR_Y } from '../frame.js';
 import { palette } from '../palette.js';
 import { AW1924_PARAPET_Y } from './american-1924.js';
 import { areaMaterials } from './materials.js';
 import { AW1924, AW_EAST_Z, AW_MEZZANINE_Y, AW_NORTH_X, AW_SECOND_FLOOR_Y, AW_STEP_X, AW_WEST_Z_NORTH, AW_WEST_Z_SOUTH, BANK_FRONT_X, COURT, COURT_EAVE_Y, SACKLER_TOWER } from './plan.js';
-import { UNIT_BOX, boxAt, facingMatrix } from './shapes.js';
+import { UNIT_BOX, boxAt, facingMatrix, merge } from './shapes.js';
 
 const T = 1.2;
-const FOOTING_Y = MAIN_FLOOR_Y - 6.5;
+/** The footing's underside, just into the site's pad at GROUND_FLOOR_Y − 0.1 (the coordinator's terrain note, 2026-10-11). */
+const FOOTING_Y = GROUND_FLOOR_Y - 0.15;
 const SLAB = 0.35;
 /** D: the parapet of the north wall, under its coping (camera solve of King of Hearts 2013: coping top 21.8, 1.2 m below the Sackler tower's), and the roofs inside it. */
 export const AW_PARAPET_Y = 21.5;
@@ -60,6 +61,7 @@ function foundations(kit: Kit): void {
   boxAt(kit, areaMaterials.concrete, [AW_NORTH_X - T, FOOTING_Y + 0.6, AW_WEST_Z_NORTH + T], [AW_NORTH_X, top, -103.0]);
   boxAt(kit, areaMaterials.concrete, [49.4, FOOTING_Y + 0.6, AW_WEST_Z_SOUTH], [AW_STEP_X, top, AW_WEST_Z_SOUTH + T]);
   boxAt(kit, areaMaterials.concrete, [AW_STEP_X, FOOTING_Y + 0.6, AW_WEST_Z_NORTH + T], [AW_STEP_X + T, top, AW_WEST_Z_SOUTH + T]);
+  boxAt(kit, areaMaterials.concrete, [AW_SLOT.minX, FOOTING_Y + 0.6, AW_SLOT.minZ], [AW_SLOT.maxX, MAIN_FLOOR_Y - 0.05, AW_SLOT.minZ + T]);
   for (const rect of PLAN) cells(rect, 8, (x0, x1, z0, z1) => { boxAt(kit, areaMaterials.concrete, [x0, top, z0], [x1, MAIN_FLOOR_Y - 0.05, z1]); });
 }
 
@@ -78,18 +80,13 @@ function walls(kit: Kit): void {
   const northWall = wall({ width: -103.0 - AW_WEST_Z_NORTH, height: AW_PARAPET_Y - y0, thickness: T, openings: [band, ...lights] });
   const northAt = facingMatrix('+x', [AW_NORTH_X, y0, centre]);
   kit.add(northWall, palette.limestone, northAt);
-  const strip = windowUnit({ width: band.width, height: band.height, cols: 9, rows: 1, frame: 0.08 });
-  const stripAt = northAt.clone().multiply(new Matrix4().makeTranslation(band.x, band.y, -0.25));
-  kit.add(strip.frame, palette.metalDark, stripAt);
-  kit.add(strip.bars, palette.metalDark, stripAt);
-  kit.add(strip.glass, palette.glassDark, stripAt);
-  for (const light of lights) {
-    const unit = windowUnit({ width: light.width, height: light.height, cols: light.width > 1 ? 3 : 1, rows: light.height > 2 ? 3 : 1, frame: 0.07 });
-    const at = northAt.clone().multiply(new Matrix4().makeTranslation(light.x, light.y, -0.3));
-    kit.add(unit.frame, palette.metalDark, at);
-    kit.add(unit.bars, palette.metalDark, at);
-    kit.add(unit.glass, palette.glassDark, at);
-  }
+  // Its windows, frames and glass each merged into one geometry in the wall's frame.
+  const units = [{ ...band, cols: 9, rows: 1, depth: -0.25 }, ...lights.map((l) => ({ ...l, cols: l.width > 1 ? 3 : 1, rows: l.height > 2 ? 3 : 1, depth: -0.3 }))].map((o) => ({
+    unit: windowUnit({ width: o.width, height: o.height, cols: o.cols, rows: o.rows, frame: 0.08 }),
+    at: new Matrix4().makeTranslation(o.x, o.y, o.depth),
+  }));
+  kit.add(merge('rn-aw-north-metal', () => units.flatMap(({ unit, at }) => [[unit.frame, at] as const, [unit.bars, at] as const])), palette.metalDark, northAt.clone());
+  kit.add(merge('rn-aw-north-glass', () => units.map(({ unit, at }) => [unit.glass, at] as const)), palette.glassDark, northAt.clone());
   boxAt(kit, palette.limestoneDark, [AW_NORTH_X - T - 0.05, AW_PARAPET_Y, AW_WEST_Z_NORTH - 0.05], [AW_NORTH_X + 0.12, AW_PARAPET_Y + 0.3, -103.0]);
   // West wall on Z −161 up to the foot of the glazed lean-to, with its coping; the wall of the step at X 87.6.
   boxAt(kit, palette.limestone, [AW_STEP_X, y0, AW_WEST_Z_NORTH], [AW_NORTH_X - T, WEST_WALL_TOP, AW_WEST_Z_NORTH + T]);

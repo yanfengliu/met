@@ -2,13 +2,14 @@
  * Geometry helpers of the Roche north area: one cached geometry per distinct shape (docs/design/spec.md, Batching), placed by matrices.
  * - `UNIT_BOX` is a closed 1 m cube centred on the origin; `boxAt` scales it onto a world box, so every plain block of a step batches into one mesh per material.
  * - `prismY` extrudes a plan outline (X, Z) upward; `prismZ` extrudes an elevation outline (X, Y) along Z. Both are closed solids, so the section cut reads them as solid.
+ * - `merge` joins fixed parts (a facade's storey, its windows) into one cached geometry, so a composite that never moves apart costs one mesh per material.
  * Shapes made here are local to this folder; parts the library has (columns, glazing, stairs, fittings) come from src/model/lib/.
  */
 import { Matrix4, Quaternion, Vector3 } from 'three';
 
 import { MeshBuilder, type V2 } from '../lib/index.js';
 import type { Kit, Vec3 } from '../../build/types.js';
-import type { Material , BufferGeometry} from 'three';
+import type { BufferGeometry, Material } from 'three';
 
 const store = new Map<string, unknown>();
 
@@ -18,6 +19,15 @@ export function memo<T>(key: string, build: () => T): T {
   const made = build();
   store.set(key, made);
   return made;
+}
+
+/** One cached geometry of `parts` (each a geometry and its matrix in a shared frame), built on the first call for `key`. */
+export function merge(key: string, parts: () => readonly (readonly [BufferGeometry, Matrix4])[]): BufferGeometry {
+  return memo(key, () => {
+    const b = new MeshBuilder();
+    for (const [geometry, matrix] of parts()) b.append(geometry, matrix);
+    return b.build();
+  });
 }
 
 /** A stable key for numeric parameters, rounded to 0.1 mm. */
