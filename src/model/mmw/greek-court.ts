@@ -13,7 +13,7 @@ import type { BufferGeometry } from 'three';
 import type { Kit, StepDef } from '../../build/types.js';
 import { column, hippedSkylight, lathe, MeshBuilder, moulding, ProfilePen } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { LEVEL_1, LEVEL_2_FRONT, ROOF_Y, SLAB, SOUTH_HIP_RISE } from './dims.js';
+import { END_ROOF_Y, LEVEL_1, LEVEL_2_FRONT, SLAB, SOUTH_HIP_RISE } from './dims.js';
 import { extrudeOutline } from './facade-parts.js';
 import { mmwMaterials } from './materials.js';
 import { merged } from './merge.js';
@@ -43,7 +43,7 @@ const IONIC_D = 0.5;
 const IONIC_H = 4.4;
 const UPPER_ENTABLATURE = 0.8;
 const UPPER_WALL = 0.45;
-const SKYLIGHT_Y = ROOF_Y + 0.4 + SOUTH_HIP_RISE;
+const SKYLIGHT_Y = END_ROOF_Y + 0.4 + SOUTH_HIP_RISE;
 
 /** Every peristyle column's plan position: the two long rows and the short rows' intermediate columns. */
 const PERISTYLE: readonly (readonly [number, number])[] = [...ROW_Z.flatMap((z) => ROW_X.map((x) => [x, z] as const)), ...[PX0, PX1].flatMap((x) => SHORT_Z.map((z) => [x, z] as const))];

@@ -4,7 +4,7 @@
  * bay of a kind is one shared geometry (docs/design/spec.md, Batching).
  *
  * Wall-module frame (the parts library's wall.ts): origin at the bottom centre of the front face, the wall spans y from 0 (the foot, under the ground floor)
- * to WALL_HEIGHT (the crowning cornice's top) and z from −OUTER_WALL to 0. World heights below are converted with `local`.
+ * to wallHeight(tier) (the tier's crowning cornice top) and z from −OUTER_WALL to 0. World heights below are converted with `local`.
  */
 import { Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -15,9 +15,7 @@ import {
   ARCH_CROWN_Y,
   ARCH_SILL_Y,
   ARCH_WIDTH,
-  ATTIC_PANEL_HEIGHT,
   ATTIC_PANEL_WIDTH,
-  ATTIC_PANEL_Y,
   BASE_WINDOW_HEIGHT,
   BASE_WINDOW_SILL_Y,
   BASE_WINDOW_WIDTH,
@@ -33,12 +31,12 @@ import {
   SLAB,
   WATER_TABLE_Y,
 } from './dims.js';
-import { CORNICE_TOP } from './wings.js';
+import type { Tier } from './dims.js';
 
 /** The foot of the outer walls: under the ground-floor slab, below every grade along the front. */
 export const WALL_FOOT_Y = LEVEL_G - SLAB;
-/** Height of a wall module from its foot to the crowning cornice's top. */
-export const WALL_HEIGHT = CORNICE_TOP - WALL_FOOT_Y;
+/** Height of a wall module from its foot to its tier's crowning cornice top. */
+export const wallHeight = (tier: Tier): number => tier.top - WALL_FOOT_Y;
 /** A world height as a height above the wall foot. */
 export const local = (y: number): number => y - WALL_FOOT_Y;
 
@@ -53,32 +51,32 @@ const RUSTICATION: Rustication = { course: RUSTICATION_COURSE, joint: 0.05, dept
 
 const archOpening: Opening = { shape: 'arch', y: local(ARCH_SILL_Y), width: ARCH_WIDTH, height: ARCH_CROWN_Y - ARCH_SILL_Y };
 const baseWindow: Opening = { y: local(BASE_WINDOW_SILL_Y), width: BASE_WINDOW_WIDTH, height: BASE_WINDOW_HEIGHT };
-const atticPanel = (width: number): Opening => ({ y: local(ATTIC_PANEL_Y), width, height: ATTIC_PANEL_HEIGHT, depth: 0.1 });
+const atticPanel = (width: number, tier: Tier): Opening => ({ y: local(tier.atticPanelY), width, height: tier.atticPanelHeight, depth: 0.1 });
 
 /** One arched-window bay: base window, arched main-storey window, sunk attic panel. */
-export function archBay(): BufferGeometry {
-  return wall({ width: BAY, height: WALL_HEIGHT, thickness: OUTER_WALL, openings: [baseWindow, archOpening, atticPanel(ATTIC_PANEL_WIDTH)], rustication: RUSTICATION });
+export function archBay(tier: Tier): BufferGeometry {
+  return wall({ width: BAY, height: wallHeight(tier), thickness: OUTER_WALL, openings: [baseWindow, archOpening, atticPanel(ATTIC_PANEL_WIDTH, tier)], rustication: RUSTICATION });
 }
 
 /** An arched-window bay with a grade-level door in place of the base window. */
-export function doorBay(): BufferGeometry {
-  return wall({ width: BAY, height: WALL_HEIGHT, thickness: OUTER_WALL, openings: [{ y: 0, width: DOOR_WIDTH, height: local(DOOR_TOP_Y) }, archOpening, atticPanel(ATTIC_PANEL_WIDTH)], rustication: RUSTICATION });
+export function doorBay(tier: Tier): BufferGeometry {
+  return wall({ width: BAY, height: wallHeight(tier), thickness: OUTER_WALL, openings: [{ y: 0, width: DOOR_WIDTH, height: local(DOOR_TOP_Y) }, archOpening, atticPanel(ATTIC_PANEL_WIDTH, tier)], rustication: RUSTICATION });
 }
 
 /** An end bay of a pavilion front: the tall blind niche over a base window, and a wide attic panel. */
-export function endBay(width: number): BufferGeometry {
+export function endBay(width: number, tier: Tier): BufferGeometry {
   return wall({
     width,
-    height: WALL_HEIGHT,
+    height: wallHeight(tier),
     thickness: OUTER_WALL,
-    openings: [baseWindow, { shape: 'arch', y: local(NICHE_SILL_Y), width: NICHE_WIDTH, height: NICHE_CROWN_Y - NICHE_SILL_Y, depth: NICHE_DEPTH }, atticPanel(Math.min(width - 3, 7.2))],
+    openings: [baseWindow, { shape: 'arch', y: local(NICHE_SILL_Y), width: NICHE_WIDTH, height: NICHE_CROWN_Y - NICHE_SILL_Y, depth: NICHE_DEPTH }, atticPanel(Math.min(width - 3, 7.2), tier)],
     rustication: RUSTICATION,
   });
 }
 
 /** A plain pier 1 m wide with the base's channelled joints; scaled along X to any width (the joints run horizontally, so scaling keeps them true). */
-export function pier(): BufferGeometry {
-  return wall({ width: 1, height: WALL_HEIGHT, thickness: OUTER_WALL, rustication: RUSTICATION });
+export function pier(tier: Tier): BufferGeometry {
+  return wall({ width: 1, height: wallHeight(tier), thickness: OUTER_WALL, rustication: RUSTICATION });
 }
 
 /** The bronze arched window of the main storey: three lights, a transom at the springing, glazing bars. */

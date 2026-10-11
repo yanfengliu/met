@@ -12,7 +12,7 @@ import type { BufferGeometry } from 'three';
 import type { Kit, StepDef } from '../../build/types.js';
 import { hippedSkylight, MeshBuilder } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { LEVEL_2_NORTH, ROOF_Y, SLAB } from './dims.js';
+import { END_ROOF_Y, LEVEL_2_NORTH, SLAB } from './dims.js';
 import { mmwMaterials } from './materials.js';
 import { merged } from './merge.js';
 import { addBox, placed, UNIT_BOX } from './shapes.js';
@@ -20,7 +20,7 @@ import { ASTOR_COURT } from './wings.js';
 
 const [X0, Z0, X1, Z1] = ASTOR_COURT;
 const Y = LEVEL_2_NORTH;
-const WALL_TOP = ROOF_Y - SLAB;
+const WALL_TOP = END_ROOF_Y - SLAB;
 /** The partitions round the court are 0.45 m thick, centred on the map's lines: their court faces stand 0.225 m inside the court's rectangle. */
 const FACE = 0.225;
 const GATE = { z: -13.8, radius: 1.2 } as const;
@@ -264,7 +264,7 @@ function buildGarden(kit: Kit): void {
 /** The pyramidal skylight over the whole court (KRJDA): a glazed hip on the court's curb, its ridge along the court's length. */
 function buildSkylight(kit: Kit): void {
   const glass = hippedSkylight({ width: Z1 - Z0, length: X1 - X0, pitch: 30, curbHeight: 0.35, bays: 8 });
-  const m = placed((X0 + X1) / 2, ROOF_Y + 0.5, (Z0 + Z1) / 2, Math.PI / 2);
+  const m = placed((X0 + X1) / 2, END_ROOF_Y + 0.5, (Z0 + Z1) / 2, Math.PI / 2);
   kit.add(glass.frame, palette.metalDark, m, 0);
   kit.add(glass.glass, palette.glass, m, 0);
 }

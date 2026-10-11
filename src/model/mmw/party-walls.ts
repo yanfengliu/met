@@ -5,10 +5,9 @@
  */
 import type { Kit } from '../../build/types.js';
 import { palette } from '../palette.js';
-import { MORGAN_ROOF_Y, PARTY_WALL } from './dims.js';
+import { END_TIER, LINK_TIER, MORGAN_ROOF_Y, PARTY_WALL } from './dims.js';
 import { WALL_FOOT_Y } from './facade-parts.js';
 import { addBox } from './shapes.js';
-import { CORNICE_TOP } from './wings.js';
 
 /** One party wall: a line of the block outline and the side its outer face looks to. */
 interface Party {
@@ -24,7 +23,7 @@ interface Party {
 
 /** North campaign: against the Sackler Wing (Z −41.3 and X 118.0) and the American Wing (Z −96.0). */
 export const NORTH_PARTY: readonly Party[] = [
-  { x0: 118.0, z0: -41.3, x1: 153.13, z1: -41.3, out: '-z', top: CORNICE_TOP },
+  { x0: 118.0, z0: -41.3, x1: 153.13, z1: -41.3, out: '-z', top: END_TIER.top },
   // The Morgan wing's walls stop a parapet above its lower roof.
   { x0: 118.0, z0: -96.0, x1: 118.0, z1: -41.3, out: '+x', top: MORGAN_ROOF_Y + 1.0 },
   { x0: 49.4, z0: -96.0, x1: 118.0, z1: -96.0, out: '-z', top: MORGAN_ROOF_Y + 1.0 },
@@ -32,9 +31,9 @@ export const NORTH_PARTY: readonly Party[] = [
 
 /** South campaign: against the Kravis Wing (Z −69.0) and the Rockefeller Wing (X −88.1 and Z −38.5). */
 export const SOUTH_PARTY: readonly Party[] = [
-  { x0: -88.1, z0: -69.0, x1: -49.7, z1: -69.0, out: '-z', top: CORNICE_TOP },
-  { x0: -88.1, z0: -69.0, x1: -88.1, z1: -38.5, out: '-x', top: CORNICE_TOP },
-  { x0: -151.61, z0: -38.5, x1: -88.1, z1: -38.5, out: '-z', top: CORNICE_TOP },
+  { x0: -88.1, z0: -69.0, x1: -49.7, z1: -69.0, out: '-z', top: LINK_TIER.top },
+  { x0: -88.1, z0: -69.0, x1: -88.1, z1: -38.5, out: '-x', top: LINK_TIER.top },
+  { x0: -151.61, z0: -38.5, x1: -88.1, z1: -38.5, out: '-z', top: END_TIER.top },
 ];
 
 /** The party walls, rising from the outer walls' foot to the parapet, with a dark coping. */

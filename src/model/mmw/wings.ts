@@ -2,8 +2,7 @@
  * The five McKim, Mead & White blocks as plan data: their outlines, the storeys and slabs each carries, and the voids through them.
  * Plan positions are the Met floor map's (interior.md, Plan source) moved into the world frame with MAP_Z_SHIFT, rounded to 5 cm; levels are dims.ts's.
  */
-import { MMW_CORNICE_Y } from '../frame.js';
-import { LEVEL_1, LEVEL_1M_SOUTH, LEVEL_2_FRONT, LEVEL_2_NORTH, LEVEL_3_NORTH, LEVEL_G, MORGAN, MORGAN_ROOF_Y, NORTH_END, NORTH_LINK, OUTER_WALL, PARTY_WALL, ROOF_Y, SLAB, SOUTH_END, SOUTH_LINK } from './dims.js';
+import { LEVEL_1, LEVEL_1M_SOUTH, LEVEL_2_FRONT, LEVEL_2_NORTH, LEVEL_3_NORTH, LEVEL_G, LINK_ROOF_Y, END_ROOF_Y, MORGAN, MORGAN_ROOF_Y, NORTH_END, NORTH_LINK, OUTER_WALL, PARTY_WALL, SLAB, SOUTH_END, SOUTH_LINK } from './dims.js';
 import type { PlanBlock, PlanLevel } from './plan-data.js';
 
 /** An axis-aligned plan rectangle [x0, z0, x1, z1] in world metres. */
@@ -46,8 +45,9 @@ const { x0: fx0, x1: fx1, z0: fz0, z1: fz1, stripX1, stripZ1 } = MORGAN;
 const { x0: jx0, x1: jx1, z0: jz0, z1: jz1 } = SOUTH_LINK;
 const { x0: kx0, x1: kx1, z0: kz0, z1: kz1 } = SOUTH_END;
 
-/** The roof deck sits a slab's depth below ROOF_Y's top surface. */
-const ROOF_UNDERSIDE = ROOF_Y - SLAB;
+/** The roof decks sit a slab's depth below their top surfaces: the links' and the end pavilions' (dims.ts tiers). */
+const LINK_UNDERSIDE = LINK_ROOF_Y - SLAB;
+const END_UNDERSIDE = END_ROOF_Y - SLAB;
 
 const O = OUTER_WALL;
 const P = PARTY_WALL;
@@ -82,7 +82,7 @@ export const WINGS: readonly Wing[] = [
     storeys: [
       { level: 'G', y: LEVEL_G, top: LEVEL_1 - SLAB, slab: E_IN },
       { level: '1', y: LEVEL_1, top: LEVEL_2_FRONT - SLAB, slab: E_IN },
-      { level: '2', y: LEVEL_2_FRONT, top: ROOF_UNDERSIDE, slab: E_IN },
+      { level: '2', y: LEVEL_2_FRONT, top: LINK_UNDERSIDE, slab: E_IN },
     ],
     roofVoids: [],
     // exterior.md section 2, well (3).
@@ -95,9 +95,9 @@ export const WINGS: readonly Wing[] = [
     storeys: [
       { level: 'G', y: LEVEL_G, top: LEVEL_1 - SLAB, slab: H_IN },
       { level: '1', y: LEVEL_1, top: LEVEL_2_NORTH - SLAB, slab: H_IN },
-      { level: '2', y: LEVEL_2_NORTH, top: ROOF_UNDERSIDE, slab: H_IN },
+      { level: '2', y: LEVEL_2_NORTH, top: END_UNDERSIDE, slab: H_IN },
       // Map floor 3: the front range and the 84th Street range.
-      { level: '3', y: LEVEL_3_NORTH, top: ROOF_UNDERSIDE, slab: [inner(101.9, -3.1, 133.35, hz1 - O), inner(140.1, -33.85, hx1 - O, -3.1)] },
+      { level: '3', y: LEVEL_3_NORTH, top: END_UNDERSIDE, slab: [inner(101.9, -3.1, 133.35, hz1 - O), inner(140.1, -33.85, hx1 - O, -3.1)] },
     ],
     roofVoids: [ASTOR_COURT],
     lightWells: [],
@@ -125,7 +125,7 @@ export const WINGS: readonly Wing[] = [
     storeys: [
       { level: 'G', y: LEVEL_G, top: LEVEL_1 - SLAB, slab: J_IN },
       { level: '1', y: LEVEL_1, top: LEVEL_2_FRONT - SLAB, slab: J_IN },
-      { level: '2', y: LEVEL_2_FRONT, top: ROOF_UNDERSIDE, slab: J_IN },
+      { level: '2', y: LEVEL_2_FRONT, top: LINK_UNDERSIDE, slab: J_IN },
     ],
     roofVoids: [],
     // exterior.md section 2, well (1).
@@ -141,7 +141,7 @@ export const WINGS: readonly Wing[] = [
       { level: '1', y: LEVEL_1, top: LEVEL_1M_SOUTH - SLAB, slab: K_IN },
       // Map floor 1M: the Fifth Avenue range (gallery 171 and its corner) and the 80th Street range (gallery 170).
       { level: '1M', y: LEVEL_1M_SOUTH, top: LEVEL_2_FRONT - SLAB, slab: [inner(kx0 + O, -2.5, kx1 - O, kz1 - O), inner(-99.35, -7.8, kx1 - O, -2.5), inner(kx0 + O, -35.6, -139.25, -2.5)] },
-      { level: '2', y: LEVEL_2_FRONT, top: ROOF_UNDERSIDE, slab: K_IN, voids: [ROMAN_WELL] },
+      { level: '2', y: LEVEL_2_FRONT, top: END_UNDERSIDE, slab: K_IN, voids: [ROMAN_WELL] },
     ],
     roofVoids: [ROMAN_WELL],
     lightWells: [],
@@ -173,6 +173,3 @@ export function subtract(rect: Rect, holes: readonly Rect[]): Rect[] {
   }
   return out;
 }
-
-/** The height of the crowning cornice's top, re-exported for the roof and facade builders. */
-export const CORNICE_TOP = MMW_CORNICE_Y;
