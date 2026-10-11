@@ -105,8 +105,8 @@ export const STEPS_TOP_Z = 9.0; // [P2] M: DEM profile on the axis
 export const STEPS_BOTTOM_Z = 20.0; // [P2] M
 export const STEPS_HALF_WIDTH = 23.47; // [P4] M: 154 ft flight (PPS); orthophoto reads 47 m
 export const STEP_RISER_COUNT = 22; // [P3] E ±2: counted in photo S8
-export const STEP_RISER = 0.165; // [P3] D: LANDING_Y / STEP_RISER_COUNT
-export const STEP_TREAD = 0.52; // [P3] D: run / (risers - 1)
+export const STEP_RISER = 0.163; // [P3] D: (LANDING_Y - the foot's +0.05 [P2]) / STEP_RISER_COUNT
+export const STEP_TREAD = 0.4; // [P3] D: (run - two 1.73 m landings, interior.md) / 19 treads
 export const FOUNTAIN_SIZE = 13.8; // [P6] M: square granite blocks, circular basin inside
 export const FOUNTAIN_JETS = 48; // [P6] M: published, inward-pointing rim jets per fountain
 export const FOUNTAIN_CENTRE_X = 38.5; // [P6] M: at X = ±38.5
