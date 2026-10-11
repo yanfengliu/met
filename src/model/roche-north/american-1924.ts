@@ -68,7 +68,7 @@ function foundations(kit: Kit): void {
   boxAt(kit, areaMaterials.concrete, [BANK_FRONT_X, FOOTING_Y + 0.6, Z0], [X1, MAIN_FLOOR_Y - 0.35, Z0 + T]);
   boxAt(kit, areaMaterials.concrete, [BANK_FRONT_X, FOOTING_Y + 0.6, Z1 - T], [X1, MAIN_FLOOR_Y - 0.35, Z1]);
   boxAt(kit, areaMaterials.concrete, [X1 - T, FOOTING_Y + 0.6, Z0 + T], [X1, MAIN_FLOOR_Y - 0.35, Z1 - T]);
-  boxAt(kit, areaMaterials.concrete, [BANK_FRONT_X, FOOTING_Y + 0.6, Z0 + T], [SOUTH_X, MAIN_FLOOR_Y - 0.35, Z1 - T]);
+  boxAt(kit, areaMaterials.concrete, [BANK_FRONT_X, FOOTING_Y + 0.6, Z0 + T], [SOUTH_X, MAIN_FLOOR_Y, Z1 - T]);
   for (let x = X0; x < X1 - 0.1; x += 6.03) boxAt(kit, areaMaterials.concrete, [x, MAIN_FLOOR_Y - 0.35, Z0], [Math.min(x + 6.03, X1), MAIN_FLOOR_Y - 0.05, Z1]);
 }
 
