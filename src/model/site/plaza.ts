@@ -34,7 +34,7 @@ import { FRONTAGE, PAVING_GAP, walkWestY } from './ground.js';
 import { CELLS } from './grid.js';
 import { BENCH, CHAIR, PARASOL_CANOPY, PARASOL_MAST, POLE, POLE_LENS, TABLE } from './furniture.js';
 import { fountainParts } from './fountain.js';
-import { lumpy } from './lumps.js';
+import { clumps } from './lumps.js';
 import { siteMaterials } from './materials.js';
 import { seeded } from './random.js';
 import { STEPS_BACK_Z } from './steps.js';
@@ -73,7 +73,7 @@ export const pavingStep: StepDef = {
   chapter: 'koch-plaza-2014',
   year: '2014',
   title: 'Lay the plaza’s granite paving',
-  detail: 'Light granite replaces the 1970 plaza from the facades to the curb, along the whole thousand-foot front from 80th to 84th Street.',
+  detail: 'Grey granite replaces the 1970 plaza from the facades to the curb along the whole thousand-foot front, 80th to 84th Street.',
   motion: { kind: 'rise', distance: 0.3 },
   stagger: 'radial',
   weight: 1.2,
@@ -267,11 +267,13 @@ export const furnitureStep: StepDef = {
 
 const GROVE_TREES = [tree({ height: 11, spread: 7.5, seed: 52, detail: 'medium' }), tree({ height: 11, spread: 7.5, seed: 77, detail: 'medium' })];
 /** Southern magnolias (Hałun 2023): a dense, glossy, oval evergreen crown 4.6 m wide and 9 m tall on a short trunk. */
-const MAGNOLIA_CROWN = lumpy(5, 3, 11, 0.2, (p) => {
-  const t = (p.y + 1) / 2;
-  const w = 0.5 * Math.sqrt(Math.max(0, 1 - 0.3 * t * t));
-  return new Vector3(p.x * w, t, p.z * w);
-});
+const MAGNOLIA_CROWN = clumps([
+  { x: 0, y: 0.3, z: 0, r: 0.46, h: 0.3, seed: 51 },
+  { x: -0.12, y: 0.5, z: 0.1, r: 0.38, h: 0.24, seed: 52 },
+  { x: 0.12, y: 0.55, z: -0.1, r: 0.36, h: 0.24, seed: 53 },
+  { x: 0, y: 0.72, z: 0.05, r: 0.3, h: 0.2, seed: 54 },
+  { x: 0.05, y: 0.86, z: -0.03, r: 0.18, h: 0.13, seed: 55 },
+]);
 const MAGNOLIA_Z = 1.2;
 
 function planted(kit: Kit, shape: Tree, crown: Material, x: number, y: number, z: number, scale: number, yaw: number, order: number): void {

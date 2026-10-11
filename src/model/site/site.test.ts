@@ -11,7 +11,7 @@ import { collectStep } from '../../build/kit.js';
 import type { CollectedStep } from '../../build/kit.js';
 import { Timeline } from '../../build/timeline.js';
 import type { StepDef } from '../../build/types.js';
-import { ALLEE_TREES_PER_ROW, FOOTPRINT_AREA_M2, LANDING_Y, STEPS_BOTTOM_Z, STEPS_HALF_WIDTH, STEPS_TOP_Z } from '../frame.js';
+import { ALLEE_TREES_PER_ROW, FOOTPRINT_AREA_M2, LANDING_Y, STEP_RISER, STEP_TREAD, STEPS_BOTTOM_Z, STEPS_HALF_WIDTH, STEPS_TOP_Z } from '../frame.js';
 import { insideFootprint } from './footprint.js';
 import { PAD_Y, groundGeometry } from './grid.js';
 import { frontSteps1970, plaza2014Steps, siteSteps } from './index.js';
@@ -137,6 +137,11 @@ describe('front steps', () => {
     expect(rows[0]?.zIn).toBeCloseTo(STEPS_TOP_Z, 6);
     const risers = rows.map((r, i) => (i === 0 ? LANDING_Y : rows[i - 1]?.y ?? 0) - r.y);
     expect(Math.max(...risers) - Math.min(...risers)).toBeLessThan(1e-9);
+    // frame.ts states the riser and the tread this flight is built with.
+    expect(Math.abs((risers[0] ?? 0) - STEP_RISER)).toBeLessThan(0.001);
+    const treads = rows.map((r) => r.z - r.zIn).filter((d) => d < 1);
+    expect(treads).toHaveLength(19);
+    expect(Math.abs((treads[0] ?? 0) - STEP_TREAD)).toBeLessThan(0.005);
     const box = new Box3();
     for (const piece of pieces('steps-flight')) {
       piece.geometry.computeBoundingBox();

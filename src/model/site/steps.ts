@@ -79,7 +79,7 @@ export const landingStep: StepDef = {
   chapter: 'roche-steps-lehman-1975',
   year: '1970',
   title: 'Build the landing before the doors',
-  detail: 'A granite terrace 25 m wide at the level of the doors, 3.6 m above the avenue, carries the approach to the Great Hall.',
+  detail: 'A granite terrace 25 m wide and 3.6 m above the avenue spreads before the three doorways of the Great Hall.',
   motion: { kind: 'rise', distance: 1.5 },
   focus: { kind: 'preset', id: 'ref-front-axis' },
   build(kit) {
