@@ -6,6 +6,7 @@
  */
 import type { StepDef } from '../../build/types.js';
 import { armorCourtSteps, armorCourtVaultStep } from './armor-court.js';
+import { astorCourtSteps } from './astor-court.js';
 import { greekCourt2007, romanCourtSteps } from './greek-court.js';
 import { northFrontSteps, southFrontSteps } from './steps-fronts.js';
 import { roofSteps } from './steps-roofs.js';
@@ -17,4 +18,4 @@ export const mmwSteps: readonly StepDef[] = [...northFrontSteps, ...armorCourtSt
 export const greekRomanCourt2007Steps: readonly StepDef[] = greekCourt2007;
 
 /** Chapter `roche-north-1980`: the Astor Court (1981). */
-export const astorCourt1981Steps: readonly StepDef[] = [];
+export const astorCourt1981Steps: readonly StepDef[] = astorCourtSteps;

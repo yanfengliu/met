@@ -6,7 +6,7 @@
 import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from '../model/core/index.js';
 import { demoSteps } from '../model/demo/index.js';
 import { huntSteps } from '../model/hunt/index.js';
-import { greekRomanCourt2007Steps, mmwSteps } from '../model/mmw/index.js';
+import { astorCourt1981Steps, greekRomanCourt2007Steps, mmwSteps } from '../model/mmw/index.js';
 import { americanWing1924Steps, rocheNorthSteps } from '../model/roche-north/index.js';
 import { lehmanSteps, rocheSouthSteps } from '../model/roche-south/index.js';
 import { frontSteps1970, plaza2014Steps, siteSteps } from '../model/site/index.js';
@@ -22,7 +22,7 @@ export const COMPOSITION: { readonly [K in ChapterId]: readonly (readonly StepDe
   'hunt-1902': [huntSteps],
   'mckim-mead-white-1926': [mmwSteps, americanWing1924Steps, medievalHallSteps],
   'roche-steps-lehman-1975': [frontSteps1970, lehmanSteps],
-  'roche-north-1980': [rocheNorthSteps],
+  'roche-north-1980': [rocheNorthSteps, astorCourt1981Steps],
   'roche-south-1990': [rocheSouthSteps],
   'koch-plaza-2014': [greekRomanCourt2007Steps, plaza2014Steps, europeanPaintingsGlazing2023Steps],
   demo: [demoSteps],
