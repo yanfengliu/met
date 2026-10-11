@@ -41,6 +41,7 @@ import {
   WALL_Z,
   COLUMN_TOP_Y,
 } from './dims.js';
+import { FOUNDATION_TOP } from './podium.js';
 import { at, box } from './shapes.js';
 
 /** Banded rustication: courses of 0.6 m with 9 cm channels 8 cm deep (S7, S9: the end piers' bands read from across the avenue). */
@@ -110,8 +111,11 @@ function extensionFront(kit: Kit, x0: number, x1: number, order: number): void {
     openings.push({ x: s * EXT_WINDOW.offset, y: EXT_PANEL.sill, width: EXT_PANEL.width, height: EXT_PANEL.height, depth: 0.15 });
   }
   openings.push({ x: 0, y: EXT_PANEL.centreSill, width: EXT_PANEL.centreWidth, height: EXT_PANEL.centreHeight, depth: 0.15 });
-  const front = wall({ width, height: EXT_PARAPET_Y, thickness: EXT_WALL_T, openings, rustication: { ...RUSTICATION, stop: EXT_BASE_TOP_Y - 0.35 } });
-  kit.add(front, palette.limestone, at(cx, 0, EXT_FACE_Z), order);
+  // From the footings (below the site's excavation pad) to the parapet: openings and rustication are measured from grade, so shift them by the depth.
+  const depth = -FOUNDATION_TOP;
+  const shifted = openings.map((o) => ({ ...o, y: (o.y ?? 0) + depth }));
+  const front = wall({ width, height: EXT_PARAPET_Y + depth, thickness: EXT_WALL_T, openings: shifted, rustication: { ...RUSTICATION, start: depth + RUSTICATION.course, stop: depth + EXT_BASE_TOP_Y - 0.35 } });
+  kit.add(front, palette.limestone, at(cx, FOUNDATION_TOP, EXT_FACE_Z), order);
 }
 
 /** The Great Hall's end walls (doors at both floors) and west wall (the stair's arched opening, doors), up to the eaves above the wings' roofs. */

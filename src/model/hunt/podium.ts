@@ -4,7 +4,7 @@
  */
 import type { StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';
-import { stairFlight } from '../lib/index.js';
+import { moulding, stairFlight, wall } from '../lib/index.js';
 import {
   BACK_Z,
   EXT_FACE_Z,
@@ -35,12 +35,14 @@ import {
 import { hunt } from './materials.js';
 import { at, box } from './shapes.js';
 
-/** Every wall line of the block that carries a footing: [x0, z0, x1, z1] centre lines, thickness. */
+/** Wall lines whose walls start on their footings in the walls step (the wings' fronts, a finished face from the excavation up): no basement wall here. */
+const WING_FRONTS = 2;
+/** Every wall line of the block that carries a footing: [x0, z0, x1, z1] centre lines, thickness. The wings' fronts come first. */
 const WALL_LINES: readonly (readonly [number, number, number, number, number])[] = [
-  // Pavilion front wall and the extensions' fronts.
-  [-PAVILION_HALF, (WALL_Z + WALL_BACK_Z) / 2, PAVILION_HALF, (WALL_Z + WALL_BACK_Z) / 2, WALL_Z - WALL_BACK_Z],
   [EXT_SOUTH_X, EXT_FACE_Z - EXT_WALL_T / 2, -PAVILION_HALF, EXT_FACE_Z - EXT_WALL_T / 2, EXT_WALL_T],
   [PAVILION_HALF, EXT_FACE_Z - EXT_WALL_T / 2, EXT_NORTH_X, EXT_FACE_Z - EXT_WALL_T / 2, EXT_WALL_T],
+  // Pavilion front wall.
+  [-PAVILION_HALF, (WALL_Z + WALL_BACK_Z) / 2, PAVILION_HALF, (WALL_Z + WALL_BACK_Z) / 2, WALL_Z - WALL_BACK_Z],
   // Side walls on the McKim, Mead & White seams.
   [EXT_SOUTH_X + 0.6, EXT_FACE_Z, EXT_SOUTH_X + 0.6, BACK_Z, 1.2],
   [EXT_NORTH_X - 0.6, EXT_FACE_Z, EXT_NORTH_X - 0.6, BACK_Z, 1.2],
@@ -56,6 +58,32 @@ const WALL_LINES: readonly (readonly [number, number, number, number, number])[]
   [-9.75, HALL_WEST_WALL_Z, -9.75, BACK_Z, 0.8],
   [9.75, HALL_WEST_WALL_Z, 9.75, BACK_Z, 0.8],
 ];
+
+/** Footings' tops, where the basement walls, the podium and the wings' fronts start: below the site's pad at GROUND_FLOOR_Y − 0.1. */
+export const FOUNDATION_TOP = GROUND - SLAB;
+
+const PODIUM_H = LANDING - FOUNDATION_TOP;
+const podiumFace = (() => {
+  let made: ReturnType<typeof wall> | undefined;
+  return (): ReturnType<typeof wall> =>
+    (made ??= wall({ width: 2 * PAVILION_HALF, height: PODIUM_H, thickness: FRONT_LIMIT_Z - WALL_Z, rustication: { course: 0.85, joint: 0.05, depth: 0.03, start: -FOUNDATION_TOP + 0.3, stop: PODIUM_H - 0.55 } }));
+})();
+/** The coping along the podium's front edge at the landing (S7: a moulded course under the pedestals). */
+const podiumCoping = (() => {
+  let made: ReturnType<typeof moulding> | undefined;
+  return (): ReturnType<typeof moulding> =>
+    (made ??= moulding({
+      profile: 'string-course',
+      path: [
+        [-PAVILION_HALF, LANDING - 0.3, WALL_Z],
+        [-PAVILION_HALF, LANDING - 0.3, FRONT_LIMIT_Z],
+        [PAVILION_HALF, LANDING - 0.3, FRONT_LIMIT_Z],
+        [PAVILION_HALF, LANDING - 0.3, WALL_Z],
+      ],
+      height: 0.3,
+      projection: 0.1,
+    }));
+})();
 
 /** A footing strip under one wall line: twice the wall's thickness wide. */
 function footing(line: readonly [number, number, number, number, number], top: number, bottom: number): [readonly [number, number, number], readonly [number, number, number]] {
@@ -101,15 +129,17 @@ export const podiumSteps: readonly StepDef[] = [
     stagger: 'order',
     build(kit) {
       let order = 0;
-      // Basement walls from the ground floor to the main floor on every footing line.
-      for (const line of WALL_LINES) {
+      // Basement walls on their footings up to the main floor, reaching below the site's excavation pad (GROUND_FLOOR_Y − 0.1).
+      for (const line of WALL_LINES.slice(WING_FRONTS)) {
         const [x0, z0, x1, z1, t] = line;
-        if (Math.abs(z1 - z0) < 1e-6) box(kit, palette.limestoneDark, [Math.min(x0, x1), GROUND, z0 - t / 2], [Math.max(x0, x1), MAIN - SLAB, z0 + t / 2], order);
-        else box(kit, palette.limestoneDark, [x0 - t / 2, GROUND, Math.min(z0, z1)], [x0 + t / 2, MAIN - SLAB, Math.max(z0, z1)], order);
+        if (Math.abs(z1 - z0) < 1e-6) box(kit, palette.limestoneDark, [Math.min(x0, x1), FOUNDATION_TOP, z0 - t / 2], [Math.max(x0, x1), MAIN - SLAB, z0 + t / 2], order);
+        else box(kit, palette.limestoneDark, [x0 - t / 2, FOUNDATION_TOP, Math.min(z0, z1)], [x0 + t / 2, MAIN - SLAB, Math.max(z0, z1)], order);
       }
       order += 1;
-      // The podium in front of the pavilion: grade to the landing, from the facade wall to the landing's edge at Z +3.5.
-      box(kit, palette.granite, [-PAVILION_HALF, -0.6, WALL_Z], [PAVILION_HALF, LANDING, FRONT_LIMIT_Z], order);
+      // The podium in front of the pavilion, from the facade wall to the landing's edge at Z +3.5: a finished granite face in courses from the
+      // excavation to a coping at the landing, seen over the steps' descending ends and down to the plaza beyond them (site, 2026-10-11).
+      kit.add(podiumFace(), palette.granite, at(0, FOUNDATION_TOP, FRONT_LIMIT_Z), order);
+      kit.add(podiumCoping(), palette.granite, at(0, 0, 0), order);
       order += 1;
       // Main-floor plate over the whole block behind the front walls; the stair and the hall's floor finish stand on it.
       box(kit, palette.limestoneDark, [EXT_SOUTH_X, MAIN - SLAB, BACK_Z], [EXT_NORTH_X, MAIN - 0.03, WALL_BACK_Z], order);
