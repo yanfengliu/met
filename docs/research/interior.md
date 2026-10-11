@@ -16,6 +16,8 @@ Sources cited by short name:
 
 ## Plan source and world frame
 
+**Correction (coordinator, 2026-10-11): every Z in this file and in `interior-images.md` is in the floor map's own frame, which sits 3.1 m +Z of the world frame of `src/model/frame.ts`; subtract 3.1 m.** Found by the `mmw` modeller and checked against the data: in this file's frame the map's main-floor plate lies 1.21 to 1.23 m inside the OpenStreetMap outline at both X ends but 4.24 m inside at the park side and 1.92 m outside at the front; a Z shift of −3.08 m makes all four margins about 1.2 m, and puts the map's step foot at Z +20.08 against the elevation model's +20.0. X values and levels are unaffected. The `int-*` presets apply the shift in `src/viewer/presets.ts`.
+
 The map's vector tiles (`https://prod.cdn.livingmap.com/tiles/the_met/{z}/{x}/{y}.pbf`) carry every floor's room, wall, column, stair, void ("open to below") and water outlines in latitude and longitude. I decoded the 18 tiles at zoom 18 that cover the building (quantisation 2.8 cm), merged features split across tiles, converted them to local metres and rotated them onto the Manhattan grid. A second, independent decode of the zoom-16 tiles by a helper agent gave the same room sizes to within 0.1 m. Tooling and decoded data stay outside the repo.
 
 - Grid angle (derived): fitting the main-floor outline's edges gives grid north at a bearing of 29.00° east of true north; 84% of the outline's length lies within 0.1° of that grid, and most of the rest at exactly 45° (the Lehman Wing's chamfers). The OpenStreetMap outline of the building (way 278363061, NYC BIN 1083810) gives 29.0° independently.

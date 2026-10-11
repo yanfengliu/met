@@ -35,6 +35,9 @@ export interface ViewPreset {
 
 const EYE = 1.6;
 const look = (position: Vec3, target: Vec3, fov: number, up?: Vec3): PresetCamera => (up === undefined ? { kind: 'look', position, target, fov } : { kind: 'look', position, target, fov, up });
+// The int-* proposals were measured on the decoded floor map, whose frame sits 3.1 m +Z of the world frame (docs/research/interior.md, correction of 2026-10-11).
+const MAP_Z_SHIFT = -3.1;
+const mapLook = (p: Vec3, t: Vec3, fov: number): PresetCamera => look([p[0], p[1], p[2] + MAP_Z_SHIFT], [t[0], t[1], t[2] + MAP_Z_SHIFT], fov);
 
 export const PRESETS: readonly ViewPreset[] = [
   { id: 'front', label: 'Front, from Fifth Avenue', group: 'exterior', camera: { kind: 'fit', direction: [0, 0.16, 1], margin: 1 } },
@@ -52,15 +55,15 @@ export const PRESETS: readonly ViewPreset[] = [
   { id: 'ref-park-north', label: 'Photo: north side from the park', group: 'exterior', camera: look([230, 6, -110], [153, 12, -72], 55) },
   // Park at the top, Fifth Avenue at the bottom, north to the right.
   { id: 'ref-plan-ortho', label: 'Photo: plan from above', group: 'exterior', camera: look([0, 600, -85], [0, 0, -85], 30, [0, 0, -1]) },
-  { id: 'int-great-hall-balcony-south', label: 'Great Hall from the north balcony', group: 'interior', camera: look([28.5, L2 + EYE, -14.5], [-30, L1 + 4, -14.5], 46) },
-  { id: 'int-great-hall-floor-north', label: 'Great Hall floor, looking north', group: 'interior', camera: look([-2, L1 + EYE, -12], [30, L1 + 9, -14.5], 55) },
-  { id: 'int-grand-stair-west', label: 'Grand Staircase, looking west', group: 'interior', camera: look([0, L2 + EYE, -27], [0, L2 + 3, -62], 68) },
-  { id: 'int-dendur-se', label: 'Temple of Dendur from the south-east', group: 'interior', camera: look([116, L1 + EYE, -55], [138, L1 + 5, -84], 46) },
-  { id: 'int-engelhard-north', label: 'American Wing court, looking north', group: 'interior', camera: look([60, L1 + EYE, -112.4], [94, L1 + 8, -112.4], 55) },
-  { id: 'int-greek-roman-court', label: 'Greek and Roman court', group: 'interior', camera: look([-136, L1 + EYE, -3], [-104, L1 + 2.5, -11], 45) },
-  { id: 'int-arms-armor-court', label: 'Arms and Armor court', group: 'interior', camera: look([58.5, L1 + EYE, -76.3], [93, L1 + 4.5, -76.3], 50) },
-  { id: 'int-medieval-hall-east', label: 'Medieval Sculpture Hall, looking east', group: 'interior', camera: look([0, L1 + EYE, -117], [0, L1 + 7, -80], 60) },
-  { id: 'int-lehman-pyramid-up', label: 'Lehman Wing court, looking up', group: 'interior', camera: look([0, LG + EYE, -147.7], [0.01, LG + 30, -147.69], 60) },
+  { id: 'int-great-hall-balcony-south', label: 'Great Hall from the north balcony', group: 'interior', camera: mapLook([28.5, L2 + EYE, -14.5], [-30, L1 + 4, -14.5], 46) },
+  { id: 'int-great-hall-floor-north', label: 'Great Hall floor, looking north', group: 'interior', camera: mapLook([-2, L1 + EYE, -12], [30, L1 + 9, -14.5], 55) },
+  { id: 'int-grand-stair-west', label: 'Grand Staircase, looking west', group: 'interior', camera: mapLook([0, L2 + EYE, -27], [0, L2 + 3, -62], 68) },
+  { id: 'int-dendur-se', label: 'Temple of Dendur from the south-east', group: 'interior', camera: mapLook([116, L1 + EYE, -55], [138, L1 + 5, -84], 46) },
+  { id: 'int-engelhard-north', label: 'American Wing court, looking north', group: 'interior', camera: mapLook([60, L1 + EYE, -112.4], [94, L1 + 8, -112.4], 55) },
+  { id: 'int-greek-roman-court', label: 'Greek and Roman court', group: 'interior', camera: mapLook([-136, L1 + EYE, -3], [-104, L1 + 2.5, -11], 45) },
+  { id: 'int-arms-armor-court', label: 'Arms and Armor court', group: 'interior', camera: mapLook([58.5, L1 + EYE, -76.3], [93, L1 + 4.5, -76.3], 50) },
+  { id: 'int-medieval-hall-east', label: 'Medieval Sculpture Hall, looking east', group: 'interior', camera: mapLook([0, L1 + EYE, -117], [0, L1 + 7, -80], 60) },
+  { id: 'int-lehman-pyramid-up', label: 'Lehman Wing court, looking up', group: 'interior', camera: mapLook([0, LG + EYE, -147.7], [0.01, LG + 30, -147.69], 60) },
 ];
 
 /** The preset the page opens with when the query names none. */
