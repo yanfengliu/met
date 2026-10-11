@@ -182,6 +182,40 @@ const antefix = lazy(() => {
 });
 
 /** The scrollwork between two antefixes (S7): a band rising to two volutes beside the masks and dipping between them, 0.24 m thick. Origin at its bottom centre. */
+/** A lion-head spout on the cornice's cymatium (S7, S9): a rounded mane and a muzzle, facing +Z, origin at its back centre. */
+const lionHead = lazy(() => {
+  const b = new MeshBuilder();
+  const blob = (cx: number, cy: number, cz: number, rx: number, ry: number, rz: number): void => {
+    const mark = b.vertexCount;
+    const rows: THREE.Vector3[][] = [];
+    for (let j = 0; j <= 5; j++) {
+      const phi = -Math.PI / 2 + (j / 5) * Math.PI;
+      const row: THREE.Vector3[] = [];
+      for (let i = 0; i <= 10; i++) {
+        const theta = (i / 10) * Math.PI * 2;
+        row.push(new THREE.Vector3(rx * Math.cos(phi) * Math.cos(theta), ry * Math.sin(phi), -rz * Math.cos(phi) * Math.sin(theta)));
+      }
+      rows.push(row);
+    }
+    b.grid(rows);
+    b.transform(mark, new THREE.Matrix4().makeTranslation(cx, cy, cz));
+  };
+  blob(0, 0, 0.08, 0.24, 0.27, 0.16);
+  blob(0, -0.05, 0.2, 0.1, 0.09, 0.1);
+  return b.build();
+});
+
+/** Lion heads along the cornices: every 3.9 m on the runs between the breaks, two on each break's front (S7 at 1:1; about 0.7 m across in S9). */
+const LION_SCALE = new THREE.Matrix4().makeScale(1.4, 1.4, 1.4);
+function lionHeads(kit: Kit, order: number): void {
+  const y = CORNICE_TOP_Y - 0.33;
+  const half = (PAIR_X[2] - PAIR_X[1]) / 2 - BREAK_HALF;
+  for (const cx of [(PAIR_X[0] + PAIR_X[1]) / 2, 0, (PAIR_X[2] + PAIR_X[3]) / 2]) {
+    for (const dx of [-3.9, 0, 3.9]) if (Math.abs(dx) < half) kit.add(lionHead(), palette.limestone, at(cx + dx, y, WALL_Z + CORNICE_P - 0.42).multiply(LION_SCALE), order);
+  }
+  for (const px of PAIR_X) for (const dx of [-2.0, 2.0]) kit.add(lionHead(), palette.limestone, at(px + dx, y, BREAK_FACE_Z + CORNICE_P - 0.42).multiply(LION_SCALE), order);
+}
+
 const scroll = lazy(() => {
   const b = new MeshBuilder();
   const top: [number, number][] = [];
@@ -230,6 +264,7 @@ export const entablatureSteps: readonly StepDef[] = [
       addRun(kit, p.inner, PAIR_X[2], COLUMN_TOP_Y, 2);
       addRun(kit, p.outerNorth, 0, COLUMN_TOP_Y, 3);
       for (const x of [(PAIR_X[0] + PAIR_X[1]) / 2, 0, (PAIR_X[2] + PAIR_X[3]) / 2]) addRun(kit, p.between, x, FRIEZE_TOP_Y, 4);
+      lionHeads(kit, 4);
       // The wings: a string course over the rusticated base, the band and dentilled cornice the caryatids carry, and the crowning cornice at Y 20.7
       // that meets the McKim, Mead & White links' cornice with no jog.
       for (const [x0, x1, order] of [
