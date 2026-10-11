@@ -44,9 +44,9 @@ Modelling split: each area worker owns one folder and exports one step array per
 - [x] Scaffold: toolchain, configs, gates, AGENTS.md Gates section (worker `scaffold`; merged `aa7852a`: three 0.186.1, vite 8.3.4, vitest 5.0.3, TypeScript 6.0.3, Playwright 1.64.0 on system Chrome; verify green, audits 0).
 - [x] Research: exterior, footprint and history (worker `research-exterior`, merged `cd61ea4`). Interior: done (worker `research-interior`, merged `ca3c6af`; floor-map decode cached under ignored `research/cache/`).
 - [x] Engine: viewer, build API, timeline, player, page, capture, e2e (worker `engine`, merged `4ea291f`; verify green on main: 110 unit, 16 e2e; demo 2,105 pieces build 13 ms, frame 1.2 ms).
-- [ ] Parts library and gallery page (worker `parts`; needs scaffold).
-- [ ] Chapter list, `frame.ts`, chapter stubs from research (coordinator).
-- [ ] Modelling by chapter (workers named per chapter; need engine, parts, research).
+- [ ] Parts library and gallery page (worker `parts`): milestone 1 merged `600b10b` (orders, mouldings, walls, arches, windows, domes and vaults, landscape, fittings, Egyptian; 199 unit tests, verify green); milestone 2 (glazing, stairs, balustrades, full visual inspection) running in `../met-worktrees/parts`.
+- [x] Chapter list, `frame.ts`, chapter stubs from research (coordinator decisions; chapters, stubs and composition landed with the engine, `4ea291f`).
+- [ ] Modelling by area, dispatched 2026-10-11 from `600b10b`, each in `../met-worktrees/<area>` on branch `<area>`: `site` (port 5340), `hunt` (5350), `mmw` (5360; also wires `astorCourt1981Steps` into `sequence.ts`), `core` (5370), `roche-north` (5380), `roche-south` (5390). Shared lines: the older block builds the wall. Budgets (triangles / meshes / lights): site 400k/120/0, hunt 650k/170/2, mmw 500k/160/1, core 350k/130/1, roche-north 450k/150/2, roche-south 450k/150/1.
 - [ ] Integration, visual audit, budgets, independent review, fixes (coordinator with reviewer).
 - [ ] Docs, devlog, merge, push, worktree cleanup (coordinator).
 
@@ -54,9 +54,8 @@ Modelling split: each area worker owns one folder and exports one step array per
 
 Pending.
 
-## Handoff (2026-10-11, session stopped at the usage limit)
+## Next after modelling
 
-- Parts library: worker `parts` was stopped mid-way through its visual inspection; its work is preserved, unmerged, in worktree `../met-worktrees/parts` (branch `parts`, 0 commits ahead of main, 9 uncommitted paths at stop). Next: resume or review it, run `MET_PORT=5330 npm run verify` there, inspect the gallery shots (`MET_PORT=5330 node scripts/shots-parts.ts`), merge to main, remove the worktree.
-- Then spawn the six modelling workers per "Modelling split" above, one worktree each under `../met-worktrees/<area>` from main, ports 5340/5350/…/5390, each filling only `src/model/<area>/` (stub exports listed in `docs/design/spec.md`); remove the `demo` chapter in the integration commit that lands the first real steps.
-- Then integration, the visual audit against `docs/research/*-images.md`, the budgets, an independent review (codex 0.158.0 and claude 2.1.281 are installed; see `../fleet/docs/skills/multi-cli-review.md`), docs and devlog.
-- `npm run shots` now takes `--solo <chapter>` and `--presets id,id` (coordinator, this commit).
+- Integrate the area branches in chapter order (`core`, `hunt`, `mmw`, `roche-north`, `roche-south`, `site`), then an integration worker removes the `demo` chapter, tunes presets against the photographs and fixes seams between areas (the coordinator's permissions exclude `src/build/`, so that change is delegated).
+- Then the full-model visual audit against `docs/research/*-images.md`, the budgets, an independent review (codex 0.158.0 and claude 2.1.281 are installed; see `../fleet/docs/skills/multi-cli-review.md`), docs and devlog.
+- If a session stops early, each area's committed progress is on its branch in its worktree; resume the worker by name.
