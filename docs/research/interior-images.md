@@ -1,0 +1,114 @@
+# Interior reference images
+
+Reference photographs of the Met's main interior spaces, for modelling and for the photo-for-render visual audit. Nothing here is committed as an image: each entry is a URL. Local copies, if anyone makes them, go only under ignored paths (`research/cache/`, `.shots/`).
+
+World frame as in `docs/design/spec.md`: metres, +Y up, +X = Manhattan north (up Fifth Avenue), +Z = Manhattan east (toward Fifth Avenue). Origin on the Great Hall axis, in the plane of the Hunt facade's main wall face, at Fifth Avenue sidewalk grade. Plan positions come from the Met's own floor map (see `interior.md`, "Plan source").
+
+Levels used for camera heights (from `interior.md`, "Floor levels"): `L1` = main floor, `L2` = second floor (Great Hall balcony level), `LG` = ground floor. Provisional values: `LG` = -2.34, `L1` = +4.11, `L2` = +10.97 m above the Fifth Avenue sidewalk. Eye height is 1.6 m above the floor the photographer stood on.
+
+"Viewed" means the photo was examined in a browser during this research (2026-10-11) and its viewpoint worked out from what it shows. "Not viewed" means the entry rests on the file's title and description only, and its viewpoint is unchecked.
+
+## Primary images for the visual audit
+
+Nine viewpoints, one or two per major space. Each has a proposed camera preset. Positions and targets are world metres; `fov` is the vertical field of view in degrees for three.js (`PerspectiveCamera.fov`), estimated from the framing (none of these files states its lens). Aspect is the photo's own. Use these as starting points: nudge each preset until the render lines up with the photo, then record the final values in `src/viewer/presets.ts`.
+
+| Preset id | Photo | Position (x, y, z) | Target (x, y, z) | fov | Aspect |
+|---|---|---|---|---|---|
+| `int-great-hall-balcony-south` | P1 | (28.5, L2+1.6, -14.5) | (-30, L1+4, -14.5) | 46 | 3:2 |
+| `int-great-hall-floor-north` | P2 | (-2, L1+1.6, -12) | (30, L1+9, -14.5) | 55 | 3:2 |
+| `int-grand-stair-west` | P3 | (0, L2+1.6, -27) | (0, L2+3, -62) | 68 | 3:4 |
+| `int-dendur-se` | P4 | (116, L1+1.6, -55) | (138, L1+5, -84) | 46 | 3:2 |
+| `int-engelhard-north` | P5 | (60, L1+1.6, -112.4) | (94, L1+8, -112.4) | 55 | 4:3 |
+| `int-greek-roman-court` | P6 | (-136, L1+1.6, -3) | (-104, L1+2.5, -11) | 45 | 3:2 |
+| `int-arms-armor-court` | P7 | (58.5, L1+1.6, -76.3) | (93, L1+4.5, -76.3) | 50 | 3:2 |
+| `int-medieval-hall-east` | P8 | (0, L1+1.6, -117) | (0, L1+7, -80) | 60 | 3:4 |
+| `int-lehman-pyramid-up` | P9 | (0, LG+1.6, -147.7) | (0.01, LG+30, -147.69) | 60 | 3:4 |
+
+P1. Great Hall from the north balcony looking south. https://commons.wikimedia.org/wiki/File:Great_Hall_-_Metropolitan_Museum_of_Art_-_New_York_City_-_DSC07429.jpg (CC0, Daderot, 2020-02-06, 5472×3648). Viewed. The camera stands on the north balcony (gallery 205 zone, x about 28, z about -14.5) at balcony height and looks south (-X) down the whole nave; the arched facade window with its grille is top left, so east (+Z) is on the left. It shows the three-bay nave, the big piers and arches, both long balconies with balustrades, the far (south) four-column screen with the peach half-dome over it, the round information desk with its tall central flower urn, flower niches in the piers, the floor pattern, and ticket kiosks on the west side. Informs: proportions of the nave, piers, balcony height, desk, urns, floor.
+
+P2. Great Hall main floor looking north. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art,_Great_Hall,_October_2025.jpg (CC BY-SA 4.0, TheCatalyst31, 2025-10-16, 6000×4000). Viewed. The camera is on the main floor near the hall's centre, looking north (+X) toward the north end; a dark granite Egyptian statue stands in front of the north column screen, and the west wall with the balcony is on the left. It shows the end bay: four Ionic-type columns carrying the balcony entablature and balustrade, a large arch with a coffered soffit, the peach-painted half-dome, a pendentive and dome ring at top, pilastered piers and pendant lamps. Informs: end-bay section, column screen, half-dome, pier and arch mouldings, materials.
+
+P3. Grand Staircase from the Great Hall balcony looking west. https://commons.wikimedia.org/wiki/File:Grand_Staircase,_Metropolitan_Museum_of_Art.jpg (CC BY-SA 4.0, 颐园居, 2024-05-23, 1920×2560). Viewed. The camera stands at the west balcony balustrade (gallery 202, z about -27) at second-floor height and looks west (-Z) along the stair hall. It shows the single wide flight rising away from the camera to the top landing, the arched opening at the top framing a large painting, tall fluted Corinthian columns lining both sides at second-floor level, the white barrel vault with transverse ribs and a cornice, and the stone balustrade in the foreground. Informs: stair-hall section, column rhythm, vault form and lighting.
+
+P4. Temple of Dendur from the south-east. https://commons.wikimedia.org/wiki/File:Temple_of_Dendur,_Egyptian_collection,_Metropolitan_Museum_of_Art.jpg (CC BY-SA 4.0, TheCatalyst31, 2025-10-16, 6000×4000). Viewed. The camera is on the lower floor south of the platform, east of the temple, looking north-west; the temple's long south side is left of centre, its east front with two columns and composite capitals is right, and the north glass wall recedes on the right. It shows the sandstone temple, the raised grey granite platform and its edge, the gridded glass wall rising into a sloped glazed ceiling with track lights, the beige ashlar end wall, and the light brown floor. Informs: temple massing, platform height, glass wall and ceiling, materials.
+
+P5. Charles Engelhard Court looking north. https://commons.wikimedia.org/wiki/File:American_Statue_hall_MET_2017-05_jeh.jpg (CC BY-SA 4.0, Jim.henderson, 2017-05-21, 4318×3239; the description says "Looking north in Englehard court"). Viewed. The camera is at the court's south end on its centre line, looking north (+X) at the Branch Bank facade. It shows the two-storey marble bank facade with its pedimented centre, pilasters, central arched door, steps and planting beds; Saint-Gaudens' gilded Diana on a tall white pedestal; green cast-iron lamp standards; white marble sculpture; the pitched glass roof on white tubular steel; mezzanine balconies with glass balustrades on both sides; and sun patterns on the light stone floor. Informs: court section, roof form, bank facade proportions, fit-out.
+
+P6. Leon Levy and Shelby White Court. https://commons.wikimedia.org/wiki/File:Photograph_of_the_New_Roman_Gallery_at_the_Metropolitan%E2%80%94New_York_City.jpg (CC BY 3.0, A. Balet, 2008-03-22, 3008×2000). Viewed. The camera is in the ambulatory near a corner, looking along the long (north-south) axis; the direction is inferred, not certain. It shows the tall smooth light-cream columns on Attic bases, the upper storey with smaller columns and grilled windows above the main entablature, the dark polished floor with white inlay lines, the dark green marble central field with a white border, dark grey pedestals, and the flat ambulatory ceiling with recessed lights. Informs: peristyle order and spacing, two-storey section, floor pattern, materials.
+
+P7. Arms and Armor Court (gallery 371; the map now names it the Ronald S. Lauder Arms and Armor Court, formerly the Emma and Georgina Bloomberg court). https://commons.wikimedia.org/wiki/File:Arms_and_Armor_gallery_371,_Metropolitan_Museum_of_Art_01.jpg (CC BY-SA 4.0, TheCatalyst31, 2025-10-16, 6000×4000). Viewed. The camera is at one end looking along the long (north-south) axis; which end is not settled. It shows the cream walls, the vault with tall semicircular-headed clerestory windows on the long walls (ten in all, per Heckscher p. 48), two ring chandeliers, heraldic banners on wall poles, a balcony with an organ case at the far end, glazed cases along the walls, and the mounted armour in a line on a low central platform. Informs: court section, clerestory, platform, fit-out.
+
+P8. Medieval Sculpture Hall through the Valladolid choir screen. https://commons.wikimedia.org/wiki/File:Met,_cancellata.JPG (CC BY-SA 3.0, sailko, 2010-09-22, 1944×2592). Viewed. The camera is just west of the screen (gallery 520 side), looking east (+Z) through it into the hall. It shows the full-width wrought-iron screen in three tiers with gilded friezes and a gilded cresting, and beyond it the white vaulted nave with arched clerestory windows, side arcades and an arched opening at the east end. Informs: screen size and tiers, hall section, clerestory.
+
+P9. Robert Lehman Wing court roof, looking straight up. https://commons.wikimedia.org/wiki/File:Ceiling_Robert_Lehman_Wing_Atrium_Metropolitan_Museum_of_Art.jpg (CC BY-SA 4.0, EgorovaSvetlana, 2011-11-18, 1920×2560). Viewed. The camera is near the court centre on its floor, looking up. It shows the glazed hipped pyramid with a short ridge, the diagonal grid of light grey steel members, and the cream walls with clipped corners at its base. Informs: skylight form, glazing pattern, the court's clipped-corner plan.
+
+## Further references
+
+Great Hall and balcony
+
+1. https://commons.wikimedia.org/wiki/File:MET_-_The_Great_Hall_-_Metropolitan_Museum_of_Art,_New_York,_NY,_USA_-_2012.JPG (CC BY-SA 3.0, WestportWiki, 2012-10-29). Great Hall, wide view. Not viewed. Informs: general check.
+2. https://commons.wikimedia.org/wiki/File:MET_-_The_Great_Hall_-_Metropolitan_Museum_of_Art,_New_York,_NY,_USA_-_2012_C_01.JPG (CC BY-SA 3.0, WestportWiki, 2012-10-29, portrait). Great Hall, probably looking up into a dome (portrait framing). Not viewed. Informs: dome, oculus, pendentives.
+3. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_Jan_2026_02.jpg (CC BY-SA 4.0, Epicgenius, 2026-01-19). One of about 35 Great Hall photos in this set; the newest record of the hall. Not viewed. Informs: current fit-out (desk, kiosks, signage).
+4. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_Jan_2026_10.jpg (CC BY-SA 4.0, Epicgenius, 2026-01-19). Great Hall. Not viewed. Informs: current fit-out.
+5. https://commons.wikimedia.org/wiki/File:Great_Hall_of_Metropolitan_Museum_of_Art.jpg (CC BY-SA 4.0, 颐园居, 2024-05-23, portrait). Great Hall. Not viewed. Informs: general check.
+6. https://commons.wikimedia.org/wiki/File:2008-10-23_Interior_of_the_Metropolitan_03.jpg (CC BY-SA 4.0, Szilas, 2008-10-25, portrait). Great Hall detail. Not viewed.
+7. Category of all Great Hall photos: https://commons.wikimedia.org/wiki/Category:Great_Hall_and_Great_Hall_Balcony,_Metropolitan_Museum_of_Art (70 files).
+
+Grand Staircase
+
+8. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_Jan_2026_01.jpg (CC BY-SA 4.0, Epicgenius, 2026-01-19; described as the stair). Not viewed. Informs: stair, vault.
+9. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_Jan_2026_41.jpg (CC BY-SA 4.0, Epicgenius, 2026-01-19; described as the stair hall). Not viewed. Informs: upper stair hall.
+10. https://commons.wikimedia.org/wiki/File:Staircase_at_the_Met_(3434199505).jpg (CC BY 2.0, Allen McGregor, 2009-04-03). Not viewed. Informs: stair.
+11. https://commons.wikimedia.org/wiki/File:Met_staircase_by_Matthew_Bisanz.JPG (CC BY-SA 3.0, MBisanz; described as the underside of the main staircase). Not viewed. Informs: the vault under the stair (Byzantine galleries below it).
+
+Temple of Dendur
+
+12. https://commons.wikimedia.org/wiki/File:The_Sackler_Wing_(21473312203).jpg (CC BY-SA 2.0, Erwin Verbruggen, 2015-10-03). Not viewed. Informs: whole gallery, glass wall.
+13. https://commons.wikimedia.org/wiki/File:Temple_of_Dendur-Metropolitan_Museum_of_Art.jpg (CC BY-SA 3.0, Yair Haklai, 2012-05-26). Not viewed. Informs: gate, temple, pool.
+14. https://commons.wikimedia.org/wiki/File:Dendur_Temple_in_Metropolitan_Museum_of_Art_20240523.jpg (CC BY 4.0, 颐园居, 2024-05-23). Not viewed. Informs: temple and pool.
+15. https://commons.wikimedia.org/wiki/File:The_Temple_of_Dendur_-_Flickr_-_Marcela_McGreal.jpg (CC BY 2.0, Marcela McGreal). Not viewed.
+16. https://commons.wikimedia.org/wiki/File:The_Temple_of_Dendur_MET_DP244278.jpg (CC0, The Met's own object photograph). Not viewed. Informs: temple elevation, sandstone colour under controlled light.
+17. https://commons.wikimedia.org/wiki/File:Temple_of_Dendur-_night.jpg (CC BY-SA 2.0, Rosemanios, 2005-12-30). Not viewed. Informs: night lighting through the glass wall.
+
+Charles Engelhard Court
+
+18. https://commons.wikimedia.org/wiki/File:The_Met_III.jpg (CC BY-SA 4.0, Karl Thomas Moore, 2016-11-28). Viewed. The bank facade's ground storey seen from the court floor, looking north: rusticated grey marble, the central arched door with fanlight up four steps, curbed planting beds, white marble sculpture on grey pedestals, a verdigris lamp standard, and mezzanine balconies with glass balustrades on the left. Informs: bank facade detail, planting beds, floor.
+19. https://commons.wikimedia.org/wiki/File:American_Wing,_Met_Museum,_Oct_2017.jpg (CC0, Thomson200). Not viewed.
+20. https://commons.wikimedia.org/wiki/File:Charles_Engelhard_Court,_Metropolitan_Museum_of_Art_20240523.jpg (CC BY-SA 4.0, 颐园居, 2024-05-23). Not viewed.
+21. https://commons.wikimedia.org/wiki/File:The_New_York_Branch_Bank_of_the_United_States_Fa%C3%A7ade_in_the_Charles_Engelhard_Court_in_The_American_Wing_at_The_Metropolitan_Museum_of_Art_New_York.jpg (CC BY-SA 4.0, EgorovaSvetlana, 2011-11-18). Not viewed. Informs: bank facade elevation.
+22. https://commons.wikimedia.org/wiki/File:At_the_Metropolitan_Museum_of_Art,_New_York_2017_01_-_Loggia_from_Laurelton_Hall.jpg (CC BY-SA 4.0, Mike Peel, 2017-05-27). Not viewed. Informs: Tiffany loggia.
+23. https://commons.wikimedia.org/wiki/File:Branch_Bank_of_U._S._erected_1825_-_front_75_feet_(NYPL_Hades-118424-54550).tif (public domain, NYPL scan). Historic print of the bank on Wall Street; its title gives the front as 75 feet. Not viewed. Informs: bank facade width.
+
+Leon Levy and Shelby White Court
+
+24. https://commons.wikimedia.org/wiki/File:Met,_cortile_dell%27arte_romana.JPG (CC BY-SA 3.0, Sailko, 2014-01-23). Not viewed. Informs: court overview.
+25. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_(51033853587).jpg (CC BY-SA 2.0, Larry Syverson, 2008-09-26; described as the Leon Levy and Shelby White Court). Not viewed.
+26. https://commons.wikimedia.org/wiki/File:Gallery_162,_Metropolitan_Museum_of_Art_20240523.jpg (CC BY-SA 4.0, 颐园居, 2024-05-23, portrait). Not viewed.
+
+Arms and Armor court
+
+27. https://commons.wikimedia.org/wiki/File:Armor_hall_at_the_Met,_Oct_2017.jpg (CC0, Thomson200). Not viewed.
+28. https://commons.wikimedia.org/wiki/File:Department_of_Arms_and_Armor_Middle_Ages_Main_Hall_(6279771970).jpg (CC BY 2.0, Erik Drost). Not viewed.
+
+Medieval Sculpture Hall
+
+29. https://commons.wikimedia.org/wiki/File:Choir_screen_from_the_Cathedral_of_Valladolid_MET_MM29152.jpg (CC0, The Met's own object photograph). Not viewed. Informs: screen elevation.
+
+Robert Lehman Wing
+
+30. https://commons.wikimedia.org/wiki/File:Robert_Lehman_Wing_-_Visitors_Watching_Impressionist_Masters.JPG (CC BY-SA 3.0, Sumanch, 2011-01-02). Not viewed. Informs: gallery ring around the court.
+
+Astor Court and the Petrie Court
+
+31. https://commons.wikimedia.org/wiki/File:Astor_Court,_the_Met,_Manhattan_Oct_2017.jpg (CC0, Thomson200). Not viewed. Informs: Astor Court overview.
+32. https://commons.wikimedia.org/wiki/File:Astor_court_colonnade.jpg (CC BY-SA 3.0, Alawa; described as looking north along the colonnade). Not viewed.
+33. https://commons.wikimedia.org/wiki/File:NYC_-_Metropolitan_Museum_-_Carroll_and_Milton_Petrie_European_Sculpture_Court.jpg (CC BY 3.0, Jean-Christophe Benoist, 2012-04-26). Not viewed. Informs: the Petrie Court, the long skylit court next to the Lehman Wing (see `interior.md`).
+
+Plan source (not a photograph)
+
+34. The Met's floor map, https://maps.metmuseum.org/ (Living Map platform). Its vector tiles give room, wall, column, stair and void outlines on every floor; all plan positions in `interior.md` come from it. Treat it as the Met's data, used here for reference only.
+
+## Gaps
+
+- No freely licensed wide view of the Medieval Sculpture Hall from its east end, or of a second-floor European Paintings gallery, turned up on Commons. Use the Met's own pages as reference-only sources for those (see `interior.md`).
+- Most "not viewed" entries need a look before their viewpoint is relied on.
