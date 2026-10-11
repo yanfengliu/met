@@ -94,10 +94,12 @@ function endPiers(kit: Kit): void {
   }
 }
 
-/** One extension front, X from x0 to x1: rusticated base with ground-floor windows, two tall windows, three recessed panels, up to the parapet. */
-export const EXT_WINDOW = { width: 2.3, sill: 6.0, height: 5.4, offset: 5.15, groundWidth: 1.3, groundSill: 1.2, groundHeight: 1.9 } as const;
-export const EXT_PANEL = { width: 2.6, sill: 13.6, height: 2.2, centreWidth: 3.6, centreSill: 13.4, centreHeight: 3.6 } as const;
+/** S7 at the pavilion's ends: the pediments' tops at about Y 11.6 (window 5.0 m from a sill at 5.4), windows 5.15 m either side of each wing's middle. */
+export const EXT_WINDOW = { width: 2.3, sill: 5.4, height: 5.0, offset: 5.15, groundWidth: 1.3, groundSill: 1.2, groundHeight: 1.9 } as const;
+/** S7: a recessed panel over each window (Y 14.3–16.1) and one between the caryatids. */
+export const EXT_PANEL = { width: 2.6, sill: 13.9, height: 2.2, centreWidth: 3.6, centreSill: 13.4, centreHeight: 3.6 } as const;
 
+/** One extension front, X from x0 to x1: rusticated base with ground-floor windows, two tall windows, three recessed panels, up to the parapet. */
 function extensionFront(kit: Kit, x0: number, x1: number, order: number): void {
   const width = x1 - x0;
   const cx = (x0 + x1) / 2;
