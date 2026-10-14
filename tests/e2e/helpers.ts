@@ -4,6 +4,7 @@
  */
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { PerspectiveCamera, Vector3 } from 'three';
 
 import type { MetFacts } from '../../src/viewer/facts.js';
 
@@ -108,6 +109,12 @@ export async function labelStep(page: Page): Promise<number> {
 
 export type Camera = Facts['camera'];
 
+type Triple = readonly [number, number, number];
+
+export const distance = (p: Triple, q: Triple): number => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+
+export const centreOf = (b: { readonly min: Triple; readonly max: Triple }): [number, number, number] => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+
 export async function camera(page: Page): Promise<Camera> {
   const value = await page.evaluate(() => (window.__met === undefined ? null : (JSON.parse(JSON.stringify(window.__met.camera)) as unknown)));
   if (value === null) throw new Error('window.__met is not published, so the camera cannot be read.');
@@ -131,6 +138,30 @@ export async function settledCamera(page: Page, timeout = 6000): Promise<Camera>
     if (Date.now() > end) throw new Error(`The camera did not settle within ${String(timeout)} ms; it last moved ${cameraGap(now, last).toFixed(4)} m in 150 ms.`);
     last = now;
   }
+}
+
+/**
+ * The largest |x| or |y|, in normalized device coordinates, of the 8 corners of `bounds` seen from `cam` (its fov and aspect, +Y up as the orbit
+ * controls keep it): at most 1 when the whole box is in frame; Infinity when a corner lies behind the camera.
+ */
+export function cornerReach(cam: Camera, bounds: Facts['bounds']): number {
+  const c = new PerspectiveCamera(cam.fov, cam.aspect, cam.near, cam.far);
+  c.position.set(...cam.position);
+  c.lookAt(new Vector3(...cam.target));
+  c.updateMatrixWorld();
+  const forward = new Vector3(...cam.target).sub(c.position).normalize();
+  let reach = 0;
+  for (const x of [bounds.min[0], bounds.max[0]]) {
+    for (const y of [bounds.min[1], bounds.max[1]]) {
+      for (const z of [bounds.min[2], bounds.max[2]]) {
+        const corner = new Vector3(x, y, z);
+        if (!(corner.clone().sub(c.position).dot(forward) > 0)) return Infinity;
+        const p = corner.project(c);
+        reach = Math.max(reach, Math.abs(p.x), Math.abs(p.y));
+      }
+    }
+  }
+  return reach;
 }
 
 /** Opens the view menu and clicks the preset's item. */

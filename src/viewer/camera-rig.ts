@@ -18,7 +18,9 @@ const NEAR_PER_DISTANCE = 0.01;
 /** The camera stays this far above the workspace ground. */
 const CAMERA_FLOOR = 0.4;
 /** The follow camera frames at least a sphere of this radius, so a small step does not zoom in on one stone. */
-const FOLLOW_MIN_RADIUS = 14;
+export const FOLLOW_MIN_RADIUS = 14;
+/** The follow camera stands this many times as far as the tightest fit of its box. */
+const FOLLOW_MARGIN = 1.15;
 /** Seconds for the follow camera to cover about 63% of the way to its goal. */
 const FOLLOW_TAU = 0.9;
 const FOLLOW_ELEVATION_MIN = 14 * MathUtils.DEG2RAD;
@@ -147,21 +149,29 @@ export class CameraRig {
     }
   }
 
-  /** Where the follow camera aims for `focus`, given the step's piece bounds and the whole model's bounds. */
+  /** Where the follow camera aims for `focus`, given the step's piece bounds and the whole model's bounds; see `followGoal`. */
   followGoal(focus: CameraFocus | undefined, stepBounds: Box3, modelBounds: Box3): CameraPose {
-    const aspect = this.camera.aspect;
-    if (focus?.kind === 'view') return { position: new Vector3(...focus.position), target: new Vector3(...focus.target), fov: DEFAULT_FOV };
-    if (focus?.kind === 'preset') {
-      const preset = presetById(focus.id);
-      if (preset !== undefined) return resolvePreset(preset, modelBounds, aspect);
-    }
-    const box = focus?.kind === 'box' ? new Box3(new Vector3(...focus.min), new Vector3(...focus.max)) : stepBounds.clone();
-    // At least FOLLOW_MIN_RADIUS across, so a small step does not zoom in on one stone.
-    box.expandByVector(new Vector3(1, 1, 1).multiplyScalar(Math.max(0, FOLLOW_MIN_RADIUS - box.getSize(new Vector3()).length() / 2) / Math.sqrt(3)));
-    const offset = this.camera.position.clone().sub(this.controls.target);
-    const horizontal = Math.hypot(offset.x, offset.z) > 1e-6 ? Math.atan2(offset.z, offset.x) : Math.PI / 4;
-    const elevation = MathUtils.clamp(Math.atan2(offset.y, Math.hypot(offset.x, offset.z)), FOLLOW_ELEVATION_MIN, FOLLOW_ELEVATION_MAX);
-    const direction = new Vector3(Math.cos(elevation) * Math.cos(horizontal), Math.sin(elevation), Math.cos(elevation) * Math.sin(horizontal));
-    return fitBox(box, direction, DEFAULT_FOV, aspect, 1.15);
+    return followGoal({ position: this.camera.position, target: this.controls.target }, this.camera.aspect, focus, stepBounds, modelBounds);
   }
+}
+
+/**
+ * Where the follow camera aims for `focus`, seen from the camera `from` at `aspect`: a `view` exactly; a `preset` as the preset resolves; a `box` or,
+ * by default, the step's piece bounds, grown evenly until its half-diagonal is at least FOLLOW_MIN_RADIUS (14 m) and framed with a 1.15 margin from
+ * the current horizontal direction, its elevation kept within 14..62 degrees.
+ */
+export function followGoal(from: { readonly position: Vector3; readonly target: Vector3 }, aspect: number, focus: CameraFocus | undefined, stepBounds: Box3, modelBounds: Box3): CameraPose {
+  if (focus?.kind === 'view') return { position: new Vector3(...focus.position), target: new Vector3(...focus.target), fov: DEFAULT_FOV };
+  if (focus?.kind === 'preset') {
+    const preset = presetById(focus.id);
+    if (preset !== undefined) return resolvePreset(preset, modelBounds, aspect);
+  }
+  const box = focus?.kind === 'box' ? new Box3(new Vector3(...focus.min), new Vector3(...focus.max)) : stepBounds.clone();
+  // At least FOLLOW_MIN_RADIUS across, so a small step does not zoom in on one stone.
+  box.expandByVector(new Vector3(1, 1, 1).multiplyScalar(Math.max(0, FOLLOW_MIN_RADIUS - box.getSize(new Vector3()).length() / 2) / Math.sqrt(3)));
+  const offset = from.position.clone().sub(from.target);
+  const horizontal = Math.hypot(offset.x, offset.z) > 1e-6 ? Math.atan2(offset.z, offset.x) : Math.PI / 4;
+  const elevation = MathUtils.clamp(Math.atan2(offset.y, Math.hypot(offset.x, offset.z)), FOLLOW_ELEVATION_MIN, FOLLOW_ELEVATION_MAX);
+  const direction = new Vector3(Math.cos(elevation) * Math.cos(horizontal), Math.sin(elevation), Math.cos(elevation) * Math.sin(horizontal));
+  return fitBox(box, direction, DEFAULT_FOV, aspect, FOLLOW_MARGIN);
 }

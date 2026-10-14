@@ -228,7 +228,11 @@ function boot(): void {
   const b = timeline.bounds;
   publishFacts({
     n: timeline.n,
-    steps: steps.map((s) => Object.freeze({ id: s.id, title: s.title, chapter: s.chapter, year: s.year ?? null, detail: s.detail ?? null, weight: s.weight ?? 1 })),
+    steps: steps.map((s, i) => {
+      const sb = timeline.steps[i]?.bounds ?? b;
+      const bounds = Object.freeze({ min: vec(sb.min), max: vec(sb.max) });
+      return Object.freeze({ id: s.id, title: s.title, chapter: s.chapter, year: s.year ?? null, detail: s.detail ?? null, weight: s.weight ?? 1, focus: s.focus ?? null, bounds });
+    }),
     chapters: ranges.map((r) => Object.freeze({ id: r.chapter.id, title: r.chapter.title, years: r.chapter.years, summary: r.chapter.summary, first: r.first, count: r.count })),
     presets: PRESETS.map((p) => Object.freeze({ id: p.id, label: p.label, group: p.group })),
     bounds: Object.freeze({ min: vec(b.min), max: vec(b.max) }),

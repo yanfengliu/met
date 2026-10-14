@@ -7,10 +7,11 @@
  * that camera's fov and aspect in Node; what the canvas shows is not checked here.
  */
 import { expect, test } from '@playwright/test';
-import { PerspectiveCamera, Vector3 } from 'three';
 
-import { camera, cameraGap, choosePreset, dragCanvas, open, press, settledCamera, watchErrors } from './helpers.js';
-import type { Camera, Facts } from './helpers.js';
+import type { Vec3 } from '../../src/build/types.js';
+import { PRESETS } from '../../src/viewer/presets.js';
+import { camera, cameraGap, centreOf, choosePreset, cornerReach, distance, dragCanvas, open, press, settledCamera, watchErrors } from './helpers.js';
+import type { Facts } from './helpers.js';
 
 test.describe('camera', () => {
   let errors: { expectClean: () => void };
@@ -85,22 +86,59 @@ test.describe('camera', () => {
     expect([unknown.view, unknown.follow]).toEqual([plain.view, plain.follow]);
     expect(unknown.follow).toBe(true);
   });
+
+  test('during playback the follow camera moves toward the framing of the step in motion', async ({ page }) => {
+    const f = await open(page);
+    // Start playing at the first step that frames its own pieces away from the opening view's target, so the camera has somewhere to go.
+    const start = f.steps.findIndex((s) => s.focus === null && distance(centre(s.bounds), centre(f.bounds)) > 20);
+    expect(start, 'a step framing its own pieces away from the model centre').toBeGreaterThanOrEqual(0);
+    await open(page, `t=${String(start)}&autoplay=1`);
+    await page.waitForFunction(() => window.__met?.mode === 'playing' && window.__met.follow);
+    const samples: { t: number; direction: 1 | -1; follow: boolean; target: Vec3 }[] = [];
+    for (let k = 0; k < 25; k += 1) {
+      samples.push(await page.evaluate(() => {
+        const m = window.__met;
+        if (m === undefined) throw new Error('window.__met is not published.');
+        return { t: m.t, direction: m.direction, follow: m.follow, target: m.camera.target };
+      }));
+      await page.waitForTimeout(120);
+    }
+    expect(samples.every((s) => s.follow), 'follow stays on without input').toBe(true);
+    // The goal's target for the step in motion, from the spec's CameraFocus: its pieces' bounds, a box, a view or a preset.
+    const goal = (t: number, direction: 1 | -1): { step: number; target: Vec3 } => {
+      const index = Math.min(Math.max(direction === 1 ? Math.floor(t) : Math.ceil(t) - 1, 0), f.n - 1);
+      const step = f.steps[index];
+      if (step === undefined) throw new Error(`No step ${String(index)}.`);
+      return { step: index, target: focusTarget(step.focus, step.bounds, f.bounds) };
+    };
+    let approaches = 0;
+    const away: string[] = [];
+    for (let k = 1; k < samples.length; k += 1) {
+      const a = samples[k - 1];
+      const b = samples[k];
+      if (a === undefined || b === undefined) continue;
+      const ga = goal(a.t, a.direction);
+      const gb = goal(b.t, b.direction);
+      if (ga.step !== gb.step) continue;
+      const before = distance(a.target, ga.target);
+      const after = distance(b.target, gb.target);
+      if (before < 0.05) continue;
+      approaches += 1;
+      if (!(after < before)) away.push(`step ${String(ga.step)} at t ${a.t.toFixed(2)}..${b.t.toFixed(2)}: ${before.toFixed(3)} m to ${after.toFixed(3)} m`);
+    }
+    expect(approaches, 'sample pairs within one step with the camera still under way').toBeGreaterThanOrEqual(3);
+    expect(away, 'pairs where the camera target moved away from the step framing').toEqual([]);
+  });
 });
 
-/** The largest |x| or |y|, in normalized device coordinates, of the 8 corners of `bounds` seen from `cam`: at most 1 when the whole box is in frame. */
-function cornerReach(cam: Camera, bounds: Facts['bounds']): number {
-  const c = new PerspectiveCamera(cam.fov, cam.aspect, cam.near, cam.far);
-  c.position.set(...cam.position);
-  c.lookAt(new Vector3(...cam.target));
-  c.updateMatrixWorld();
-  let reach = 0;
-  for (const x of [bounds.min[0], bounds.max[0]]) {
-    for (const y of [bounds.min[1], bounds.max[1]]) {
-      for (const z of [bounds.min[2], bounds.max[2]]) {
-        const p = new Vector3(x, y, z).project(c);
-        reach = Math.max(reach, Math.abs(p.x), Math.abs(p.y));
-      }
-    }
-  }
-  return reach;
+const centre = centreOf;
+
+/** Where a step's framing looks (docs/design/spec.md, CameraFocus): its pieces' or the box's centre, the view's target, or the preset's target. */
+function focusTarget(focus: Facts['steps'][number]['focus'], bounds: Facts['bounds'], model: Facts['bounds']): Vec3 {
+  if (focus === null || focus.kind === 'pieces') return centre(bounds);
+  if (focus.kind === 'box') return centre(focus);
+  if (focus.kind === 'view') return focus.target;
+  const preset = PRESETS.find((p) => p.id === focus.id);
+  if (preset === undefined) return centre(bounds);
+  return preset.camera.kind === 'look' ? preset.camera.target : centre(model);
 }

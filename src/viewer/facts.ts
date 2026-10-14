@@ -3,11 +3,21 @@
  * Everything is frozen or a getter; nothing here changes the page's state, so tests still drive it through its real controls.
  */
 import type { PlayerMode, Speed } from '../build/player.js';
-import type { Vec3 } from '../build/types.js';
+import type { CameraFocus, Vec3 } from '../build/types.js';
 
 export interface MetFacts {
   readonly n: number;
-  readonly steps: readonly { readonly id: string; readonly title: string; readonly chapter: string; readonly year: string | null; readonly detail: string | null; readonly weight: number }[];
+  /** Each step's own facts; `focus` is what the follow camera frames for it (null: its pieces) and `bounds` its pieces' world bounds at their final matrices. */
+  readonly steps: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly chapter: string;
+    readonly year: string | null;
+    readonly detail: string | null;
+    readonly weight: number;
+    readonly focus: CameraFocus | null;
+    readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
+  }[];
   /** Every chapter of src/build/chapters.ts in order; `count` is 0 for a chapter with no steps (shown disabled), whose `first` is where its steps would start. */
   readonly chapters: readonly { readonly id: string; readonly title: string; readonly years: string; readonly summary: string; readonly first: number; readonly count: number }[];
   readonly presets: readonly { readonly id: string; readonly label: string; readonly group: string }[];
