@@ -89,7 +89,8 @@ export const HUNT_MEDALLION_COUNT = 6; // [H12] M: Bitter's portrait medallions
 export const HUNT_MEDALLION_DIAMETER = 1.8; // [H12] D: S7, 69 px at the wall
 export const HUNT_MEDALLION_CENTRE_Y = 18.6; // [H12] D: S7
 export const HUNT_NICHE_COUNT = 4; // [H13] M: one between the columns of each pair
-export const HUNT_EXTENSION_CORNICE_Y = 20.7; // [H14] E: flanking extensions' main cornice
+export const HUNT_EXTENSION_CORNICE_Y = 21.9; // [H14] M ±0.3: the flanking extensions' crowning cornice top, 21.4..21.9 in E43 and E41 (mmw/dims.ts) once the camera's pitch and the cornice's overhang are taken out; level with the end pavilions' parapet
+export const HUNT_EXTENSION_PARAPET_Y = 22.5; // [H14] E: top of the extensions' walls, a low parapet behind the crowning cornice (was MMW_PARAPET_TOP_Y, which only they read; P35, P37, P47 show them standing above the links)
 
 // --- McKim, Mead & White wings --------------------------------------------------------------
 export const MMW_NORTH_LINK_MIN_X = 49.4; // [W2] M
@@ -100,7 +101,6 @@ export const MMW_END_PAVILION_FRONT_Z = 9.85; // [W3] M: both end pavilions (9.8
 export const MMW_NORTH_END_MIN_X = 88.6; // [W3] M
 export const MMW_SOUTH_END_MAX_X = -88.1; // [W3] M
 export const MMW_CORNICE_Y = 17.7; // [W4] M ±0.3: the links' crowning cornice top (its front edge); photos P37 (mmw/dims.ts, 18.0 on the wall's scale) and E43 (Epicgenius 2023, 17.95 after its pitch is corrected), each less the 0.3 m its 0.75 m projection reads high from the street; just under the Hunt extensions' dentil course
-export const MMW_PARAPET_TOP_Y = 22.5; // [W4] E: read only by the Hunt extensions (hunt/dims.ts EXT_PARAPET_Y), which stand above the links (P35, P37, P47)
 
 // --- Steps and plaza ------------------------------------------------------------------------
 export const STEPS_TOP_Z = 9.0; // [P2] M: DEM profile on the axis

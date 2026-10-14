@@ -22,11 +22,14 @@ import {
   CORNICE_H,
   CORNICE_P,
   CORNICE_TOP_Y,
+  EXT_ARCHITRAVE_H,
   EXT_BASE_TOP_Y,
   EXT_CORNICE_Y,
+  EXT_CROWN_H,
   EXT_FACE_Z,
   EXT_NORTH_X,
-  EXT_ORDER_TOP_Y,
+  EXT_ORDER_BOTTOM_Y,
+  EXT_ORDER_CORNICE_H,
   EXT_SOUTH_X,
   FRIEZE_TOP_Y,
   PAIR_X,
@@ -265,8 +268,8 @@ export const entablatureSteps: readonly StepDef[] = [
       addRun(kit, p.outerNorth, 0, COLUMN_TOP_Y, 3);
       for (const x of [(PAIR_X[0] + PAIR_X[1]) / 2, 0, (PAIR_X[2] + PAIR_X[3]) / 2]) addRun(kit, p.between, x, FRIEZE_TOP_Y, 4);
       lionHeads(kit, 4);
-      // The wings: a string course over the rusticated base, the band and dentilled cornice the caryatids carry, and the crowning cornice at Y 20.7
-      // that meets the McKim, Mead & White links' cornice with no jog.
+      // The wings: a string course over the rusticated base, the band and dentilled cornice the caryatids carry, starting on the McKim, Mead & White
+      // links' cornice top, and the plain crowning cornice at the end pavilions' parapet height (E43, E41; mmw/dims.ts).
       for (const [x0, x1, order] of [
         [EXT_SOUTH_X, -PAVILION_HALF, 0],
         [PAVILION_HALF, EXT_NORTH_X, 3],
@@ -275,12 +278,12 @@ export const entablatureSteps: readonly StepDef[] = [
           [x0, y, EXT_FACE_Z],
           [x1, y, EXT_FACE_Z],
         ];
-        const order1 = corniceRun({ path: line(EXT_ORDER_TOP_Y - 0.75), height: 0.75, projection: 0.5, modillions: false, dentils: true });
-        const crown = corniceRun({ path: line(EXT_CORNICE_Y - 0.9), height: 0.9, projection: 0.85, modillions: true, dentils: false });
+        const order1 = corniceRun({ path: line(EXT_ORDER_BOTTOM_Y), height: EXT_ORDER_CORNICE_H, projection: 0.5, modillions: false, dentils: true });
+        const crown = corniceRun({ path: line(EXT_CORNICE_Y - EXT_CROWN_H), height: EXT_CROWN_H, projection: 0.85, modillions: false, dentils: false });
         // The four swept mouldings of one wing share a material: one geometry, so one mesh.
         const trim = wingTrim(x0, () => [
           moulding({ profile: 'string-course', path: line(EXT_BASE_TOP_Y), height: 0.4, projection: 0.22 }),
-          moulding({ profile: 'architrave', path: line(EXT_ORDER_TOP_Y - 1.2), height: 0.45, projection: 0.12 }),
+          moulding({ profile: 'architrave', path: line(EXT_ORDER_BOTTOM_Y - EXT_ARCHITRAVE_H), height: EXT_ARCHITRAVE_H, projection: 0.12 }),
           order1.moulding,
           crown.moulding,
         ]);

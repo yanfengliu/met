@@ -10,7 +10,7 @@ import type { StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';
 import { keystone, lathe, MeshBuilder, moulding, ProfilePen } from '../lib/index.js';
 import { HUNT_MEDALLION_CENTRE_Y, HUNT_MEDALLION_DIAMETER, HUNT_PAIR_AXIS_SPACING } from '../frame.js';
-import { ARCH_OUTER_SPAN, ARCH_SPRING_Y, ARCHIVOLT_BAND, BAY_X, EXT_FACE_Z, EXT_NORTH_X, EXT_SOUTH_X, PAIR_X, PAVILION_HALF, PILASTER_W, WALL_Z } from './dims.js';
+import { ARCH_OUTER_SPAN, ARCH_SPRING_Y, ARCHIVOLT_BAND, BAY_X, EXT_ARCHITRAVE_H, EXT_FACE_Z, EXT_NORTH_X, EXT_ORDER_BOTTOM_Y, EXT_SOUTH_X, PAIR_X, PAVILION_HALF, PILASTER_W, WALL_Z } from './dims.js';
 import { at, box, medallionDisc, scaled } from './shapes.js';
 import { NICHE } from './walls.js';
 
@@ -55,6 +55,10 @@ const athena = lazy(() => {
   return b.build();
 });
 
+/** The caryatids' corbels' top, and the figures' lathe height: each figure is stretched to carry the wings' architrave band (dims.ts EXT_ORDER_BOTTOM_Y). */
+const CARYATID_FOOT_Y = 13.9;
+const CARYATID_H = 3.2;
+const CARYATID_STRETCH = (EXT_ORDER_BOTTOM_Y - EXT_ARCHITRAVE_H - CARYATID_FOOT_Y) / CARYATID_H;
 /** A draped caryatid with a basket capital, about 3.2 m tall, a lathe body flattened front to back. Origin at its base centre. */
 const caryatid = lazy(() => {
   const pen = new ProfilePen(0, 0)
@@ -71,8 +75,8 @@ const caryatid = lazy(() => {
     .to(0.12, 2.86)
     .to(0.3, 2.9)
     .to(0.34, 3.05)
-    .to(0.42, 3.2)
-    .to(0, 3.2);
+    .to(0.42, CARYATID_H)
+    .to(0, CARYATID_H);
   const g = lathe(pen.open(), { segments: 14 });
   g.applyMatrix4(new THREE.Matrix4().makeScale(1, 1, 0.62));
   g.computeBoundingBox();
@@ -129,8 +133,8 @@ export const sculptureSteps: readonly StepDef[] = [
         const cx = (x0 + x1) / 2;
         for (const s of [-1, 1]) {
           const x = cx + s * 3.55;
-          box(kit, palette.limestone, [x - 0.5, 13.4, EXT_FACE_Z], [x + 0.5, 13.9, EXT_FACE_Z + 0.75]);
-          kit.add(caryatid(), palette.limestone, scaled(x, 13.9, EXT_FACE_Z + 0.42, 1.45, 1, 1.1));
+          box(kit, palette.limestone, [x - 0.5, CARYATID_FOOT_Y - 0.5, EXT_FACE_Z], [x + 0.5, CARYATID_FOOT_Y, EXT_FACE_Z + 0.75]);
+          kit.add(caryatid(), palette.limestone, scaled(x, CARYATID_FOOT_Y, EXT_FACE_Z + 0.42, 1.45, CARYATID_STRETCH, 1.1));
         }
       }
     },

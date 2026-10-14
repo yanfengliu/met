@@ -23,7 +23,8 @@ import {
   HUNT_PAVILION_FRONT_Z,
   LANDING_Y,
   MAIN_FLOOR_Y,
-  MMW_PARAPET_TOP_Y,
+  HUNT_EXTENSION_PARAPET_Y,
+  MMW_CORNICE_Y,
   SECOND_FLOOR_Y,
 } from '../frame.js';
 
@@ -113,12 +114,20 @@ export const SLAB = 0.45;
 
 // --- Flanking extensions --------------------------------------------------------------------------
 export const EXT_CORNICE_Y = HUNT_EXTENSION_CORNICE_Y;
-export const EXT_PARAPET_Y = MMW_PARAPET_TOP_Y;
+export const EXT_PARAPET_Y = HUNT_EXTENSION_PARAPET_Y;
 export const EXT_WALL_T = 1.2;
 /** Their rusticated base and the string course over it. */
 export const EXT_BASE_TOP_Y = 4.7;
-/** The dentilled cornice the caryatids carry (S7, S9). */
-export const EXT_ORDER_TOP_Y = 18.3;
+/**
+ * The dentilled cornice the caryatids carry (S7, S9) starts on the McKim, Mead & White links' cornice top, so the links' cornice runs into the extensions just
+ * under their dentil course (E43, E41: dentils from about 18.0; mmw/dims.ts); an architrave band under it rests on the caryatids.
+ */
+export const EXT_ORDER_BOTTOM_Y = MMW_CORNICE_Y;
+export const EXT_ORDER_CORNICE_H = 0.9;
+export const EXT_ORDER_TOP_Y = EXT_ORDER_BOTTOM_Y + EXT_ORDER_CORNICE_H;
+export const EXT_ARCHITRAVE_H = 0.45;
+/** The crowning cornice under the extensions' parapet: plain, no modillions under its corona (E43). */
+export const EXT_CROWN_H = 0.9;
 
 // --- Great Hall (interior.md, The Great Hall; map Z − 3.1) ------------------------------------------
 export const HALL_X = 30.43;
