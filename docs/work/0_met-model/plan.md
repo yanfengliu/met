@@ -1,9 +1,9 @@
 # Animated build of The Met
 
-Status: active
+Status: complete
 Owner: Coordinator (Claude Code desktop session, 2026-10-10)
 Created: 2026-10-11
-Updated: 2026-10-11
+Updated: 2026-10-14
 
 ## Problem and outcome
 
@@ -56,13 +56,19 @@ Modelling split: each area worker owns one folder and exports one step array per
 - [x] Coordinator acceptance pass on `ad6f16f` (standard shots, sweep seed 2026): one defect, A1, the section cut slices park trees and paints their crowns red.
 - [x] Independent review round 0 of `ad6f16f`: Codex `gpt-6-astra` xhigh, 8 findings; Claude `claude-opus-5-5[1m]` max, 12 findings (2 duplicates). Record `reviews/0_integration.md` being written by worker `docs`. Decision: the 1970 desk moves to `roche-steps-lehman-1975`; `mckim-mead-white-1926` widens to 1904–1956.
 - [x] Repair (worker `repair`, head `102adc3`, base `8455397`): F1–F18 and A1 fixed, each new check shown red then green; spec and Gates updated; verify green (307 unit tests in 31 files, 24 e2e).
-- [ ] Review round 1 (Codex and Claude, focused on `8455397..102adc3`), then merge `repair`.
+- [x] Review rounds 1 (both, `8455397..102adc3`) and 2 (Codex, `102adc3..5357bb5`): open items fixed on `repair2`, verified; merged as `bec9ba5`.
 - [x] README, devlog and the round 0 record (worker `docs`, merged `8455397`). After the repair merge: README's section-cut line must say landscape stays.
 - [ ] Final merge, push, worktree cleanup, plan outcome. This session ends at this milestone (fleet R6); further work starts a fresh session from main.
 
 ## Outcome
 
-Pending.
+Complete on main `bec9ba5` (2026-10-14), pushed. The page assembles the present-day Met in 153 steps over 9 chapters and plays them forward and backward, stepped or scrubbed: 26,787 pieces, 693 instanced meshes, 1.54M triangles (budgets 3M and 900), ready 2.1 s from a cold navigation, frame 8.7 ms at the finished state on the RTX 4090.
+
+Checks on `bec9ba5`: `npm run verify` green (315 unit tests in 32 files, 26 e2e driving every control through real input); dependency audits unchanged since the scaffold (no lockfile change). Visual acceptance: standard shots, a seeded sweep and the section cut inspected by the coordinator; each area's modeller compared its photo presets.
+
+Review coverage: round 0 (Codex and Claude, whole codebase at `ad6f16f`, 18 findings), round 1 (both, the repair diff, 3 new low findings and 5 weak tests), round 2 (Codex, the second repair diff, clean); all findings fixed with red-then-green checks (`reviews/`). Claude's round 0 F1 was not fully independent: the plan named Codex's F1 while it ran.
+
+Limitations: sculpture, figures and portrait medallions are blocked out; the Dendur hall stops at the estimated block lines (about 5.6 m short of the real east end); the Hunt column positions follow the photographs where the floor map disagrees; the Wallace and Kravis park faces are estimated (no photographs found); the Wallace Wing is modelled as it stood until 2025. Not done, needing the owner: deployment, and the fleet runbook's stale note that the Codex pin has not returned a live review (it did, three times, on 2026-10-14).
 
 ## Recovery
 
