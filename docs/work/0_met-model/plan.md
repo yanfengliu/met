@@ -55,9 +55,9 @@ Modelling split: each area worker owns one folder and exports one step array per
 - [x] Modelling and integration phases 1–2 all merged: main `ad6f16f` (256 unit tests, 16 e2e green; 26,655 pieces, 690 meshes, 1.53M triangles, build 301 ms, frame 6.1 ms).
 - [x] Coordinator acceptance pass on `ad6f16f` (standard shots, sweep seed 2026): one defect, A1, the section cut slices park trees and paints their crowns red.
 - [x] Independent review round 0 of `ad6f16f`: Codex `gpt-6-astra` xhigh, 8 findings; Claude `claude-opus-5-5[1m]` max, 12 findings (2 duplicates). Record `reviews/0_integration.md` being written by worker `docs`. Decision: the 1970 desk moves to `roche-steps-lehman-1975`; `mckim-mead-white-1926` widens to 1904–1956.
-- [ ] Repair (worker `repair`, `../met-worktrees/repair`, port 5410, from `ad6f16f`): F1–F18 and A1, each new check shown red then green.
-- [ ] Focused re-review of the repair diff, then merge.
-- [ ] README and devlog (worker `docs`, port none).
+- [x] Repair (worker `repair`, head `102adc3`, base `8455397`): F1–F18 and A1 fixed, each new check shown red then green; spec and Gates updated; verify green (307 unit tests in 31 files, 24 e2e).
+- [ ] Review round 1 (Codex and Claude, focused on `8455397..102adc3`), then merge `repair`.
+- [x] README, devlog and the round 0 record (worker `docs`, merged `8455397`). After the repair merge: README's section-cut line must say landscape stays.
 - [ ] Final merge, push, worktree cleanup, plan outcome. This session ends at this milestone (fleet R6); further work starts a fresh session from main.
 
 ## Outcome
