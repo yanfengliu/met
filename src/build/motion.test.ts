@@ -128,28 +128,37 @@ describe('stagger ordering', () => {
       let s = 7;
       return () => ((s = (s * 16807) % 2147483647) / 2147483647);
     })();
+    // Every pair is checked, but violations are collected and asserted once: a million expect() calls made this test slow enough to time out.
+    const problems: string[] = [];
+    let violations = 0;
+    const note = (message: string): void => {
+      violations += 1;
+      if (problems.length < 20) problems.push(message);
+    };
+    let pairs = 0;
     for (const count of [1, 2, 3, 5, 40, 1000]) {
       const keys = Float64Array.from({ length: count }, () => Math.floor(rand() * count * 0.7));
       const w = windowsFromKeys(keys);
-      expect(w.duration).toBe(Math.max(MIN_WINDOW, 1 / w.ranks));
+      if (w.duration !== Math.max(MIN_WINDOW, 1 / w.ranks)) note(`${String(count)} keys: duration ${String(w.duration)} with ${String(w.ranks)} ranks`);
       for (let i = 0; i < count; i += 1) {
         const a = w.start[i] ?? -1;
         const b = w.end[i] ?? -1;
-        expect(a).toBeGreaterThanOrEqual(0);
-        expect(b).toBeLessThanOrEqual(1);
-        expect(b).toBeGreaterThan(a);
+        if (!(a >= 0)) note(`${String(count)} keys: window ${String(i)} starts at ${String(a)}, before 0`);
+        if (!(b <= 1)) note(`${String(count)} keys: window ${String(i)} ends at ${String(b)}, after 1`);
+        if (!(b > a)) note(`${String(count)} keys: window ${String(i)} is empty (${String(a)}..${String(b)})`);
+        const ki = keys[i] ?? 0;
         for (let j = 0; j < count; j += 1) {
-          const ki = keys[i] ?? 0;
+          pairs += 1;
           const kj = keys[j] ?? 0;
-          if (ki === kj) expect(w.start[j]).toBe(a);
-          if (ki < kj) expect(w.start[j]).toBeGreaterThan(a);
+          const sj = w.start[j] ?? Number.NaN;
+          if (ki === kj && sj !== a) note(`${String(count)} keys: equal keys ${String(ki)} (windows ${String(i)}, ${String(j)}) start at ${String(a)} and ${String(sj)}`);
+          if (ki < kj && !(sj > a)) note(`${String(count)} keys: key ${String(kj)} (window ${String(j)}) starts at ${String(sj)}, not after key ${String(ki)} (window ${String(i)}) at ${String(a)}`);
         }
       }
-      if (w.ranks > 1) {
-        expect(Math.min(...w.start)).toBe(0);
-        expect(Math.max(...w.end)).toBe(1);
-      }
+      if (w.ranks > 1 && (Math.min(...w.start) !== 0 || Math.max(...w.end) !== 1)) note(`${String(count)} keys: windows span ${String(Math.min(...w.start))}..${String(Math.max(...w.end))}, not 0..1`);
     }
+    expect(pairs, 'key pairs compared').toBe([1, 2, 3, 5, 40, 1000].reduce((n, c) => n + c * c, 0));
+    expect(problems, `${String(violations)} violations, the first 20 listed`).toEqual([]);
   });
 
   it.each(STAGGERS)('%s through the timeline: arrival order follows the keys', (stagger) => {
