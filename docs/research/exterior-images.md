@@ -114,6 +114,19 @@ Unviewed unless marked. Coordinates are Commons geotags converted to the world f
 - https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_Of_Art_-_New_York_-_USA_-_panoramio_(24).jpg — Paulo JC Nogueira, 2014-04-05, CC BY-SA 3.0. South end, 80th Street side (?).
 - https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_Of_Art_-_New_York_-_USA_-_panoramio_(5).jpg — Paulo JC Nogueira, 2014-04-05, CC BY-SA 3.0. Panorama of the south part of the plaza (?).
 
+### McKim, Mead & White fronts measured by the mmw modeller (added 2026-10-13)
+
+Viewed and measured at 1:1 by the `mmw` worker; the readings are in `src/model/mmw/dims.ts` (header) and `exterior.md` [W4]. Licences re-read from each file's Commons metadata on 2026-10-13, except the Mapillary frames.
+
+- [E39] https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_39.jpg — Epicgenius, 2023-04-14 11:17, CC BY-SA 4.0, 5184×3456. The south end pavilion's north-east corner and its seam with the south link. Informs: the end pavilion's giant order, crowning cornice and parapet.
+- [E40] https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_40.jpg — Epicgenius, 2023-04-14 11:17, CC BY-SA 4.0, 5184×3456. The whole south link. Informs: its bays, attic panels and crowning cornice (dentils, no modillions, no cresting).
+- [E41] https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_41.jpg — Epicgenius, 2023-04-14 11:17, CC BY-SA 4.0, 5184×3456. The Hunt south extension frontally. Informs: its dentilled cornice over the caryatids and its crowning cornice.
+- [E42] https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_42.jpg — Epicgenius, 2023-04-14 11:18, CC BY-SA 4.0, 5184×3456. The south end pavilion's north-east corner, as [E39]. Informs: the end pavilion's heights against the link's cornice in the same frame.
+- [E43] https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_43.jpg — Epicgenius, 2023-04-14 11:18, CC BY-SA 4.0, 5184×3456. The south link's last four bays and the Hunt south extension frontally from the far sidewalk, 27 mm (6277 px focal), about 44 m out, pitched up about 15°. Informs: every height above the links' windows and the seam with the Hunt extension (the links' cornice top runs just under the extension's dentil course). Viewed again by the integration worker on 2026-10-13: the extension's crowning cornice is plain, with no modillions under its corona.
+- [P37] Mapillary, user tomjmat, frame of 2020-05-25 16:21:37 (named 16H21M37S in `mmw/dims.ts`; its image key was not recorded), Mapillary's CC BY-SA 4.0 imagery licence. The north link frontally from Fifth Avenue, camera about 39 m out, level to 1.7°. Informs: the links' heights up to the window glass, and the anchor of [E43]'s projective scale. Siblings [P35] (16:21:35), [P47] and [P50] (the south link and the south end pavilion's north end bay).
+- [L14] https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_circa_1914_LC-USZ62-101736.jpg — Irving Underhill, about 1914 (Library of Congress LC-USZ62-101736), public domain, 3678×2826. Informs: the north link's seven arched windows and the north end pavilion's south side and giant order.
+- [D12] https://commons.wikimedia.org/wiki/File:The_Metropolitan_Museum_of_Art_Manhattan_NYC_sideview.jpg — Daniel Dimitrov, 2012-01-02, CC BY-SA 4.0, 3264×2448 (also listed above under the Hunt pavilion). Informs: the south link's bays, base windows and archivolts, and its channelled base.
+
 ### Steps, plaza, fountains, Fifth Avenue
 
 - https://commons.wikimedia.org/wiki/File:Fountain_at_The_Met.jpg — G. Scott Segler, 2017-06-10, CC BY-SA 4.0; camera (51, 12) by the north grove. North fountain; informs P6.
