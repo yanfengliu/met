@@ -10,7 +10,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { catalogue } from './catalogue.js';
 import type { PartEntry } from './entry.js';
-import { boundsOf, buildExhibit, createStage, frame, light, lookUp, VIEWS, type ViewName } from './stage.js';
+import { boundsOf, buildExhibit, createStage, frame, light, lookUp, viewNamed, VIEWS, type ViewName } from './stage.js';
 
 declare global {
   interface Window {
@@ -32,7 +32,7 @@ const shot = params.get('shot') === '1';
 const noUi = params.get('noui') === '1';
 const partId = params.get('part');
 const viewParam = params.get('view') ?? 'three-quarter';
-const viewName: ViewName = viewParam in VIEWS ? (viewParam as ViewName) : 'three-quarter';
+const viewName: ViewName = viewNamed(viewParam) ?? 'three-quarter';
 const closeup = params.get('closeup');
 
 window.__parts = catalogue.map((entry) => ({ id: entry.id, label: entry.label, group: entry.group, closeups: Object.keys(entry.closeups ?? {}) }));
