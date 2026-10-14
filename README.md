@@ -127,7 +127,7 @@ Coordinates are in the world frame: metres, +Y up, +X up Fifth Avenue (Manhattan
 | 2 | The first building | `vaux-mould-1880` | 1874–1880 |
 | 3 | The first wings | `weston-tuckerman-1894` | 1884–1894 |
 | 4 | Hunt's Fifth Avenue front | `hunt-1902` | 1895–1902 |
-| 5 | The Fifth Avenue wings | `mckim-mead-white-1926` | 1904–1939 |
+| 5 | The Fifth Avenue wings | `mckim-mead-white-1926` | 1904–1956 |
 | 6 | The master plan begins | `roche-steps-lehman-1975` | 1967–1975 |
 | 7 | North on the park | `roche-north-1980` | 1975–1981 |
 | 8 | South on the park | `roche-south-1990` | 1979–1991 |

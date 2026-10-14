@@ -16,7 +16,7 @@ import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
 import { LUNETTE_GRILLE } from './arches.js';
 import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y } from './dims.js';
-import { huntSteps } from './index.js';
+import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -26,8 +26,11 @@ const BLOCK = { south: -49.7, north: 49.4, back: -69.0, wingFrontSouth: -1.9, wi
 const MOULDING_ALLOWANCE = 1.5;
 const BUDGET = { triangles: 650_000, meshes: 170, lights: 2 } as const;
 
+/** Every step this area builds: Hunt's chapter and, composed into the 1975 chapter, Roche's desk in the Great Hall. */
+const AREA = [...huntSteps, ...greatHallDesk1970Steps];
+
 function boxes(stepIndex: number): Box3[] {
-  const step = huntSteps[stepIndex];
+  const step = AREA[stepIndex];
   if (step === undefined) return [];
   return collectStep(step).pieces.map((piece) => {
     const g = piece.geometry;
@@ -62,13 +65,14 @@ function overstep(b: Box3, stepId: string): { by: number; edge: string } {
 }
 
 describe('Hunt steps', () => {
-  it('has unique kebab-case ids in chapter hunt-1902, titles of at most 48 characters and details of at most 200', () => {
-    const ids = huntSteps.map((s) => s.id);
+  it('has unique kebab-case ids in chapter hunt-1902 (the 1970 desk in roche-steps-lehman-1975), titles of at most 48 characters and details of at most 200', () => {
+    const ids = AREA.map((s) => s.id);
     expect(ids.filter((id) => !KEBAB.test(id))).toEqual([]);
     expect(new Set(ids).size).toBe(ids.length);
     expect(huntSteps.filter((s) => s.chapter !== 'hunt-1902').map((s) => s.id)).toEqual([]);
-    expect(huntSteps.filter((s) => s.title.length === 0 || s.title.length > 48).map((s) => s.id)).toEqual([]);
-    expect(huntSteps.filter((s) => (s.detail?.length ?? 0) > 200).map((s) => s.id)).toEqual([]);
+    expect(greatHallDesk1970Steps.map((s) => [s.id, s.chapter, s.year])).toEqual([['great-hall-desk', 'roche-steps-lehman-1975', '1970']]);
+    expect(AREA.filter((s) => s.title.length === 0 || s.title.length > 48).map((s) => s.id)).toEqual([]);
+    expect(AREA.filter((s) => (s.detail?.length ?? 0) > 200).map((s) => s.id)).toEqual([]);
   });
 
   it('builds in constructional order: foundations first, the Great Hall and staircase before the roof, the roof last of 1902', () => {
@@ -76,12 +80,12 @@ describe('Hunt steps', () => {
     expect(ids[0]).toBe('hunt-foundations');
     const roof = ids.indexOf('hunt-roof');
     for (const id of ['hunt-walls', 'hunt-columns', 'great-hall-floor', 'great-hall-domes', 'grand-stair-vault', 'hunt-galleries']) expect(ids.indexOf(id), id).toBeLessThan(roof);
-    expect(huntSteps.slice(roof + 1).every((s) => s.year === '1970'), 'only the 1970 desk follows the roof').toBe(true);
+    expect(ids[ids.length - 1], 'the roof is the last step of 1902').toBe('hunt-roof');
   });
 
   it('keeps every piece inside block hunt-d, the pavilion front within Z +3.5', () => {
     const offenders: string[] = [];
-    huntSteps.forEach((step, i) => {
+    AREA.forEach((step, i) => {
       boxes(i).forEach((b, k) => {
         const o = overstep(b, step.id);
         if (o.by > TOLERANCE + 1e-6) offenders.push(`${step.id} piece ${String(k)}: ${o.by.toFixed(2)} m past the ${o.edge}`);
@@ -112,7 +116,7 @@ describe('Hunt steps', () => {
   });
 
   it(`stays within ${String(BUDGET.triangles)} triangles, ${String(BUDGET.meshes)} instanced meshes and ${String(BUDGET.lights)} step lights, with finite matrices`, () => {
-    const timeline = new Timeline(huntSteps);
+    const timeline = new Timeline(AREA);
     const stats = timeline.stats();
     expect(stats.triangles).toBeLessThanOrEqual(BUDGET.triangles);
     expect(stats.meshes).toBeLessThanOrEqual(BUDGET.meshes);

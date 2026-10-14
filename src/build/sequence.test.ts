@@ -87,7 +87,43 @@ describe('sequence integrity', () => {
     expect(selectSteps(SEQUENCE, 'no-such-chapter')).toBeNull();
     expect(selectSteps(SEQUENCE, null)).toBe(SEQUENCE);
   });
+
+  it('reads years as inclusive ranges: a range, a single year, or "before" a year', () => {
+    expect(yearRange('1904–1956')).toEqual([1904, 1956]);
+    expect(yearRange('1904-1956')).toEqual([1904, 1956]);
+    expect(yearRange('1902')).toEqual([1902, 1902]);
+    expect(yearRange('before 1872')).toEqual([-Infinity, 1872]);
+    for (const text of ['c. 1900', '1902s', '1956–1904', '', 'before']) expect(yearRange(text), text).toBeNull();
+  });
+
+  it("dates every step inside its chapter's years", () => {
+    const problems: string[] = [];
+    for (const chapter of CHAPTERS) if (yearRange(chapter.years) === null) problems.push(`chapter ${chapter.id}: years "${chapter.years}" is not a year, a range like 1904–1956 or "before 1872"`);
+    for (const step of SEQUENCE) {
+      if (step.year === undefined) continue;
+      const span = yearRange(step.year);
+      const chapter = CHAPTERS.find((c) => c.id === step.chapter);
+      const within = chapter === undefined ? null : yearRange(chapter.years);
+      if (span === null) problems.push(`${step.id}: year "${step.year}" is not a year or a range like 1904–1956`);
+      else if (chapter !== undefined && within !== null && (span[0] < within[0] || span[1] > within[1])) problems.push(`${step.id}: year ${step.year} lies outside chapter ${chapter.id} (${chapter.years})`);
+    }
+    expect(problems).toEqual([]);
+  });
 });
+
+/** A years text as an inclusive range: `1904–1956` (en dash or hyphen), `1902`, or `before 1872` (anything up to 1872); null for anything else. */
+function yearRange(text: string): readonly [number, number] | null {
+  const before = /^before (\d{4})$/.exec(text);
+  if (before !== null) return [-Infinity, Number(before[1])];
+  const range = /^(\d{4})[–-](\d{4})$/.exec(text);
+  if (range !== null) {
+    const from = Number(range[1]);
+    const to = Number(range[2]);
+    return from <= to ? [from, to] : null;
+  }
+  const single = /^(\d{4})$/.exec(text);
+  return single === null ? null : [Number(single[1]), Number(single[1])];
+}
 
 describe('sequence build and budgets', () => {
   let timeline: Timeline;
