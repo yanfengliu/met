@@ -17,6 +17,7 @@ import { publishFacts } from './viewer/facts.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
 import type { CameraPose } from './viewer/presets.js';
 import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
+import { cappedBySection } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
 
 const READY_FRAMES = 5;
@@ -71,7 +72,8 @@ function boot(): void {
   app.appendChild(viewport);
   document.body.appendChild(app);
 
-  const capExcluded = timeline.steps.flatMap((s) => s.meshes).filter((m) => !Array.isArray(m.material) && m.material.transparent);
+  // The section cut's cap pass leaves out transparent meshes and those whose material the cut does not clip (src/viewer/section-cut.ts).
+  const capExcluded = timeline.steps.flatMap((s) => s.meshes).filter((m) => !Array.isArray(m.material) && !cappedBySection(m.material));
   const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capExcluded });
   const rig = viewer.rig;
   const presetPose = (id: string): CameraPose | null => {

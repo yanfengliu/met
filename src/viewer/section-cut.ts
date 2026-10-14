@@ -4,6 +4,8 @@
  * (part of every shader) never changes and toggling never recompiles.
  * Cut walls read as solid: after the main pass, a second pass draws the model's back faces in one flat colour. Where the plane opens a closed solid the
  * camera sees the inside of its far faces, so the cut face of every wall and slab shows as a solid band, as in an architect's section (poché).
+ * Only the building is cut: a material with `userData.sectionCut === false` (the site's landscape: trees, ground, paths) gets no plane, and the cap pass
+ * leaves its meshes out, so trees stay whole instead of showing cut-coloured crowns.
  * Bound: only closed meshes get a solid cut face; an open surface seen from behind shows the cut colour too while the cut is on. Transparent meshes are left out.
  */
 import { BackSide, Color, MeshBasicMaterial, Plane, Vector3 } from 'three';
@@ -12,6 +14,16 @@ import type { Material } from 'three';
 /** Plane constant while the cut is off: far above anything modelled. */
 const OFF = 1e6;
 export const CUT_COLOUR = new Color('#7b2f2a');
+
+/** Whether the section cut clips `material`: every model material does unless it opts out with `userData.sectionCut === false`. */
+export function cutBySection(material: Material): boolean {
+  return material.userData['sectionCut'] !== false;
+}
+
+/** Whether the cap pass draws meshes of `material`: those the cut clips, except transparent ones (glass would show its back faces in the cut colour). */
+export function cappedBySection(material: Material): boolean {
+  return cutBySection(material) && !material.transparent;
+}
 
 export class SectionCut {
   readonly plane = new Plane(new Vector3(0, -1, 0), OFF);
@@ -23,11 +35,12 @@ export class SectionCut {
     this.capMaterial.clippingPlanes = [this.plane];
   }
 
-  /** Gives each material the cut plane; call before the first render so shaders compile with it. */
+  /** Gives each material the cut clips the cut plane, and the others none; call before the first render so shaders compile with it. */
   attach(materials: Iterable<Material>): void {
     for (const material of materials) {
-      material.clippingPlanes = [this.plane];
-      material.clipShadows = true;
+      const cut = cutBySection(material);
+      material.clippingPlanes = cut ? [this.plane] : null;
+      material.clipShadows = cut;
     }
   }
 

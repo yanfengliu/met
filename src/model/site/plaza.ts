@@ -190,7 +190,7 @@ export const grovesStep: StepDef = {
       const cz = (b.z0 + b.z1) / 2;
       for (let x = b.x0 + 1.6; x < b.x1 - 1.4; x += 2.6) {
         if (Math.abs(Math.abs(x + 1.2) - MAGNOLIA_X) < 2.4) continue;
-        kit.add(SHRUB, palette.foliage, onPlaza(x + 1.2, cz, 0.35), 10 + k);
+        kit.add(SHRUB, siteMaterials.foliage, onPlaza(x + 1.2, cz, 0.35), 10 + k);
       }
     });
   },
@@ -278,7 +278,7 @@ const MAGNOLIA_Z = 1.2;
 
 function planted(kit: Kit, shape: Tree, crown: Material, x: number, y: number, z: number, scale: number, yaw: number, order: number): void {
   const m = new Matrix4().makeRotationY(yaw).scale(new Vector3(scale, scale, scale)).setPosition(x, y, z);
-  kit.add(shape.trunk, palette.bark, m, order);
+  kit.add(shape.trunk, siteMaterials.bark, m, order);
   kit.add(shape.foliage, crown, m, order);
 }
 
@@ -296,14 +296,14 @@ export const groveTreesStep: StepDef = {
     for (const b of GROVES) {
       for (const [x, z] of groveTrees(b)) {
         const shape = GROVE_TREES[order % GROVE_TREES.length] ?? GROVE_TREES[0];
-        if (shape !== undefined) planted(kit, shape, palette.foliage, x, plazaY(x, z) + BORDER_HEIGHT - 0.05, z, 0.9 + 0.2 * random(), random() * Math.PI * 2, order);
+        if (shape !== undefined) planted(kit, shape, siteMaterials.foliage, x, plazaY(x, z) + BORDER_HEIGHT - 0.05, z, 0.9 + 0.2 * random(), random() * Math.PI * 2, order);
         order += 1;
       }
     }
     for (const s of [-1, 1]) {
       const x = s * MAGNOLIA_X;
       const y = plazaY(x, MAGNOLIA_Z) + 0.35;
-      kit.add(UNIT_BLOCK, palette.bark, blockMatrix(x, y, MAGNOLIA_Z, 0.3, 1.6, 0.3), order);
+      kit.add(UNIT_BLOCK, siteMaterials.bark, blockMatrix(x, y, MAGNOLIA_Z, 0.3, 1.6, 0.3), order);
       kit.add(MAGNOLIA_CROWN, siteMaterials.foliageDark, new Matrix4().makeRotationY(s > 0 ? 0.4 : 2.1).scale(new Vector3(4.6, 9, 4.6)).setPosition(x, y + 0.9, MAGNOLIA_Z), order);
       order += 1;
     }
@@ -337,8 +337,8 @@ export const alleesStep: StepDef = {
     alleeTrees().forEach(([x, z], k) => {
       const y = plazaY(x, z);
       kit.add(UNIT_BLOCK, siteMaterials.darkGranite, blockMatrix(x, y - 0.02, z, 1.6, 0.03, 1.6), k);
-      kit.add(UNIT_BLOCK, palette.bark, blockMatrix(x, y, z, 0.28, LINDEN_STEM + 0.4, 0.28), k);
-      kit.add(LINDEN_CROWN, palette.foliage, blockMatrix(x, y + LINDEN_STEM, z, 1, 1, 1), k);
+      kit.add(UNIT_BLOCK, siteMaterials.bark, blockMatrix(x, y, z, 0.28, LINDEN_STEM + 0.4, 0.28), k);
+      kit.add(LINDEN_CROWN, siteMaterials.foliage, blockMatrix(x, y + LINDEN_STEM, z, 1, 1, 1), k);
     });
   },
 };
