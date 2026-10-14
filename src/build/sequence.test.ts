@@ -7,7 +7,13 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import * as core from '../model/core/index.js';
 import { SITE_MAX_X, SITE_MAX_Z, SITE_MIN_X, SITE_MIN_Z } from '../model/frame.js';
+import * as hunt from '../model/hunt/index.js';
+import * as mmw from '../model/mmw/index.js';
+import * as rocheNorth from '../model/roche-north/index.js';
+import * as rocheSouth from '../model/roche-south/index.js';
+import * as site from '../model/site/index.js';
 import { PRESETS } from '../viewer/presets.js';
 import { CHAPTERS, SITE_CHAPTER } from './chapters.js';
 import { chapterRanges, compositionMismatches, selectSteps } from './select.js';
@@ -21,6 +27,25 @@ const MAX_MESHES = 900;
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const finite = (values: readonly number[]): boolean => values.every(Number.isFinite);
 const SITE_BOUNDS = { min: [SITE_MIN_X, -30, SITE_MIN_Z], max: [SITE_MAX_X, 120, SITE_MAX_Z] } as const;
+/** The area modules (docs/design/spec.md, Build-step API) by folder. */
+const AREAS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = { site, core, hunt, mmw, 'roche-north': rocheNorth, 'roche-south': rocheSouth };
+
+/** Whether `value` is a non-empty array of step definitions (an id and a build function each). */
+function isStepArray(value: unknown): value is readonly StepDef[] {
+  return Array.isArray(value) && value.length > 0 && value.every((s: unknown) => typeof s === 'object' && s !== null && typeof (s as { id?: unknown }).id === 'string' && typeof (s as { build?: unknown }).build === 'function');
+}
+
+/** One message per step of an exported step array that the sequence does not build. */
+function uncomposed(areas: Readonly<Record<string, Readonly<Record<string, unknown>>>>, sequence: readonly StepDef[]): string[] {
+  const built = new Set(sequence);
+  return Object.entries(areas).flatMap(([area, module]) =>
+    Object.entries(module).flatMap(([name, value]) => {
+      if (!isStepArray(value)) return [];
+      const missing = value.filter((step) => !built.has(step));
+      return missing.length === 0 ? [] : [`src/model/${area}/index.ts exports ${name}, whose ${String(missing.length)} step(s) COMPOSITION does not compose (first: ${missing[0]?.id ?? '?'})`];
+    }),
+  );
+}
 
 describe('sequence integrity', () => {
   it('has at least one step and every chapter id is kebab-case and unique', () => {
@@ -47,6 +72,17 @@ describe('sequence integrity', () => {
     const ranges = chapterRanges(SEQUENCE);
     expect(ranges.map((r) => r.chapter.id)).toEqual(CHAPTERS.map((c) => c.id));
     expect(ranges.reduce((sum, r) => sum + r.count, 0), 'steps covered by the chapter ranges').toBe(SEQUENCE.length);
+  });
+
+  it('composes every step array each area module exports', () => {
+    const exported = Object.values(AREAS).flatMap((module) => Object.values(module).filter(isStepArray));
+    expect(exported.length, 'step arrays the area modules export').toBeGreaterThanOrEqual(Object.keys(COMPOSITION).length);
+    expect(uncomposed(AREAS, SEQUENCE)).toEqual([]);
+  });
+
+  it('the export check reports an exported array the sequence leaves out', () => {
+    const stray: StepDef = { id: 'stray', chapter: SITE_CHAPTER, title: 'stray', motion: { kind: 'pop' }, build: () => undefined };
+    expect(uncomposed({ site: { strays: [stray], other: 3 } }, SEQUENCE)).toEqual(['src/model/site/index.ts exports strays, whose 1 step(s) COMPOSITION does not compose (first: stray)']);
   });
 
   it("composes each step into the chapter its own chapter field names", () => {
