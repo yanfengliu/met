@@ -38,8 +38,9 @@ import {
   LEHMAN_SLAB_BOTTOM_Y,
   MAIN_SLAB,
   OUTER_RING_THICKNESS,
-  ROOF_HOLE,
   ROOF_OUTLINE,
+  STRIP_FLAT,
+  STRIP_HEAD_Y,
 } from './lehman-plan.js';
 import { mat } from './materials.js';
 import { inwardNormal, type P2 } from './poly.js';
@@ -287,7 +288,9 @@ function galleries(kit: Kit): void {
 // --- Roof -------------------------------------------------------------------------------------------------------------------------------
 
 function roof(kit: Kit): void {
-  kit.add(prism(ROOF_OUTLINE, [ROOF_HOLE], LEHMAN_ROOF_Y - 0.6, LEHMAN_ROOF_Y), mat.roof, at(0, 0, 0), 0);
+  kit.add(prism(ROOF_OUTLINE, [], LEHMAN_ROOF_Y - 0.6, LEHMAN_ROOF_Y), mat.roof, at(0, 0, 0), 0);
+  // The lead flat at the skylight strip's head over the court's east tip, between the inner ring wall and the 1880 front.
+  kit.add(prism(STRIP_FLAT, [], STRIP_HEAD_Y, STRIP_HEAD_Y + 0.06), mat.roof, at(0, 0, 0), 0);
   // Gables under the two east ends of the gallery ring's sloped glass, standing on the flat roof.
   const north: [P2, P2] = [BAND_HIGH[0] ?? [0, 0], BAND_LOW[0] ?? [0, 0]];
   const south: [P2, P2] = [BAND_LOW[5] ?? [0, 0], BAND_HIGH[5] ?? [0, 0]];

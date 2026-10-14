@@ -1,6 +1,7 @@
 /**
  * Facts the Roche south wings must keep, checked headless on the pieces their steps add (src/build/kit.ts collectStep).
- * Bounds: the Lehman pyramid's apex and eave, the Rockefeller glass wall's foot line, slope and rows, wall thickness on every limestone unit-box wall
+ * Bounds: the Lehman pyramid's apex and eave, the Lehman Wing's junction with the 1880 front (the skylight strip clear of the inner ring wall and the
+ * brick face, the flat roof open over the court, sampled at fixed points), the Rockefeller glass wall's foot line, slope and rows, wall thickness on every limestone unit-box wall
  * taller than 3 m, and the wings' date order. Each check reads the geometry the steps place, not the constants they were built from, except where a
  * test names the constant it compares against.
  */
@@ -9,11 +10,12 @@ import { describe, expect, it } from 'vitest';
 
 import { collectStep } from '../../build/kit.js';
 import type { StepDef } from '../../build/types.js';
-import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, ROCKEFELLER_GLASS_FACE_X, ROCKEFELLER_GLASS_RISE, ROCKEFELLER_GLASS_SLOPE_DEG } from '../frame.js';
+import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, ROCKEFELLER_GLASS_FACE_X, ROCKEFELLER_GLASS_RISE, ROCKEFELLER_GLASS_SLOPE_DEG, WEST_FACE_Z_CORE } from '../frame.js';
 import { palette } from '../palette.js';
 import { lehmanSteps, rocheSouthSteps } from './index.js';
-import { COURT_OCTAGON, LEHMAN_EAVE_Y } from './lehman-plan.js';
+import { COURT_OCTAGON, COURT_OCTAGON_OUT, LEHMAN_EAVE_Y, LEHMAN_ROOF_Y } from './lehman-plan.js';
 import { mat } from './materials.js';
+import { contains } from './poly.js';
 import { GLASS_ROWS, RF_GLASS_FOOT_Y } from './rockefeller.js';
 import { UNIT_BOX, UNIT_TRIANGLE } from './shapes.js';
 
@@ -52,6 +54,41 @@ describe('the Lehman pyramid', () => {
     const low = glass.filter((v) => v.y < LEHMAN_EAVE_Y + 0.2);
     for (const [x, z] of COURT_OCTAGON) {
       expect(low.some((v) => Math.hypot(v.x - x, v.z - z) < 0.2), `a pane corner at the octagon vertex (${String(x)}, ${String(z)})`).toBe(true);
+    }
+  });
+});
+
+describe('the Lehman Wing against the 1880 front', () => {
+  it('keeps the skylight strip along the old front out of the inner ring wall and short of the brick face', () => {
+    // The court's east tip comes within 0.2 m of the front; the strip once ran through the ring wall that carries the pyramid's east eave.
+    const bad = vertices(step(lehmanSteps, 'lehman-gallery-glass'), mat.steel)
+      .concat(vertices(step(lehmanSteps, 'lehman-gallery-glass'), mat.glass))
+      .filter((v) => v.z > -141 && (v.z > WEST_FACE_Z_CORE + 1e-6 || contains(COURT_OCTAGON_OUT, [v.x, v.z])));
+    expect(bad.map((v) => v.toArray().map((c) => c.toFixed(2)).join(', '))).toEqual([]);
+  });
+
+  it('leaves the court open to its pyramid: the flat roof covers the rooms round it but nothing over the court octagon', () => {
+    // The roof's opening for the court, a hole stopped 0.1 m short of the roof's edge, once left the slab's top face over the whole court (seen from
+    // above through the pyramid) and a sliver across the top of the court's east opening (seen from the court).
+    const court: [number, number][] = [[0, -139.4], [-1.9, -139.45], [1.9, -139.45], [0, -139.65], [0, -145], [6, -146], [-6, -146], [0, -150.8], [0, -158]];
+    const rooms: [number, number][] = [[22, -160], [-22, -160], [0, -176], [10, -142]];
+    const faces = { top: [] as [number, number][][], bottom: [] as [number, number][][] };
+    for (const piece of collectStep(step(lehmanSteps, 'lehman-roof')).pieces) {
+      if (piece.material !== mat.roof) continue;
+      const position = piece.geometry.getAttribute('position');
+      const index = piece.geometry.index;
+      const count = index?.count ?? position.count;
+      for (let t = 0; t + 2 < count; t += 3) {
+        const tri = [0, 1, 2].map((k) => new Vector3().fromBufferAttribute(position, index?.getX(t + k) ?? t + k).applyMatrix4(piece.matrix));
+        const plan = tri.map((v): [number, number] => [v.x, v.z]);
+        if (tri.every((v) => Math.abs(v.y - LEHMAN_ROOF_Y) < 1e-6)) faces.top.push(plan);
+        if (tri.every((v) => Math.abs(v.y - (LEHMAN_ROOF_Y - 0.6)) < 1e-6)) faces.bottom.push(plan);
+      }
+    }
+    const under = (p: [number, number], tris: [number, number][][]): boolean => tris.some((tri) => contains(tri, p));
+    for (const [name, tris] of Object.entries(faces)) {
+      expect(court.filter((p) => contains(COURT_OCTAGON, p) && under(p, tris)).map((p) => `${name} over the court at ${p.join(', ')}`)).toEqual([]);
+      expect(rooms.filter((p) => !under(p, tris)).map((p) => `${name} missing over the rooms at ${p.join(', ')}`)).toEqual([]);
     }
   });
 });

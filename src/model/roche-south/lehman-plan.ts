@@ -9,7 +9,7 @@
  * which stands 1.5 m over the court floor at its south end, tilted 29.5° north. The gallery ring's sloped glass ceiling is from the 2011 gallery
  * photograph (interior-images.md, item 30).
  */
-import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, MAIN_FLOOR_Y } from '../frame.js';
+import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, MAIN_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
 import { LEHMAN_BLOCK, MAP_Z, OUTER_WALL } from './blocks.js';
 import { ccw, clipHalfPlane, inset, type P2 } from './poly.js';
 
@@ -103,12 +103,72 @@ export const BAND_HIGH_Y = LEHMAN_EAVE_Y - 0.2;
 /** Skylight strip along the 1880 front (orthophoto: Z −139.5 to the front, X ±15.5), between the link's inner walls. */
 export const STRIP_WEST_Z = -139.6;
 export const STRIP_HALF_X = 16.3 - OUTER_WALL;
+/** The strip's head, at the brick face of the 1880 front (core, Z −138.3), and its height there over the flat roof. */
+export const STRIP_EAST_Z = WEST_FACE_Z_CORE;
+export const STRIP_HEAD_Y = LEHMAN_ROOF_Y + 0.9;
+
+/** |X| where the inner ring wall's outer face crosses the strip's west edge, each side of the court's east tip. */
+function ringCrossingX(): number {
+  let best = 0;
+  COURT_OCTAGON_OUT.forEach((a, i) => {
+    const b = COURT_OCTAGON_OUT[(i + 1) % COURT_OCTAGON_OUT.length] ?? a;
+    if (a[1] === b[1] || (a[1] - STRIP_WEST_Z) * (b[1] - STRIP_WEST_Z) > 0) return;
+    const t = (STRIP_WEST_Z - a[1]) / (b[1] - a[1]);
+    best = Math.max(best, Math.abs(a[0] + (b[0] - a[0]) * t));
+  });
+  return best;
+}
+
+/**
+ * The court's east tip comes within 0.2 m of the 1880 front, so the inner ring wall that carries the pyramid's east eave stands across the strip's line.
+ * The strip stops this far each side of the axis, clear of that wall, and a lead flat at its head closes the gap between the wall and the old front.
+ */
+export const STRIP_GAP_HALF_X = ringCrossingX() + 0.25;
+const TIP_Z = Math.max(...COURT_OCTAGON_OUT.map((p) => p[1]));
+const TIP_HALF_X = Math.max(...COURT_OCTAGON_OUT.filter((p) => Math.abs(p[1] - TIP_Z) < 1e-6).map((p) => Math.abs(p[0])));
+export const STRIP_FLAT: readonly P2[] = [
+  [STRIP_GAP_HALF_X, STRIP_WEST_Z],
+  [STRIP_GAP_HALF_X, STRIP_EAST_Z],
+  [-STRIP_GAP_HALF_X, STRIP_EAST_Z],
+  [-STRIP_GAP_HALF_X, STRIP_WEST_Z],
+  [-ringCrossingX(), STRIP_WEST_Z],
+  [-TIP_HALF_X, TIP_Z],
+  [TIP_HALF_X, TIP_Z],
+  [ringCrossingX(), STRIP_WEST_Z],
+];
+
+const ROOF_BASE: readonly P2[] = clipHalfPlane(LEHMAN_INNER, (p) => p[1] - STRIP_WEST_Z);
+const onStripEdge = (p: P2): boolean => Math.abs(p[1] - STRIP_WEST_Z) < 1e-6;
+const courtEast = clipHalfPlane(COURT_OCTAGON_OUT, (p) => p[1] - STRIP_WEST_Z).filter((p) => p[1] > (BAND_HIGH[0]?.[1] ?? 0) - 1e-6 || onStripEdge(p));
+/** The opening the roof leaves round the court and the glazed gallery ring; the court's east tip reaches the strip's edge. */
+const ROOF_OPENING: readonly P2[] = [...BAND_LOW, ...[...courtEast].sort((p, q) => p[0] - q[0])];
+
+/**
+ * The opening meets the roof's edge at the strip, where the court's east tip crosses it, so it is a bay in the outline rather than a hole: walk the
+ * outline to that edge, round the opening the long way between its two points on the edge, and on. (A hole stopped short of the edge left a 0.1 m
+ * sliver of roof across the top of the court's east opening, seen from the court as a beam in front of the 1880 front.)
+ */
+function bayed(outline: readonly P2[], opening: readonly P2[]): P2[] {
+  const n = opening.length;
+  const ends = opening.map((p, i) => (onStripEdge(p) ? i : -1)).filter((i) => i >= 0);
+  const edge = outline.findIndex((a, i) => onStripEdge(a) && onStripEdge(outline[(i + 1) % outline.length] ?? a));
+  const [i0, i1] = ends;
+  if (ends.length !== 2 || i0 === undefined || i1 === undefined || edge < 0) throw new Error(`lehman-plan.ts: the court's opening meets the strip edge at ${String(ends.length)} points and the roof outline has ${edge < 0 ? 'no' : 'an'} edge on Z ${String(STRIP_WEST_Z)}; expected 2 and one.`);
+  const a = outline[edge] ?? [0, 0];
+  // Start from the opening's end nearer the outline edge's first point; leave by the neighbour that is not the other end.
+  const first = Math.abs((opening[i0] ?? a)[0] - a[0]) < Math.abs((opening[i1] ?? a)[0] - a[0]) ? i0 : i1;
+  const last = first === i0 ? i1 : i0;
+  const step = (first + 1) % n === last ? -1 : 1;
+  const path: P2[] = [];
+  for (let i = first; ; i = (i + step + n) % n) {
+    path.push(opening[i] ?? a);
+    if (i === last) break;
+  }
+  return [...outline.slice(0, edge + 1), ...path, ...outline.slice(edge + 1)];
+}
 
 /** The flat roof: inside the outer walls, short of the skylight strip, round the glazed ring and the court. */
-export const ROOF_OUTLINE: readonly P2[] = clipHalfPlane(LEHMAN_INNER, (p) => p[1] - STRIP_WEST_Z);
-const EAST_CUT = STRIP_WEST_Z - 0.1;
-const courtEast = clipHalfPlane(COURT_OCTAGON_OUT, (p) => p[1] - EAST_CUT).filter((p) => p[1] > (BAND_HIGH[0]?.[1] ?? 0) - 1e-6 || Math.abs(p[1] - EAST_CUT) < 1e-6);
-export const ROOF_HOLE: readonly P2[] = [...BAND_LOW, ...[...courtEast].sort((p, q) => p[0] - q[0])];
+export const ROOF_OUTLINE: readonly P2[] = bayed(ROOF_BASE, ROOF_OPENING);
 
 /** One stair flight: foot on the court floor, top at the main floor, along the court's long side. */
 export interface Flight {

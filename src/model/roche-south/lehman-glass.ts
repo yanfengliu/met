@@ -17,7 +17,10 @@ import {
   LEHMAN_BAND_LOW_Y,
   LEHMAN_EAVE_Y,
   LEHMAN_ROOF_Y,
+  STRIP_EAST_Z,
+  STRIP_GAP_HALF_X,
   STRIP_HALF_X,
+  STRIP_HEAD_Y,
   STRIP_WEST_Z,
 } from './lehman-plan.js';
 import { mat } from './materials.js';
@@ -129,31 +132,44 @@ export function bandPieces(): Piece[] {
   return pieces;
 }
 
-/** The skylight along the 1880 front: a lean-to from the flat roof up toward the old wall, rafters every 0.75 m (orthophoto). */
+/**
+ * The skylight along the 1880 front: a lean-to from the flat roof up to the old wall, rafters every 0.75 m (orthophoto), in two runs either side of the
+ * court's east tip (STRIP_GAP_HALF_X). Its head bar rests against the brick face above the band at the second floor, so nothing of it enters the old
+ * front's trim; a glass triangle closes each run's inner end up to the lead flat over the gap.
+ */
 export function stripPieces(): Piece[] {
   const z0 = STRIP_WEST_Z;
-  const z1 = -138.45;
   const y0 = LEHMAN_ROOF_Y + 0.1;
-  const y1 = LEHMAN_ROOF_Y + 0.9;
-  const x0 = -STRIP_HALF_X;
-  const x1 = STRIP_HALF_X - 0.1;
-  const corners: [Vec, Vec, Vec, Vec] = [
-    [x0, y0, z0],
-    [x1, y0, z0],
-    [x1, y1, z1],
-    [x0, y1, z1],
-  ];
-  const normal = upNormal(corners[0], corners[2], corners[1]);
-  const pieces: Piece[] = [];
-  pieces.push({ matrix: bar(corners[0], corners[1], HIP_BAR[0], HIP_BAR[1], normal), glass: false, order: 0 });
-  pieces.push({ matrix: bar(corners[3], corners[2], HIP_BAR[0], HIP_BAR[1], normal), glass: false, order: 0 });
-  const bays = Math.round((x1 - x0) / 0.75);
-  for (let j = 0; j <= bays; j++) {
-    const x = x0 + ((x1 - x0) * j) / bays;
-    pieces.push({ matrix: bar([x, y0, z0], [x, y1, z1], GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: 0 });
+  const y1 = STRIP_HEAD_Y;
+  // The head bar sits square to the slope, so its back edge reaches half its width and half its depth's lean beyond the head line: stop it 5 mm off the wall.
+  let z1 = STRIP_EAST_Z;
+  for (let k = 0; k < 4; k++) {
+    const slope = Math.atan2(y1 - y0, z1 - z0);
+    z1 = STRIP_EAST_Z - (HIP_BAR[0] / 2) * Math.cos(slope) - (HIP_BAR[1] / 2) * Math.sin(slope) - 0.005;
   }
-  const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
-  for (const matrix of quadPanes(lifted(corners[0]), lifted(corners[1]), lifted(corners[2]), lifted(corners[3]))) pieces.push({ matrix, glass: true, order: 1 });
+  const pieces: Piece[] = [];
+  const run = (x0: number, x1: number, inner: number): void => {
+    const corners: [Vec, Vec, Vec, Vec] = [
+      [x0, y0, z0],
+      [x1, y0, z0],
+      [x1, y1, z1],
+      [x0, y1, z1],
+    ];
+    const normal = upNormal(corners[0], corners[2], corners[1]);
+    pieces.push({ matrix: bar(corners[0], corners[1], HIP_BAR[0], HIP_BAR[1], normal), glass: false, order: 0 });
+    pieces.push({ matrix: bar(corners[3], corners[2], HIP_BAR[0], HIP_BAR[1], normal), glass: false, order: 0 });
+    const bays = Math.round((x1 - x0) / 0.75);
+    for (let j = 0; j <= bays; j++) {
+      const x = x0 + ((x1 - x0) * j) / bays;
+      pieces.push({ matrix: bar([x, y0, z0], [x, y1, z1], GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: 0 });
+    }
+    const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
+    for (const matrix of quadPanes(lifted(corners[0]), lifted(corners[1]), lifted(corners[2]), lifted(corners[3]))) pieces.push({ matrix, glass: true, order: 1 });
+    // The run's inner end: a triangle from its low edge up to the head's height, under the lead flat.
+    pieces.push({ matrix: paneMatrix([inner, y0, z0], [inner, y1, z0], [inner, y1, z1]), glass: true, order: 1 });
+  };
+  run(-STRIP_HALF_X, -STRIP_GAP_HALF_X, -STRIP_GAP_HALF_X);
+  run(STRIP_GAP_HALF_X, STRIP_HALF_X - 0.1, STRIP_GAP_HALF_X);
   return pieces;
 }
 
