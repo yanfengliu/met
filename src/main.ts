@@ -80,11 +80,15 @@ function boot(): void {
     const preset = presetById(id);
     return preset === undefined ? null : resolvePreset(preset, timeline.bounds, rig.camera.aspect);
   };
-  if (query.view !== null && presetById(query.view) === undefined) {
+  // A view= that names no preset is ignored, as if absent: the default preset, and the follow camera as without a view.
+  const namedView = query.view !== null && presetById(query.view) !== undefined ? query.view : null;
+  if (query.view !== null && namedView === null) {
     warnings.push(`Query parameter view="${query.view}" names no preset; use one of ${PRESETS.map((p) => p.id).join(', ')}. It is ignored.`);
   }
-  let view: string | null = query.cam !== null ? null : query.view !== null && presetById(query.view) !== undefined ? query.view : DEFAULT_PRESET;
-  let follow = !query.shot && query.view === null && query.cam === null;
+  let view: string | null = query.cam !== null ? null : (namedView ?? DEFAULT_PRESET);
+  let follow = !query.shot && namedView === null && query.cam === null;
+  /** Whether the camera stands where the preset in view puts it, so a resize fits that preset again; false once the follow camera or the user moves it. */
+  let atPreset = view !== null;
 
   const top = timeline.bounds.isEmpty() ? 20 : timeline.bounds.max.y;
   const cutMax = Math.ceil(top + 1);
@@ -135,12 +139,16 @@ function boot(): void {
         if (pose === null) return;
         rig.setPose(pose);
         view = id;
+        atPreset = true;
         follow = false;
         needsRender = true;
       },
       setFollow: (on: boolean) => {
         follow = on;
-        if (on) view = null;
+        if (on) {
+          view = null;
+          atPreset = false;
+        }
         needsRender = true;
       },
       setCut: (enabled: boolean, height: number) => {
@@ -167,11 +175,17 @@ function boot(): void {
   rig.onUserMove = () => {
     follow = false;
     view = null;
+    atPreset = false;
     needsRender = true;
   };
   const resized = new ResizeObserver(() => {
     viewer.resize();
     fitInset();
+    // A fit preset depends on the canvas's shape, so the preset in view is fitted again (a look preset comes back unchanged).
+    if (atPreset && view !== null) {
+      const pose = presetPose(view);
+      if (pose !== null) rig.setPose(pose);
+    }
   });
   resized.observe(viewport);
   resized.observe(ui.bar);
@@ -190,7 +204,10 @@ function boot(): void {
     }
     if (follow && player.moving) {
       const step = stepInMotion(timeline.steps, player.t, player.direction);
-      if (step !== undefined && rig.approach(rig.followGoal(step.def.focus, step.bounds, timeline.bounds), seconds)) needsRender = true;
+      if (step !== undefined && rig.approach(rig.followGoal(step.def.focus, step.bounds, timeline.bounds), seconds)) {
+        needsRender = true;
+        atPreset = false;
+      }
     }
     if (rig.update()) needsRender = true;
     ui.sync(state());
@@ -226,7 +243,8 @@ function boot(): void {
     get cut() { return { enabled: viewer.cut.enabled, height: viewer.cut.height }; },
     get view() { return view; },
     get camera() {
-      return { position: vec(rig.camera.position), target: vec(rig.controls.target), near: rig.camera.near, far: rig.camera.far };
+      const c = rig.camera;
+      return { position: vec(c.position), target: vec(rig.controls.target), near: c.near, far: c.far, fov: c.fov, aspect: c.aspect };
     },
     perf: Object.freeze({
       buildMs,

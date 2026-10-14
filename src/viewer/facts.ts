@@ -26,7 +26,8 @@ export interface MetFacts {
   readonly cut: { readonly enabled: boolean; readonly height: number };
   /** The preset in view, or null once the user moved the camera. */
   readonly view: string | null;
-  readonly camera: { readonly position: Vec3; readonly target: Vec3; readonly near: number; readonly far: number };
+  /** `fov` is the vertical field of view in degrees and `aspect` the width over the height of the part of the canvas above the timeline bar, which the projection covers. */
+  readonly camera: { readonly position: Vec3; readonly target: Vec3; readonly near: number; readonly far: number; readonly fov: number; readonly aspect: number };
   readonly perf: {
     /**
      * Milliseconds of the timeline build: every step's `build` and its meshes (performance marks met:build-start, met:build-end).
