@@ -54,8 +54,8 @@ Modelling split: each area worker owns one folder and exports one step array per
 - [ ] Modelling by area, dispatched 2026-10-11 from `600b10b`, each in `../met-worktrees/<area>` on branch `<area>`: `site` (port 5340), `hunt` (5350), `mmw` (5360; also wires `astorCourt1981Steps` into `sequence.ts`), `core` (5370), `roche-north` (5380), `roche-south` (5390). Shared lines: the older block builds the wall. Budgets (triangles / meshes / lights): site 400k/120/0, hunt 650k/170/2, mmw 500k/160/1, core 350k/130/1, roche-north 450k/150/2, roche-south 450k/150/1.
 - [x] Modelling and integration phases 1–2 all merged: main `ad6f16f` (256 unit tests, 16 e2e green; 26,655 pieces, 690 meshes, 1.53M triangles, build 301 ms, frame 6.1 ms).
 - [x] Coordinator acceptance pass on `ad6f16f` (standard shots, sweep seed 2026): one defect, A1, the section cut slices park trees and paints their crowns red.
-- [ ] Independent review round 0 of `ad6f16f` (`reviews/0_integration.md`, to be written): Codex `gpt-6-astra` xhigh done, 8 findings F1–F8 (F1 P1: `shots --solo` path can empty the repo root); Claude `claude-opus-5-5[1m]` max still running.
-- [ ] Repair (worker `repair`, `../met-worktrees/repair`, port 5410, from `ad6f16f`): F1–F8 and A1, each shown red then green; Claude's findings forwarded when they land.
+- [x] Independent review round 0 of `ad6f16f`: Codex `gpt-6-astra` xhigh, 8 findings; Claude `claude-opus-5-5[1m]` max, 12 findings (2 duplicates). Record `reviews/0_integration.md` being written by worker `docs`. Decision: the 1970 desk moves to `roche-steps-lehman-1975`; `mckim-mead-white-1926` widens to 1904–1956.
+- [ ] Repair (worker `repair`, `../met-worktrees/repair`, port 5410, from `ad6f16f`): F1–F18 and A1, each new check shown red then green.
 - [ ] Focused re-review of the repair diff, then merge.
 - [ ] README and devlog (worker `docs`, port none).
 - [ ] Final merge, push, worktree cleanup, plan outcome. This session ends at this milestone (fleet R6); further work starts a fresh session from main.
