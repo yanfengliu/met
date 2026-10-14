@@ -171,7 +171,7 @@ async function facts(page: Page): Promise<Facts> {
 }
 
 /** Writes `shots` into `dir`, which must lie inside `.shots/` and is emptied first, so the folder only ever holds one run's images and its manifest. */
-async function capture(origin: string, shots: readonly Shot[], dir: string): Promise<void> {
+export async function capture(origin: string, shots: readonly Shot[], dir: string): Promise<void> {
   rmSync(insideShots(dir), { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   for (const shot of shots) {
@@ -240,8 +240,9 @@ async function sweep(origin: string, args: Map<string, string>): Promise<void> {
   await capture(origin, list, join(OUT, `sweep-${String(seed)}-t${String(t)}`));
 }
 
-async function main(): Promise<number> {
-  const [command, ...rest] = process.argv.slice(2);
+/** One run of the command line `argv` (as after `node scripts/capture.ts`): starts the server and browser, captures, and stops both on every path. */
+export async function run(argv: readonly string[]): Promise<number> {
+  const [command, ...rest] = argv;
   if (command !== 'shots' && command !== 'sweep') {
     console.error('Usage: node scripts/capture.ts shots [--solo <chapter>] [--presets id,id] | sweep --t <t> [--count 12] [--seed <n>] [--solo <chapter>]');
     return 2;
@@ -249,10 +250,15 @@ async function main(): Promise<number> {
   const args = parseArgs(rest);
   const { rev, dirty } = revision();
   console.log(`Revision ${rev}${dirty ? ' (dirty: uncommitted changes are in these images)' : ' (clean)'}`);
-  const origin = await start();
-  console.log(`Dev server ${origin}`);
-  if (command === 'shots') await shots(origin, args);
-  else await sweep(origin, args);
+  problems.length = 0;
+  try {
+    const origin = await start();
+    console.log(`Dev server ${origin}`);
+    if (command === 'shots') await shots(origin, args);
+    else await sweep(origin, args);
+  } finally {
+    await cleanup();
+  }
   if (problems.length > 0) {
     console.error(`The page reported ${String(problems.length)} problem(s):\n${problems.join('\n')}`);
     return 1;
@@ -266,9 +272,8 @@ if (import.meta.main) {
       void cleanup().then(() => process.exit(130));
     });
   }
-  main()
-    .then(async (code) => {
-      await cleanup();
+  run(process.argv.slice(2))
+    .then((code) => {
       process.exit(code);
     })
     .catch(async (error: unknown) => {
