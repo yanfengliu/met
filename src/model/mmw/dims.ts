@@ -9,15 +9,19 @@
  * - [L14] Library of Congress LC-USZ62-101736, about 1914: the north link (seven arched windows) and the north end pavilion's south side and giant order.
  * - [D12] Daniel Dimitrov 2012, "The Metropolitan Museum of Art Manhattan NYC sideview": the south link's bays, base windows and archivolts.
  * - [E39]..[E43] Epicgenius, "5 Av Apr 2023 39" to "43" (Commons, CC BY-SA 4.0; the series named in exterior-images.md), viewed at 1:1 on 2026-10-13: [E43] the
- *   south link's last four bays and the Hunt extension frontally, perspective-corrected; [E40] the whole south link; [E41] the south extension frontally;
- *   [E42] and [E39] the south end pavilion's north-east corner and its seam with the link.
+ *   south link's last four bays and the Hunt extension frontally from the far sidewalk, 27 mm (6277 px focal), about 44 m out and pitched up about 15°;
+ *   [E40] the whole south link; [E41] the south extension frontally; [E42] and [E39] the south end pavilion's north-east corner and its seam with the link.
  * Heights: [P37] is level to 1.7° and yawed about 9°; at the link's second window the 5.2 m bay spans 530 px, so the wall reads 99 px/m above the plaza at the
- * wall foot (Y 0.25): water table 4.4, window glass 6.2..11.6. Above the glass the lines are [E43]'s (2026-10-13), where the glass (765 px) and the bay (738 px)
- * give 141.7 px/m, set on [P37]'s glass: keystones 12.0..12.75 hanging from the main entablature 12.75..13.9, the attic 13.9..16.5 with sunk panels 14.25..16.2,
- * and the crowning cornice 16.5..17.55 with dentils, no modillions and no cresting ([E43], [E40], [D12]). [P37] alone read the cornice top at 18.0.
- * At both seams the link's cornice top meets the soffit of its neighbour's cornice: the Hunt extension's dentilled cornice (hunt/dims.ts EXT_ORDER_TOP_Y − 0.75,
- * 17.55; [E43], [E41], [D12]) and the end pavilion's modillioned cornice ([E42], [E39]). The pavilions' giant order rises to an architrave and frieze under that
- * cornice, with a plain parapet over it ([E42], [E39], [L14]); their heights are scaled at the seam by the link's crowning cornice in the same photograph.
+ * wall foot (Y 0.25): water table 4.4, window glass 6.2..11.6. Above the glass the lines are [E43]'s (2026-10-13). Its glass (765 px) and bay (738 px) give
+ * 141.7 px/m, but its verticals converge: three windows widen by 4.2e-5 of their width per row downward and their centres lean to match, so the vertical
+ * scale shrinks upward with the square of that and a row maps to a wall height by a projective map anchored on [P37]'s glass (vanishing line 21,100 rows above
+ * the image top). A cornice's front edge stands out from the wall, so a street camera reads it high by its projection in about 44 m: about 0.3 m for the links'.
+ * So, true heights: keystones 12.0..12.8 hanging from the main entablature 12.8..13.9, sunk attic panels 14.4..16.5, the crowning cornice 16.8..17.7 with dentils,
+ * no modillions and no cresting ([E43], [E40], [D12]). [P37] read the cornice's front edge at 18.0 on the wall's scale: 17.7 once its projection is taken out.
+ * At the seam with the Hunt extension ([E43], [E41], [D12]) the link's cornice top runs just under the extension's dentil course (dentils from 18.0, its corona's
+ * front edge 19.3), and the extension's crowning cornice stands at 21.4..21.9, about 4 m over the link's. At the end pavilion ([E42], [E39], [L14]) the giant
+ * order rises to an architrave and frieze, the modillioned cornice springs from the link's cornice top, and a plain parapet tops out at 21.9, level with the
+ * extension's crown; these are scaled at the seam by the link's crowning cornice in the same photograph and carry the same corrections.
  */
 import {
   BUILDING_MAX_X,
@@ -74,13 +78,14 @@ export const SLAB = 0.45;
 /** Foundations: footings under the outer walls go this far below the ground floor. E. */
 export const FOOTING_DEPTH = 1.2;
 /**
- * The end pavilions' crowning entablature and parapet: the giant order's capitals and the architrave over them, the modillioned cornice's top and the parapet's
- * coping top. [E42] at the south seam, scaled by the link's 1.05 m crowning cornice in the same frame: architrave lines 1.3–1.4 m under the link's cornice top,
- * the cornice rising 1.8–2.0 m over it, a plain parapet 1.85–2.0 m over that; [E39]: 1.7 and 2.3. E ±0.4.
+ * The end pavilions' crowning entablature and parapet: the giant order's capitals and the architrave over them, the modillioned cornice's top (its front edge)
+ * and the parapet's coping top. [E42] at the south seam, with the link's crowning cornice in the same frame as the ruler (1.13 m on the wall's scale, [E43]):
+ * architrave 1.45 m under the link's cornice top, the cornice's front edge 2.05 m over it and the parapet 2.05 m over that; [E39]: 1.8 and 2.5. Wall-scale
+ * readings 16.5, 20.0 and 22.05, less the parallax of the 1.3 m cornice and the coping (dims header): 16.5, 19.4, 21.9. E ±0.4.
  */
-export const END_ARCHITRAVE_Y = 16.2;
-export const END_CORNICE_Y = 19.35;
-export const END_PARAPET_Y = 21.5;
+export const END_ARCHITRAVE_Y = 16.5;
+export const END_CORNICE_Y = 19.4;
+export const END_PARAPET_Y = 21.9;
 /**
  * Top of the south link's park wall (Z −69.0) once the Kravis Wing (1990) rose against it: that wing's parapet, roche-south kravis.ts KRAVIS_ROOF_Y + 1.0.
  * A neighbour's number restated here because frame.ts has no constant for it (requested in the handoff, 2026-10-13).
@@ -111,10 +116,10 @@ export const BASE_WINDOW_SILL_Y = 0.9;
 export const BASE_WINDOW_HEIGHT = 2.3;
 export const BASE_WINDOW_WIDTH = 1.7;
 /**
- * The links' main entablature over the arched windows: bottom (the keystones hang from it) and top ([E43]: architrave 0.3, frieze 0.3, a cornice of 0.55 with
- * dentils). M ±0.3. Links only: the pavilions' giant order runs through its height ([E42]), so it stops against their side faces.
+ * The links' main entablature over the arched windows: bottom (the keystones hang from it) and top ([E43]: architrave 0.3, frieze 0.3 and a cornice of about
+ * 0.5). M ±0.3. Links only: the pavilions' giant order runs through its height ([E42]), so it stops against their side faces.
  */
-export const ENTABLATURE_Y = 12.75;
+export const ENTABLATURE_Y = 12.8;
 export const ENTABLATURE_TOP_Y = 13.9;
 /** The sunk panels, one per bay: their width ([E43]), and per tier their sill and height (links in the attic, [E43]; pavilions between the arch and the architrave, [E39]). */
 export const ATTIC_PANEL_WIDTH = 3.6;
@@ -139,17 +144,17 @@ export interface Tier {
   /** The roof deck's top behind the parapet. */
   readonly roofY: number;
 }
-/** Links: crowning cornice 16.5..17.55, its top at the soffit of the Hunt extension's dentilled cornice; projection under that cornice's ([E43]). M ±0.4. */
+/** Links: crowning cornice 16.8..17.7, its top just under the Hunt extension's dentil course; sunk attic panels 14.4..16.5 ([E43], [P37]; dims header). M ±0.3. */
 export const LINK_TIER: Tier = {
   name: 'link',
-  corniceY: 16.5,
+  corniceY: 16.8,
   top: MMW_CORNICE_Y,
   projection: 0.75,
   modillions: false,
   architraveY: null,
   wallTop: MMW_CORNICE_Y,
-  atticPanelY: 14.25,
-  atticPanelHeight: 1.95,
+  atticPanelY: 14.4,
+  atticPanelHeight: 2.1,
   roofY: LINK_ROOF_Y,
 };
 /** End pavilions: the modillioned cornice springs from the links' cornice top ([E42]), over the giant order's architrave and frieze, under a plain parapet. E ±0.4. */

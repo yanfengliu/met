@@ -51,7 +51,7 @@ const NORTH: Campaign = {
     galleries: 'Gallery walls on the room lines of today\'s floor plan: Egyptian galleries below, Asian art and musical instruments above.',
     windows: 'Bronze arched windows light the main storey; grilled windows the ground floor; a door in the link\'s middle bay.',
     orders: 'Tuscan pilasters frame the link\'s seven arches; a giant Corinthian order rises the pavilion\'s full height between niched end bays.',
-    cornices: 'The link\'s dentilled cornice meets the soffit of Hunt\'s; the pavilion\'s frieze, modillioned cornice and parapet run on to 84th Street.',
+    cornices: 'The link\'s dentilled cornice runs under Hunt\'s dentil course; the pavilion\'s frieze, modillioned cornice and parapet run on to 84th Street.',
   },
 };
 
