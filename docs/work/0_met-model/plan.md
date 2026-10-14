@@ -52,15 +52,18 @@ Modelling split: each area worker owns one folder and exports one step array per
 - Cross-area decisions since dispatch (in `docs/design/spec.md`): the floor map needs a −3.1 m Z shift (`c2526d0`); walls sit on block lines, the older block builds a shared wall, exterior mouldings may overhang 1.5 m (`80d77ac`); exterior walls start at or below `GROUND_FLOOR_Y` − 0.1; the scrubber e2e check compares at t = N (`98023b9`).
 - [x] Chapter list, `frame.ts`, chapter stubs from research (coordinator decisions; chapters, stubs and composition landed with the engine, `4ea291f`).
 - [ ] Modelling by area, dispatched 2026-10-11 from `600b10b`, each in `../met-worktrees/<area>` on branch `<area>`: `site` (port 5340), `hunt` (5350), `mmw` (5360; also wires `astorCourt1981Steps` into `sequence.ts`), `core` (5370), `roche-north` (5380), `roche-south` (5390). Shared lines: the older block builds the wall. Budgets (triangles / meshes / lights): site 400k/120/0, hunt 650k/170/2, mmw 500k/160/1, core 350k/130/1, roche-north 450k/150/2, roche-south 450k/150/1.
-- [ ] Integration, visual audit, budgets, independent review, fixes (coordinator with reviewer).
-- [ ] Docs, devlog, merge, push, worktree cleanup (coordinator).
+- [x] Modelling and integration phases 1–2 all merged: main `ad6f16f` (256 unit tests, 16 e2e green; 26,655 pieces, 690 meshes, 1.53M triangles, build 301 ms, frame 6.1 ms).
+- [x] Coordinator acceptance pass on `ad6f16f` (standard shots, sweep seed 2026): one defect, A1, the section cut slices park trees and paints their crowns red.
+- [ ] Independent review round 0 of `ad6f16f` (`reviews/0_integration.md`, to be written): Codex `gpt-6-astra` xhigh done, 8 findings F1–F8 (F1 P1: `shots --solo` path can empty the repo root); Claude `claude-opus-5-5[1m]` max still running.
+- [ ] Repair (worker `repair`, `../met-worktrees/repair`, port 5410, from `ad6f16f`): F1–F8 and A1, each shown red then green; Claude's findings forwarded when they land.
+- [ ] Focused re-review of the repair diff, then merge.
+- [ ] README and devlog (worker `docs`, port none).
+- [ ] Final merge, push, worktree cleanup, plan outcome. This session ends at this milestone (fleet R6); further work starts a fresh session from main.
 
 ## Outcome
 
 Pending.
 
-## Next after modelling
+## Recovery
 
-- Integrate the area branches in chapter order (`core`, `hunt`, `mmw`, `roche-north`, `roche-south`, `site`), then an integration worker removes the `demo` chapter, tunes presets against the photographs and fixes seams between areas (the coordinator's permissions exclude `src/build/`, so that change is delegated).
-- Then the full-model visual audit against `docs/research/*-images.md`, the budgets, an independent review (codex 0.158.0 and claude 2.1.281 are installed; see `../fleet/docs/skills/multi-cli-review.md`), docs and devlog.
-- If a session stops early, each area's committed progress is on its branch in its worktree; resume the worker by name.
+If a session stops early, each worker's committed progress is on its branch in its worktree under `../met-worktrees/`; a fresh worker recovers from `git log main..<branch>` and `git status` there. Review raw output is in ignored `tmp/review-runs/`.
