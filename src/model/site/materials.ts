@@ -2,10 +2,11 @@
  * Materials of the site area that the shared palette does not have, each defined once here (docs/design/spec.md, Batching).
  * Colours are sRGB as photographed or judged from the reference images of docs/research/exterior-images.md (the 2018 orthophoto and the Hałun 2023 view);
  * flat ground surfaces opt out of shadow casting like the palette's ground materials, and water jets are transparent, so they never cast shadows.
- * Landscape opts out of the section cut (`userData.sectionCut === false`, src/viewer/section-cut.ts): only the building is cut, so trees, ground,
- * paths, rocks and retaining walls stay whole. The site's trees take their own foliage and bark, copies of the palette's, because the building's
- * courts and roof garden use the palette's and are cut with the building. The excavation and pad (the building's own works), the front steps' treads,
- * and what stands on a post of a shared palette material (lamp globes, parasols) stay cut, so no part floats above a cut post.
+ * Landscape opts out of the section cut (`userData.sectionCut === false`, src/viewer/section-cut.ts): only the building is cut, so everything the site
+ * builds as landscape stays whole: trees, ground, streets, paths, rocks, walls, fences, lamps, benches, fountains and the plaza's furniture. Where the
+ * building uses a palette material too (granite, dark metal, wood, glass, water, sidewalk paving, foliage, bark), the site takes its own copy, so the
+ * building's courts, pools and roof garden stay cut with the building. Only the building's own works stay cut here: the excavation faces, the pad and
+ * the front steps' treads (src/model/site/steps.ts builds those steps with the palette's granite and metal).
  */
 import { Color, MeshStandardMaterial } from 'three';
 import type { Material } from 'three';
@@ -25,7 +26,7 @@ function uncut<T extends Material>(material: T): T {
 }
 
 /** A copy of a palette material for the site's own landscape, under its own name. */
-function landscapeCopy(source: MeshStandardMaterial, name: string): MeshStandardMaterial {
+function landscapeCopy<T extends Material>(source: T, name: string): T {
   const material = source.clone();
   material.name = name;
   return uncut(material);
@@ -37,9 +38,9 @@ jet.userData['castShadow'] = false;
 export const siteMaterials = Object.freeze({
   /** Graded earth under the streets and drives before they are paved. */
   bareGround: uncut(surface('siteBareGround', '#857a69', 1, false)),
-  /** The cut faces of the building excavation round the footprint. */
+  /** The cut faces of the building excavation round the footprint: the building's works, so cut. */
   excavation: surface('siteExcavation', '#6b5b49', 1, false),
-  /** The building pad: a concrete slab at the bottom of the excavation. */
+  /** The building pad: a concrete slab at the bottom of the excavation; the building's works, so cut. */
   pad: surface('sitePad', '#b9ae98', 0.95, false),
   /** Manhattan schist outcrops: dark grey with a faint sheen (King of Hearts 2013, the park north of the American Wing). */
   schist: uncut(surface('siteSchist', '#5f5c58', 0.8, true)),
@@ -50,7 +51,7 @@ export const siteMaterials = Object.freeze({
   /** The roadway's gutters along the curbs, darker than the lanes. */
   gutter: uncut(surface('siteGutter', '#454b4e', 0.9, false)),
   /** The frosted globes of the park's cast-iron lamp posts. */
-  lampGlobe: surface('siteLampGlobe', '#f1eee4', 0.35, true),
+  lampGlobe: uncut(surface('siteLampGlobe', '#f1eee4', 0.35, true)),
   /** Park paths: the light asphalt of the orthophoto. */
   pathAsphalt: uncut(surface('sitePathAsphalt', '#7b7974', 0.95, false)),
   /** The 2014 plaza's granite paving: a cool mid grey, about 0.7 of the limestone's lightness in Schneider 2019 (paving #7c7f84 by columns #bdb5a8). */
@@ -60,7 +61,7 @@ export const siteMaterials = Object.freeze({
   /** Fountain jets: clear water. Transparent, so it never casts shadows. */
   jet: uncut(jet),
   /** The red angular parasols over the benches (orthophoto 2018, both end pavilions). */
-  parasolRed: surface('siteParasolRed', '#c3302a', 0.6, true),
+  parasolRed: uncut(surface('siteParasolRed', '#c3302a', 0.6, true)),
   /** Decomposed granite under the grove trees (orthophoto 2018). */
   gravel: uncut(surface('siteGravel', '#958f85', 1, false)),
   /** The front steps' treads, a shade lighter than the risers (palette granite); Schneider 2019 reads the flight at #716c65..#84827b by columns #bdb5a8. */
@@ -69,6 +70,18 @@ export const siteMaterials = Object.freeze({
   foliage: landscapeCopy(palette.foliage, 'siteFoliage'),
   /** The site's tree trunks: the palette's bark, as landscape. */
   bark: landscapeCopy(palette.bark, 'siteBark'),
+  /** Curbs, plaza kerbs and benches: the palette's granite, as landscape. */
+  granite: landscapeCopy(palette.granite, 'siteGranite'),
+  /** Fences, lamp posts, bench frames, parasol masts, tables, chairs and light poles: the palette's dark metal, as landscape. */
+  metalDark: landscapeCopy(palette.metalDark, 'siteMetalDark'),
+  /** Park bench seats: the palette's wood, as landscape. */
+  wood: landscapeCopy(palette.wood, 'siteWood'),
+  /** The lenses of the plaza's light poles: the palette's glass, as landscape. */
+  glass: landscapeCopy(palette.glass, 'siteGlass'),
+  /** The plaza fountains' water: the palette's water, as landscape; the building's pools keep the palette's, which is cut. */
+  water: landscapeCopy(palette.water, 'siteWater'),
+  /** The avenue's sidewalks: the palette's paving, as landscape. */
+  sidewalk: landscapeCopy(palette.sidewalk, 'siteSidewalk'),
   /** A deeper green for some park crowns. */
   foliageDeep: uncut(surface('siteFoliageDeep', '#3d5f2a', 0.9, true)),
   /** A second, yellower foliage green, so the park's trees are not all one colour. */

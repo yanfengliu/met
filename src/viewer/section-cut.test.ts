@@ -1,8 +1,9 @@
 /**
- * The section cut's materials (src/viewer/section-cut.ts): only the building is cut. Over the whole sequence's materials, `attach` gives every material
- * a building step uses the cut plane with shadow clipping, and none to the materials the site marks as landscape (`userData.sectionCut === false`):
- * the trees' foliage and bark, the ground, paths, rocks and walls of the park. The cap pass leaves landscape and transparent meshes out.
- * Building steps are those of every area but the site's arrays (src/model/site/index.ts).
+ * The section cut's materials (src/viewer/section-cut.ts): only the building is cut. `attach` runs over the whole sequence's materials; then every piece
+ * the site builds as landscape (src/model/site/index.ts's siteSteps and plaza2014Steps) has a material with no plane, no shadow clipping and no cap
+ * pass, except the building's own works there (the excavation faces and the pad); the park's and plaza's trees and the fountains are checked piece
+ * by piece with no exception; and every material of a building step (every other step, the 1970 front steps included) gets the plane with shadow
+ * clipping, so the building's courts, pools and roof garden stay cut.
  * Bound: the planes `attach` hands out, without WebGL; what the GPU draws is checked by eye in the cut-aerial-ne and cut-top captures.
  */
 import type { Material } from 'three';
@@ -10,63 +11,66 @@ import { describe, expect, it } from 'vitest';
 
 import { collectStep } from '../build/kit.js';
 import { SEQUENCE } from '../build/sequence.js';
+import type { StepDef } from '../build/types.js';
 import { palette } from '../model/palette.js';
-import { frontSteps1970, plaza2014Steps, siteSteps } from '../model/site/index.js';
+import { plaza2014Steps, siteSteps } from '../model/site/index.js';
 import { siteMaterials } from '../model/site/materials.js';
 import { cappedBySection, cutBySection, SectionCut } from './section-cut.js';
 
-const SITE_STEPS = new Set([...siteSteps, ...frontSteps1970, ...plaza2014Steps].map((s) => s.id));
+const LANDSCAPE_STEPS: readonly StepDef[] = [...siteSteps, ...plaza2014Steps];
+const LANDSCAPE_IDS = new Set(LANDSCAPE_STEPS.map((s) => s.id));
+/** The building's own works the site builds; they stay cut with the building. */
+const WORKS = new Set<Material>([siteMaterials.excavation, siteMaterials.pad]);
+/** The trees and fountains, which must stay whole in every piece. */
+const WHOLE = ['site-trees-park', 'plaza-groves', 'plaza-grove-trees', 'plaza-allees', 'plaza-fountains', 'plaza-fountain-water'];
 
-/** The site's landscape: what must stay whole. */
-const LANDSCAPE: Readonly<Record<string, Material>> = {
-  'site foliage': siteMaterials.foliage,
-  'site bark': siteMaterials.bark,
-  'deep foliage': siteMaterials.foliageDeep,
-  'light foliage': siteMaterials.foliageLight,
-  'magnolia foliage': siteMaterials.foliageDark,
-  grass: palette.grass,
-  asphalt: palette.asphalt,
-  'bare ground': siteMaterials.bareGround,
-  'path asphalt': siteMaterials.pathAsphalt,
-  gravel: siteMaterials.gravel,
-  'plaza granite': siteMaterials.plazaGranite,
-  schist: siteMaterials.schist,
-  'retaining walls': siteMaterials.wallStone,
-};
-
-function materialsOf(building: boolean): Set<Material> {
-  const out = new Set<Material>();
-  for (const step of SEQUENCE) if (SITE_STEPS.has(step.id) !== building) for (const piece of collectStep(step).pieces) out.add(piece.material);
-  return out;
+interface Piece {
+  readonly step: string;
+  readonly index: number;
+  readonly material: Material;
 }
+
+const pieces = (steps: readonly StepDef[]): Piece[] => steps.flatMap((step) => collectStep(step).pieces.map((p, index) => ({ step: step.id, index, material: p.material })));
+
+/** Messages for pieces whose material the cut would clip or cap. */
+const clipped = (list: readonly Piece[]): string[] =>
+  list
+    .filter(({ material }) => cutBySection(material) || (material.clippingPlanes?.length ?? 0) > 0 || material.clipShadows || cappedBySection(material))
+    .map(({ step, index, material }) => `${step} piece ${String(index)} (${material.name})`);
 
 describe('section cut materials', () => {
   const cut = new SectionCut();
-  const building = materialsOf(true);
-  const site = materialsOf(false);
-  cut.attach([...building, ...site]);
+  const site = pieces(LANDSCAPE_STEPS);
+  const building = pieces(SEQUENCE.filter((s) => !LANDSCAPE_IDS.has(s.id)));
+  cut.attach(new Set([...site, ...building].map((p) => p.material)));
 
-  it('gives no clipping plane, and no shadow clipping, to the site landscape', () => {
-    for (const [name, material] of Object.entries(LANDSCAPE)) {
-      expect(site.has(material), `${name} is used by the site`).toBe(true);
-      expect(cutBySection(material), `${name} opts out of the cut`).toBe(false);
-      expect(material.clippingPlanes ?? [], `${name}: clipping planes`).toEqual([]);
-      expect(material.clipShadows, `${name}: shadow clipping`).toBe(false);
+  it('leaves every landscape piece the site builds whole, but for the building works', () => {
+    expect(site.length).toBeGreaterThan(100);
+    expect(clipped(site.filter((p) => !WORKS.has(p.material))), 'landscape pieces the cut would clip or cap').toEqual([]);
+  });
+
+  it('leaves the park and plaza trees and the fountains whole in every piece', () => {
+    for (const id of WHOLE) {
+      const own = site.filter((p) => p.step === id);
+      expect(own.length, `pieces of ${id}`).toBeGreaterThan(0);
+      expect(clipped(own), `${id}: pieces the cut would clip or cap`).toEqual([]);
     }
   });
 
-  it('gives every material a building step uses the cut plane with shadow clipping', () => {
-    expect(building.size).toBeGreaterThan(20);
-    const uncut = [...building].filter((m) => m.clippingPlanes?.length !== 1 || m.clippingPlanes[0] !== cut.plane || !m.clipShadows).map((m) => m.name);
+  it('gives every material a building step uses, and the building works, the cut plane with shadow clipping', () => {
+    const materials = [...new Set([...building.map((p) => p.material), ...WORKS])];
+    expect(materials.length).toBeGreaterThan(20);
+    const uncut = materials.filter((m) => m.clippingPlanes?.length !== 1 || m.clippingPlanes[0] !== cut.plane || !m.clipShadows).map((m) => m.name);
     expect(uncut, 'building materials the cut would not clip').toEqual([]);
-    // The courts and the roof garden use the palette's foliage and bark, so those stay cut; the site's trees have their own.
-    for (const material of [palette.foliage, palette.bark, palette.limestone, palette.brick, palette.glass]) expect(building.has(material) && cutBySection(material), material.name).toBe(true);
+    // The courts, pools and roof garden use the palette's foliage, bark and water; the site's trees and fountains have their own.
+    for (const material of [palette.foliage, palette.bark, palette.water, palette.granite, palette.limestone, palette.glass]) expect(cutBySection(material), material.name).toBe(true);
   });
 
   it('leaves landscape and transparent meshes out of the cap pass, and caps the rest', () => {
-    for (const [name, material] of Object.entries(LANDSCAPE)) expect(cappedBySection(material), name).toBe(false);
+    expect(cappedBySection(siteMaterials.foliage)).toBe(false);
+    expect(cappedBySection(siteMaterials.water)).toBe(false);
     expect(cappedBySection(palette.glass)).toBe(false);
     expect(cappedBySection(palette.limestone)).toBe(true);
-    expect(cappedBySection(palette.foliage)).toBe(true);
+    expect(cappedBySection(palette.water)).toBe(true);
   });
 });

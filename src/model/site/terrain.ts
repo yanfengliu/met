@@ -26,7 +26,7 @@ export const terrainStep: StepDef = {
     kit.add(g.grass, palette.grass, IDENTITY, 0);
     kit.add(g.bare, siteMaterials.bareGround, IDENTITY, 0);
     kit.add(g.walls, siteMaterials.wallStone, IDENTITY, 0);
-    kit.add(g.curbs, palette.granite, IDENTITY, 0);
+    kit.add(g.curbs, siteMaterials.granite, IDENTITY, 0);
     kit.add(g.cuts, siteMaterials.excavation, IDENTITY, 0);
   },
 };

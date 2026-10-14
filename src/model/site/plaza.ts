@@ -124,7 +124,7 @@ export const fountainWaterStep: StepDef = {
     const f = fountainParts();
     FOUNTAINS.forEach((b, k) => {
       const m = frameOf(b);
-      kit.add(f.water, palette.water, m, k);
+      kit.add(f.water, siteMaterials.water, m, k);
       kit.add(f.jets, siteMaterials.jet, m, k);
     });
   },
@@ -145,10 +145,10 @@ function bed(kit: Kit, b: Box2, fill: Material, width: number, height: number, o
   const put = (material: Material, m: Matrix4): void => {
     kit.add(UNIT_BLOCK, material, frame.clone().multiply(m), order);
   };
-  put(palette.granite, blockMatrix(0, y0, -sz / 2 + width / 2, sx, depth, width));
-  put(palette.granite, blockMatrix(0, y0, sz / 2 - width / 2, sx, depth, width));
-  put(palette.granite, blockMatrix(-sx / 2 + width / 2, y0, 0, width, depth, sz - 2 * width));
-  put(palette.granite, blockMatrix(sx / 2 - width / 2, y0, 0, width, depth, sz - 2 * width));
+  put(siteMaterials.granite, blockMatrix(0, y0, -sz / 2 + width / 2, sx, depth, width));
+  put(siteMaterials.granite, blockMatrix(0, y0, sz / 2 - width / 2, sx, depth, width));
+  put(siteMaterials.granite, blockMatrix(-sx / 2 + width / 2, y0, 0, width, depth, sz - 2 * width));
+  put(siteMaterials.granite, blockMatrix(sx / 2 - width / 2, y0, 0, width, depth, sz - 2 * width));
   put(fill, blockMatrix(0, y0, 0, sx - 2 * width, depth - 0.04, sz - 2 * width));
 }
 
@@ -227,9 +227,9 @@ export const furnitureStep: StepDef = {
         const x = s * px;
         const y = plazaY(x, PARASOL_Z);
         const m = new Matrix4().makeTranslation(x, y, PARASOL_Z);
-        kit.add(PARASOL_MAST, palette.metalDark, m);
+        kit.add(PARASOL_MAST, siteMaterials.metalDark, m);
         kit.add(PARASOL_CANOPY, siteMaterials.parasolRed, m);
-        kit.add(BENCH, palette.granite, new Matrix4().makeTranslation(x, plazaY(x, BENCH_Z), BENCH_Z));
+        kit.add(BENCH, siteMaterials.granite, new Matrix4().makeTranslation(x, plazaY(x, BENCH_Z), BENCH_Z));
       }
     }
     const random = seeded(2014);
@@ -243,13 +243,13 @@ export const furnitureStep: StepDef = {
         const z = b.z0 + 1.6 + (b.z1 - b.z0 - 3.2) * random();
         if (trees.some(([tx, tz]) => Math.hypot(tx - x, tz - z) < 1.3)) continue;
         const up = BORDER_HEIGHT - 0.04;
-        kit.add(TABLE, palette.metalDark, onPlaza(x, z, up));
+        kit.add(TABLE, siteMaterials.metalDark, onPlaza(x, z, up));
         const turn = random() * Math.PI * 2;
         for (let c = 0; c < 4; c += 1) {
           const a = turn + (c * Math.PI) / 2;
           // Each chair faces the table: its front (+Z) turned toward the table's centre.
           const chair = onPlaza(x + 0.75 * Math.sin(a), z + 0.75 * Math.cos(a), up).multiply(new Matrix4().makeRotationY(a + Math.PI + (random() - 0.5) * 0.4));
-          kit.add(CHAIR, palette.metalDark, chair);
+          kit.add(CHAIR, siteMaterials.metalDark, chair);
         }
         placed += 1;
       }
@@ -257,8 +257,8 @@ export const furnitureStep: StepDef = {
     });
     for (const [x, z] of POLES) {
       const m = new Matrix4().makeTranslation(x, plazaY(x, z), z);
-      kit.add(POLE, palette.metalDark, m);
-      kit.add(POLE_LENS, palette.glass, m);
+      kit.add(POLE, siteMaterials.metalDark, m);
+      kit.add(POLE_LENS, siteMaterials.glass, m);
     }
   },
 };
