@@ -178,7 +178,7 @@ Repair for every row: worker `repair`, branch `repair`, from `ad6f16f`, revision
 
 Before the round, the coordinator ran `npm run verify` on main at `ad6f16f` and it was green: 256 unit tests and 16 e2e tests (plan, `b5a5e45`). It was not rerun for this record, which changes no code.
 
-The reviewers' own checks and their bounds are under Reviewers and coverage. Apart from the two duplicates (F1, F5), nobody but the reviewer who raised a finding has reproduced it, and no repair exists yet to check.
+The reviewers' own checks and their bounds are under Reviewers and coverage. Apart from the two duplicates (F1, F5), nobody but the reviewer who raised a finding has reproduced it. The repair was in progress on its branch when this record was written; it is not part of this round and has not been reviewed.
 
 Checks run while writing this record (docs worker, 2026-10-14):
 
@@ -189,7 +189,7 @@ Checks run while writing this record (docs worker, 2026-10-14):
 - Structure: `node scripts/work-docs.mjs check` from the fleet checkout, pointed at this worktree, exited 0 with one work unit. It checks only the file name, the six required sections and contiguous round numbers, not whether the text is true.
 - `git status --short` of the main checkout printed nothing.
 
-Not available: any check of a repair, because none exists yet; a rerun of the reviewers' failure scenarios; the e2e suite and a photographic comparison at reviewer level.
+Not available: any check of the repair, which is in progress and outside this round; a rerun of the reviewers' failure scenarios; the e2e suite and a photographic comparison at reviewer level.
 
 ## Round outcome
 
@@ -197,4 +197,4 @@ Round 0 closes with 19 accepted items and no rejection: F1 to F18 from the two r
 
 There is no dissent and no abstention. One provenance caveat: Claude's confirmation of F1 followed the plan's mention of Codex's F1, so it is a second check, not an independent find. One coverage caveat: a Codex subagent spawn failed, and the log cannot show whether any subagent ran.
 
-Nothing in this round is repaired yet, so every finding stays open. Round 1 is a focused review of the repair diff. It should also settle what the reviewers did not cover: the e2e suite and the model against its photographs. This record is history; the plan holds the current status.
+No repair has been reviewed or merged, so every finding stays open until round 1. Round 1 is a focused review of the repair diff. It should also settle what the reviewers did not cover: the e2e suite and the model against its photographs. This record is history; the plan holds the current status.
