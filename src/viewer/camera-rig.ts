@@ -68,8 +68,9 @@ export class CameraRig {
     this.camera.updateProjectionMatrix();
   }
 
-  /** Puts the camera at `pose` at once. */
+  /** Puts the camera at `pose` at once, dropping any rotation or pan the controls still owe from the last drag, so the camera stays where it is put. */
   setPose(pose: CameraPose): void {
+    this.stopInertia();
     if (this.camera.fov !== pose.fov) {
       this.camera.fov = pose.fov;
       this.camera.updateProjectionMatrix();
@@ -79,6 +80,17 @@ export class CameraRig {
     this.camera.lookAt(pose.target);
     this.controls.update();
     this.updateClipping();
+  }
+
+  /**
+   * With damping on, OrbitControls spends a drag's rotation and pan over the following frames. One update with damping off spends what is left
+   * at once and clears it (undamped controls carry nothing over), so the pose set next is not carried away by the last drag's inertia.
+   */
+  private stopInertia(): void {
+    const damping = this.controls.enableDamping;
+    this.controls.enableDamping = false;
+    this.controls.update();
+    this.controls.enableDamping = damping;
   }
 
   pose(): CameraPose {

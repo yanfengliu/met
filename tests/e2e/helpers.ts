@@ -105,3 +105,48 @@ export async function labelStep(page: Page): Promise<number> {
   if (match === null) throw new Error(`The step label "${text}" does not start with "Step k / N".`);
   return Number(match[1]);
 }
+
+export type Camera = Facts['camera'];
+
+export async function camera(page: Page): Promise<Camera> {
+  const value = await page.evaluate(() => (window.__met === undefined ? null : (JSON.parse(JSON.stringify(window.__met.camera)) as unknown)));
+  if (value === null) throw new Error('window.__met is not published, so the camera cannot be read.');
+  return value as Camera;
+}
+
+/** The larger of the distances between two cameras' positions and between their targets, in metres. */
+export function cameraGap(a: Camera, b: Camera): number {
+  const d = (p: readonly number[], q: readonly number[]): number => Math.hypot(...p.map((v, i) => v - (q[i] ?? Number.NaN)));
+  return Math.max(d(a.position, b.position), d(a.target, b.target));
+}
+
+/** The camera once it has stopped: two reads 150 ms apart that agree within 0.1 mm. */
+export async function settledCamera(page: Page, timeout = 6000): Promise<Camera> {
+  const end = Date.now() + timeout;
+  let last = await camera(page);
+  for (;;) {
+    await page.waitForTimeout(150);
+    const now = await camera(page);
+    if (cameraGap(now, last) < 1e-4) return now;
+    if (Date.now() > end) throw new Error(`The camera did not settle within ${String(timeout)} ms; it last moved ${cameraGap(now, last).toFixed(4)} m in 150 ms.`);
+    last = now;
+  }
+}
+
+/** Opens the view menu and clicks the preset's item. */
+export async function choosePreset(page: Page, id: string): Promise<void> {
+  await openMenu(page, 'view-menu');
+  await press(page, `preset-${id}`);
+}
+
+/** Drags across the canvas with the primary button from its centre, `steps` moves of (dx, dy) pixels each, as a quick flick. */
+export async function dragCanvas(page: Page, dx: number, dy: number, steps: number): Promise<void> {
+  const box = await page.getByTestId('canvas').boundingBox();
+  if (box === null) throw new Error('The canvas has no box.');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 3;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let k = 1; k <= steps; k += 1) await page.mouse.move(x + k * dx, y + k * dy);
+  await page.mouse.up();
+}
