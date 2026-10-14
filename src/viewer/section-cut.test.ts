@@ -23,6 +23,11 @@ const LANDSCAPE_IDS = new Set(LANDSCAPE_STEPS.map((s) => s.id));
 const WORKS = new Set<Material>([siteMaterials.excavation, siteMaterials.pad]);
 /** The trees and fountains, which must stay whole in every piece. */
 const WHOLE = ['site-trees-park', 'plaza-groves', 'plaza-grove-trees', 'plaza-allees', 'plaza-fountains', 'plaza-fountain-water'];
+/**
+ * Materials the site's landscape may share with the building, each with its reason. None today: the site takes its own copy of every material the
+ * building also uses (src/model/site/materials.ts), so a landscape piece can never be cut, or a building piece left whole, through a shared material.
+ */
+const SHARED_WITH_BUILDING: ReadonlyMap<Material, string> = new Map();
 
 interface Piece {
   readonly step: string;
@@ -55,6 +60,14 @@ describe('section cut materials', () => {
       expect(own.length, `pieces of ${id}`).toBeGreaterThan(0);
       expect(clipped(own), `${id}: pieces the cut would clip or cap`).toEqual([]);
     }
+  });
+
+  it("shares no material with the building, and never the palette's foliage or bark", () => {
+    const buildingMaterials = new Set(building.map((p) => p.material));
+    const shared = [...new Set(site.map((p) => p.material))].filter((m) => buildingMaterials.has(m) && !SHARED_WITH_BUILDING.has(m)).map((m) => m.name);
+    expect(shared, 'materials the site landscape shares with the building').toEqual([]);
+    const palettePlants = site.filter((p) => p.material === palette.foliage || p.material === palette.bark).map((p) => `${p.step} piece ${String(p.index)} (${p.material.name})`);
+    expect(palettePlants, "site pieces on the palette's foliage or bark").toEqual([]);
   });
 
   it('gives every material a building step uses, and the building works, the cut plane with shadow clipping', () => {
