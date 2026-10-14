@@ -13,7 +13,7 @@ import type { BuiltStep } from './build/timeline.js';
 import { installStyles } from './ui/styles.js';
 import { createUi } from './ui/ui.js';
 import type { UiState } from './ui/ui.js';
-import { publishFacts } from './viewer/facts.js';
+import { publishFacts, snapshot } from './viewer/facts.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
 import type { CameraPose } from './viewer/presets.js';
 import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
@@ -196,6 +196,8 @@ function boot(): void {
   let frames = 0;
   let readyMs: number | null = null;
   let last = performance.now();
+  /** The pose the follow camera headed for in the last frame, or null when it is not under way. */
+  let followGoal: CameraPose | null = null;
   const frame = (now: number): void => {
     const seconds = Math.min(MAX_FRAME_SECONDS, Math.max(0, (now - last) / 1000));
     last = now;
@@ -205,9 +207,11 @@ function boot(): void {
       if (timeline.evaluate(player.t)) viewer.markShadowsDirty();
       needsRender = true;
     }
+    followGoal = null;
     if (follow && player.moving) {
       const step = stepInMotion(timeline.steps, player.t, player.direction);
-      if (step !== undefined && rig.approach(rig.followGoal(step.def.focus, step.bounds, timeline.bounds), seconds)) {
+      followGoal = step === undefined ? null : rig.followGoal(step.def.focus, step.bounds, timeline.bounds);
+      if (followGoal !== null && rig.approach(followGoal, seconds)) {
         needsRender = true;
         atPreset = false;
       }
@@ -231,27 +235,31 @@ function boot(): void {
   const b = timeline.bounds;
   publishFacts({
     n: timeline.n,
-    steps: steps.map((s, i) => {
+    // Detached, deeply frozen snapshots: a step's focus is the step definition's own object, which the follow camera reads.
+    steps: snapshot(steps.map((s, i) => {
       const sb = timeline.steps[i]?.bounds ?? b;
-      const bounds = Object.freeze({ min: vec(sb.min), max: vec(sb.max) });
-      return Object.freeze({ id: s.id, title: s.title, chapter: s.chapter, year: s.year ?? null, detail: s.detail ?? null, weight: s.weight ?? 1, focus: s.focus ?? null, bounds });
-    }),
-    chapters: ranges.map((r) => Object.freeze({ id: r.chapter.id, title: r.chapter.title, years: r.chapter.years, summary: r.chapter.summary, first: r.first, count: r.count })),
-    presets: PRESETS.map((p) => Object.freeze({ id: p.id, label: p.label, group: p.group })),
-    bounds: Object.freeze({ min: vec(b.min), max: vec(b.max) }),
-    stats: Object.freeze(timeline.stats()),
-    warnings: Object.freeze([...warnings]),
+      return { id: s.id, title: s.title, chapter: s.chapter, year: s.year ?? null, detail: s.detail ?? null, weight: s.weight ?? 1, focus: s.focus ?? null, bounds: { min: vec(sb.min), max: vec(sb.max) } };
+    })),
+    chapters: snapshot(ranges.map((r) => ({ id: r.chapter.id, title: r.chapter.title, years: r.chapter.years, summary: r.chapter.summary, first: r.first, count: r.count }))),
+    presets: snapshot(PRESETS.map((p) => ({ id: p.id, label: p.label, group: p.group }))),
+    bounds: snapshot({ min: vec(b.min), max: vec(b.max) }),
+    stats: snapshot(timeline.stats()),
+    warnings: snapshot([...warnings]),
     gpu: viewer.gpu(),
     get t() { return player.t; },
     get mode() { return player.mode; },
     get direction() { return player.direction; },
     get speed() { return player.speed; },
     get follow() { return follow; },
-    get cut() { return { enabled: viewer.cut.enabled, height: viewer.cut.height }; },
+    get followGoal() {
+      const g = followGoal;
+      return g === null ? null : snapshot({ position: vec(g.position), target: vec(g.target), fov: g.fov });
+    },
+    get cut() { return snapshot({ enabled: viewer.cut.enabled, height: viewer.cut.height }); },
     get view() { return view; },
     get camera() {
       const c = rig.camera;
-      return { position: vec(c.position), target: vec(rig.controls.target), near: c.near, far: c.far, fov: c.fov, aspect: c.aspect };
+      return snapshot({ position: vec(c.position), target: vec(rig.controls.target), near: c.near, far: c.far, fov: c.fov, aspect: c.aspect });
     },
     perf: Object.freeze({
       buildMs,

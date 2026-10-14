@@ -1,9 +1,23 @@
 /**
  * `window.__met`: read-only facts about the page for tests and capture scripts (docs/design/spec.md, Query contract).
- * Everything is frozen or a getter; nothing here changes the page's state, so tests still drive it through its real controls.
+ * Every value is a detached, deeply frozen snapshot (`snapshot`) or a getter that returns one; none is an object the page itself uses, so nothing
+ * done to `window.__met`, however deep, reaches the page's state, and tests still drive it through its real controls.
  */
 import type { PlayerMode, Speed } from '../build/player.js';
 import type { CameraFocus, Vec3 } from '../build/types.js';
+
+/** A detached copy of plain data `value`, frozen all the way down: no part of it is shared with the original. */
+export function snapshot<T>(value: T): T {
+  return deepFreeze(structuredClone(value));
+}
+
+function deepFreeze<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const inner of Object.values(value)) deepFreeze(inner);
+  }
+  return value;
+}
 
 export interface MetFacts {
   readonly n: number;
@@ -33,6 +47,8 @@ export interface MetFacts {
   readonly direction: 1 | -1;
   readonly speed: Speed;
   readonly follow: boolean;
+  /** The pose the follow camera headed for in the last frame (from the step in motion), or null when it is not under way. */
+  readonly followGoal: { readonly position: Vec3; readonly target: Vec3; readonly fov: number } | null;
   readonly cut: { readonly enabled: boolean; readonly height: number };
   /** The preset in view, or null once the user moved the camera. */
   readonly view: string | null;
