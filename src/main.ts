@@ -17,6 +17,7 @@ import { publishFacts } from './viewer/facts.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
 import type { CameraPose } from './viewer/presets.js';
 import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
+import { RendererError } from './viewer/renderer-error.js';
 import { cappedBySection } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
 
@@ -31,7 +32,9 @@ function showError(error: unknown): void {
   panel.dataset['testid'] = 'error';
   // Inline, because the failure may come before the page styles are installed.
   panel.style.cssText = 'position:fixed;inset:16px auto auto 16px;max-width:calc(100vw - 64px);margin:0;padding:14px 16px;border-radius:10px;background:#3a1514;color:#ffd9d4;white-space:pre-wrap;font:13px/1.4 ui-monospace,Consolas,monospace;';
-  panel.textContent = `The model could not be built.\n\n${message}`;
+  // A renderer that cannot start is not the model's fault; it says so, with what to do (src/viewer/renderer-error.ts).
+  const heading = error instanceof RendererError ? 'WebGL 2 is not available.' : 'The model could not be built.';
+  panel.textContent = `${heading}\n\n${message}`;
   document.body.appendChild(panel);
   console.error(error);
 }

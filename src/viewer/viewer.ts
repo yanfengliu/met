@@ -9,6 +9,7 @@ import type { Box3, Material, Mesh, Object3D } from 'three';
 import { CameraRig } from './camera-rig.js';
 import { createEnvironment } from './environment.js';
 import type { Environment } from './environment.js';
+import { RendererError, rendererFailureMessage } from './renderer-error.js';
 import { SectionCut } from './section-cut.js';
 
 export interface ViewerModel {
@@ -21,6 +22,15 @@ export interface ViewerModel {
 }
 
 const MAX_PIXEL_RATIO = 2;
+
+/** The WebGL 2 renderer, or a RendererError that says WebGL 2 could not start and what to do (src/viewer/renderer-error.ts). */
+function startRenderer(): WebGLRenderer {
+  try {
+    return new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+  } catch (error) {
+    throw new RendererError(rendererFailureMessage(error), { cause: error });
+  }
+}
 
 export class Viewer {
   readonly renderer: WebGLRenderer;
@@ -35,7 +45,7 @@ export class Viewer {
     private readonly container: HTMLElement,
     private readonly model: ViewerModel,
   ) {
-    this.renderer = new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+    this.renderer = startRenderer();
     const r = this.renderer;
     r.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
     r.toneMapping = ACESFilmicToneMapping;
