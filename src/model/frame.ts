@@ -46,6 +46,7 @@ export const GROUND_FLOOR_Y = -2.34; // D: MAIN_FLOOR_Y − 21'-2" (interior.md,
 export const SECOND_FLOOR_Y = 10.97; // D: MAIN_FLOOR_Y + 22'-6" (interior.md, Floor levels), Hunt core only; other wings' second floors differ
 export const CORE_PARAPET_Y = 18.0; // E: parapet top of the 1880–1894 core's outer walls (core area, 2026-10-11, after 1880_Met_Museum.jpg about 1900 and the Petrie Court photo, interior-images.md #33)
 export const CORE_COPING_TOP_Y = 18.15; // D: CORE_PARAPET_Y plus the 0.15 m stone coping; the Petrie Court's glass roof rests on Weston's south front here (Petrie Court photos, interior-images.md #33 and #35)
+export const KRAVIS_PARAPET_Y = 19.6; // D: the Kravis Wing's parapet top: its roof at the Petrie Court's eaves (CORE_COPING_TOP_Y plus the court roof's 0.45 m gutter, roche-south kravis.ts) plus a 1.0 m parapet (E); the south link's park wall on Z −69.0 rises to it (mmw party-walls.ts)
 export const GREAT_HALL_RIDGE_Y = 33.37; // D: MAIN_FLOOR_Y + 96'-0" (interior.md, Floor levels), medium-low
 
 // --- Hunt central pavilion ------------------------------------------------------------------

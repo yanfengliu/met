@@ -8,7 +8,7 @@
 import { Matrix4 } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
-import { CORE_COPING_TOP_Y, GROUND_FLOOR_Y, MAIN_FLOOR_Y } from '../frame.js';
+import { CORE_COPING_TOP_Y, GROUND_FLOOR_Y, KRAVIS_PARAPET_Y, MAIN_FLOOR_Y } from '../frame.js';
 import { hippedSkylight, laylight, ridgeSkylight, wall } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { OUTER_WALL, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
@@ -47,7 +47,8 @@ const RIDGE_Z0 = -128.0;
 const RIDGE_Z1 = -85.0;
 /** E: roof over the galleries south of the court, level with the court's eaves (18.6); the map's floor 4 (plant and offices) stands on part of it. */
 export const KRAVIS_ROOF_Y = PETRIE_EAVE_Y;
-const PARAPET_Y = KRAVIS_ROOF_Y + 1.0;
+/** The parapet over the galleries (frame.ts KRAVIS_PARAPET_Y, shared with the McKim, Mead & White wall raised against it). */
+const PARAPET_Y = KRAVIS_PARAPET_Y;
 /** The map's floor 4 (plant), kept east of the glazed strips the orthophoto shows over the west end. */
 const PENTHOUSE: readonly [number, number, number, number] = [-87.9, -121.6, -62.4, -104.3];
 /** Orthophoto: two glazed strips over the west end of the galleries (Z −134.6..−128.2 and −127.4..−122.4, X −87.6..−62.6), each built 5 m wide. */
