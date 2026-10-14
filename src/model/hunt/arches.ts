@@ -52,6 +52,8 @@ const WINDOW_SILL_Y = MAIN + 1.1;
 const SCREEN_D = 0.5;
 /** Lunette mullion posts at ±1.0..1.5 m (S7: posts 0.5 m wide). */
 const MULLION = { inner: 1.0, outer: 1.5 } as const;
+/** The lunette grille (lunetteGrille's parameters) and the height of its base, the lunette's springing; it stands 0.1 m inside the intrados. */
+export const LUNETTE_GRILLE = { span: ARCH_INNER_SPAN - 0.2, base: 0, cell: 0.42, bar: 0.05, depth: 0.06, y: TRANSOM_TOP_Y + 0.05 } as const;
 
 const merged = new Map<string, { metal: THREE.BufferGeometry; glass: THREE.BufferGeometry }>();
 /** A window unit's frame and bars as one metal geometry (they share a material, so one mesh), with its glass. */
@@ -183,12 +185,13 @@ export const archSteps: readonly StepDef[] = [
     stagger: 'x',
     build(kit) {
       const lunette = windowUnit({ width: ARCH_INNER_SPAN, height: ARCH_CROWN_Y - (TRANSOM_TOP_Y - 0.25), shape: 'arch', cols: 1, rows: 1, frame: 0.1, depth: 0.12 });
-      const grille = lunetteGrille(ARCH_INNER_SPAN - 0.2, 0, 0.42, 0.05, 0.06);
+      const g = LUNETTE_GRILLE;
+      const grille = lunetteGrille(g.span, g.base, g.cell, g.bar, g.depth);
       for (const x of BAY_X) {
         const doors = x === 0;
         kit.add(lunette.frame, palette.metalDark, at(x, TRANSOM_TOP_Y - 0.25, SCREEN_Z - 0.05));
         kit.add(lunette.glass, palette.glassDark, at(x, TRANSOM_TOP_Y - 0.25, SCREEN_Z - 0.05));
-        kit.add(grille, palette.metalDark, at(x, TRANSOM_TOP_Y + 0.05, SCREEN_Z + 0.1));
+        kit.add(grille, palette.metalDark, at(x, g.y, SCREEN_Z + 0.1));
         for (const [a, b] of OPENINGS) {
           const width = b - a;
           const bottom = doors ? MAIN : WINDOW_SILL_Y;

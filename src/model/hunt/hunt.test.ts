@@ -1,6 +1,7 @@
 /**
  * The Hunt chapter's own checks, headless (collectStep and Timeline, no WebGL): step ids, titles and order; every piece inside block hunt-d with the pavilion's
- * projection; the eight columns at the settled pair positions; the area's budget; finite matrices.
+ * projection; the eight columns at the settled pair positions; the area's budget; finite matrices; every lunette grille bar inside its aperture, as a part
+ * (vertices within the outline, by at most half a bar at the bars' end corners) and as placed (within the arch's intrados, above its springing).
  * Bounds: the block test checks each piece's world bounding box (a box overstepping a corner of an L-shaped edge counts against the nearer edge only);
  * the wings' front allowance is the spec's moulding rule (up to 1.5 m beyond the line), and pieces of the walls step get 2 cm. Budgets are this area's share
  * from the coordinator (650,000 triangles counting instances, 170 instanced meshes, 2 step lights).
@@ -13,7 +14,10 @@ import { Timeline } from '../../build/timeline.js';
 import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAIR_CENTRE_X_INNER, HUNT_PAIR_CENTRE_X_OUTER } from '../frame.js';
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
+import { LUNETTE_GRILLE } from './arches.js';
+import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y } from './dims.js';
 import { huntSteps } from './index.js';
+import { lunetteGrille } from './shapes.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TOLERANCE = 0.3;
@@ -115,5 +119,58 @@ describe('Hunt steps', () => {
     expect(stats.lights).toBeLessThanOrEqual(BUDGET.lights);
     const bad = timeline.steps.flatMap((s) => s.meshes).filter((m) => !Array.from(m.instanceMatrix.array).every(Number.isFinite));
     expect(bad.map((m) => m.name)).toEqual([]);
+  });
+});
+
+/** How far (x, y) lies outside a lunette of `span` (a semicircle of radius span / 2) over a rectangle `base` tall, origin at the bottom centre; 0 inside. */
+function outsideLunette(x: number, y: number, span: number, base: number): number {
+  const r = span / 2;
+  return Math.max(0, -y, y <= base ? Math.abs(x) - r : Math.hypot(x, y - base) - r);
+}
+
+describe('lunette grilles', () => {
+  // A bar ends on the last point of its line inside the outline, so only the corners of its end faces may stand out, by half its width.
+  it.each([
+    ['the Hunt lunettes', LUNETTE_GRILLE.span, LUNETTE_GRILLE.base, LUNETTE_GRILLE.cell, LUNETTE_GRILLE.bar, LUNETTE_GRILLE.depth],
+    ['a small one over a tall base', 3, 1.2, 0.3, 0.04, 0.05],
+    ['a coarse one over a short base', 6, 0.5, 0.55, 0.06, 0.08],
+  ])('keeps every bar of %s inside its aperture', (_, span, base, cell, bar, depth) => {
+    const position = lunetteGrille(span, base, cell, bar, depth).getAttribute('position');
+    expect(position.count).toBeGreaterThan(0);
+    let worst = 0;
+    let deepest = 0;
+    for (let i = 0; i < position.count; i++) {
+      worst = Math.max(worst, outsideLunette(position.getX(i), position.getY(i), span, base));
+      deepest = Math.max(deepest, Math.abs(position.getZ(i)));
+    }
+    expect(worst, 'furthest any vertex lies outside the outline, metres').toBeLessThanOrEqual(bar / 2 + 1e-9);
+    expect(deepest).toBeLessThanOrEqual(depth / 2 + 1e-9);
+  });
+
+  it('keeps each placed grille inside its arch: above the springing and within the intrados', () => {
+    const step = huntSteps.find((s) => s.id === 'hunt-windows');
+    if (step === undefined) throw new Error('The Hunt chapter has no step hunt-windows.');
+    const g = LUNETTE_GRILLE;
+    const grille = lunetteGrille(g.span, g.base, g.cell, g.bar, g.depth);
+    const pieces = collectStep(step).pieces.filter((p) => p.geometry === grille);
+    expect(pieces.length, 'grilles in hunt-windows').toBe(3);
+    const half = ARCH_INNER_SPAN / 2;
+    const position = grille.getAttribute('position');
+    const v = new Vector3();
+    for (const piece of pieces) {
+      const cx = piece.matrix.elements[12];
+      let top = -Infinity;
+      let bottom = Infinity;
+      let reach = 0;
+      for (let i = 0; i < position.count; i++) {
+        v.fromBufferAttribute(position, i).applyMatrix4(piece.matrix);
+        top = Math.max(top, v.y);
+        bottom = Math.min(bottom, v.y);
+        reach = Math.max(reach, v.y >= ARCH_SPRING_Y ? Math.hypot(v.x - cx, v.y - ARCH_SPRING_Y) : Math.abs(v.x - cx));
+      }
+      expect(bottom, `bottom of the grille at X ${cx.toFixed(2)}`).toBeGreaterThanOrEqual(ARCH_SPRING_Y - g.bar / 2);
+      expect(top, `top of the grille at X ${cx.toFixed(2)}`).toBeLessThanOrEqual(ARCH_CROWN_Y);
+      expect(reach, `grille at X ${cx.toFixed(2)}: furthest from the arch centre`).toBeLessThanOrEqual(half);
+    }
   });
 });
