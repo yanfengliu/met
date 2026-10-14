@@ -63,10 +63,22 @@ const WALL_LINES: readonly (readonly [number, number, number, number, number])[]
 export const FOUNDATION_TOP = GROUND - SLAB;
 
 const PODIUM_H = LANDING - FOUNDATION_TOP;
+/**
+ * The podium's face where the 1970 landing (X ±12.47) leaves it bare, under the outer bays: buff limestone ashlar like the pedestals over it, in courses about
+ * 0.68 m high with deep joints counted down from the coping (Hałun 2023, ref-fountain-north: five courses between the coping and the plaza, joints
+ * 0.10 to 0.15 m tall in shadow; Haklai 2012, ref-front-street: the same light stone at the south end, far lighter than the granite steps).
+ */
+const PODIUM_COURSE = 0.68;
+const PODIUM_TOP_JOINT = LANDING - 0.3 - PODIUM_COURSE;
 const podiumFace = (() => {
   let made: ReturnType<typeof wall> | undefined;
   return (): ReturnType<typeof wall> =>
-    (made ??= wall({ width: 2 * PAVILION_HALF, height: PODIUM_H, thickness: FRONT_LIMIT_Z - WALL_Z, rustication: { course: 0.85, joint: 0.05, depth: 0.03, start: -FOUNDATION_TOP + 0.3, stop: PODIUM_H - 0.55 } }));
+    (made ??= wall({
+      width: 2 * PAVILION_HALF,
+      height: PODIUM_H,
+      thickness: FRONT_LIMIT_Z - WALL_Z,
+      rustication: { course: PODIUM_COURSE, joint: 0.12, depth: 0.08, start: PODIUM_TOP_JOINT - 3 * PODIUM_COURSE - FOUNDATION_TOP, stop: PODIUM_TOP_JOINT - FOUNDATION_TOP + 1e-6 },
+    }));
 })();
 /** The coping along the podium's front edge at the landing (S7: a moulded course under the pedestals). */
 const podiumCoping = (() => {
@@ -124,7 +136,7 @@ export const podiumSteps: readonly StepDef[] = [
     chapter: 'hunt-1902',
     year: '1898',
     title: 'Raise the podium and the main-floor plate',
-    detail: 'Basement walls rise to the main floor; in front, a granite podium carries the landing level the column pedestals stand on, and three steps climb inside the central doorway.',
+    detail: 'Basement walls rise to the main floor; in front, a coursed limestone podium carries the landing level the column pedestals stand on, and three steps climb inside the central doorway.',
     motion: { kind: 'rise' },
     stagger: 'order',
     build(kit) {
@@ -136,10 +148,10 @@ export const podiumSteps: readonly StepDef[] = [
         else box(kit, palette.limestoneDark, [x0 - t / 2, FOUNDATION_TOP, Math.min(z0, z1)], [x0 + t / 2, MAIN - SLAB, Math.max(z0, z1)], order);
       }
       order += 1;
-      // The podium in front of the pavilion, from the facade wall to the landing's edge at Z +3.5: a finished granite face in courses from the
-      // excavation to a coping at the landing, seen over the steps' descending ends and down to the plaza beyond them (site, 2026-10-11).
-      kit.add(podiumFace(), palette.granite, at(0, FOUNDATION_TOP, FRONT_LIMIT_Z), order);
-      kit.add(podiumCoping(), palette.granite, at(0, 0, 0), order);
+      // The podium in front of the pavilion, from the facade wall to the landing's edge at Z +3.5: a finished limestone face in courses from the
+      // excavation to a coping at the landing, seen over the steps' descending ends and down to the plaza beyond them (site, 2026-10-11; photos above).
+      kit.add(podiumFace(), palette.limestone, at(0, FOUNDATION_TOP, FRONT_LIMIT_Z), order);
+      kit.add(podiumCoping(), palette.limestone, at(0, 0, 0), order);
       order += 1;
       // Main-floor plate over the whole block behind the front walls; the stair and the hall's floor finish stand on it.
       box(kit, palette.limestoneDark, [EXT_SOUTH_X, MAIN - SLAB, BACK_Z], [EXT_NORTH_X, MAIN - 0.03, WALL_BACK_Z], order);
