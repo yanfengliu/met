@@ -8,12 +8,16 @@
  * - [P47] 16H21M47S and [P50] 16H21M50S: the south link frontally, and the south end pavilion's north end bay with its tall blind niche.
  * - [L14] Library of Congress LC-USZ62-101736, about 1914: the north link (seven arched windows) and the north end pavilion's south side and giant order.
  * - [D12] Daniel Dimitrov 2012, "The Metropolitan Museum of Art Manhattan NYC sideview": the south link's bays, base windows and archivolts.
- * Heights (re-measured 2026-10-11): [P37] is level to 1.7° and yawed about 9°; at the link's second window the 5.2 m bay spans 530 px and the arch's rise equals
- * its half-width, so the wall reads 99 px/m, which the Hunt column beside it confirms (frame.ts HUNT_COLUMN_HEIGHT 12.75 m spans 1265 px at the same depth).
- * Above the plaza at the wall foot (Y 0.25): water table 4.4, window glass 6.2..11.6, keystones 12.6..13.3, main cornice's corona 14.2, attic panels
- * 14.9..16.25, crowning dentils 16.7..17.1, corona 17.5, cornice top 18.0 (MMW_CORNICE_Y), cresting about 18.6. At the seam with the Hunt extension ([P35],
- * [P37], [P47], [D12]) the extension stands above the link: its 18.3 dentil cornice (hunt/dims.ts EXT_ORDER_TOP_Y) runs just over the link's cornice top.
- * [L14] and [P50] show both end pavilions an attic storey taller than the links (END_CORNICE_Y).
+ * - [E39]..[E43] Epicgenius, "5 Av Apr 2023 39" to "43" (Commons, CC BY-SA 4.0; the series named in exterior-images.md), viewed at 1:1 on 2026-10-13: [E43] the
+ *   south link's last four bays and the Hunt extension frontally, perspective-corrected; [E40] the whole south link; [E41] the south extension frontally;
+ *   [E42] and [E39] the south end pavilion's north-east corner and its seam with the link.
+ * Heights: [P37] is level to 1.7° and yawed about 9°; at the link's second window the 5.2 m bay spans 530 px, so the wall reads 99 px/m above the plaza at the
+ * wall foot (Y 0.25): water table 4.4, window glass 6.2..11.6. Above the glass the lines are [E43]'s (2026-10-13), where the glass (765 px) and the bay (738 px)
+ * give 141.7 px/m, set on [P37]'s glass: keystones 12.0..12.75 hanging from the main entablature 12.75..13.9, the attic 13.9..16.5 with sunk panels 14.25..16.2,
+ * and the crowning cornice 16.5..17.55 with dentils, no modillions and no cresting ([E43], [E40], [D12]). [P37] alone read the cornice top at 18.0.
+ * At both seams the link's cornice top meets the soffit of its neighbour's cornice: the Hunt extension's dentilled cornice (hunt/dims.ts EXT_ORDER_TOP_Y − 0.75,
+ * 17.55; [E43], [E41], [D12]) and the end pavilion's modillioned cornice ([E42], [E39]). The pavilions' giant order rises to an architrave and frieze under that
+ * cornice, with a plain parapet over it ([E42], [E39], [L14]); their heights are scaled at the seam by the link's crowning cornice in the same photograph.
  */
 import {
   BUILDING_MAX_X,
@@ -55,13 +59,13 @@ export const SOUTH_END = { x0: BUILDING_MIN_X, x1: MMW_SOUTH_END_MAX_X, z0: -38.
 export const LEVEL_G = GROUND_FLOOR_Y;
 export const LEVEL_1 = MAIN_FLOOR_Y;
 /**
- * Second floor of the Fifth Avenue links and the south end pavilion. D: the links' main-storey arched windows rise to +11.7 and their keystones to +12.6 ([P37],
- * [D12]), above Hunt's +10.97, so the floor sits over them, behind the main entablature; Heckscher p. 48 gives 25 ft main-floor ceilings in the later wings (4.11 + 7.62 + 1.0 m of floor and cove ≈ 12.7..13.6). Low-medium.
+ * Second floor of the Fifth Avenue links and the south end pavilion. D: the links' main-storey arched windows rise to +11.7 and their keystones to +12.75 ([P37],
+ * [E43]), above Hunt's +10.97, so the floor sits over them, behind the main entablature; Heckscher p. 48 gives 25 ft main-floor ceilings in the later wings (4.11 + 7.62 + 1.0 m of floor and cove ≈ 12.7..13.6). Low-medium.
  */
 export const LEVEL_2_FRONT = 13.6;
 /** Second floor of the north end pavilion and the Morgan wing: lowered in 1908 to match Hunt's (Heckscher p. 48 via interior.md, Floor levels). M/D. */
 export const LEVEL_2_NORTH = SECOND_FLOOR_Y;
-/** Third floor of the north end pavilion, in the attic storey (map floor 3, X +101.9..+152.0). E from the attic band of [L14], low. */
+/** Third floor of the north end pavilion, behind the giant order's upper part and frieze (map floor 3, X +101.9..+152.0). E, low. */
 export const LEVEL_3_NORTH = 15.9;
 /** Mezzanine of the south end pavilion (map floor 1M: galleries 170 and 171 overlook the Roman court). E: halfway between the main and second floors, low. */
 export const LEVEL_1M_SOUTH = 9.3;
@@ -69,11 +73,17 @@ export const LEVEL_1M_SOUTH = 9.3;
 export const SLAB = 0.45;
 /** Foundations: footings under the outer walls go this far below the ground floor. E. */
 export const FOOTING_DEPTH = 1.2;
-/** The end pavilions' crowning cornice top: an attic storey over the links' ([L14]: at the seam the pavilion's south face rises about 3 m over the link's cornice; [P50]). E, low-medium. */
-export const END_CORNICE_Y = 20.7;
-/** Flat roof decks behind the parapets of the links and of the end pavilions. D: each crowning cornice's top less the cornice and a parapet upstand. */
+/**
+ * The end pavilions' crowning entablature and parapet: the giant order's capitals and the architrave over them, the modillioned cornice's top and the parapet's
+ * coping top. [E42] at the south seam, scaled by the link's 1.05 m crowning cornice in the same frame: architrave lines 1.3–1.4 m under the link's cornice top,
+ * the cornice rising 1.8–2.0 m over it, a plain parapet 1.85–2.0 m over that; [E39]: 1.7 and 2.3. E ±0.4.
+ */
+export const END_ARCHITRAVE_Y = 16.2;
+export const END_CORNICE_Y = 19.35;
+export const END_PARAPET_Y = 21.5;
+/** Flat roof decks: the links' behind the coping over their cornice, the end pavilions' behind the parapet. D: each a cornice or parapet upstand below. */
 export const LINK_ROOF_Y = MMW_CORNICE_Y - 0.9;
-export const END_ROOF_Y = END_CORNICE_Y - 0.9;
+export const END_ROOF_Y = END_PARAPET_Y - 1.0;
 /**
  * Roof deck of the Morgan wing's galleries round the Arms and Armor Court: the court rises "above two floors of smaller galleries" (Heckscher p. 48 via
  * interior.md) and its clerestory windows stand on the court's cornice (P7), so the galleries' roof sits under their sills. E: second floor + 4.0 m, low-medium.
@@ -95,32 +105,61 @@ export const ARCH_WIDTH = 2.7;
 export const BASE_WINDOW_SILL_Y = 0.9;
 export const BASE_WINDOW_HEIGHT = 2.3;
 export const BASE_WINDOW_WIDTH = 1.7;
-/** The main entablature over the arched windows, links and pavilions alike: bottom (the keystones touch it) and cornice top ([P37]; [L14]: the pavilions' capitals line up with it). M ±0.3. */
-export const ENTABLATURE_Y = 12.6;
-export const ENTABLATURE_TOP_Y = 14.6;
-/** The attic's sunk panels, one per bay: their width, and per tier their sill and height ([P37] links 14.9..16.25; pavilions E from [L14]). */
+/**
+ * The links' main entablature over the arched windows: bottom (the keystones hang from it) and top ([E43]: architrave 0.3, frieze 0.3, a cornice of 0.55 with
+ * dentils). M ±0.3. Links only: the pavilions' giant order runs through its height ([E42]), so it stops against their side faces.
+ */
+export const ENTABLATURE_Y = 12.75;
+export const ENTABLATURE_TOP_Y = 13.9;
+/** The sunk panels, one per bay: their width ([E43]), and per tier their sill and height (links in the attic, [E43]; pavilions between the arch and the architrave, [E39]). */
 export const ATTIC_PANEL_WIDTH = 3.6;
-/** Crowning cornice's projection: the NYC roof outline runs about 0.7 m outside OSM (coordinator, 2026-10-11) plus the cyma. E. */
-export const CORNICE_PROJECTION = 1.0;
+/** Coping over the pavilions' parapet: its height and its overhang beyond the face. E. */
+export const PARAPET_COPING = 0.3;
 
-/** A height tier of the fronts: the links, or the taller end pavilions with their attic storey. */
+/** A height tier of the fronts: the links, or the taller end pavilions with their giant order, crowning entablature and parapet. */
 export interface Tier {
   readonly name: 'link' | 'end';
   /** Bottom of the crowning cornice (its bed mouldings and dentils) and its top. */
   readonly corniceY: number;
   readonly top: number;
+  /** The crowning cornice's projection, and whether modillions carry its corona (the pavilions') or dentils alone dress it (the links', [E43]). */
+  readonly projection: number;
+  readonly modillions: boolean;
+  /** Bottom of the architrave and frieze under the crowning cornice, on the giant order's capitals (pavilions); null where the attic runs up to the cornice (links). */
+  readonly architraveY: number | null;
+  /** Top of the wall modules: the cornice top (links, a coping set back behind it) or the parapet under its coping (pavilions). */
+  readonly wallTop: number;
   readonly atticPanelY: number;
   readonly atticPanelHeight: number;
   /** The roof deck's top behind the parapet. */
   readonly roofY: number;
 }
-/** Links: [P37] crowning dentils from 16.7, cornice top 18.0. M ±0.5. */
-export const LINK_TIER: Tier = { name: 'link', corniceY: 16.8, top: MMW_CORNICE_Y, atticPanelY: 14.95, atticPanelHeight: 1.3, roofY: LINK_ROOF_Y };
-/** End pavilions: the attic storey over the main entablature, under the links' cornice profile (1.2 m, so both tiers share its modillions and dentils). E, low-medium. */
-export const END_TIER: Tier = { name: 'end', corniceY: END_CORNICE_Y - 1.2, top: END_CORNICE_Y, atticPanelY: 15.6, atticPanelHeight: 2.8, roofY: END_ROOF_Y };
-/** Antefix cresting on the cornice ([P35], [P37]: a row of small palmettes): height and spacing. E. */
-export const CRESTING_HEIGHT = 0.75;
-export const CRESTING_SPACING = 1.3;
+/** Links: crowning cornice 16.5..17.55, its top at the soffit of the Hunt extension's dentilled cornice; projection under that cornice's ([E43]). M ±0.4. */
+export const LINK_TIER: Tier = {
+  name: 'link',
+  corniceY: 16.5,
+  top: MMW_CORNICE_Y,
+  projection: 0.75,
+  modillions: false,
+  architraveY: null,
+  wallTop: MMW_CORNICE_Y,
+  atticPanelY: 14.25,
+  atticPanelHeight: 1.95,
+  roofY: LINK_ROOF_Y,
+};
+/** End pavilions: the modillioned cornice springs from the links' cornice top ([E42]), over the giant order's architrave and frieze, under a plain parapet. E ±0.4. */
+export const END_TIER: Tier = {
+  name: 'end',
+  corniceY: MMW_CORNICE_Y,
+  top: END_CORNICE_Y,
+  projection: 1.3,
+  modillions: true,
+  architraveY: END_ARCHITRAVE_Y,
+  wallTop: END_PARAPET_Y - PARAPET_COPING,
+  atticPanelY: 13.3,
+  atticPanelHeight: 2.5,
+  roofY: END_ROOF_Y,
+};
 
 // --- Bays ------------------------------------------------------------------------------------------
 /** Bay (window centre to centre) of the links. D: seven arched windows in each link ([L14] north, [P47] south) in 39.2 / 38.4 m less end piers; [P37] spacing 0.55 of the main storey. E ±0.3. */
@@ -132,14 +171,14 @@ export const PILASTER_PROJECTION = 0.16;
 /** End pavilion fronts: end bays with a tall blind niche (semicircular in the map's plate edge at X −144.8 and −94.9, 6.7 m in from each corner; [P50]) and seven central bays of the giant Corinthian order ([L14]). D. */
 export const END_BAY = 13.3;
 export const PAVILION_BAYS = 7;
-/** The end bays' tall niches: width, sill and crown ([P50]; the crown and its keystone under the main entablature). E, low. */
+/** The end bays' tall niches: width, sill and crown ([P50]; the crown and its keystone under the bay's sunk panel). E, low. */
 export const NICHE_WIDTH = 3.6;
 export const NICHE_SILL_Y = 5.2;
 export const NICHE_CROWN_Y = 12.0;
 export const NICHE_DEPTH = 0.9;
-/** Giant Corinthian pilasters on the end pavilions' fronts, water table to entablature ([L14]). E. */
-export const GIANT_PILASTER_WIDTH = 1.05;
+/** Giant Corinthian pilasters of the end pavilions, from the water table to the architrave (11.7 m, about ten widths; [E42], [E39], [L14]). E. */
+export const GIANT_PILASTER_WIDTH = 1.2;
 export const GIANT_PILASTER_PROJECTION = 0.28;
-/** 84th and 80th Street end facades: arched bays in the links' rhythm (the wings "wrap round the corners", exterior.md W5). E. */
+/** 84th and 80th Street end facades: arched bays in the links' rhythm between the pavilions' giant pilasters (the wings "wrap round the corners", exterior.md W5). E. */
 export const END_FACADE_BAYS_NORTH = 9;
 export const END_FACADE_BAYS_SOUTH = 8;

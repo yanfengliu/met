@@ -24,15 +24,15 @@ export interface Run {
   /** Wall mass beyond the face's ends: +OUTER_WALL fills a concave corner, −OUTER_WALL stops short where the neighbouring run owns a convex corner. */
   readonly extendStart: number;
   readonly extendEnd: number;
-  /** The order on its piers: Tuscan strips between arched bays, the giant Corinthian order of a pavilion front, or none. */
+  /** The order on its piers: Tuscan strips on the links, the giant Corinthian order on the pavilions' fronts and street ends ([E42], [E39]), or none. */
   readonly order: 'tuscan' | 'giant' | 'none';
   /** Pilasters on the run's own two ends (a pavilion front's corners). */
   readonly cornerPilasters: boolean;
-  /** The height tier: a link, or an end pavilion an attic storey taller (dims.ts). */
+  /** The height tier: a link, or an end pavilion with its crowning entablature and parapet over the link's cornice (dims.ts). */
   readonly tier: Tier;
 }
 
-/** The end pavilion's side wall behind the link's face line, standing over the link's roof up to the pavilion's cornice, which returns along it. */
+/** The end pavilion's side wall behind the link's face line, standing over the link's roof up to the pavilion's parapet; its cornice returns along it. */
 export interface Seam {
   readonly line: FacadeLine;
   /** Whether it comes before or after the pavilion's runs in the front's winding. */
@@ -83,7 +83,7 @@ export const NORTH_FRONT: Front = {
     arched(facadeLine(MMW_NORTH_LINK_MIN_X, HUNT_EXTENSION_FACE_Z, MMW_NORTH_END_MIN_X - MMW_NORTH_LINK_MIN_X, '+z'), LINK_BAYS, linkBays(LINK_BAYS), 0, 0, 'tuscan', LINK_TIER),
     arched(facadeLine(MMW_NORTH_END_MIN_X, HUNT_EXTENSION_FACE_Z, FRONT_Z - HUNT_EXTENSION_FACE_Z, '-x'), 1, arches(1), W, -W, 'none'),
     pavilion(facadeLine(MMW_NORTH_END_MIN_X, FRONT_Z, BUILDING_MAX_X - MMW_NORTH_END_MIN_X, '+z'), PAVILION_BAYS),
-    arched(facadeLine(BUILDING_MAX_X, FRONT_Z, FRONT_Z - SACKLER_MAX_Z, '+x'), END_FACADE_BAYS_NORTH, arches(END_FACADE_BAYS_NORTH), -W, 0, 'tuscan'),
+    arched(facadeLine(BUILDING_MAX_X, FRONT_Z, FRONT_Z - SACKLER_MAX_Z, '+x'), END_FACADE_BAYS_NORTH, arches(END_FACADE_BAYS_NORTH), -W, 0, 'giant'),
   ],
   seam: { line: facadeLine(MMW_NORTH_END_MIN_X, SACKLER_MAX_Z, NORTH_LINK.z1 - SACKLER_MAX_Z, '-x'), where: 'before', foot: MORGAN_ROOF_Y - SLAB },
 };
@@ -95,7 +95,7 @@ export const NORTH_FRONT: Front = {
 export const SOUTH_FRONT: Front = {
   name: 'south',
   runs: [
-    arched(facadeLine(BUILDING_MIN_X, SOUTH_END.z0, FRONT_Z - SOUTH_END.z0, '-x'), END_FACADE_BAYS_SOUTH, arches(END_FACADE_BAYS_SOUTH), 0, -W, 'tuscan'),
+    arched(facadeLine(BUILDING_MIN_X, SOUTH_END.z0, FRONT_Z - SOUTH_END.z0, '-x'), END_FACADE_BAYS_SOUTH, arches(END_FACADE_BAYS_SOUTH), 0, -W, 'giant'),
     pavilion(facadeLine(BUILDING_MIN_X, FRONT_Z, MMW_SOUTH_END_MAX_X - BUILDING_MIN_X, '+z'), PAVILION_BAYS),
     arched(facadeLine(MMW_SOUTH_END_MAX_X, FRONT_Z, FRONT_Z - SOUTH_LINK.z1, '+x'), 1, arches(1), -W, W, 'none'),
     arched(facadeLine(MMW_SOUTH_END_MAX_X, SOUTH_LINK.z1, MMW_SOUTH_LINK_MAX_X - MMW_SOUTH_END_MAX_X, '+z'), LINK_BAYS, linkBays(LINK_BAYS), 0, 0, 'tuscan', LINK_TIER),
@@ -105,7 +105,7 @@ export const SOUTH_FRONT: Front = {
 
 export const FRONTS: readonly Front[] = [NORTH_FRONT, SOUTH_FRONT];
 
-/** Face lines as one moulding path at height `y`: the start of each line, then the end of the last. */
+/** Face lines as one moulding path at height `y`: the start of each line, then the end of the last (the lines must join end to start). */
 export function linesPath(lines: readonly FacadeLine[], y: number): V3[] {
   const points: V3[] = lines.map((l) => [l.x, y, l.z]);
   const last = lines.at(-1);
@@ -113,7 +113,7 @@ export function linesPath(lines: readonly FacadeLine[], y: number): V3[] {
   return points;
 }
 
-/** The front's face line as a moulding path at height `y` (water table, main entablature: one line round both tiers). */
+/** The front's face line as a moulding path at height `y` (the water table: one line round both tiers). */
 export function frontPath(front: Front, y: number): V3[] {
   return linesPath(front.runs.map((r) => r.line), y);
 }

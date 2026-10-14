@@ -1,16 +1,16 @@
 /**
  * Geometries of the McKim, Mead & White fronts: the wall modules of one bay (arched-window bay, door bay, end bay with its tall niche, plain pier),
- * the window, door and archivolt parts that fill them, and the antefix of the cresting. Each function returns the cached part for its parameters, so every
- * bay of a kind is one shared geometry (docs/design/spec.md, Batching).
+ * and the window, door and archivolt parts that fill them. Each function returns the cached part for its parameters, so every bay of a kind is one shared
+ * geometry (docs/design/spec.md, Batching).
  *
  * Wall-module frame (the parts library's wall.ts): origin at the bottom centre of the front face, the wall spans y from 0 (the foot, under the ground floor)
- * to wallHeight(tier) (the tier's crowning cornice top) and z from −OUTER_WALL to 0. World heights below are converted with `local`.
+ * to wallHeight(tier) (the tier's wall top: the links' cornice top, the pavilions' parapet) and z from −OUTER_WALL to 0. World heights are converted with `local`.
  */
 import { Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
-import { archivolt, doorUnit, keystone, MeshBuilder, wall, windowUnit } from '../lib/index.js';
-import type { DoorParts, Opening, Rustication, WindowParts } from '../lib/index.js';
+import { archivolt, doorUnit, keystone, wall, windowUnit } from '../lib/index.js';
+import type { DoorParts, MeshBuilder, Opening, Rustication, WindowParts } from '../lib/index.js';
 import {
   ARCH_CROWN_Y,
   ARCH_SILL_Y,
@@ -20,7 +20,7 @@ import {
   BASE_WINDOW_SILL_Y,
   BASE_WINDOW_WIDTH,
   BAY,
-  CRESTING_HEIGHT,
+  ENTABLATURE_Y,
   LEVEL_G,
   NICHE_CROWN_Y,
   NICHE_DEPTH,
@@ -35,8 +35,8 @@ import type { Tier } from './dims.js';
 
 /** The foot of the outer walls: under the ground-floor slab, below every grade along the front. */
 export const WALL_FOOT_Y = LEVEL_G - SLAB;
-/** Height of a wall module from its foot to its tier's crowning cornice top. */
-export const wallHeight = (tier: Tier): number => tier.top - WALL_FOOT_Y;
+/** Height of a wall module from its foot to its tier's wall top. */
+export const wallHeight = (tier: Tier): number => tier.wallTop - WALL_FOOT_Y;
 /** A world height as a height above the wall foot. */
 export const local = (y: number): number => y - WALL_FOOT_Y;
 
@@ -105,9 +105,9 @@ export function nicheArchivolt(): BufferGeometry {
   return archivolt({ span: NICHE_WIDTH, band: 0.42, projection: 0.14 });
 }
 
-/** The carved keystone at each crown ([P37]: a small console). */
+/** The carved keystone at each crown, a console with a head that hangs from the links' main entablature to the arch ([E43]: 12.0..12.75). */
 export function crownKeystone(): BufferGeometry {
-  return keystone({ width: 0.42, height: 0.85, projection: 0.22 });
+  return keystone({ width: 0.42, height: ENTABLATURE_Y - ARCH_CROWN_Y, projection: 0.22 });
 }
 
 /** Extrudes a counter-clockwise outline in the (x, y) plane from z = −depth/2 to +depth/2, with its sides. */
@@ -127,33 +127,4 @@ export function extrudeOutline(b: MeshBuilder, outline: readonly (readonly [numb
     if (p === undefined || q === undefined) continue;
     b.polygon([new Vector3(p[0], p[1], h), new Vector3(p[0], p[1], -h), new Vector3(q[0], q[1], -h), new Vector3(q[0], q[1], h)]);
   }
-}
-
-let antefixCache: BufferGeometry | null = null;
-
-/**
- * One antefix of the cresting: a palmette slab on a low plinth, CRESTING_HEIGHT tall, 0.5 m wide. Origin at its bottom centre; front toward +Z.
- * Built here because the parts library has no cresting part; one geometry, placed along the cornice by matrices.
- */
-export function antefix(): BufferGeometry {
-  if (antefixCache !== null) return antefixCache;
-  const b = new MeshBuilder();
-  const h = CRESTING_HEIGHT;
-  const plinth = 0.12;
-  b.box([-0.22, 0, -0.1], [0.22, plinth, 0.1], ['-y']);
-  // The palmette: a scalloped fan over a narrow stem, counter-clockwise from the stem's right foot.
-  const outline: [number, number][] = [[0.07, plinth]];
-  const lobes = 7;
-  const r = 0.25;
-  const cy = h - r;
-  const steps = lobes * 4;
-  for (let k = 0; k <= steps; k += 1) {
-    const a = (Math.PI * k) / steps;
-    const scallop = 1 - 0.12 * Math.abs(Math.sin((k * Math.PI * lobes) / steps));
-    outline.push([r * scallop * Math.cos(a), cy + r * scallop * Math.sin(a) * 1.0]);
-  }
-  outline.push([-0.07, plinth]);
-  extrudeOutline(b, outline, 0.07);
-  antefixCache = b.build();
-  return antefixCache;
 }

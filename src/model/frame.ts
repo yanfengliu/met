@@ -97,7 +97,7 @@ export const MMW_SOUTH_LINK_MAX_X = -49.7; // [W2] M
 export const MMW_END_PAVILION_FRONT_Z = 9.85; // [W3] M: both end pavilions (9.8..9.9)
 export const MMW_NORTH_END_MIN_X = 88.6; // [W3] M
 export const MMW_SOUTH_END_MAX_X = -88.1; // [W3] M
-export const MMW_CORNICE_Y = 18.0; // [W4] M ±0.5: the links' crowning cornice top, photo P37 (mmw/dims.ts): 99 px/m from the 5.2 m bay and the 12.75 m Hunt column; just under the Hunt extensions' 18.3 dentil cornice
+export const MMW_CORNICE_Y = 17.55; // [W4] M ±0.4: the links' crowning cornice top, at the soffit of the Hunt extensions' dentilled cornice (hunt/dims.ts EXT_ORDER_TOP_Y − 0.75), photos E43 and E41 (Epicgenius 2023, mmw/dims.ts); E43's lines on P37's glass give 17.54
 export const MMW_PARAPET_TOP_Y = 22.5; // [W4] E: read only by the Hunt extensions (hunt/dims.ts EXT_PARAPET_Y), which stand above the links (P35, P37, P47)
 
 // --- Steps and plaza ------------------------------------------------------------------------

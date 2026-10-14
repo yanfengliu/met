@@ -47,11 +47,11 @@ const NORTH: Campaign = {
     wings: 'north wings',
     foundations: 'Footings and ground floors for the north link (Wing E, 1906), the Morgan wing behind it (F, 1908) and the north end pavilion (H, 1910).',
     walls: 'Limestone walls rise bay by bay along Fifth Avenue to the 84th Street corner, with the rear walls that later face the Sackler and American wings.',
-    floors: 'The main and second floors, and the pavilion\'s third floor in its attic; the Morgan wing\'s floors stop round the open court.',
+    floors: 'The main and second floors, and the pavilion\'s third floor behind its frieze; the Morgan wing\'s floors stop round the open court.',
     galleries: 'Gallery walls on the room lines of today\'s floor plan: Egyptian galleries below, Asian art and musical instruments above.',
     windows: 'Bronze arched windows light the main storey; grilled windows the ground floor; a door in the link\'s middle bay.',
-    orders: 'Tuscan pilasters frame the link\'s seven arches; the pavilion front takes a giant Corinthian order between niched end bays.',
-    cornices: 'Water table, entablature and a modillioned cornice level with Hunt\'s, crested with antefixes, run from Hunt\'s wing to 84th Street.',
+    orders: 'Tuscan pilasters frame the link\'s seven arches; a giant Corinthian order rises the pavilion\'s full height between niched end bays.',
+    cornices: 'The link\'s dentilled cornice meets the soffit of Hunt\'s; the pavilion\'s frieze, modillioned cornice and parapet run on to 84th Street.',
   },
 };
 
@@ -71,7 +71,7 @@ const SOUTH: Campaign = {
     galleries: 'Gallery walls on today\'s room lines: Greek and Roman art on the main floor and mezzanine, Ancient Near East and Islamic art above.',
     windows: 'Bronze arched windows, grilled ground-floor windows, and the 81st Street door in the south link\'s middle bay.',
     orders: 'The same Tuscan arcade on the link and giant Corinthian order on the end pavilion, finishing the thousand-foot front.',
-    cornices: 'The south front\'s water table, entablature, modillioned cornice and cresting, closing the line from 80th to 84th Street.',
+    cornices: 'The south front\'s water table, entablature and cornices, the pavilion\'s parapet over them, closing the line from 80th to 84th Street.',
   },
 };
 
