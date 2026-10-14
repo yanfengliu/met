@@ -137,19 +137,23 @@ export function elevationTrim(kit: Kit, e: Elevation): void {
   elevationBox(kit, e, stone, lo, hi, PARAPET_Y, COPING_TOP_Y, 0.08, e.thickness, 30);
 }
 
-/** Windows of a plain elevation (frames and glass in the ground and main-floor openings). */
+/** Windows of a plain elevation (frames, sash bars and glass in the ground and main-floor openings). */
 export function elevationWindows(kit: Kit, e: Elevation): void {
   if (!e.glazed) return;
   const { main, ground } = wingWindows();
   e.bays.forEach((c, i) => {
     const reveal = 0.3;
     const g = at(e, c, -reveal);
-    kit.add(ground.frame, palette.metalDark, placed(g.x, WALL_BASE_Y + (PLAIN_GROUND.y ?? 0), g.z, e.facing), i);
-    kit.add(ground.glass, palette.glassDark, placed(g.x, WALL_BASE_Y + (PLAIN_GROUND.y ?? 0), g.z, e.facing), i);
+    const gm = placed(g.x, WALL_BASE_Y + (PLAIN_GROUND.y ?? 0), g.z, e.facing);
+    kit.add(ground.frame, palette.metalDark, gm, i);
+    kit.add(ground.bars, palette.metalDark, gm, i);
+    kit.add(ground.glass, palette.glassDark, gm, i);
     for (const h of PLAIN_MAIN) {
       const p = at(e, c + (h.x ?? 0) * (e.axis === 'x' ? -e.inward : e.inward), -reveal);
-      kit.add(main.frame, palette.metalDark, placed(p.x, WALL_BASE_Y + (h.y ?? 0), p.z, e.facing), i);
-      kit.add(main.glass, palette.glassDark, placed(p.x, WALL_BASE_Y + (h.y ?? 0), p.z, e.facing), i);
+      const m = placed(p.x, WALL_BASE_Y + (h.y ?? 0), p.z, e.facing);
+      kit.add(main.frame, palette.metalDark, m, i);
+      kit.add(main.bars, palette.metalDark, m, i);
+      kit.add(main.glass, palette.glassDark, m, i);
     }
   });
 }
