@@ -3,7 +3,9 @@
  * Sources: docs/research/history.md section 8 (steps), exterior.md [K5] (the sloping south glass wall, src/model/frame.ts ROCKEFELLER_*) and [R3]
  * (ridge skylights); plan from the Met floor map (galleries 341–363 on the main floor, 800–830 on the second, blocks.ts MAP_Z).
  * Ridge skylights: counted on the 2018 orthophoto (exterior-images.md, primary 9): eleven ridges along X at a 5.47 m pitch, valleys at Z −96.0
- * to −41.2, the eleventh straddling the block line Z −38.5 (the roof runs on to about Z −35.5 inside the mmw-south-k block); ten are built here.
+ * to −41.3. The eleventh straddles the block line Z −38.5: its north slope rises from the valley at −41.3 to its ridge at −38.6, on the line; its south
+ * slope reaches about −36.8 west of X −121 and is cut by the south end pavilion's roof east of it (re-read 2026-10-13 by the integration worker). Ten are
+ * built whole, and the eleventh's north slope as a lean-to against the south pavilion's raised wall on the line (mmw party-walls.ts), inside this block.
  * Walls: the wing builds its west wall on Z −97.2 (the Wallace Wing came later) and its north wall on X −88.1 south of Z −69 (the Kravis Wing came
  * later); the McKim, Mead & White blocks build the lines Z −38.5 and X −88.1 north of Z −69.
  */
@@ -52,6 +54,14 @@ const RIDGE_X1 = -93.1;
 const RIDGE = hippedSkylight({ width: RIDGE_WIDTH, length: RIDGE_X1 - RIDGE_X0, pitch: 35, curbHeight: 0.4, bays: 24, bar: 0.07, barDepth: 0.12 });
 /** The laylight ceiling under each ridge (the galleries' diffusing ceiling; interior.md, Second-floor European Paintings galleries). */
 const LAYLIGHT = laylight({ width: RIDGE_WIDTH - 0.6, length: RIDGE_X1 - RIDGE_X0 - 0.8, cols: 3, rows: 24 });
+/** The eleventh ridge's north slope: from its curb 0.2 m inside the last valley up, at the ridges' 35°, to the north wall line, under its laylight. */
+const LEAN = (() => {
+  const z0 = FIRST_VALLEY + RIDGE_PITCH * RIDGES + 0.2;
+  const z1 = Z_EAST - 0.03;
+  const curb = 0.4;
+  return { z0, z1, low: RF_ROOF_Y + curb, high: RF_ROOF_Y + curb + (z1 - z0) * Math.tan((35 * Math.PI) / 180) };
+})();
+const LEAN_LAYLIGHT = laylight({ width: LEAN.z1 - LEAN.z0 - 0.6, length: RIDGE_X1 - RIDGE_X0 - 0.8, cols: 2, rows: 24 });
 
 function ridgeCentreZ(k: number): number {
   return FIRST_VALLEY + RIDGE_PITCH * (k + 0.5);
@@ -161,6 +171,13 @@ function roof(kit: Kit): void {
       [RIDGE_X0 + 0.2, z + h],
     ];
   });
+  // Under the lean-to; a strip of deck stays along the north wall under its high edge.
+  holes.push([
+    [RIDGE_X0 + 0.2, LEAN.z0 + 0.1],
+    [RIDGE_X1 - 0.2, LEAN.z0 + 0.1],
+    [RIDGE_X1 - 0.2, Z_EAST - 0.2],
+    [RIDGE_X0 + 0.2, Z_EAST - 0.2],
+  ]);
   const deckX0 = RF_GLASS_TOP_X - 0.6;
   kit.add(prism([[deckX0, Z_IN], [X1, Z_IN], [X1, Z_EAST], [deckX0, Z_EAST]], holes, RF_ROOF_Y - DECK, RF_ROOF_Y), mat.roof, at(0, 0, 0), 0);
   // The white stone fascia that caps the glass wall's top edge (photo ref-park-south).
@@ -177,6 +194,37 @@ function skylights(kit: Kit): void {
     kit.add(LAYLIGHT.frame, mat.steel, under, k);
     kit.add(LAYLIGHT.glass, mat.laylight, under, k);
   }
+  leanTo(kit, RIDGES);
+}
+
+/** The eleventh ridge's north slope (LEAN): curbs, rafters every ridge bay, a pane, glass ends, and its laylight. */
+function leanTo(kit: Kit, order: number): void {
+  const { z0, z1, low, high } = LEAN;
+  const x0 = RIDGE_X0;
+  const x1 = RIDGE_X1;
+  kit.add(UNIT_BOX, palette.limestone, boxAt([x0, RF_ROOF_Y, z0 - 0.1], [x1, low, z0 + 0.1]), order);
+  for (const x of [x0, x1]) kit.add(UNIT_BOX, palette.limestone, boxAt([x - 0.1, RF_ROOF_Y, z0 - 0.1], [x + 0.1, low, z1]), order);
+  const a: [number, number, number] = [x0, low, z0];
+  const b: [number, number, number] = [x1, low, z0];
+  const c: [number, number, number] = [x1, high, z1];
+  const d: [number, number, number] = [x0, high, z1];
+  const up: [number, number, number] = [0, Math.cos((35 * Math.PI) / 180), -Math.sin((35 * Math.PI) / 180)];
+  kit.add(UNIT_BOX, mat.steel, bar(a, b, 0.12, 0.2, up), order);
+  kit.add(UNIT_BOX, mat.steel, bar(d, c, 0.12, 0.2, up), order);
+  const bays = 24;
+  for (let j = 0; j <= bays; j++) {
+    const x = x0 + ((x1 - x0) * j) / bays;
+    kit.add(UNIT_BOX, mat.steel, bar([x, low, z0], [x, high, z1], 0.07, 0.12, up), order);
+  }
+  const lift = (p: [number, number, number]): [number, number, number] => [p[0] + up[0] * 0.03, p[1] + up[1] * 0.03, p[2] + up[2] * 0.03];
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(lift(a), lift(b), lift(c)), order);
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(lift(a), lift(c), lift(d)), order);
+  // The ends: upright glass triangles from the curb to the high edge.
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x0, low, z0], [x0, high, z1], [x0, low, z1]), order);
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x1, low, z0], [x1, low, z1], [x1, high, z1]), order);
+  const under = at((x0 + x1) / 2, RF_ROOF_Y - DECK - 0.15, (LEAN.z0 + 0.1 + Z_EAST - 0.2) / 2).multiply(new Matrix4().makeRotationY(Math.PI / 2));
+  kit.add(LEAN_LAYLIGHT.frame, mat.steel, under, order);
+  kit.add(LEAN_LAYLIGHT.glass, mat.laylight, under, order);
 }
 
 function glassWall(kit: Kit): void {
