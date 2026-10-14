@@ -52,6 +52,8 @@ function boot(): void {
     steps = SEQUENCE;
   }
 
+  // The timeline build alone: modules have already loaded, with whatever geometry they build on import. The 4 s budget gate times readyMs,
+  // which runs from navigation start and so includes that (tests/e2e/layout.spec.ts).
   performance.mark('met:build-start');
   const timeline = new Timeline(steps);
   performance.mark('met:build-end');

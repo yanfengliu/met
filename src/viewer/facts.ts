@@ -28,9 +28,12 @@ export interface MetFacts {
   readonly view: string | null;
   readonly camera: { readonly position: Vec3; readonly target: Vec3; readonly near: number; readonly far: number };
   readonly perf: {
-    /** Milliseconds to build every step's geometry and meshes (performance marks met:build-start, met:build-end). */
+    /**
+     * Milliseconds of the timeline build: every step's `build` and its meshes (performance marks met:build-start, met:build-end).
+     * Geometry a module builds when it is imported comes before this and is not in it; `readyMs` covers it.
+     */
     readonly buildMs: number;
-    /** Milliseconds from navigation start to `__shotReady` (mark met:ready), or null before. */
+    /** Milliseconds from navigation start to `__shotReady` (mark met:ready), or null before: module loading, the timeline build, renderer start and the first frames. */
     readonly readyMs: number | null;
     readonly framesRendered: number;
   };

@@ -2,6 +2,10 @@
  * Page layout at 1280x720 and 390x844: every control is visible, inside the viewport, unclipped and clear of every other control, with each menu
  * open and closed; open panels stay above the timeline bar. Also the build-time budget (docs/design/spec.md, Budgets: all geometry in under 4 s).
  * Bound: boxes are compared as rectangles from layout, so a control hidden under a translucent sibling with no overlap of boxes is not caught.
+ * Bound of the build budget: it times the whole interval from navigation start to `window.__shotReady` (perf.readyMs) on the Vite dev server in
+ * headless Chrome on this machine, so it covers loading the modules (with every geometry they build on import), the timeline build, starting the
+ * renderer and the first five frames. That makes it an upper bound on geometry build time, not a measure of it; perf.buildMs, the timeline build
+ * alone, is reported beside it and misses geometry built at import.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -79,10 +83,15 @@ for (const viewport of VIEWPORTS) {
   });
 }
 
-test('the whole sequence builds within the 4 s budget', async ({ page }) => {
+test('the whole sequence builds within the 4 s budget, from navigation to ready', async ({ page }) => {
   const errors = watchErrors(page);
   const f = await open(page);
-  expect(f.perf.buildMs, `build time ${f.perf.buildMs.toFixed(0)} ms`).toBeLessThan(4000);
+  const ready = f.perf.readyMs;
+  if (ready === null) throw new Error('perf.readyMs is null after __shotReady: the page never marked met:ready, so the budget was not measured.');
+  const build = f.perf.buildMs;
+  // The ready interval contains the timeline build, so it cannot be shorter; if it were, the two clocks would not be the ones this test means.
+  expect(ready, `ready ${ready.toFixed(0)} ms after navigation, timeline build ${build.toFixed(0)} ms`).toBeGreaterThan(build);
+  expect(ready, `ready ${ready.toFixed(0)} ms after navigation (timeline build ${build.toFixed(0)} ms of it)`).toBeLessThan(4000);
   expect(f.stats.triangles).toBeLessThanOrEqual(3_000_000);
   expect(f.stats.meshes).toBeLessThanOrEqual(900);
   errors.expectClean();
