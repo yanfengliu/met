@@ -16,6 +16,7 @@ import { areaMaterials } from './materials.js';
 import {
   AW_EAST_Z,
   AW_MEZZANINE_Y,
+  AW_SOUTH_X,
   AW_STEP_X,
   AW_WEST_Z_SOUTH,
   BANK_FRONT_X,
@@ -236,7 +237,12 @@ function curtain(kit: Kit): void {
   const at = facingMatrix('-z', [(COURT.southX + AW_STEP_X) / 2, F - 0.3, AW_WEST_Z_SOUTH + 0.03]);
   kit.add(wallGlass.frame, areaMaterials.whiteSteel, at);
   kit.add(wallGlass.glass, areaMaterials.clearGlass, at);
-  boxAt(kit, palette.limestoneDark, [COURT.southX - 4.5, F - 0.4, AW_WEST_Z_SOUTH], [COURT.southX, CURTAIN_TOP + 0.3, AW_WEST_Z_SOUTH + 1.2]);
+  // The stone pier at the court's south end, from the 1894 wing's corner to the curtain wall. Its park face stands 2 cm behind the block line, so the old wing's
+  // trim, which returns along their shared line to the corner, ends just proud of it instead of in its plane; it stops at the court's south wall, and a strip
+  // in front of that wall's end closes the corner (integration, 2026-10-13: the trim's ends and the pier's face z-fought, and a 4 cm slot opened at the corner).
+  const pierFace = AW_WEST_Z_SOUTH + 0.02;
+  boxAt(kit, palette.limestoneDark, [AW_SOUTH_X, F - 0.4, pierFace], [COURT.southX - 0.6, CURTAIN_TOP + 0.3, AW_WEST_Z_SOUTH + 1.2]);
+  boxAt(kit, palette.limestoneDark, [COURT.southX - 0.6, F - 0.4, pierFace], [COURT.southX, CURTAIN_TOP + 0.3, AW_WEST_Z_SOUTH + 0.3]);
   // The slot (King of Hearts 2013): a grid of square panes from the lawn up to a sloped glass step, then a set-back upper wall of glass under a glass roof.
   const slotWidth = AW_SLOT.maxX - AW_SLOT.minX;
   const lowTop = 16.4;

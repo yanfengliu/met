@@ -122,8 +122,11 @@ function driveY(rect: Rect, z: number): number {
 
 // ---------------------------------------------------------------- park
 
-/** E: the lawn at the foot of the Engelhard Court's curtain wall, just under the court floor (its glass starts 0.3 m below it, roche-north engelhard.ts). */
-export const ENGELHARD_LAWN_Y = MAIN_FLOOR_Y - 0.15;
+/**
+ * E: the lawn at the foot of the Engelhard Court's curtain wall: just under the court floor and over the edge of the American Wing's main-floor slab (top
+ * MAIN_FLOOR_Y − 0.05, roche-north american.ts), so the glass, which starts 0.3 m below the floor, rises straight out of the grass.
+ */
+export const ENGELHARD_LAWN_Y = MAIN_FLOOR_Y - 0.03;
 
 /**
  * Park control points (X, Z, Y). Measured groups come from [F11] (DEM samples) and frame.ts; the rest are estimates (E) that keep the park's surface
@@ -148,9 +151,9 @@ const PARK_POINTS: readonly (readonly [number, number, number])[] = [
   // E: the lawn before the Engelhard Court's west curtain wall (Z −138.3, X 53.9..87.6) falls to the court floor, so the glass meets it at its foot as the
   // American Wing's glazed slot meets the lawn in King of Hearts 2013 (ref-park-northwest); the 2018 orthophoto shows a park path running up to the glass
   // at X +71. From there it rises to [F11]'s +7.0 at Z −170 (integration, 2026-10-13).
-  [55, -139.3, ENGELHARD_LAWN_Y],
-  [71, -139.3, ENGELHARD_LAWN_Y],
-  [86.5, -139.3, ENGELHARD_LAWN_Y],
+  [55, -138.4, ENGELHARD_LAWN_Y],
+  [71, -138.4, ENGELHARD_LAWN_Y],
+  [86.5, -138.4, ENGELHARD_LAWN_Y],
   [62, -148, ENGELHARD_LAWN_Y + 1.0],
   [80, -148, ENGELHARD_LAWN_Y + 1.0],
   [95, -170, PARK_GROUND_Y_WEST_AMERICAN],

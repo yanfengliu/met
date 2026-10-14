@@ -21,6 +21,8 @@ export const AMERICAN_BLOCK: readonly (readonly [number, number])[] = [
   [87.6, -138.3],
   [49.4, -138.3],
 ];
+/** M: the line the American Wing shares with the 1894 wing (core-1894-c's north face; exterior.md section 2), where the older wing builds the wall. */
+export const AW_SOUTH_X = 49.4;
 /** M: the American Wing's park faces ([K1]): Z −138.3 south of X 87.6, Z −161.0 north of it; north face at X 140.5. */
 export const AW_WEST_Z_SOUTH = -138.3;
 export const AW_WEST_Z_NORTH = -161.0;
