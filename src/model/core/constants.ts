@@ -4,7 +4,7 @@
  * floor levels), the decoded floor map (research/cache/lm_features.json in the canonical frame, world Z = json z − 82.87 − 3.1, coordinator 2026-10-11),
  * the photographs named in docs/research/*-images.md, or E (an estimate, with its reasoning). Data only.
  */
-import { GROUND_FLOOR_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
+import { CORE_COPING_TOP_Y, CORE_PARAPET_Y, GROUND_FLOOR_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
 
 // --- Blocks (exterior.md section 2, block table; outer faces of the walls lie on these lines) -------------------------
 export const WEST_Z = WEST_FACE_Z_CORE; // -138.3, the park-side face; the Vaux west front
@@ -21,7 +21,8 @@ export const FOOTING_Y = LG - 1.3; // E: strip footings 1.3 m below the ground-f
 export const SLAB = 0.5; // E: floor slab depth under L1 and L2
 export const GALLERY_CEILING_Y = 16.6; // E: second-floor galleries 5.6 m to the laylight (interior.md: heights not found)
 export const ROOF_Y = 17.2; // E: top of the flat roof slab round the skylights (orthophoto S5: flat roofs between skylights)
-export const PARAPET_Y = 18.0; // E: parapet top on the outer walls
+export const PARAPET_Y = CORE_PARAPET_Y; // E (frame.ts): parapet top on the outer walls
+export const COPING_TOP_Y = CORE_COPING_TOP_Y; // D (frame.ts): top of the stone coping on the parapets
 export const CORNICE_Y = 16.9; // E: main cornice at the roof line
 
 // --- Walls (E: load-bearing brick, 0.9-1.5 m; the map's room edges sit 1.2-3.2 m inside the block lines) ----------------

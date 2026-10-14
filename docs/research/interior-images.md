@@ -104,6 +104,10 @@ Astor Court and the Petrie Court
 32. https://commons.wikimedia.org/wiki/File:Astor_court_colonnade.jpg (CC BY-SA 3.0, Alawa; described as looking north along the colonnade). Not viewed.
 33. https://commons.wikimedia.org/wiki/File:NYC_-_Metropolitan_Museum_-_Carroll_and_Milton_Petrie_European_Sculpture_Court.jpg (CC BY 3.0, Jean-Christophe Benoist, 2012-04-26). Not viewed. Informs: the Petrie Court, the long skylit court next to the Lehman Wing (see `interior.md`).
 
+Petrie Court, added by the integration worker (2026-10-13)
+
+35. https://commons.wikimedia.org/wiki/File:European_Sculpture_Court_at_Metropolitan_Museum.jpg (CC BY-SA 4.0, Yair Haklai, 2012-05-26, 2448×3264, portrait). Viewed. The camera stands on the balcony at the court's east end and looks west along it to the glass end wall on the park: Weston's red-brick and stone 1888 front on the right, the limestone south wall on the left, and the long glass roof with its central ridge. Both eaves are level, the north one a dark gutter laid on the old front's cornice and coping. With #33, it informs the court roof's height (frame.ts `CORE_COPING_TOP_Y`).
+
 Plan source (not a photograph)
 
 34. The Met's floor map, https://maps.metmuseum.org/ (Living Map platform). Its vector tiles give room, wall, column, stair and void outlines on every floor; all plan positions in `interior.md` come from it. Treat it as the Met's data, used here for reference only.

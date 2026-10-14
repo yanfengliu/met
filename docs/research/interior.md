@@ -269,6 +269,8 @@ Sourced facts:
 
 The second floor's open-to-below areas mark two more double-height spaces the build may want: the Carroll and Milton Petrie European Sculpture Court (gallery 548), a long glass-roofed court on the west elevation (Heckscher p. 73; Kravis Wing, 1990, p. 78), X -61.44 to -51.24 by Z -134.00 to -61.73 (10.2 × 72.3 m); and the patio from the Castle of Vélez Blanco (gallery 534), X -23.63 to -9.79 by Z -53.79 to -38.06 (13.8 × 15.7 m).
 
+Note (integration worker, 2026-10-13): the Petrie Court's glass roof rests on Weston's 1888 front. In both court photographs (`interior-images.md` #33 and #35) its north eave is a dark gutter on the old front's cornice and coping, and the south eave is level with it, so the roof sits at the old front's coping (`CORE_COPING_TOP_Y` in `src/model/frame.ts`, +18.15) plus the gutter, not 2.5 m above it as first modelled. The court floor is the main floor, the level of the 1888 door sill and porch.
+
 ## Checks run
 
 - Every plan number above was printed again from the decoded map data and compared with the text; two transcription slips (the armour court's extent and the Great Hall section's area) were corrected.

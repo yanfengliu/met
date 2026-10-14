@@ -13,7 +13,7 @@ import type { Kit } from '../../build/types.js';
 import { column, doorUnit, moulding, voussoirs, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { openWall, type Hole } from './arches.js';
-import { B_SOUTH_X, CORNICE_Y, EAST_Z, L1, L2, LG, OUTER_WALL, PARAPET_Y, WESTON_ARCH_SPAN, WESTON_ARCH_SPRING, WESTON_BAY, WESTON_DADO, WESTON_LOWER_HEAD, WESTON_PAVILION_HALF, WEST_Z } from './constants.js';
+import { B_SOUTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, L1, L2, LG, OUTER_WALL, PARAPET_Y, WESTON_ARCH_SPAN, WESTON_ARCH_SPRING, WESTON_BAY, WESTON_DADO, WESTON_LOWER_HEAD, WESTON_PAVILION_HALF, WEST_Z } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, placed } from './shapes.js';
 import { WALL_BASE_Y } from './vaux-front.js';
@@ -126,7 +126,7 @@ export function westonTrim(kit: Kit): void {
   }
   kit.add(pavCornice, stone, placed(B_SOUTH_X, CORNICE_Y, CENTRE_Z, FACING.south), 10);
   for (const [a0, a1] of FILLS) elevationBox(kit, e, stone, a0, a1, CORNICE_Y, CORNICE_Y + 0.8, 0.3, 0, 10);
-  elevationBox(kit, e, stone, WEST_Z, EAST_Z, PARAPET_Y, PARAPET_Y + 0.15, 0.08, OUTER_WALL, 11);
+  elevationBox(kit, e, stone, WEST_Z, EAST_Z, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
 }
 
 /** Windows of the facade and the pavilion, the entrance door, and the porch: two pairs of Ionic columns carrying the balcony. */

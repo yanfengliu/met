@@ -12,7 +12,7 @@ import type { Kit } from '../../build/types.js';
 import { moulding, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { openWall, tympanum, voussoirRing, type Hole } from './arches.js';
-import { A_HALF, CORNICE_Y, L1, L2, LG, PARAPET_Y, VAUX_ARCH_RISE, VAUX_ARCH_SILL, VAUX_ARCH_SPAN, VAUX_ARCH_SPRING, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
+import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, L2, LG, PARAPET_Y, VAUX_ARCH_RISE, VAUX_ARCH_SILL, VAUX_ARCH_SPAN, VAUX_ARCH_SPRING, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, placed } from './shapes.js';
 
@@ -89,7 +89,7 @@ export function westFrontTrim(kit: Kit): void {
   }
   const cornice = moulding({ profile: 'cornice-plain', path: [[-A_HALF, 0, 0], [A_HALF, 0, 0]], height: 0.8, projection: 0.6 });
   kit.add(cornice, core.granite, placed(0, CORNICE_Y, WEST_Z, FACING.west), 8);
-  addBox(kit, core.granite, -A_HALF, PARAPET_Y, WEST_Z - 0.1, A_HALF, PARAPET_Y + 0.15, WEST_Z + WEST_WALL, 9);
+  addBox(kit, core.granite, -A_HALF, PARAPET_Y, WEST_Z - 0.1, A_HALF, COPING_TOP_Y, WEST_Z + WEST_WALL, 9);
 }
 
 /** Windows in the front's six main-floor arches (below the springing) and six ground-storey openings, the entrance left open; and glass in the hall's two oculi. */

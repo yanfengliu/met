@@ -10,7 +10,7 @@ import type { Kit } from '../../build/types.js';
 import { moulding, stairFlight, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { openWall, type Hole } from './arches.js';
-import { A_HALF, B_SOUTH_X, C_NORTH_X, CORNICE_Y, EAST_Z, FOOTING_Y, L1, L2, LG, OUTER_WALL, PARAPET_Y, SLAB, WESTON_BAY, WEST_WALL, WEST_Z } from './constants.js';
+import { A_HALF, B_SOUTH_X, C_NORTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, FOOTING_Y, L1, L2, LG, OUTER_WALL, PARAPET_Y, SLAB, WESTON_BAY, WEST_WALL, WEST_Z } from './constants.js';
 import { slabRects } from './galleries.js';
 import { INNER_EAST_Z, INNER_WEST_Z, INTERIOR, type BlockId, type Rect } from './layout.js';
 import { core } from './materials.js';
@@ -134,7 +134,7 @@ export function elevationTrim(kit: Kit, e: Elevation): void {
   // On a shared line the cornice is a flat band, 0.25 m proud; elsewhere the fills get a short cornice block.
   if (e.shared) elevationBox(kit, e, stone, lo, hi, CORNICE_Y, CORNICE_Y + 0.75, 0.25, 0, 20);
   else for (const [a0, a1] of e.fills) elevationBox(kit, e, stone, a0, a1, CORNICE_Y, CORNICE_Y + 0.75, 0.2, 0, 20);
-  elevationBox(kit, e, stone, lo, hi, PARAPET_Y, PARAPET_Y + 0.15, 0.08, e.thickness, 30);
+  elevationBox(kit, e, stone, lo, hi, PARAPET_Y, COPING_TOP_Y, 0.08, e.thickness, 30);
 }
 
 /** Windows of a plain elevation (frames and glass in the ground and main-floor openings). */

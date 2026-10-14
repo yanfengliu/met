@@ -8,7 +8,7 @@
 import { Matrix4 } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
-import { GROUND_FLOOR_Y, MAIN_FLOOR_Y } from '../frame.js';
+import { CORE_COPING_TOP_Y, GROUND_FLOOR_Y, MAIN_FLOOR_Y } from '../frame.js';
 import { hippedSkylight, laylight, ridgeSkylight, wall } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { OUTER_WALL, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
@@ -32,12 +32,21 @@ const Z_IN = Z_WEST + OUTER_WALL;
 /** The court: from its limestone south wall to the 1888 front (map gallery 548; the map's edge at X −51.24 is the old front's line). */
 export const COURT_X0 = -61.45;
 const COURT_WALL = 0.8;
-/** E: the court's glass roof, its eaves on the south wall and on a beam along the old front, its ridge in the middle (orthophoto X −56.2). */
-export const PETRIE_EAVE_Y = 20.6;
+/**
+ * D: the court's glass roof rests on the 1888 front: both Petrie Court photographs (interior-images.md #33, Benoist 2012, and #35, Haklai 2012) show its
+ * north eave on a dark gutter laid on the old front's coping and its south eave level with it on the limestone wall, the ridge in the middle (orthophoto
+ * X −56.2). The gutter is 0.45 m deep (E), so the eaves sit at the Kravis roof's level.
+ */
+const GUTTER = 0.45;
+export const PETRIE_EAVE_Y = CORE_COPING_TOP_Y + GUTTER;
+/** The 1888 front's base course stands 0.14 m proud at the main floor (core); the court's floor stops at it, so nothing of the court touches the old front's trim. */
+const OLD_FRONT_CLEAR = 0.15;
+/** The court's floor finish, laid on the slab so its top is the main floor (MAIN_FLOOR_Y), the level of the 1888 door sill and porch. */
+const FINISH = 0.03;
 const RIDGE_Z0 = -128.0;
 const RIDGE_Z1 = -85.0;
-/** E: roof over the galleries south of the court; the map's floor 4 (plant and offices) stands on part of it. */
-export const KRAVIS_ROOF_Y = 18.6;
+/** E: roof over the galleries south of the court, level with the court's eaves (18.6); the map's floor 4 (plant and offices) stands on part of it. */
+export const KRAVIS_ROOF_Y = PETRIE_EAVE_Y;
 const PARAPET_Y = KRAVIS_ROOF_Y + 1.0;
 /** The map's floor 4 (plant), kept east of the glazed strips the orthophoto shows over the west end. */
 const PENTHOUSE: readonly [number, number, number, number] = [-87.9, -121.6, -62.4, -104.3];
@@ -73,7 +82,9 @@ const END_EAST = laylight({ width: COURT_SPAN, length: Z_EAST - RIDGE_Z1, cols: 
 function structure(kit: Kit): void {
   kit.add(UNIT_BOX, mat.concrete, wallAlong([X0, Z_WEST], [X1, Z_WEST], FOOTING_Y, BASE_Y, 2.0), 0);
   kit.add(UNIT_BOX, palette.stoneFloor, boxAt([X0, BASE_Y, Z_IN], [X1, GROUND_FLOOR_Y, Z_EAST]), 1);
-  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([X0, MAIN_FLOOR_Y - SLAB, Z_IN], [X1, MAIN_FLOOR_Y, Z_EAST]), 2);
+  // The main floor: the galleries' plate, and under the court a plate one finish lower, stopping at the old front's base course.
+  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([X0, MAIN_FLOOR_Y - SLAB, Z_IN], [COURT_X0, MAIN_FLOOR_Y, Z_EAST]), 2);
+  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([COURT_X0, MAIN_FLOOR_Y - SLAB, Z_IN], [X1 - OLD_FRONT_CLEAR, MAIN_FLOOR_Y - FINISH, Z_EAST]), 2);
   // The second floor covers the galleries south of the court; the court rises open to its roof (map Floor 2 vista).
   kit.add(UNIT_BOX, palette.wood, boxAt([X0, ROCHE_SECOND_FLOOR_Y - SLAB, Z_IN], [COURT_X0 - COURT_WALL, ROCHE_SECOND_FLOOR_Y, Z_EAST]), 3);
 }
@@ -109,10 +120,10 @@ const COURT_SOUTH = wall({
 });
 
 function court(kit: Kit): void {
-  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([COURT_X0, MAIN_FLOOR_Y, Z_IN], [X1, MAIN_FLOOR_Y + 0.03, Z_EAST]), 0);
+  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([COURT_X0, MAIN_FLOOR_Y - FINISH, Z_IN], [X1 - OLD_FRONT_CLEAR, MAIN_FLOOR_Y, Z_EAST]), 0);
   // The wall's front faces the court (north): run it from east to west.
   kit.add(COURT_SOUTH, palette.limestone, libraryWallOn([COURT_X0, Z_EAST], [COURT_X0, Z_IN], MAIN_FLOOR_Y), 1);
-  kit.add(UNIT_BOX, palette.limestone, boxAt([COURT_X0 - COURT_WALL - 0.1, PETRIE_EAVE_Y - 0.6, Z_IN], [COURT_X0 + 0.25, PETRIE_EAVE_Y, Z_EAST]), 2);
+  kit.add(UNIT_BOX, palette.limestone, boxAt([COURT_X0 - COURT_WALL, PETRIE_EAVE_Y - 0.6, Z_IN], [COURT_X0 + 0.25, PETRIE_EAVE_Y, Z_EAST]), 2);
 }
 
 /** Main-floor galleries 549–556, the café and the second floor's galleries (map, rectangular rooms). */
@@ -157,8 +168,8 @@ function roof(kit: Kit): void {
   for (const [x, z] of UNITS) kit.add(UNIT_BOX, palette.metalDark, boxAt([x - 0.8, KRAVIS_ROOF_Y, z - 0.8], [x + 0.8, KRAVIS_ROOF_Y + 1.2, z + 0.8]), 3);
   const [px0, pz0, px1, pz1] = PENTHOUSE;
   for (const m of hollowBoxes([px0, KRAVIS_ROOF_Y, pz0], [px1, PENTHOUSE_TOP_Y, pz1], 0.6)) kit.add(UNIT_BOX, palette.limestone, m, 1);
-  // The beam along the old front that carries the court roof's north eave.
-  kit.add(UNIT_BOX, mat.steel, boxAt([X1 - 0.6, PETRIE_EAVE_Y - 0.7, Z_IN], [X1 - 0.1, PETRIE_EAVE_Y, Z_EAST]), 2);
+  // The gutter laid on the old front's coping that carries the court roof's north eave, reaching 0.6 m over the court and onto the coping.
+  kit.add(UNIT_BOX, palette.metalDark, boxAt([X1 - 0.6, CORE_COPING_TOP_Y, Z_IN], [X1 + 0.28, PETRIE_EAVE_Y, Z_EAST]), 2);
 }
 
 function courtGlass(kit: Kit): void {

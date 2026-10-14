@@ -44,6 +44,8 @@ export const LANDING_Y = 3.63; // [P1] M: top of the front steps, flat Z +3.5..+
 export const MAIN_FLOOR_Y = 4.11; // D: LANDING_Y plus the three steps inside the central doorway (interior.md, Floor levels); the total rise matches the published 13½ ft (4.115 m)
 export const GROUND_FLOOR_Y = -2.34; // D: MAIN_FLOOR_Y − 21'-2" (interior.md, Floor levels; Tang drawing labels), low-medium
 export const SECOND_FLOOR_Y = 10.97; // D: MAIN_FLOOR_Y + 22'-6" (interior.md, Floor levels), Hunt core only; other wings' second floors differ
+export const CORE_PARAPET_Y = 18.0; // E: parapet top of the 1880–1894 core's outer walls (core area, 2026-10-11, after 1880_Met_Museum.jpg about 1900 and the Petrie Court photo, interior-images.md #33)
+export const CORE_COPING_TOP_Y = 18.15; // D: CORE_PARAPET_Y plus the 0.15 m stone coping; the Petrie Court's glass roof rests on Weston's south front here (Petrie Court photos, interior-images.md #33 and #35)
 export const GREAT_HALL_RIDGE_Y = 33.37; // D: MAIN_FLOOR_Y + 96'-0" (interior.md, Floor levels), medium-low
 
 // --- Hunt central pavilion ------------------------------------------------------------------
