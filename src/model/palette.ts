@@ -8,6 +8,8 @@
  * so the front now renders (203, 197, 188), between its two photographs, and the shaded wall (149, 145, 138).
  * No texture is fetched. Shadows: a material with `userData.castShadow === false`, or any transparent one, never casts shadows (see `castsShadow` in src/build/batch.ts):
  * glass and water because they are clear, and the flat ground materials because a slab on the ground shades nothing and would only widen the sun's shadow camera.
+ * Section cut: a material with `userData.sectionCut === false` is landscape the cut leaves whole (src/viewer/section-cut.ts); here the lawns and the
+ * roadway, which only the site uses. Foliage and bark stay cut, because the building's courts and roof garden use them; the site has its own copies.
  */
 import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 import type { Material } from 'three';
@@ -18,6 +20,8 @@ interface Surface {
   readonly metalness?: number;
   /** False for flat ground surfaces; see the header. */
   readonly castShadow?: boolean;
+  /** False for landscape the section cut leaves whole; see the header. */
+  readonly sectionCut?: boolean;
 }
 
 function standard(name: string, surface: Surface): MeshStandardMaterial {
@@ -28,6 +32,7 @@ function standard(name: string, surface: Surface): MeshStandardMaterial {
     metalness: surface.metalness ?? 0,
   });
   if (surface.castShadow === false) material.userData['castShadow'] = false;
+  if (surface.sectionCut === false) material.userData['sectionCut'] = false;
   return material;
 }
 
@@ -102,10 +107,10 @@ export const palette = Object.freeze({
   wood: standard('wood', { colour: '#8b5c39', roughness: 0.62 }),
   /** Fountain basins and pools. Never casts shadows. */
   water,
-  /** Lawns. Never casts shadows. */
-  grass: standard('grass', { colour: '#5a7a39', roughness: 1, castShadow: false }),
-  /** Roadway ([C5] asphalt photographed #67757B in daylight; base darker). Never casts shadows. */
-  asphalt: standard('asphalt', { colour: '#4f585c', roughness: 0.95, castShadow: false }),
+  /** Lawns. Never casts shadows; landscape, so the section cut leaves it whole. */
+  grass: standard('grass', { colour: '#5a7a39', roughness: 1, castShadow: false, sectionCut: false }),
+  /** Roadway ([C5] asphalt photographed #67757B in daylight; base darker). Never casts shadows; landscape, so the section cut leaves it whole. */
+  asphalt: standard('asphalt', { colour: '#4f585c', roughness: 0.95, castShadow: false, sectionCut: false }),
   /** Sidewalk and plaza paving ([C5] sidewalk concrete photographed #787878; base lifted for the sunlit render). Never casts shadows. */
   sidewalk: standard('sidewalk', { colour: '#9a9895', roughness: 0.9, castShadow: false }),
   /** Tree crowns and hedges. */

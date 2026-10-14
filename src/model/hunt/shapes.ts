@@ -106,7 +106,8 @@ export function lunetteGrille(span: number, base: number, cell: number, bar: num
           const e = s - step;
           if (e - a > bar) {
             const mark = b.vertexCount;
-            const length = (e - a) * Math.SQRT2;
+            // (dx, dy) is a unit direction, so s is distance along the bar and the run from a to e is its length.
+            const length = e - a;
             b.box([-bar / 2, 0, -depth / 2], [bar / 2, length, depth / 2]);
             const angle = Math.atan2(dx, dy);
             b.transform(mark, new THREE.Matrix4().makeTranslation(x0 + dx * a, y0 + dy * a, 0).multiply(new THREE.Matrix4().makeRotationZ(-angle)));

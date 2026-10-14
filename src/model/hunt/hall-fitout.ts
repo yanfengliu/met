@@ -101,10 +101,11 @@ export const fitoutSteps: readonly StepDef[] = [
   },
 ];
 
-export const deskSteps: readonly StepDef[] = [
+/** Roche's 1970 desk: composed into chapter `roche-steps-lehman-1975`, the era it was built in, not Hunt's. */
+export const greatHallDesk1970Steps: readonly StepDef[] = [
   {
     id: 'great-hall-desk',
-    chapter: 'hunt-1902',
+    chapter: 'roche-steps-lehman-1975',
     year: '1970',
     title: 'Set the round information desk',
     detail: "Kevin Roche's 1970 renovation put a round information desk on the axis of the nave, a tall flower arrangement rising from the urn at its centre.",

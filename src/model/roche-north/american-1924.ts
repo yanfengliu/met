@@ -160,7 +160,9 @@ export const americanWing1924: readonly StepDef[] = [
     title: 'The Branch Bank facade, re-erected',
     detail: 'The marble front of the Branch Bank of the United States (Martin E. Thompson, 1822–24) moves from Wall Street to be the south face of the new wing.',
     motion: { kind: 'rise', distance: 2 },
-    stagger: 'y',
+    // Storey by storey (addBankFacade's orders 0, 1, 2), so each window's metal and glass and the door's leaf arrive together; under 'y' each merged
+    // piece keyed on its own centre and the glass came a rank after its frames.
+    stagger: 'order',
     weight: 1.4,
     focus: { kind: 'preset', id: 'int-engelhard-north' },
     build: addBankFacade,

@@ -144,13 +144,13 @@ export function westonOpenings(kit: Kit): void {
     if (parts.glass) kit.add(parts.glass, palette.glassDark, m, order);
   };
   BAYS.forEach((c, i) => {
-    for (const gx of GROUND_X) put({ frame: ground.frame, glass: ground.glass }, z(c, gx), GROUND_WINDOW.sill, i);
-    for (const mx of MAIN_X) put({ frame: main.frame, glass: main.glass }, z(c, mx), MAIN_WINDOW.sill, i);
+    for (const gx of GROUND_X) put(ground, z(c, gx), GROUND_WINDOW.sill, i);
+    for (const mx of MAIN_X) put(main, z(c, mx), MAIN_WINDOW.sill, i);
     put(arched, c, L2 + ARCH_SILL, i);
   });
   for (const px of [-3.6, 3.6]) {
-    put({ frame: ground.frame, glass: ground.glass }, z(CENTRE_Z, px), GROUND_WINDOW.sill, 5);
-    put({ frame: main.frame, glass: main.glass }, z(CENTRE_Z, px), MAIN_WINDOW.sill, 5);
+    put(ground, z(CENTRE_Z, px), GROUND_WINDOW.sill, 5);
+    put(main, z(CENTRE_Z, px), MAIN_WINDOW.sill, 5);
   }
   put(big, CENTRE_Z, L2 + w.sill, 5);
   const dm = placed(x, L1, CENTRE_Z, FACING.south);

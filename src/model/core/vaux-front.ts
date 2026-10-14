@@ -108,6 +108,7 @@ export function westFrontWindows(kit: Kit): void {
     kit.add(main.bars, palette.metalDark, at(L1 + VAUX_ARCH_SILL), order);
     kit.add(main.glass, palette.glassDark, at(L1 + VAUX_ARCH_SILL), order);
     kit.add(ground.frame, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
+    kit.add(ground.bars, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
     kit.add(ground.glass, palette.glassDark, at(LG + VAUX_GROUND_SILL), order);
   }
 }

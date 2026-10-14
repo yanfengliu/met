@@ -63,13 +63,13 @@ export const drivesStep: StepDef = {
     coping(kit, edge(DRIVE_SOUTH, 'driveSouth', 'x', DRIVE_SOUTH.z0, -1));
     // The fence on the north wall, from the dock to the sidewalk (OSM 739699912 runs Z −33.3 to +12.3 at X +163).
     const fence = north.filter((p) => p.z <= 12.3 && p.top - p.low > 0.3);
-    for (const p of fence) kit.add(UNIT_BLOCK, palette.metalDark, blockMatrix(p.x, p.top + COPING_HEIGHT, p.z, FENCE_POST, FENCE_HEIGHT, FENCE_POST));
+    for (const p of fence) kit.add(UNIT_BLOCK, siteMaterials.metalDark, blockMatrix(p.x, p.top + COPING_HEIGHT, p.z, FENCE_POST, FENCE_HEIGHT, FENCE_POST));
     for (let k = 1; k < fence.length; k += 1) {
       const a = fence[k - 1];
       const b = fence[k];
       if (a === undefined || b === undefined) continue;
       for (const y of [0.15, FENCE_HEIGHT - 0.05]) {
-        kit.add(UNIT_BLOCK, palette.metalDark, beamMatrix([a.x, a.top + COPING_HEIGHT + y, a.z], [b.x, b.top + COPING_HEIGHT + y, b.z], 0.04, 0.04));
+        kit.add(UNIT_BLOCK, siteMaterials.metalDark, beamMatrix([a.x, a.top + COPING_HEIGHT + y, a.z], [b.x, b.top + COPING_HEIGHT + y, b.z], 0.04, 0.04));
       }
     }
   },

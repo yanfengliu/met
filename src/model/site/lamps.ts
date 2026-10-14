@@ -8,7 +8,6 @@ import { Matrix4 } from 'three';
 import type { StepDef } from '../../build/types.js';
 import { SITE_MAX_X, SITE_MIN_X, SITE_MIN_Z } from '../frame.js';
 import { bench, lampPost } from '../lib/index.js';
-import { palette } from '../palette.js';
 import { footprintClearance } from './footprint.js';
 import type { Point } from './footprint.js';
 import { parkY, zoneAt } from './ground.js';
@@ -85,15 +84,15 @@ export const parkLampsStep: StepDef = {
   build(kit) {
     PARK_LAMPS.forEach(([x, z], k) => {
       const m = new Matrix4().makeTranslation(x, parkY(x, z) - 0.05, z);
-      kit.add(LAMP.post, palette.metalDark, m, k);
+      kit.add(LAMP.post, siteMaterials.metalDark, m, k);
       kit.add(LAMP.lamp, siteMaterials.lampGlobe, m, k);
     });
     OSM_BENCHES.filter(fits).forEach(([x, z], k) => {
       // The sitter (+Z) faces the nearest path.
       const [qx, qz] = nearestOnPaths([x, z]);
       const m = new Matrix4().makeRotationY(Math.atan2(qx - x, qz - z)).setPosition(x, parkY(x, z) - 0.03, z);
-      kit.add(BENCH.frame, palette.metalDark, m, PARK_LAMPS.length + k);
-      kit.add(BENCH.seat, palette.wood, m, PARK_LAMPS.length + k);
+      kit.add(BENCH.frame, siteMaterials.metalDark, m, PARK_LAMPS.length + k);
+      kit.add(BENCH.seat, siteMaterials.wood, m, PARK_LAMPS.length + k);
     });
   },
 };

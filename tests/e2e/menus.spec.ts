@@ -1,11 +1,14 @@
 /**
- * Chapter menu and view menu through real input (docs/design/spec.md, Page): chapters in order (empty ones disabled), presets, the follow camera
- * (a drag turns it off) and the section cut (toggle and slider). Facts come from `window.__met`; nothing names a step or chapter.
- * Bound: canvas checks compare coarse luminance grids, proving the drawing changed, not that the new view is right.
+ * Chapter menu and view menu through real input (docs/design/spec.md, Page): chapters in order (empty ones disabled), each chapter with steps chosen
+ * in turn, every preset chosen in turn and settling on its camera, the follow camera (a drag turns it off) and the section cut (toggle and slider).
+ * Facts come from `window.__met` and preset cameras from src/viewer/presets.ts; nothing names a step or chapter.
+ * Bound: canvas checks compare coarse luminance grids, proving the drawing changed, not that the new view is right; a preset's camera is compared by
+ * position, target and fov (look) or by target, direction and the model's corners in frame (fit), read from `window.__met.camera`.
  */
 import { expect, test } from '@playwright/test';
 
-import { changedCells, cornerCells, currentT, facts, lumaGrid, open, openMenu, press, settle, waitForT, watchErrors } from './helpers.js';
+import { DEFAULT_FOV, PRESETS } from '../../src/viewer/presets.js';
+import { centreOf, changedCells, cornerCells, cornerReach, currentT, distance, facts, labelStep, lumaGrid, open, openMenu, press, settle, settledCamera, waitForT, watchErrors } from './helpers.js';
 
 test.describe('menus', () => {
   let errors: { expectClean: () => void };
@@ -28,18 +31,58 @@ test.describe('menus', () => {
       if (chapter.count === 0) await expect(item).toBeDisabled();
       else await expect(item).toBeEnabled();
     }
-    const target = [...f.chapters].filter((c) => c.count > 0).sort((a, b) => b.first - a.first)[0];
-    if (target === undefined) throw new Error('No chapter has steps.');
+    const withSteps = f.chapters.filter((c) => c.count > 0);
+    expect(withSteps.length).toBeGreaterThan(1);
     await page.keyboard.press('Escape');
     await press(page, 'btn-end');
     await waitForT(page, f.n);
-    await openMenu(page, 'chapter-menu');
-    await press(page, `chapter-${target.id}`);
-    await waitForT(page, target.first);
-    await expect(page.getByTestId('chapter-menu')).toBeHidden();
-    await expect(page.getByTestId('scrubber')).toHaveValue(String(target.first));
-    await openMenu(page, 'chapter-menu');
-    await expect(page.getByTestId(`chapter-${target.id}`)).toHaveAttribute('aria-current', 'true');
+    // Every chapter with steps, last first, so each choice moves the build.
+    for (const target of [...withSteps].reverse()) {
+      await openMenu(page, 'chapter-menu');
+      await press(page, `chapter-${target.id}`);
+      await waitForT(page, target.first);
+      await expect(page.getByTestId('chapter-menu')).toBeHidden();
+      await expect(page.getByTestId('scrubber')).toHaveValue(String(target.first));
+      expect(await labelStep(page), `the label after choosing ${target.id}`).toBe(target.first);
+      await openMenu(page, 'chapter-menu');
+      await expect(page.getByTestId(`chapter-${target.id}`)).toHaveAttribute('aria-current', 'true');
+      await page.keyboard.press('Escape');
+    }
+  });
+
+  test('every preset, chosen through the view menu, marks itself and settles on its camera', async ({ page }) => {
+    const f = await open(page);
+    await openMenu(page, 'view-menu');
+    const model = centreOf(f.bounds);
+    const problems: string[] = [];
+    for (const entry of f.presets) {
+      const preset = PRESETS.find((p) => p.id === entry.id);
+      if (preset === undefined) {
+        problems.push(`${entry.id}: not in src/viewer/presets.ts`);
+        continue;
+      }
+      await press(page, `preset-${entry.id}`);
+      await expect(page.getByTestId(`preset-${entry.id}`)).toHaveAttribute('aria-pressed', 'true');
+      const view = await page.evaluate(() => window.__met?.view);
+      if (view !== entry.id) problems.push(`${entry.id}: __met.view is ${String(view)}`);
+      const cam = await settledCamera(page);
+      const c = preset.camera;
+      if (c.kind === 'look') {
+        // A look preset with an up stands a hair (1e-3 of its distance) beside its axis; see resolvePreset.
+        const allowed = (c.up === undefined ? 0 : 1e-3 * distance(c.position, c.target)) + 1e-3;
+        if (distance(cam.position, c.position) > allowed) problems.push(`${entry.id}: camera at ${cam.position.join(', ')}, preset ${c.position.join(', ')}`);
+        if (distance(cam.target, c.target) > 1e-3) problems.push(`${entry.id}: target at ${cam.target.join(', ')}, preset ${c.target.join(', ')}`);
+        if (Math.abs(cam.fov - (c.fov ?? DEFAULT_FOV)) > 1e-9) problems.push(`${entry.id}: fov ${String(cam.fov)}`);
+      } else {
+        const along = [cam.position[0] - cam.target[0], cam.position[1] - cam.target[1], cam.position[2] - cam.target[2]] as const;
+        const cos = (along[0] * c.direction[0] + along[1] * c.direction[1] + along[2] * c.direction[2]) / (Math.hypot(...along) * Math.hypot(...c.direction));
+        if (distance(cam.target, model) > 1e-3) problems.push(`${entry.id}: target ${cam.target.join(', ')} is not the model's centre ${model.join(', ')}`);
+        if (!(cos > 1 - 1e-6)) problems.push(`${entry.id}: camera off the preset's direction (cos ${String(cos)})`);
+        const reach = cornerReach(cam, f.bounds);
+        if (reach > 1.001) problems.push(`${entry.id}: the model's corners reach |ndc| ${reach.toFixed(3)}`);
+      }
+    }
+    expect(problems).toEqual([]);
   });
 
   test('view presets move the camera and mark the chosen one', async ({ page }) => {

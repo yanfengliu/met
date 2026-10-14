@@ -58,8 +58,8 @@ It lists the nine chapters with their years. Choosing one jumps to the start of 
 ### View menu
 
 - **Exterior** and **Interior**: camera presets. The ids for `view=` are in the tables below. The page opens on `aerial-ne`.
-- **Follow the build**: while the build plays, the camera frames what each step adds. It turns off as soon as you move the camera yourself, and the toggle turns it back on. It starts on, except when the URL sets `view`, `cam` or `shot`.
-- **Section cut**: Cut switches a horizontal cut on or off, and the slider sets its height in metres, in 0.1 m steps up to just above the model's top. Moving the slider switches the cut on. Everything above the cut is removed, shadows included, and cut walls and slabs are drawn solid in one flat colour, as in an architect's section. Use it, or an interior preset, to see inside.
+- **Follow the build**: while the build plays, the camera frames what each step adds. It turns off as soon as you drag or zoom the camera yourself (a press without movement leaves it on), and the toggle turns it back on. It starts on unless the URL sets `shot=1`, a `view=` that names a preset, or `cam=`; a `view=` that names no preset is ignored.
+- **Section cut**: Cut switches a horizontal cut on or off, and the slider sets its height in metres, in 0.1 m steps up to just above the model's top. Moving the slider switches the cut on. Only the building is cut: everything of it above the cut is removed, shadows included, and cut walls and slabs are drawn solid in one flat colour, as in an architect's section, while everything the site builds as landscape (trees, ground, streets, paths, rocks, walls, fences, lamps, benches, fountains and the plaza's furniture) stays whole. Use it, or an interior preset, to see inside.
 
 ### Camera
 
@@ -127,7 +127,7 @@ Coordinates are in the world frame: metres, +Y up, +X up Fifth Avenue (Manhattan
 | 2 | The first building | `vaux-mould-1880` | 1874–1880 |
 | 3 | The first wings | `weston-tuckerman-1894` | 1884–1894 |
 | 4 | Hunt's Fifth Avenue front | `hunt-1902` | 1895–1902 |
-| 5 | The Fifth Avenue wings | `mckim-mead-white-1926` | 1904–1939 |
+| 5 | The Fifth Avenue wings | `mckim-mead-white-1926` | 1904–1956 |
 | 6 | The master plan begins | `roche-steps-lehman-1975` | 1967–1975 |
 | 7 | North on the park | `roche-north-1980` | 1975–1981 |
 | 8 | South on the park | `roche-south-1990` | 1979–1991 |

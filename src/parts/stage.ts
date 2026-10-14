@@ -117,6 +117,11 @@ export const VIEWS: Readonly<Record<ViewName, readonly [number, number]>> = {
   up: [0, 90],
 };
 
+/** The view `text` names, or null: only VIEWS' own keys count, so `toString` or `constructor` from the prototype is no view. */
+export function viewNamed(text: string): ViewName | null {
+  return Object.hasOwn(VIEWS, text) ? (text as ViewName) : null;
+}
+
 /** Places the camera 1.6 m above the floor under `box`'s centre, looking straight up with +Z (the front) at the bottom of the view. */
 export function lookUp(stage: Stage, box: THREE.Box3): void {
   const { camera } = stage;

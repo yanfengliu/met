@@ -110,6 +110,23 @@ test.describe('timeline controls', () => {
     expect(fast / slow).toBeLessThan(16);
   });
 
+  test('every speed button sets its speed, marks only itself and plays at it', async ({ page }) => {
+    await open(page);
+    // The spec's speeds (docs/design/spec.md, Playback), not read from the page.
+    const speeds = ['0.5', '1', '2', '4'] as const;
+    for (const speed of speeds) {
+      await press(page, `speed-${speed}`);
+      for (const other of speeds) await expect(page.getByTestId(`speed-${other}`)).toHaveAttribute('aria-pressed', String(other === speed));
+      expect(await page.evaluate(() => window.__met?.speed), `speed after pressing ${speed}x`).toBe(Number(speed));
+      const t0 = await currentT(page);
+      await press(page, 'btn-play');
+      await page.waitForFunction((t) => (window.__met?.t ?? t) > t + 0.02, t0);
+      expect(await page.evaluate(() => window.__met?.speed), `speed while playing at ${speed}x`).toBe(Number(speed));
+      await press(page, 'btn-play');
+      await expect(page.getByTestId('btn-play')).toHaveAttribute('aria-label', 'Play');
+    }
+  });
+
   test('the scrubber follows a mouse drag', async ({ page }) => {
     const f = await open(page);
     const before = await lumaGrid(page);

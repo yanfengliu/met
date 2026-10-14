@@ -59,12 +59,12 @@ function curbs(kit: Kit): void {
   const west = (x: number): number => walkWestY(x, CURB_WEST_Z) + 0.01;
   for (const [x0, x1] of spans(SITE_MIN_X, SITE_MAX_X)) {
     if (x0 >= TRANSVERSE_MOUTH.x0 - 1e-6 && x1 <= TRANSVERSE_MOUTH.x1 + 1e-6) continue;
-    kit.add(UNIT_SLAB, palette.granite, surfaceMatrix(x0, x1, CURB_WEST_Z - CURB_WIDTH, CURB_WEST_Z, (x) => west(x), 0, CURB_DEPTH));
+    kit.add(UNIT_SLAB, siteMaterials.granite, surfaceMatrix(x0, x1, CURB_WEST_Z - CURB_WIDTH, CURB_WEST_Z, (x) => west(x), 0, CURB_DEPTH));
   }
   const east = (x: number): number => walkEastY(x, CURB_EAST_Z) + 0.01;
   for (const [x0, x1] of spans(SITE_MIN_X, SITE_MAX_X)) {
     if (onCrossStreet(x0, x1)) continue;
-    kit.add(UNIT_SLAB, palette.granite, surfaceMatrix(x0, x1, CURB_EAST_Z, CURB_EAST_Z + CURB_WIDTH, (x) => east(x), 0, CURB_DEPTH));
+    kit.add(UNIT_SLAB, siteMaterials.granite, surfaceMatrix(x0, x1, CURB_EAST_Z, CURB_EAST_Z + CURB_WIDTH, (x) => east(x), 0, CURB_DEPTH));
   }
   // The corners of the cross streets: curbs turning east along each side of the street.
   for (const c of CROSS_STREETS_X) {
@@ -72,7 +72,7 @@ function curbs(kit: Kit): void {
       [c - CROSS_STREET_HALF_WIDTH - CURB_WIDTH, c - CROSS_STREET_HALF_WIDTH],
       [c + CROSS_STREET_HALF_WIDTH, c + CROSS_STREET_HALF_WIDTH + CURB_WIDTH],
     ] as const) {
-      kit.add(UNIT_SLAB, palette.granite, surfaceMatrix(x0, x1, CURB_EAST_Z, EAST_LINE_Z, (x, z) => walkEastY(x, z) + 0.01, 0, CURB_DEPTH));
+      kit.add(UNIT_SLAB, siteMaterials.granite, surfaceMatrix(x0, x1, CURB_EAST_Z, EAST_LINE_Z, (x, z) => walkEastY(x, z) + 0.01, 0, CURB_DEPTH));
     }
   }
 }
@@ -141,7 +141,7 @@ export const sidewalksStep: StepDef = {
   motion: { kind: 'rise', distance: 0.4 },
   stagger: 'x',
   build(kit) {
-    tileZones(kit, ['walkWest'], palette.sidewalk);
+    tileZones(kit, ['walkWest'], siteMaterials.sidewalk);
     parkWall(kit);
   },
 };
@@ -154,6 +154,6 @@ export const eastSidewalkStep: StepDef = {
   motion: { kind: 'rise', distance: 0.4 },
   stagger: 'x',
   build(kit) {
-    tileZones(kit, ['walkEast'], palette.sidewalk);
+    tileZones(kit, ['walkEast'], siteMaterials.sidewalk);
   },
 };

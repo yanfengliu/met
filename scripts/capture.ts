@@ -3,17 +3,19 @@
  *   npm run shots                         the standard set: every preset at the finished state, the aerial preset at t = 0 and at each chapter boundary,
  *                                         the section cut, and the page UI at 1280x720 and 390x844, into .shots/shots/
  *   npm run shots -- [--solo <chapter>] [--presets id,id]
- *                                         the same set for one chapter (into .shots/shots-<chapter>/) and/or only the named presets
+ *                                         the same set for one chapter (into .shots/shots-<chapter>/) and/or only the named presets;
+ *                                         --solo must be one of the page's chapter ids (window.__met.chapters), or the run fails before writing anything
  *   npm run sweep -- --t 6.5 [--count 12] [--seed 7] [--solo <chapter>]
  *                                         seeded random cameras around the model's bounds at one t, into .shots/sweep-<seed>-t<t>/
  * Each run starts its own Vite dev server on this worktree's MET_PORT through Vite's JS API (strict port: a taken port fails the run instead of
  * attaching to another server), drives the installed Chrome through Playwright, waits for `window.__shotReady`, prints the git revision with a dirty
  * flag so each image is tied to code, and stops the server and browser on every exit path. A console error on any page fails the run.
+ * Each run empties its own output folder first, and only ever a folder strictly inside .shots/ (insideShots).
  * Bound: images are written, not judged; a person or agent inspects each one at native resolution.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { chromium } from '@playwright/test';
 import type { Browser, Page } from '@playwright/test';
@@ -79,6 +81,25 @@ export function sweepCameras(seed: number, count: number, min: readonly number[]
     cams.push([...position, ...target].map((v) => v.toFixed(2)).join(','));
   }
   return cams;
+}
+
+/**
+ * `dir`, resolved, when it lies strictly inside `root` (by default `.shots/`); anything else throws. Every delete in this script goes through it,
+ * so no option value can aim a recursive delete at the repository or anywhere outside `.shots/`.
+ */
+export function insideShots(dir: string, root: string = OUT): string {
+  const target = resolve(dir);
+  const rel = relative(resolve(root), target);
+  if (rel === '' || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+    throw new Error(`Refusing to empty ${target}: capture deletes only folders inside ${resolve(root)}.`);
+  }
+  return target;
+}
+
+/** Throws unless `solo` is absent or one of the page's chapter ids (`window.__met.chapters`). */
+export function checkSolo(solo: string | undefined, chapterIds: readonly string[]): void {
+  if (solo === undefined || chapterIds.includes(solo)) return;
+  throw new Error(`--solo "${solo}" names no chapter; use one of ${chapterIds.join(', ')}.`);
 }
 
 function revision(): { rev: string; dirty: boolean } {
@@ -149,9 +170,9 @@ async function facts(page: Page): Promise<Facts> {
   return (await page.evaluate(() => JSON.parse(JSON.stringify(window.__met)) as unknown)) as Facts;
 }
 
-/** Writes `shots` into `dir`, which it empties first, so the folder only ever holds one run's images and its manifest. */
-async function capture(origin: string, shots: readonly Shot[], dir: string): Promise<void> {
-  rmSync(dir, { recursive: true, force: true });
+/** Writes `shots` into `dir`, which must lie inside `.shots/` and is emptied first, so the folder only ever holds one run's images and its manifest. */
+export async function capture(origin: string, shots: readonly Shot[], dir: string): Promise<void> {
+  rmSync(insideShots(dir), { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   for (const shot of shots) {
     const page = await open(origin, shot.query, shot.viewport);
@@ -170,6 +191,7 @@ async function shots(origin: string, args: Map<string, string>): Promise<void> {
   const probe = await open(origin, `shot=1&noui=1${extra}`, MODEL_VIEWPORT);
   const f = await facts(probe);
   await probe.close();
+  checkSolo(solo, f.chapters.map((c) => c.id));
   const only = args.get('presets')?.split(',').filter((id) => id !== '');
   const missing = only?.filter((id) => !f.presets.some((p) => p.id === id)) ?? [];
   if (missing.length > 0) throw new Error(`--presets names unknown preset(s) ${missing.join(', ')}; known: ${f.presets.map((p) => p.id).join(', ')}.`);
@@ -192,13 +214,14 @@ async function shots(origin: string, args: Map<string, string>): Promise<void> {
   console.log(`GPU: ${f.gpu}`);
   console.log(`Model: ${String(f.stats.pieces)} pieces, ${String(f.stats.meshes)} meshes, ${String(f.stats.triangles)} triangles at t = N.`);
   console.log(`Build ${f.perf.buildMs.toFixed(0)} ms; ready ${f.perf.readyMs?.toFixed(0) ?? '?'} ms after navigation (first probe page, cold).`);
-  const finished = await open(origin, `shot=1&noui=1&t=${String(n)}&view=aerial-ne`, MODEL_VIEWPORT);
+  // The benchmark page keeps the solo query, so it measures the same selection at its own N.
+  const finished = await open(origin, `shot=1&noui=1&t=${String(n)}&view=aerial-ne${extra}`, MODEL_VIEWPORT);
   const finishedMs = await finished.evaluate(() => {
     const met = window.__met;
     return met === undefined ? [] : [met.benchmark(30), met.benchmark(30), met.benchmark(30)];
   });
   await finished.close();
-  console.log(`Frame at t = N, aerial-ne, 1600x900, shadow update each frame: ${[...finishedMs].sort((a, b) => a - b)[1]?.toFixed(2) ?? '?'} ms (median of three means of 30).`);
+  console.log(`Frame at t = N${solo === undefined ? '' : ` (solo ${solo})`}, aerial-ne, 1600x900, shadow update each frame: ${[...finishedMs].sort((a, b) => a - b)[1]?.toFixed(2) ?? '?'} ms (median of three means of 30).`);
 }
 
 async function sweep(origin: string, args: Map<string, string>): Promise<void> {
@@ -211,13 +234,15 @@ async function sweep(origin: string, args: Map<string, string>): Promise<void> {
   const probe = await open(origin, base, MODEL_VIEWPORT);
   const f = await facts(probe);
   await probe.close();
+  checkSolo(solo, f.chapters.map((c) => c.id));
   const cams = sweepCameras(seed, count, f.bounds.min, f.bounds.max);
   const list = cams.map((cam, i) => ({ name: String(i).padStart(2, '0'), query: `${base}&cam=${cam}`, viewport: MODEL_VIEWPORT }));
   await capture(origin, list, join(OUT, `sweep-${String(seed)}-t${String(t)}`));
 }
 
-async function main(): Promise<number> {
-  const [command, ...rest] = process.argv.slice(2);
+/** One run of the command line `argv` (as after `node scripts/capture.ts`): starts the server and browser, captures, and stops both on every path. */
+export async function run(argv: readonly string[]): Promise<number> {
+  const [command, ...rest] = argv;
   if (command !== 'shots' && command !== 'sweep') {
     console.error('Usage: node scripts/capture.ts shots [--solo <chapter>] [--presets id,id] | sweep --t <t> [--count 12] [--seed <n>] [--solo <chapter>]');
     return 2;
@@ -225,10 +250,15 @@ async function main(): Promise<number> {
   const args = parseArgs(rest);
   const { rev, dirty } = revision();
   console.log(`Revision ${rev}${dirty ? ' (dirty: uncommitted changes are in these images)' : ' (clean)'}`);
-  const origin = await start();
-  console.log(`Dev server ${origin}`);
-  if (command === 'shots') await shots(origin, args);
-  else await sweep(origin, args);
+  problems.length = 0;
+  try {
+    const origin = await start();
+    console.log(`Dev server ${origin}`);
+    if (command === 'shots') await shots(origin, args);
+    else await sweep(origin, args);
+  } finally {
+    await cleanup();
+  }
   if (problems.length > 0) {
     console.error(`The page reported ${String(problems.length)} problem(s):\n${problems.join('\n')}`);
     return 1;
@@ -242,9 +272,8 @@ if (import.meta.main) {
       void cleanup().then(() => process.exit(130));
     });
   }
-  main()
-    .then(async (code) => {
-      await cleanup();
+  run(process.argv.slice(2))
+    .then((code) => {
       process.exit(code);
     })
     .catch(async (error: unknown) => {

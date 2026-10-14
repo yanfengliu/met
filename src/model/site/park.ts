@@ -10,7 +10,6 @@ import type { BufferGeometry, Material } from 'three';
 import type { StepDef } from '../../build/types.js';
 import { SITE_MAX_X, SITE_MIN_X, SITE_MIN_Z } from '../frame.js';
 import { tree } from '../lib/index.js';
-import { palette } from '../palette.js';
 import { footprintClearance } from './footprint.js';
 import type { Point } from './footprint.js';
 import { parkY, terrainY, zoneAt } from './ground.js';
@@ -141,10 +140,10 @@ function open(p: Point, r: number): boolean {
 
 /** Tree variants: one geometry per seed, scaled per tree; the crowns take three greens by turns. */
 const VARIANT_HEIGHT = 16;
-const CROWNS: readonly Material[] = [palette.foliage, siteMaterials.foliageLight, siteMaterials.foliageDeep];
+const CROWNS: readonly Material[] = [siteMaterials.foliage, siteMaterials.foliageLight, siteMaterials.foliageDeep];
 const VARIANTS = [3, 8, 14, 21, 29, 40].map((seed, k) => ({
   shape: tree({ height: VARIANT_HEIGHT, spread: VARIANT_HEIGHT * (0.72 + 0.04 * (k % 3)), seed, detail: 'medium' }),
-  crown: CROWNS[k % CROWNS.length] ?? palette.foliage,
+  crown: CROWNS[k % CROWNS.length] ?? siteMaterials.foliage,
 }));
 
 export interface PlacedTree {
@@ -203,7 +202,7 @@ export const parkTreesStep: StepDef = {
       const y = terrainY(zoneAt(t.x, t.z), t.x, t.z) - 0.15;
       const m = new Matrix4().makeRotationY(t.yaw).scale(new Vector3(t.scale, t.scale, t.scale)).setPosition(t.x, y, t.z);
       const crown: Material = variant.crown;
-      kit.add(variant.shape.trunk, palette.bark, m, k);
+      kit.add(variant.shape.trunk, siteMaterials.bark, m, k);
       kit.add(variant.shape.foliage, crown, m, k);
     });
   },

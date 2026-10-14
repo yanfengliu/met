@@ -3,14 +3,15 @@
  *
  * Query: `part=<id>` shows one exhibit alone and frames it; `view=<three-quarter|front|side|back|rear-quarter|top|low|up>` picks the angle (default three-quarter; `up` stands inside under it looking up);
  * `closeup=<name>` frames one of the exhibit's named close-up boxes; `shot=1` is capture mode (no animation, no controls, `window.__shotReady = true` once at least 5 frames have rendered);
- * `noui=1` hides the labels. `window.__parts` lists every exhibit for capture scripts.
+ * `noui=1` hides the labels. `window.__parts` lists every exhibit for capture scripts; `window.__partsView` reports, read-only, the view the gallery
+ * used (an unknown `view=` falls back to three-quarter, with a message) and the camera's position and direction.
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { catalogue } from './catalogue.js';
 import type { PartEntry } from './entry.js';
-import { boundsOf, buildExhibit, createStage, frame, light, lookUp, VIEWS, type ViewName } from './stage.js';
+import { boundsOf, buildExhibit, createStage, frame, light, lookUp, viewNamed, VIEWS, type ViewName } from './stage.js';
 
 declare global {
   interface Window {
@@ -18,6 +19,8 @@ declare global {
     __shotReady?: boolean;
     /** Every exhibit: id, label, group and the names of its close-ups. */
     __parts?: { id: string; label: string; group: string; closeups: string[] }[];
+    /** The view the gallery used and, read fresh each time, where the camera stands and the way it looks. */
+    readonly __partsView?: { readonly view: ViewName; readonly camera: { readonly position: readonly number[]; readonly direction: readonly number[] } };
   }
 }
 
@@ -32,7 +35,7 @@ const shot = params.get('shot') === '1';
 const noUi = params.get('noui') === '1';
 const partId = params.get('part');
 const viewParam = params.get('view') ?? 'three-quarter';
-const viewName: ViewName = viewParam in VIEWS ? (viewParam as ViewName) : 'three-quarter';
+const viewName: ViewName = viewNamed(viewParam) ?? 'three-quarter';
 const closeup = params.get('closeup');
 
 window.__parts = catalogue.map((entry) => ({ id: entry.id, label: entry.label, group: entry.group, closeups: Object.keys(entry.closeups ?? {}) }));
@@ -151,6 +154,18 @@ function start(): void {
     } else framed = showOne(entry);
   } else framed = showAll();
   if (viewName !== viewParam) message(`Unknown view "${viewParam}"; use one of ${Object.keys(VIEWS).join(', ')}.`);
+  Object.defineProperty(window, '__partsView', {
+    value: Object.freeze({
+      view: viewName,
+      get camera() {
+        const direction = stage.camera.getWorldDirection(new THREE.Vector3());
+        return Object.freeze({ position: Object.freeze(stage.camera.position.toArray()), direction: Object.freeze(direction.toArray()) });
+      },
+    }),
+    writable: false,
+    configurable: false,
+    enumerable: true,
+  });
   let frames = 0;
   const controls = shot ? null : new OrbitControls(stage.camera, stage.renderer.domElement);
   if (controls !== null) {

@@ -18,7 +18,9 @@ const NEAR_PER_DISTANCE = 0.01;
 /** The camera stays this far above the workspace ground. */
 const CAMERA_FLOOR = 0.4;
 /** The follow camera frames at least a sphere of this radius, so a small step does not zoom in on one stone. */
-const FOLLOW_MIN_RADIUS = 14;
+export const FOLLOW_MIN_RADIUS = 14;
+/** The follow camera stands this many times as far as the tightest fit of its box. */
+const FOLLOW_MARGIN = 1.15;
 /** Seconds for the follow camera to cover about 63% of the way to its goal. */
 const FOLLOW_TAU = 0.9;
 const FOLLOW_ELEVATION_MIN = 14 * MathUtils.DEG2RAD;
@@ -27,9 +29,11 @@ const FOLLOW_ELEVATION_MAX = 62 * MathUtils.DEG2RAD;
 export class CameraRig {
   readonly camera = new PerspectiveCamera(DEFAULT_FOV, 1, 0.1, FAR);
   readonly controls: OrbitControls;
-  /** Called when the user moves the camera by dragging, wheeling or touching (not when code moves it). */
+  /** Called when the user moves the camera by dragging, wheeling or touching (not when code moves it, even while a pointer is down). */
   onUserMove: (() => void) | null = null;
   private interacting = false;
+  /** Above 0 while the rig itself runs the controls' update, whose `change` events are the rig's own moves (the follow camera, damping, a pose), not the user's. */
+  private own = 0;
 
   constructor(
     element: HTMLElement,
@@ -51,9 +55,20 @@ export class CameraRig {
     c.addEventListener('end', () => {
       this.interacting = false;
     });
+    // The controls report a user's drag or wheel from inside their own input handlers; a change from the rig's update is the rig's own move.
     c.addEventListener('change', () => {
-      if (this.interacting) this.onUserMove?.();
+      if (this.interacting && this.own === 0) this.onUserMove?.();
     });
+  }
+
+  /** Runs the controls' update as the rig's own move; returns whether the camera moved. */
+  private sync(): boolean {
+    this.own += 1;
+    try {
+      return this.controls.update();
+    } finally {
+      this.own -= 1;
+    }
   }
 
   /**
@@ -68,8 +83,9 @@ export class CameraRig {
     this.camera.updateProjectionMatrix();
   }
 
-  /** Puts the camera at `pose` at once. */
+  /** Puts the camera at `pose` at once, dropping any rotation or pan the controls still owe from the last drag, so the camera stays where it is put. */
   setPose(pose: CameraPose): void {
+    this.stopInertia();
     if (this.camera.fov !== pose.fov) {
       this.camera.fov = pose.fov;
       this.camera.updateProjectionMatrix();
@@ -77,8 +93,19 @@ export class CameraRig {
     this.camera.position.copy(pose.position);
     this.controls.target.copy(pose.target);
     this.camera.lookAt(pose.target);
-    this.controls.update();
+    this.sync();
     this.updateClipping();
+  }
+
+  /**
+   * With damping on, OrbitControls spends a drag's rotation and pan over the following frames. One update with damping off spends what is left
+   * at once and clears it (undamped controls carry nothing over), so the pose set next is not carried away by the last drag's inertia.
+   */
+  private stopInertia(): void {
+    const damping = this.controls.enableDamping;
+    this.controls.enableDamping = false;
+    this.sync();
+    this.controls.enableDamping = damping;
   }
 
   pose(): CameraPose {
@@ -101,11 +128,11 @@ export class CameraRig {
 
   /** Applies damping and the camera floor. Returns whether the camera moved. */
   update(): boolean {
-    const moved = this.controls.update();
+    const moved = this.sync();
     const floor = this.groundY + CAMERA_FLOOR;
     if (this.camera.position.y < floor) {
       this.camera.position.y = floor;
-      this.controls.update();
+      this.sync();
     }
     this.updateClipping();
     return moved;
@@ -122,21 +149,29 @@ export class CameraRig {
     }
   }
 
-  /** Where the follow camera aims for `focus`, given the step's piece bounds and the whole model's bounds. */
+  /** Where the follow camera aims for `focus`, given the step's piece bounds and the whole model's bounds; see `followGoal`. */
   followGoal(focus: CameraFocus | undefined, stepBounds: Box3, modelBounds: Box3): CameraPose {
-    const aspect = this.camera.aspect;
-    if (focus?.kind === 'view') return { position: new Vector3(...focus.position), target: new Vector3(...focus.target), fov: DEFAULT_FOV };
-    if (focus?.kind === 'preset') {
-      const preset = presetById(focus.id);
-      if (preset !== undefined) return resolvePreset(preset, modelBounds, aspect);
-    }
-    const box = focus?.kind === 'box' ? new Box3(new Vector3(...focus.min), new Vector3(...focus.max)) : stepBounds.clone();
-    // At least FOLLOW_MIN_RADIUS across, so a small step does not zoom in on one stone.
-    box.expandByVector(new Vector3(1, 1, 1).multiplyScalar(Math.max(0, FOLLOW_MIN_RADIUS - box.getSize(new Vector3()).length() / 2) / Math.sqrt(3)));
-    const offset = this.camera.position.clone().sub(this.controls.target);
-    const horizontal = Math.hypot(offset.x, offset.z) > 1e-6 ? Math.atan2(offset.z, offset.x) : Math.PI / 4;
-    const elevation = MathUtils.clamp(Math.atan2(offset.y, Math.hypot(offset.x, offset.z)), FOLLOW_ELEVATION_MIN, FOLLOW_ELEVATION_MAX);
-    const direction = new Vector3(Math.cos(elevation) * Math.cos(horizontal), Math.sin(elevation), Math.cos(elevation) * Math.sin(horizontal));
-    return fitBox(box, direction, DEFAULT_FOV, aspect, 1.15);
+    return followGoal({ position: this.camera.position, target: this.controls.target }, this.camera.aspect, focus, stepBounds, modelBounds);
   }
+}
+
+/**
+ * Where the follow camera aims for `focus`, seen from the camera `from` at `aspect`: a `view` exactly; a `preset` as the preset resolves; a `box` or,
+ * by default, the step's piece bounds, grown evenly until its half-diagonal is at least FOLLOW_MIN_RADIUS (14 m) and framed with a 1.15 margin from
+ * the current horizontal direction, its elevation kept within 14..62 degrees.
+ */
+export function followGoal(from: { readonly position: Vector3; readonly target: Vector3 }, aspect: number, focus: CameraFocus | undefined, stepBounds: Box3, modelBounds: Box3): CameraPose {
+  if (focus?.kind === 'view') return { position: new Vector3(...focus.position), target: new Vector3(...focus.target), fov: DEFAULT_FOV };
+  if (focus?.kind === 'preset') {
+    const preset = presetById(focus.id);
+    if (preset !== undefined) return resolvePreset(preset, modelBounds, aspect);
+  }
+  const box = focus?.kind === 'box' ? new Box3(new Vector3(...focus.min), new Vector3(...focus.max)) : stepBounds.clone();
+  // At least FOLLOW_MIN_RADIUS across, so a small step does not zoom in on one stone.
+  box.expandByVector(new Vector3(1, 1, 1).multiplyScalar(Math.max(0, FOLLOW_MIN_RADIUS - box.getSize(new Vector3()).length() / 2) / Math.sqrt(3)));
+  const offset = from.position.clone().sub(from.target);
+  const horizontal = Math.hypot(offset.x, offset.z) > 1e-6 ? Math.atan2(offset.z, offset.x) : Math.PI / 4;
+  const elevation = MathUtils.clamp(Math.atan2(offset.y, Math.hypot(offset.x, offset.z)), FOLLOW_ELEVATION_MIN, FOLLOW_ELEVATION_MAX);
+  const direction = new Vector3(Math.cos(elevation) * Math.cos(horizontal), Math.sin(elevation), Math.cos(elevation) * Math.sin(horizontal));
+  return fitBox(box, direction, DEFAULT_FOV, aspect, FOLLOW_MARGIN);
 }
