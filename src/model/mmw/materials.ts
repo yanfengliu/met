@@ -65,6 +65,8 @@ export const mmwMaterials = Object.freeze({
   rock: standard('mmwRock', '#9a9890', 0.95),
   /** Flat roof decks: light grey membrane and pavers (NYC orthophoto 2018). */
   roofDeck: standard('mmwRoofDeck', '#a6a29a', 0.9),
+  /** The north end pavilion's hipped tile roof over its south range (orthophoto: brown). */
+  roofTile: standard('mmwRoofTile', '#8a5a46', 0.85),
   /** Rooftop plant and the south link's mechanical penthouse, painted metal (orthophoto: pale grey). */
   plant: standard('mmwPlant', '#b8bab8', 0.6, 0.2),
 });

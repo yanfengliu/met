@@ -2,7 +2,8 @@
  * Roofs of the McKim, Mead & White blocks as they stand today, read from the NYC orthophoto 2018 (ref-plan-ortho, docs/research/exterior-images.md #9),
  * viewed rotated into the grid frame with this area's blocks overlaid (2026-10-11):
  * - north link: flat deck, a brown roof strip over the front galleries, a gridded skylight over gallery 208 (X 62.5..75.8, Z −23.8..−10.0) and light well (3);
- * - north end pavilion: flat deck round the Astor Court (whose 1981 skylight fills its opening), a glazed ridge over the front range (Z −2.7..+8.6) and the back strip;
+ * - north end pavilion: flat deck round the Astor Court (whose 1981 skylight fills its opening), glazed hipped ranges along Fifth Avenue (Z −2.7..+8.4), along
+ *   84th Street (X 141..152) and along the Sackler line, a hipped tile roof over the south range (X 89.6..101.6) and a white raised roof east of the court;
  * - Morgan wing: a lower deck round the Arms and Armor Court's gabled clerestory roof, a field of glazed ridges over X 100..117 and light well (5), rooftop plant;
  * - south link: flat deck, glazed ridges over the front range and gallery 153 (X −83.0..−56.6, Z −18.6..−13.7), light well (1) and the mechanical penthouse (exterior.md R6);
  * - south end pavilion: a hipped metal roof from the parapet up to the curb of the Roman court's skylight, whose glass is the 2007 step's.
@@ -28,6 +29,12 @@ const NORTH_SKYLIGHT_208: Rect = [62.5, -23.8, 75.8, -10.0];
 const NORTH_FRONT_RANGE: Rect = [49.4, -10.95, 88.6, -3.2];
 const NORTH_PAVILION_RIDGE: Rect = [90.5, -2.7, 151.4, 8.4];
 const NORTH_PAVILION_BACK: Rect = [100.0, -40.5, 151.9, -33.5];
+const NORTH_PAVILION_84TH: Rect = [141.0, -33.5, 151.9, -2.7];
+const NORTH_PAVILION_TILE: Rect = [89.6, -33.4, 101.6, -2.8];
+/** The tile roof's ridge: the hips run in half its width from each end. */
+const NORTH_TILE_RIDGE: Rect = [95.55, -27.4, 95.65, -8.8];
+const NORTH_TILE_RISE = 3.0;
+const NORTH_PAVILION_WHITE: Rect = [133.6, -24.2, 141.0, -2.8];
 const MORGAN_RIDGES: Rect = [100.0, -95.2, 117.2, -41.3];
 const SOUTH_SKYLIGHT_153: Rect = [-83.0, -18.6, -56.6, -13.7];
 const SOUTH_FRONT_RANGE: Rect = [-87.5, -10.0, -50.0, -3.4];
@@ -81,6 +88,8 @@ const wing = (block: string): (typeof WINGS)[number] => {
 };
 const interior = (block: string): readonly Rect[] => wing(block).storeys.find((s) => s.level === '1')?.slab ?? [];
 
+let northTile: ReturnType<MeshBuilder['build']> | null = null;
+
 /** The north campaign's roofs (the Arms and Armor Court's clerestory roof is its own step). */
 export function buildNorthRoofs(kit: Kit): void {
   const e = interior('north-e');
@@ -91,9 +100,15 @@ export function buildNorthRoofs(kit: Kit): void {
   if (well3 !== undefined) lining(kit, well3, LEVEL_2_FRONT, LINK_ROOF_Y + 0.6, 3);
 
   const h = interior('north-h');
-  deck(kit, mmwMaterials.roofDeck, h, [ASTOR_COURT, NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK], END_ROOF_Y, 10);
-  deck(kit, mmwMaterials.roofDeck, [NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK], [], END_ROOF_Y - 0.6, 11);
+  deck(kit, mmwMaterials.roofDeck, h, [ASTOR_COURT, NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK, NORTH_PAVILION_84TH], END_ROOF_Y, 10);
+  deck(kit, mmwMaterials.roofDeck, [NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK, NORTH_PAVILION_84TH], [], END_ROOF_Y - 0.6, 11);
   lining(kit, ASTOR_COURT, END_ROOF_Y - SLAB, END_ROOF_Y + 0.5, 14);
+  northTile ??= hipRing(NORTH_PAVILION_TILE, NORTH_TILE_RIDGE, END_ROOF_Y, NORTH_TILE_RISE).build();
+  kit.add(northTile, mmwMaterials.roofTile, new Matrix4(), 12);
+  const [rx0r, rz0r, rx1r, rz1r] = NORTH_TILE_RIDGE;
+  addBox(kit, mmwMaterials.roofTile, rx0r - 0.15, END_ROOF_Y + NORTH_TILE_RISE - 0.1, rz0r - 0.1, rx1r + 0.15, END_ROOF_Y + NORTH_TILE_RISE + 0.12, rz1r + 0.1, 12);
+  const [wx0, wz0, wx1, wz1] = NORTH_PAVILION_WHITE;
+  addBox(kit, palette.plaster, wx0, END_ROOF_Y, wz0, wx1, END_ROOF_Y + 1.2, wz1, 13);
 
   const f = interior('north-f');
   const well5 = wing('north-f').lightWells[0]?.rect;
@@ -109,6 +124,7 @@ export function buildNorthRoofs(kit: Kit): void {
       { rect: NORTH_SKYLIGHT_208, y: LINK_ROOF_Y, alongX: false, pitch: 16 },
       { rect: NORTH_PAVILION_RIDGE, y: END_ROOF_Y - 0.6, alongX: true, pitch: 24 },
       { rect: NORTH_PAVILION_BACK, y: END_ROOF_Y - 0.6, alongX: true, pitch: 26 },
+      { rect: NORTH_PAVILION_84TH, y: END_ROOF_Y - 0.6, alongX: false, pitch: 26 },
       ...Array.from({ length: count }, (_, k): Ridge => ({ rect: [rx0, rz0 + k * pitchWidth, rx1, rz0 + (k + 1) * pitchWidth], y: MORGAN_ROOF_Y - 0.4, alongX: true, pitch: 32 })),
     ],
     22,
