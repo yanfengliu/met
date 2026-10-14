@@ -107,6 +107,34 @@ async function unreachable(page: Page, menu: string, ids: readonly string[]): Pr
   }, [menu, ids] as const);
 }
 
+/**
+ * Chapters whose menu item does not show its summary as text (docs/design/spec.md, Page: the menu shows years and summary), as messages: the
+ * item's `chapter-summary-<id>` element must hold the summary and, scrolled into view, be visible, unclipped and inside its item.
+ */
+async function missingSummaries(page: Page, chapters: Facts['chapters']): Promise<string[]> {
+  return page.evaluate((list) => {
+    const byId = (root: ParentNode, id: string): HTMLElement | undefined => Array.from(root.querySelectorAll<HTMLElement>('[data-testid]')).find((e) => e.dataset['testid'] === id);
+    const out = list.flatMap(({ id, summary }) => {
+      const item = byId(document, `chapter-${id}`);
+      if (item === undefined) return [`chapter-${id}: no menu item`];
+      const text = byId(item, `chapter-summary-${id}`);
+      if (text === undefined) return [`chapter-${id}: no summary text in the item`];
+      if (text.textContent !== summary) return [`chapter-${id}: summary reads "${text.textContent}"`];
+      text.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      const r = text.getBoundingClientRect();
+      const box = item.getBoundingClientRect();
+      const style = getComputedStyle(text);
+      if (!(r.width * r.height > 0) || style.visibility === 'hidden') return [`chapter-${id}: summary hidden`];
+      if (text.scrollWidth > text.clientWidth + 1 || text.scrollHeight > text.clientHeight + 1) return [`chapter-${id}: summary clipped`];
+      if (r.left < box.left - 0.5 || r.right > box.right + 0.5 || r.top < box.top - 0.5 || r.bottom > box.bottom + 0.5) return [`chapter-${id}: summary outside its item`];
+      return [];
+    });
+    const panel = byId(document, 'chapter-menu');
+    if (panel !== undefined) panel.scrollTop = 0;
+    return out;
+  }, chapters.map((c) => ({ id: c.id, summary: c.summary })));
+}
+
 for (const viewport of VIEWPORTS) {
   test.describe(`layout at ${String(viewport.width)}x${String(viewport.height)}`, () => {
     test.use({ viewport });
@@ -133,6 +161,7 @@ for (const viewport of VIEWPORTS) {
         expect(inside.length, `${menu}: controls in view`).toBeGreaterThan(0);
         expectLaidOut(inside, viewport, `${menu} open`);
         expect(await unreachable(page, menu, required[menu]), `${menu}: controls that cannot be scrolled into the panel`).toEqual([]);
+        if (menu === 'chapter-menu') expect(await missingSummaries(page, f.chapters), 'chapter items that do not show their summary').toEqual([]);
         await page.keyboard.press('Escape');
       }
       expect(f.chapters.length).toBeGreaterThan(0);

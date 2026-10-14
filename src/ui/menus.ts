@@ -54,16 +54,22 @@ export class ChapterMenu {
     this.disclosure = new Disclosure('Chapters', 'chapter-menu', 'Chapters', 'menu');
     this.items = chapters.map((chapter) => {
       const empty = chapter.count === 0;
+      // The summary is text in the item, not only a tooltip, so touch screens show it too; it describes the item for screen readers.
+      const summaryId = `met-chapter-summary-${chapter.id}`;
       const item = el('button', {
-        className: 'met-item',
+        className: 'met-item met-chapter',
         testid: `chapter-${chapter.id}`,
         attrs: {
           type: 'button',
           role: 'menuitem',
           'aria-label': `${chapter.title}, ${chapter.years}${empty ? ', no steps yet' : ''}`,
-          title: empty ? `${chapter.summary} (No steps yet.)` : chapter.summary,
+          'aria-describedby': summaryId,
         },
-      }, [el('span', { text: chapter.title }), el('span', { className: 'met-years', text: empty ? `${chapter.years} · no steps yet` : chapter.years })]);
+      }, [
+        el('span', { text: chapter.title }),
+        el('span', { className: 'met-years', text: empty ? `${chapter.years} · no steps yet` : chapter.years }),
+        el('span', { className: 'met-summary', testid: `chapter-summary-${chapter.id}`, text: chapter.summary, attrs: { id: summaryId } }),
+      ]);
       item.disabled = empty;
       item.addEventListener('click', (event) => {
         choose(chapter.first);

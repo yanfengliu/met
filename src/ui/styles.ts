@@ -51,6 +51,9 @@ const CSS = /* css */ `
 .met-item:disabled { color: var(--met-dim); opacity: 0.6; cursor: default; background: transparent; }
 .met-item[aria-current="true"], .met-item[aria-pressed="true"] { color: var(--met-accent); }
 .met-item .met-years { color: var(--met-dim); font-size: 12px; white-space: nowrap; }
+/* Chapter items: title and years on the first line, the summary as a wrapped line of text under them. */
+.met-chapter { flex-wrap: wrap; row-gap: 3px; }
+.met-chapter .met-summary { display: block; flex: 1 0 100%; color: var(--met-dim); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
 .met-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; flex-wrap: wrap; }
 .met-row input[type="range"] { flex: 1 1 140px; min-width: 120px; accent-color: var(--met-accent); }
 .met-row output { min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--met-dim); }
