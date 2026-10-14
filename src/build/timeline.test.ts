@@ -2,8 +2,11 @@
  * Timeline: determinism over seeded random histories, rest positions, batching rules and step lights (docs/design/spec.md, Timeline position, Determinism, Batching).
  * Bound: the synthetic fixture crosses all 5 motions with all 8 staggers; the determinism check also runs on whatever src/build/sequence.ts exports.
  * Snapshots compare raw float32 bytes of every instance matrix and colour, plus counts, mesh visibility and light intensities; a fresh evaluation is a new Timeline evaluated once.
+ * Landed pieces are also checked against the kit itself, not another evaluation: at t = N (fixture and real sequence) and after random histories, each mesh
+ * holds exactly the float32 matrices `kit.add` was given with its geometry and material, recorded by wrapping each step's build.
  */
 import { BoxGeometry, Matrix4, MeshStandardMaterial, PointLight } from 'three';
+import type { BufferGeometry, Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { CHAPTERS } from './chapters.js';
@@ -17,6 +20,74 @@ function fresh(steps: readonly StepDef[], t: number): Timeline {
   const timeline = new Timeline(steps);
   timeline.evaluate(t);
   return timeline;
+}
+
+interface Added {
+  readonly geometry: BufferGeometry;
+  readonly material: Material;
+  readonly matrix: Matrix4;
+}
+
+/** `steps` with each build wrapped to record what it hands `kit.add`, so the pieces are the very ones the timeline built from. */
+function recording(steps: readonly StepDef[]): { readonly steps: StepDef[]; readonly added: Added[][] } {
+  const added: Added[][] = steps.map(() => []);
+  const wrapped = steps.map((step, i): StepDef => ({
+    ...step,
+    build(kit) {
+      step.build({
+        add(geometry, material, matrix, order) {
+          added[i]?.push({ geometry, material, matrix: matrix.clone() });
+          kit.add(geometry, material, matrix, order);
+        },
+        light(light) {
+          kit.light(light);
+        },
+      });
+    },
+  }));
+  return { steps: wrapped, added };
+}
+
+/**
+ * For steps 1..k (complete at t = k), checked against the kit itself rather than against another evaluation: each mesh shows all its pieces and its
+ * instance matrices are, as a multiset in float32, exactly the matrices `kit.add` was given with that mesh's geometry and material. One message per
+ * mismatch. Slot order within a mesh is the arrival order, checked by the batching tests.
+ */
+function landedMismatches(added: readonly (readonly Added[])[], timeline: Timeline, k: number): string[] {
+  const key = (e: ArrayLike<number>, offset = 0): string => Array.from({ length: 16 }, (_, i) => Math.fround(e[offset + i] ?? Number.NaN)).join(',');
+  const problems: string[] = [];
+  for (let i = 0; i < k; i += 1) {
+    const pieces = added[i];
+    const built = timeline.steps[i];
+    if (pieces === undefined || built === undefined) {
+      problems.push(`step ${String(i)} is missing`);
+      continue;
+    }
+    const step = built.def;
+    const groups = new Map<BufferGeometry, Map<Material, string[]>>();
+    for (const p of pieces) {
+      const byMaterial = groups.get(p.geometry) ?? new Map<Material, string[]>();
+      groups.set(p.geometry, byMaterial);
+      byMaterial.set(p.material, [...(byMaterial.get(p.material) ?? []), key(p.matrix.elements)]);
+    }
+    let matched = 0;
+    for (const mesh of built.meshes) {
+      const expected = Array.isArray(mesh.material) ? undefined : groups.get(mesh.geometry)?.get(mesh.material);
+      if (expected === undefined) {
+        problems.push(`${step.id}: mesh ${mesh.name} has no kit.add pieces of its geometry and material`);
+        continue;
+      }
+      matched += 1;
+      if (mesh.count !== expected.length) problems.push(`${step.id}: mesh ${mesh.name} shows ${String(mesh.count)} of its ${String(expected.length)} pieces`);
+      const actual = Array.from({ length: mesh.instanceMatrix.count }, (_, s) => key(mesh.instanceMatrix.array, s * 16)).sort();
+      const wanted = [...expected].sort();
+      const wrong = actual.filter((a, j) => a !== wanted[j]).length + Math.abs(actual.length - wanted.length);
+      if (wrong > 0) problems.push(`${step.id}: mesh ${mesh.name} holds ${String(wrong)} instance matrices other than its kit.add matrices`);
+    }
+    const pairs = [...groups.values()].reduce((n, m) => n + m.size, 0);
+    if (matched !== pairs) problems.push(`${step.id}: ${String(pairs)} geometry and material pairs but ${String(matched)} meshes for them`);
+  }
+  return problems;
 }
 
 type Operation = (player: Player, rand: () => number) => void;
@@ -115,6 +186,34 @@ describe('timeline rest positions', () => {
     });
   });
 
+  it('holds, at t = N, the matrix kit.add was given for every piece, in the mesh of its geometry and material', () => {
+    for (const source of [steps, SEQUENCE]) {
+      const recorded = recording(source);
+      const timeline = fresh(recorded.steps, source.length);
+      expect(recorded.added.flat().length, 'pieces recorded').toBe(timeline.stats().pieces);
+      expect(landedMismatches(recorded.added, timeline, source.length)).toEqual([]);
+    }
+  });
+
+  it.each([21, 22, 23])('still holds the kit.add matrices after random history %i, at a rest position and at t = N', (seed) => {
+    const rand = random(seed);
+    const recorded = recording(steps);
+    const timeline = new Timeline(recorded.steps);
+    const player = new Player(steps.map((s) => s.weight ?? 1));
+    for (let i = 0; i < 60; i += 1) {
+      OPERATIONS[Math.floor(rand() * OPERATIONS.length)]?.(player, rand);
+      for (let k = 1 + Math.floor(rand() * 4); k > 0; k -= 1) {
+        player.tick(rand() * rand() * 2);
+        timeline.evaluate(player.t);
+      }
+    }
+    const k = 1 + Math.floor(rand() * (steps.length - 1));
+    timeline.evaluate(k);
+    expect(landedMismatches(recorded.added, timeline, k), `seed ${String(seed)} at t = ${String(k)}`).toEqual([]);
+    timeline.evaluate(steps.length);
+    expect(landedMismatches(recorded.added, timeline, steps.length), `seed ${String(seed)} at t = N`).toEqual([]);
+  });
+
   it('moves pieces strictly inside a step and tints them', () => {
     const timeline = fresh(steps, 12.5);
     const step = timeline.steps[12];
@@ -149,6 +248,8 @@ describe('batching', () => {
       ['cube', 'b', 1],
       ['other', 'a', 1],
     ]);
+    // Each mesh holds the matrices given with its own pair, in arrival order (by call order here): X of each instance's translation.
+    expect(meshes.map((m) => Array.from({ length: m.instanceMatrix.count }, (_, s) => m.instanceMatrix.array[s * 16 + 12]))).toEqual([[0, 2, 8], [4], [6]]);
   });
 
   it('never shares a mesh between steps, even for the same geometry and material', () => {
