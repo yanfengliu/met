@@ -1,8 +1,11 @@
 /**
  * Shared materials (docs/design/spec.md, Batching): builders take materials from here, never cloning one per piece, so equal pieces batch into one InstancedMesh.
  * Owner: the engine creates; others request changes. Base colours come from docs/research/exterior.md section 8 ([C1]..[C7], photographed sRGB) and the
- * colour notes of docs/research/interior.md (suggested bases), as each entry says; limestone is calibrated so the sunlit Fifth Avenue front renders
- * near its photographed #E4E0D7 (see the handoff of the engine worker, 2026-10-11).
+ * colour notes of docs/research/interior.md (suggested bases), as each entry says. The three stones were recalibrated on 2026-10-13 (integration worker) by
+ * sampling matched patches of the ref-front-axis and ref-front-street renders against their photographs (Schneider 2019, Haklai 2012): the sunlit front's
+ * columns, walls and spandrels rendered (213, 209, 203) against the photographs' (172, 162, 146) and (208, 203, 193), and a north wall in shade in
+ * ref-park-northwest rendered (165, 163, 159) against King of Hearts 2013's (148, 147, 142). All three were scaled by the same linear factors (0.80, 0.78, 0.74),
+ * so the front now renders (203, 197, 188), between its two photographs, and the shaded wall (149, 145, 138).
  * No texture is fetched. Shadows: a material with `userData.castShadow === false`, or any transparent one, never casts shadows (see `castsShadow` in src/build/batch.ts):
  * glass and water because they are clear, and the flat ground materials because a slab on the ground shades nothing and would only widen the sun's shadow camera.
  */
@@ -67,12 +70,12 @@ const water = new MeshPhysicalMaterial({
 water.userData['castShadow'] = false;
 
 export const palette = Object.freeze({
-  /** Indiana limestone, the Hunt and McKim, Mead & White facades: [C1] attic wall #E4E0D7 overcast, piers #D5D4CF, shafts #CBC8C2..#D0CBC4. */
-  limestone: standard('limestone', { colour: '#d6d1c6', roughness: 0.82 }),
-  /** Weathered or shaded limestone: plinths, string courses, cresting ([C3] weathered cresting #89857D). */
-  limestoneDark: standard('limestoneDark', { colour: '#a29d93', roughness: 0.86 }),
-  /** Grey granite: steps, pedestals, landing edges ([C2] #918B81, #8C867D). */
-  granite: standard('granite', { colour: '#918b81', roughness: 0.66 }),
+  /** Indiana limestone, the Hunt and McKim, Mead & White facades: [C1] attic wall #E4E0D7 overcast, piers #D5D4CF, shafts #CBC8C2..#D0CBC4; calibrated as the header says. */
+  limestone: standard('limestone', { colour: '#c2bbad', roughness: 0.82 }),
+  /** Weathered or shaded limestone: plinths, string courses, cresting ([C3] weathered cresting #89857D); scaled with limestone. */
+  limestoneDark: standard('limestoneDark', { colour: '#928c81', roughness: 0.86 }),
+  /** Grey granite: steps, pedestals, landing edges ([C2] #918B81, #8C867D); scaled with limestone. */
+  granite: standard('granite', { colour: '#837c70', roughness: 0.66 }),
   /** Red brick of the 1880 Vaux building ([C7] about #9A4B3A; its granite bands are about #B9B4AA). */
   brick: standard('brick', { colour: '#9a4b3a', roughness: 0.9 }),
   /** Sandstone: the Temple of Dendur (interior.md, Dendur: suggested base #a07a58). */

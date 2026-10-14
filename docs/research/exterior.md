@@ -142,6 +142,7 @@ Colours are means of 17×17 px patches read from the image file in the browser, 
 - [C5] Sidewalk concrete #787878, asphalt #67757B (S8). **M** (photo).
 - [C6] Roofs: brownish membrane or lead roofs about #8A7867, skylight glass blue-grey about #6F8FA8, park-side glass walls blue-grey about #7A93A6. **E** by eye from S5.
 - [C7] Red brick of the 1880 west front about #9A4B3A with grey-white granite bands about #B9B4AA. **E** (no sample in this run).
+- Note (integration worker, 2026-10-13): matched patches (17×17 px means) of the columns, wall faces and spandrels of the central bays read (172, 162, 146) in S7 (Schneider 2019, `ref-front-axis`) and (208, 203, 193) in S8 (Haklai 2012, `ref-front-street`), against (213, 209, 203) in the renders of those presets; the attic band read (207, 200, 188) and (222, 218, 212); a limestone north wall in shade in King of Hearts 2013 (`ref-park-northwest`) read (148, 147, 142) against (165, 163, 159) rendered. The palette's limestone, limestoneDark and granite were scaled by the same linear factors (0.80, 0.78, 0.74), so the front now renders (203, 197, 188) and the shaded wall (149, 145, 138). Both front photographs show the facade in shade or overcast light, the render a sunlit one, so the match is of overall tone, not of lighting.
 
 ## 9. Conflicts and open questions
 
