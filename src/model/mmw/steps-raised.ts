@@ -1,6 +1,6 @@
 /**
- * The shared walls this area owns, carried up when the newer wings rose higher against them (party-walls.ts): one step in each of the newer wings' chapters.
- * The north step is composed into `roche-north-1980` through astorCourt1981Steps (index.ts); the south one waits for a slot in `roche-south-1990`.
+ * The shared walls this area owns, carried up when the newer wings rose higher against them (party-walls.ts): one step in each of the newer wings' chapters,
+ * composed at the head of `roche-north-1980` and `roche-south-1990` (index.ts, src/build/sequence.ts), so each wall rises before the newer wing's roof.
  */
 import type { StepDef } from '../../build/types.js';
 import { buildRaisedWalls, NORTH_RAISES, SOUTH_RAISES } from './party-walls.js';

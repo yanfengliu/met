@@ -18,11 +18,11 @@ export const mmwSteps: readonly StepDef[] = [...northFrontSteps, ...armorCourtSt
 /** Chapter `koch-plaza-2014`: the Greek and Roman court's upper storey and skylight (2007). */
 export const greekRomanCourt2007Steps: readonly StepDef[] = greekCourt2007;
 
-/**
- * Chapter `roche-north-1980`: the Morgan wing's walls raised against the Sackler and American wings (1978–1980), then the Astor Court (1981).
- * Composed after rocheNorthSteps, so the walls rise after those wings' roofs; a separate array composed before them would keep the walls-then-roof order.
- */
-export const astorCourt1981Steps: readonly StepDef[] = [northWallsRaisedStep, ...astorCourtSteps];
+/** Chapter `roche-north-1980`, composed before rocheNorthSteps: the Morgan wing's walls raised against the Sackler and American wings (1978–1980), before their roofs. */
+export const northWallsRaised1978Steps: readonly StepDef[] = [northWallsRaisedStep];
 
-/** Chapter `roche-south-1990`: the south link's walls raised against the Rockefeller and Kravis wings (1982–1990). Not composed yet: sequence.ts needs the slot. */
+/** Chapter `roche-north-1980`, composed after rocheNorthSteps: the Astor Court (1981). */
+export const astorCourt1981Steps: readonly StepDef[] = astorCourtSteps;
+
+/** Chapter `roche-south-1990`, composed before rocheSouthSteps: the south link's walls raised against the Rockefeller and Kravis wings (1982–1990), before their roofs. */
 export const southWallsRaised1990Steps: readonly StepDef[] = [southWallsRaisedStep];

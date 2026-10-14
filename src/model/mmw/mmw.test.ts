@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CHAPTERS } from '../../build/chapters.js';
 import { collectStep } from '../../build/kit.js';
+import { SEQUENCE } from '../../build/sequence.js';
 import { Timeline } from '../../build/timeline.js';
 import type { Kit, StepDef } from '../../build/types.js';
 import { SACKLER_GLASS_TOP_Y } from '../frame.js';
@@ -23,10 +24,10 @@ import { RF_ROOF_Y } from '../roche-south/rockefeller.js';
 import { buildFrontCornices, buildFrontOrders } from './facade.js';
 import { FRONTS } from './facade-layout.js';
 import { normalOf } from './shapes.js';
-import { astorCourt1981Steps, greekRomanCourt2007Steps, mmwSteps, southWallsRaised1990Steps } from './index.js';
+import { astorCourt1981Steps, greekRomanCourt2007Steps, mmwSteps, northWallsRaised1978Steps, southWallsRaised1990Steps } from './index.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const ALL: readonly StepDef[] = [...mmwSteps, ...greekRomanCourt2007Steps, ...astorCourt1981Steps, ...southWallsRaised1990Steps];
+const ALL: readonly StepDef[] = [...mmwSteps, ...greekRomanCourt2007Steps, ...northWallsRaised1978Steps, ...astorCourt1981Steps, ...southWallsRaised1990Steps];
 
 type Rect = readonly [number, number, number, number];
 /** The five blocks as rectangles [x0, z0, x1, z1]; mmw-north-f is the union of two. */
@@ -83,9 +84,9 @@ describe('mmw steps', () => {
     expect(mmwSteps.length).toBeGreaterThan(0);
     expect(mmwSteps.filter((s) => s.chapter !== 'mckim-mead-white-1926').map((s) => s.id)).toEqual([]);
     expect(greekRomanCourt2007Steps.filter((s) => s.chapter !== 'koch-plaza-2014' || s.year !== '2007').map((s) => s.id)).toEqual([]);
+    expect(northWallsRaised1978Steps.map((s) => `${s.id} ${s.chapter} ${String(s.year)}`)).toEqual(['mmw-north-walls-raised roche-north-1980 1978–1980']);
     expect(astorCourt1981Steps.filter((s) => s.chapter !== 'roche-north-1980').map((s) => s.id)).toEqual([]);
     expect(astorCourt1981Steps.map((s) => `${s.id} ${String(s.year)}`)).toEqual([
-      'mmw-north-walls-raised 1978–1980',
       'astor-court-floor-walls 1981',
       'astor-court-walk-pavilion 1981',
       'astor-court-garden 1981',
@@ -94,6 +95,15 @@ describe('mmw steps', () => {
     expect(southWallsRaised1990Steps.filter((s) => s.chapter !== 'roche-south-1990').map((s) => s.id)).toEqual([]);
     expect(ALL.filter((s) => s.year === undefined).map((s) => s.id)).toEqual([]);
     expect(CHAPTERS.some((c) => c.id === 'mckim-mead-white-1926')).toBe(true);
+  });
+
+  it('are all composed into the sequence, each wall raise first in the chapter of the wings it rises against', () => {
+    // The south raise sat uncomposed and the Rockefeller and Kravis top galleries showed sky over +17.7 (coordinator, 2026-10-13).
+    const ids = SEQUENCE.map((s) => s.id);
+    expect(ALL.filter((s) => !ids.includes(s.id)).map((s) => s.id)).toEqual([]);
+    const first = (chapter: string): number => SEQUENCE.findIndex((s) => s.chapter === chapter);
+    expect(ids.indexOf('mmw-north-walls-raised')).toBe(first('roche-north-1980'));
+    expect(ids.indexOf('mmw-south-walls-raised')).toBe(first('roche-south-1990'));
   });
 
   it('put the roofs and skylights after the walls and interiors of their campaign', () => {
@@ -155,8 +165,8 @@ describe('mmw shared walls', () => {
   /**
    * Each wall this area builds on a line shared with a newer, taller wing must reach that wing's roof once raised, or the newer wing's top-floor rooms see sky
    * over the old coping (the Dendur hall and the Engelhard Court did, 2026-10-13). The neighbours' heights are read from their own modules, so a change there
-   * fails here. Bound: the built pieces of this area's four exports, walls found by their boxes inside the wall's 0.8 m plan strip; it cannot see whether
-   * src/build/sequence.ts composes every export (southWallsRaised1990Steps is not composed yet).
+   * fails here. Bound: the built pieces of this area's exports, walls found by their boxes inside the wall's 0.8 m plan strip; it cannot see whether
+   * src/build/sequence.ts composes every export (it composes all five since 2026-10-13).
    */
   const LINES: readonly { readonly name: string; readonly strip: Rect; readonly roof: number }[] = [
     { name: 'Sackler on X 118', strip: [117.2, -96.0, 118.0, -41.3], roof: SACKLER_GLASS_TOP_Y },
