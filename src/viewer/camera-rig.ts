@@ -27,9 +27,11 @@ const FOLLOW_ELEVATION_MAX = 62 * MathUtils.DEG2RAD;
 export class CameraRig {
   readonly camera = new PerspectiveCamera(DEFAULT_FOV, 1, 0.1, FAR);
   readonly controls: OrbitControls;
-  /** Called when the user moves the camera by dragging, wheeling or touching (not when code moves it). */
+  /** Called when the user moves the camera by dragging, wheeling or touching (not when code moves it, even while a pointer is down). */
   onUserMove: (() => void) | null = null;
   private interacting = false;
+  /** Above 0 while the rig itself runs the controls' update, whose `change` events are the rig's own moves (the follow camera, damping, a pose), not the user's. */
+  private own = 0;
 
   constructor(
     element: HTMLElement,
@@ -51,9 +53,20 @@ export class CameraRig {
     c.addEventListener('end', () => {
       this.interacting = false;
     });
+    // The controls report a user's drag or wheel from inside their own input handlers; a change from the rig's update is the rig's own move.
     c.addEventListener('change', () => {
-      if (this.interacting) this.onUserMove?.();
+      if (this.interacting && this.own === 0) this.onUserMove?.();
     });
+  }
+
+  /** Runs the controls' update as the rig's own move; returns whether the camera moved. */
+  private sync(): boolean {
+    this.own += 1;
+    try {
+      return this.controls.update();
+    } finally {
+      this.own -= 1;
+    }
   }
 
   /**
@@ -78,7 +91,7 @@ export class CameraRig {
     this.camera.position.copy(pose.position);
     this.controls.target.copy(pose.target);
     this.camera.lookAt(pose.target);
-    this.controls.update();
+    this.sync();
     this.updateClipping();
   }
 
@@ -89,7 +102,7 @@ export class CameraRig {
   private stopInertia(): void {
     const damping = this.controls.enableDamping;
     this.controls.enableDamping = false;
-    this.controls.update();
+    this.sync();
     this.controls.enableDamping = damping;
   }
 
@@ -113,11 +126,11 @@ export class CameraRig {
 
   /** Applies damping and the camera floor. Returns whether the camera moved. */
   update(): boolean {
-    const moved = this.controls.update();
+    const moved = this.sync();
     const floor = this.groundY + CAMERA_FLOOR;
     if (this.camera.position.y < floor) {
       this.camera.position.y = floor;
-      this.controls.update();
+      this.sync();
     }
     this.updateClipping();
     return moved;
