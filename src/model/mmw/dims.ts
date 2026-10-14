@@ -81,6 +81,11 @@ export const FOOTING_DEPTH = 1.2;
 export const END_ARCHITRAVE_Y = 16.2;
 export const END_CORNICE_Y = 19.35;
 export const END_PARAPET_Y = 21.5;
+/**
+ * Top of the south link's park wall (Z −69.0) once the Kravis Wing (1990) rose against it: that wing's parapet, roche-south kravis.ts KRAVIS_ROOF_Y + 1.0.
+ * A neighbour's number restated here because frame.ts has no constant for it (requested in the handoff, 2026-10-13).
+ */
+export const KRAVIS_LINE_TOP_Y = 19.6;
 /** Flat roof decks: the links' behind the coping over their cornice, the end pavilions' behind the parapet. D: each a cornice or parapet upstand below. */
 export const LINK_ROOF_Y = MMW_CORNICE_Y - 0.9;
 export const END_ROOF_Y = END_PARAPET_Y - 1.0;

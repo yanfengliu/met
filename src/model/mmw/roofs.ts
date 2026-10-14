@@ -15,7 +15,7 @@ import type { BufferGeometry, Material } from 'three';
 import type { Kit } from '../../build/types.js';
 import { MeshBuilder, ridgeSkylight } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { END_ROOF_Y, LEVEL_2_FRONT, LEVEL_2_NORTH, LINK_ROOF_Y, MORGAN_ROOF_Y, SLAB, SOUTH_HIP_RISE } from './dims.js';
+import { END_PARAPET_Y, END_ROOF_Y, LEVEL_2_FRONT, LEVEL_2_NORTH, LINK_ROOF_Y, LINK_TIER, MORGAN_ROOF_Y, SLAB, SOUTH_HIP_RISE } from './dims.js';
 import { mmwMaterials } from './materials.js';
 import { merged } from './merge.js';
 import { addBox, placed } from './shapes.js';
@@ -130,9 +130,9 @@ export function buildNorthRoofs(kit: Kit): void {
     22,
   );
   if (well5 !== undefined) lining(kit, well5, LEVEL_2_NORTH, MORGAN_ROOF_Y + 0.6, 40);
-  // Steps up from the Morgan wing's lower deck to the link's and the pavilion's.
-  addBox(kit, palette.limestone, 49.4, MORGAN_ROOF_Y - SLAB, -38.5, 88.6, LINK_ROOF_Y + 0.6, -37.9, 41);
-  addBox(kit, palette.limestone, 88.6, MORGAN_ROOF_Y - SLAB, -41.3, 118.0, END_ROOF_Y + 0.6, -40.7, 41);
+  // Steps up from the Morgan wing's lower deck to the link's coping and the pavilion's parapet.
+  addBox(kit, palette.limestone, 49.4, MORGAN_ROOF_Y - SLAB, -38.5, 88.6, LINK_TIER.top + 0.35, -37.9, 41);
+  addBox(kit, palette.limestone, 88.6, MORGAN_ROOF_Y - SLAB, -41.3, 118.0, END_PARAPET_Y, -40.7, 41);
   // Rooftop plant over the auditorium and the court's north end (orthophoto).
   for (let k = 0; k < 6; k += 1) addBox(kit, mmwMaterials.plant, 55.5 + k * 4.0, MORGAN_ROOF_Y, -49.0, 58.3 + k * 4.0, MORGAN_ROOF_Y + 2.2, -43.5, 42);
   for (const [x, z] of [[88.5, -62.5], [93.5, -62.5], [88.5, -55.5], [93.5, -55.5]] as const) addBox(kit, mmwMaterials.plant, x - 2.2, MORGAN_ROOF_Y, z - 2.2, x + 2.2, MORGAN_ROOF_Y + 1.6, z + 2.2, 43);

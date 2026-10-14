@@ -5,10 +5,10 @@
  * Exterior-moulding rule (coordinator, 2026-10-11): cornices, string courses, sills, mouldings and their modillions and dentils may reach 1.5 m beyond the exterior
  * faces (the fronts' runs in facade-layout.ts); walls never. The pieces the rule covers are those buildFrontCornices and buildFrontOrders add (cornices, entablature,
  * water table, cresting, and the pilasters' moulded bases and capitals), collected below by geometry.
- * Budget (coordinator): at most 500,000 triangles counting instances, 160 instanced meshes and 1 step light over all three exports.
+ * Budget (coordinator): at most 500,000 triangles counting instances, 160 instanced meshes and 1 step light over all four exports.
  * Bound: geometry is built in Node without WebGL; the check is on vertex positions, so a face between two in-bounds vertices is not checked separately.
  */
-import { Matrix4, Vector3 } from 'three';
+import { Box3, Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 import { describe, expect, it } from 'vitest';
 
@@ -16,13 +16,17 @@ import { CHAPTERS } from '../../build/chapters.js';
 import { collectStep } from '../../build/kit.js';
 import { Timeline } from '../../build/timeline.js';
 import type { Kit, StepDef } from '../../build/types.js';
+import { SACKLER_GLASS_TOP_Y } from '../frame.js';
+import { AW_PARAPET_Y } from '../roche-north/american.js';
+import { KRAVIS_ROOF_Y } from '../roche-south/kravis.js';
+import { RF_ROOF_Y } from '../roche-south/rockefeller.js';
 import { buildFrontCornices, buildFrontOrders } from './facade.js';
 import { FRONTS } from './facade-layout.js';
 import { normalOf } from './shapes.js';
-import { astorCourt1981Steps, greekRomanCourt2007Steps, mmwSteps } from './index.js';
+import { astorCourt1981Steps, greekRomanCourt2007Steps, mmwSteps, southWallsRaised1990Steps } from './index.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const ALL: readonly StepDef[] = [...mmwSteps, ...greekRomanCourt2007Steps, ...astorCourt1981Steps];
+const ALL: readonly StepDef[] = [...mmwSteps, ...greekRomanCourt2007Steps, ...astorCourt1981Steps, ...southWallsRaised1990Steps];
 
 type Rect = readonly [number, number, number, number];
 /** The five blocks as rectangles [x0, z0, x1, z1]; mmw-north-f is the union of two. */
@@ -79,7 +83,15 @@ describe('mmw steps', () => {
     expect(mmwSteps.length).toBeGreaterThan(0);
     expect(mmwSteps.filter((s) => s.chapter !== 'mckim-mead-white-1926').map((s) => s.id)).toEqual([]);
     expect(greekRomanCourt2007Steps.filter((s) => s.chapter !== 'koch-plaza-2014' || s.year !== '2007').map((s) => s.id)).toEqual([]);
-    expect(astorCourt1981Steps.filter((s) => s.chapter !== 'roche-north-1980' || s.year !== '1981').map((s) => s.id)).toEqual([]);
+    expect(astorCourt1981Steps.filter((s) => s.chapter !== 'roche-north-1980').map((s) => s.id)).toEqual([]);
+    expect(astorCourt1981Steps.map((s) => `${s.id} ${String(s.year)}`)).toEqual([
+      'mmw-north-walls-raised 1978–1980',
+      'astor-court-floor-walls 1981',
+      'astor-court-walk-pavilion 1981',
+      'astor-court-garden 1981',
+      'astor-court-skylight 1981',
+    ]);
+    expect(southWallsRaised1990Steps.filter((s) => s.chapter !== 'roche-south-1990').map((s) => s.id)).toEqual([]);
     expect(ALL.filter((s) => s.year === undefined).map((s) => s.id)).toEqual([]);
     expect(CHAPTERS.some((c) => c.id === 'mckim-mead-white-1926')).toBe(true);
   });
@@ -136,5 +148,38 @@ describe('mmw pieces', () => {
     expect(stats.triangles).toBeLessThanOrEqual(500_000);
     expect(stats.meshes).toBeLessThanOrEqual(160);
     expect(stats.lights).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('mmw shared walls', () => {
+  /**
+   * Each wall this area builds on a line shared with a newer, taller wing must reach that wing's roof once raised, or the newer wing's top-floor rooms see sky
+   * over the old coping (the Dendur hall and the Engelhard Court did, 2026-10-13). The neighbours' heights are read from their own modules, so a change there
+   * fails here. Bound: the built pieces of this area's four exports, walls found by their boxes inside the wall's 0.8 m plan strip; it cannot see whether
+   * src/build/sequence.ts composes every export (southWallsRaised1990Steps is not composed yet).
+   */
+  const LINES: readonly { readonly name: string; readonly strip: Rect; readonly roof: number }[] = [
+    { name: 'Sackler on X 118', strip: [117.2, -96.0, 118.0, -41.3], roof: SACKLER_GLASS_TOP_Y },
+    { name: 'Sackler on Z -41.3', strip: [118.0, -41.3, 153.13, -40.5], roof: SACKLER_GLASS_TOP_Y },
+    { name: 'American Wing on Z -96', strip: [49.4, -96.0, 118.0, -95.2], roof: AW_PARAPET_Y },
+    { name: 'Rockefeller on X -88.1', strip: [-88.1, -69.0, -87.3, -38.5], roof: RF_ROOF_Y },
+    { name: 'Rockefeller on Z -38.5', strip: [-151.61, -38.5, -88.1, -37.7], roof: RF_ROOF_Y },
+    { name: 'Kravis on Z -69', strip: [-88.1, -69.0, -49.7, -68.2], roof: KRAVIS_ROOF_Y },
+  ];
+
+  it("reach each newer neighbour's roof on every shared line", () => {
+    const boxes = ALL.flatMap((step) =>
+      collectStep(step).pieces.map((piece) => {
+        piece.geometry.computeBoundingBox();
+        return (piece.geometry.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
+      }),
+    );
+    const short = LINES.flatMap(({ name, strip: [x0, z0, x1, z1], roof }) => {
+      const along = Math.max(x1 - x0, z1 - z0);
+      const walls = boxes.filter((b) => b.min.x >= x0 - 0.1 && b.max.x <= x1 + 0.1 && b.min.z >= z0 - 0.1 && b.max.z <= z1 + 0.1 && Math.max(b.max.x - b.min.x, b.max.z - b.min.z) >= along - 0.2);
+      const top = Math.max(-Infinity, ...walls.map((b) => b.max.y));
+      return top >= roof ? [] : [`${name}: wall top ${top.toFixed(2)} under the roof at ${roof.toFixed(2)}`];
+    });
+    expect(short).toEqual([]);
   });
 });
