@@ -1,9 +1,10 @@
 /**
  * The public routes through Hunt's wing that the walk mode keeps open (plan docs/work/1_first-person-walk, milestone M2), as plan polylines [x, z] along
  * the walking line, each with the floor level it starts and ends on. Shared by the unit walks (routes.test.ts) and the e2e walks (tests/e2e/routes.spec.ts).
+ * Every segment runs along Z or at 45° to it, so a walker facing along Z walks it with W, or W and a side key (D or A) together.
  * R1: from the plaza on the entrance axis up the front steps, through the central doors and into the nave, round Roche's information desk (radius 3.08 m on
- * the axis at Z −17.6, so the route passes it 4.3 m north of the axis) to the nave's west side. R2: from there up the Grand Staircase over its landing to
- * the second floor and a few metres into the cross hall at its head; walked back, it returns to the hall floor.
+ * the axis at Z −17.6, so the route passes it 4.3 m north of the axis) back to the axis on the nave's west side. R2: from there up the Grand Staircase
+ * over its landing to the second floor and a few metres into the cross hall at its head; walked back, it returns to the hall floor.
  */
 import { PAVING_GAP, walkWestY } from '../site/ground.js';
 import { MAIN, SECOND } from './dims.js';
@@ -18,11 +19,14 @@ export interface Route {
 
 /** On the plaza on the axis, 5 m in front of the steps' foot; and on the axis in the nave, west of the desk, where R1 ends and R2 starts. */
 const PLAZA: readonly [number, number] = [0, 25];
-const NAVE_WEST: readonly [number, number] = [0, -24.5];
+const NAVE_WEST: readonly [number, number] = [0, -24.7];
+/** How far north of the axis R1 passes the desk, and where it turns off the axis and back: past the east colonnade (Z −9.37), clear of the desk. */
+const DESK_PASS_X = 4.3;
+const OFF_AXIS_Z = -10.5;
 
 export const ROUTE_R1: Route = {
   id: 'R1',
-  points: [PLAZA, [0, -10.5], [4.3, -14], [4.3, -21.2], NAVE_WEST],
+  points: [PLAZA, [0, OFF_AXIS_Z], [DESK_PASS_X, OFF_AXIS_Z - DESK_PASS_X], [DESK_PASS_X, NAVE_WEST[1] + DESK_PASS_X], NAVE_WEST],
   // The plaza's granite lies a paving gap over the sidewalk's level (src/model/site/plaza.ts).
   startY: walkWestY(...PLAZA) + PAVING_GAP,
   endY: MAIN,
