@@ -4,7 +4,8 @@
  * real model, holding W walks from the plaza up the front steps; a drag turns the view; F returns to the orbit view where the walker stood; a key
  * pressed in the same frame as the F before it already has the new mode's meaning, both ways.
  * Facts come from `window.__met.walk` and `window.__met.camera`; spawn positions from src/walk/spawns.ts; levels from src/model/frame.ts.
- * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2); frame times are this machine's (an RTX 4090 in headless Chrome);
+ * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2), W held until the eye has climbed 2 m and the eye read once the
+ * walker stands still, so a loaded machine changes how long it takes, not where it ends; frame times are this machine's (an RTX 4090 in headless Chrome);
  * "the same frame" is checked by a probe's requestAnimationFrame count at each keydown, and a run whose keys never shared a frame fails, not passes.
  */
 import { expect, test } from '@playwright/test';
@@ -13,10 +14,26 @@ import type { Page } from '@playwright/test';
 import type { Vec3 } from '../../src/build/types.js';
 import { LANDING_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEPS_BOTTOM_Z } from '../../src/model/frame.js';
 import { spawnById } from '../../src/walk/spawns.js';
-import { camera, currentT, distance, facts, open, openMenu, press, settle, waitForT, watchErrors } from './helpers.js';
+import { camera, currentT, distance, facts, open, openMenu, press, settle, throttle, throttleRate, waitForT, watchErrors } from './helpers.js';
 import type { Camera, Facts } from './helpers.js';
 
 const EYE = 1.6;
+
+/** The walk facts once the eye has stood still from one frame to the next, within 0.1 mm; fails after 5 s. */
+async function rest(page: Page): Promise<Facts['walk']> {
+  const eye = (): Promise<number[]> => page.evaluate(() => new Promise<number[]>((resolve) => {
+    requestAnimationFrame(() => { resolve([...(window.__met?.walk.eye ?? [Number.NaN, 0, 0])]); });
+  }));
+  let before = await eye();
+  const until = Date.now() + 5000;
+  for (;;) {
+    const now = await eye();
+    const moved = Math.hypot(...now.map((v, i) => v - (before[i] ?? 0)));
+    if (moved < 1e-4) return (await facts(page)).walk;
+    if (Date.now() > until) throw new Error(`The walker did not come to rest within 5 s: its eye last moved ${moved.toFixed(4)} m from one frame to a later one.`);
+    before = now;
+  }
+}
 
 /** Waits until walk mode is on and prepared, and returns the walk facts. */
 async function walking(page: Page): Promise<Facts['walk']> {
@@ -191,11 +208,16 @@ test.describe('walk mode', () => {
 
   test('from the plaza, holding W walks forward and up the front steps; a drag turns the view; F returns to the orbit view', async ({ page }) => {
     await open(page, 'walk=1&spawn=plaza');
+    await throttle(page);
     const start = await walking(page);
     const ground = (start.eye?.[1] ?? Number.NaN) - EYE;
     expect(start.eye?.[2] ?? 0, 'standing in front of the steps').toBeGreaterThan(STEPS_BOTTOM_Z);
-    await hold(page, 'KeyW', 4000);
-    const up = (await facts(page)).walk;
+    // W is held until the eye has climbed 2 m up the steps, read from window.__met, not for a fixed time a loaded machine walks less in; then
+    // the walker is let come to rest, so the eye read is the one F leaves from.
+    await page.keyboard.down('KeyW');
+    await page.waitForFunction((y) => (window.__met?.walk.eye?.[1] ?? 0) >= y, ground + EYE + 2, { timeout: 20_000 * throttleRate() });
+    await page.keyboard.up('KeyW');
+    const up = await rest(page);
     const eye = up.eye ?? [0, 0, 0];
     expect((start.eye?.[2] ?? 0) - eye[2], 'metres walked forward').toBeGreaterThan(8);
     expect(eye[1] - (ground + EYE), 'metres climbed up the front steps').toBeGreaterThan(1.5);

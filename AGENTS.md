@@ -101,6 +101,8 @@ Deploy (not part of `verify`): every push to `main` runs `.github/workflows/page
 
 Dependency audit gate: `npm run audit:runtime` (`npm audit --omit=dev --audit-level=high`) and `npm run audit:full` (`npm audit --audit-level=high`) must both report 0 vulnerabilities; rerun both on every dependency change. Runtime dependencies: `three` and `three-mesh-bvh`, the latter pinned exactly (0.9.15) for the walk collision and the zoom's pick.
 
+Load: `MET_CPU_THROTTLE=<n>` slows the page's CPU n times (CDP `Emulation.setCPUThrottlingRate`, `tests/e2e/helpers.ts` `throttle`) in the route walks and the plaza walk, which read every frame in the page and wait on positions, not times; they must pass three times in a row at 4× as well as at 1×.
+
 Ports: each worktree sets its own `MET_PORT` (default 5310) for `npm run dev` and `npm run test:e2e`, and a server is never reused across worktrees; a taken port fails the run.
 
 ## Invariants & boundaries

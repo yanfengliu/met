@@ -31,6 +31,23 @@ export async function open(page: Page, query = 'autoplay=0'): Promise<Facts> {
   return facts(page);
 }
 
+/** The CPU throttle MET_CPU_THROTTLE asks for: a factor above 1, or 1. */
+export function throttleRate(): number {
+  const rate = Number(process.env['MET_CPU_THROTTLE'] ?? '1');
+  return rate > 1 ? rate : 1;
+}
+
+/**
+ * Slows the page's main thread by the factor MET_CPU_THROTTLE names (CDP Emulation.setCPUThrottlingRate), so a walk test can be shown to hold under load;
+ * unset or 1 changes nothing. The CDP session stays open, as the emulation lasts only while it is attached.
+ */
+export async function throttle(page: Page): Promise<void> {
+  const rate = throttleRate();
+  if (rate === 1) return;
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate });
+}
+
 export async function facts(page: Page): Promise<Facts> {
   return (await page.evaluate(() => JSON.parse(JSON.stringify(window.__met)) as unknown)) as Facts;
 }

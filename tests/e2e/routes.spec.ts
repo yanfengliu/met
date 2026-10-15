@@ -11,7 +11,11 @@
  * Bound: a held key is let go once the eye passes the turn it walks to, early by the walker's coasting distance (src/walk/walker.ts, MOTION); at a
  * corner the walker then comes to rest and, if it coasted on more than 0.25 m (the keys can go up late when the machine is loaded), walks back onto the
  * corner at a walk. It rests 0.8 to 1.5 m past the end of a diagonal last leg (R1's), whose sideways motion builds up late. A leg that makes no
- * progress for 1.5 s fails with where the walker stands. Heights are read where the eye has eased out of the last stair snap. Frames of the doorways,
+ * progress for 1.5 s fails with where the walker stands. The walk is read at every frame, recorded in the page, and each leg's end and each corner's
+ * stop are watched there, so the keys change one round trip after the frame that passes them; the test's own polling slows under load until samples
+ * at a run lie metres apart and a stop comes a metre late. Each test's one deadline is its timeout, 120 s times the CPU throttle (MET_CPU_THROTTLE,
+ * tests/e2e/helpers.ts `throttle`), as long frames past the page's 0.1 s cap slow the walk against the wall clock. Heights are read where the eye has
+ * eased out of the last stair snap. Frames of the doorways,
  * the passages, the stair's landing and each arrival go to each test's output folder for a person to inspect; nothing here judges them.
  */
 import { expect, test } from '@playwright/test';
@@ -26,7 +30,7 @@ import { ROMAN_COURT } from '../../src/model/mmw/wings.js';
 import { DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../../src/model/roche-north/plan.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { BODY, MOTION } from '../../src/walk/walker.js';
-import { open, openMenu, press, watchErrors } from './helpers.js';
+import { open, openMenu, press, throttle, throttleRate, watchErrors } from './helpers.js';
 
 type XZ = readonly [number, number];
 /** A level unit direction along an axis, as [x, z]. */
@@ -66,6 +70,34 @@ async function sample(page: Page): Promise<Sample> {
   return { eye: walk.eye, look: walk.look, onGround: walk.onGround };
 }
 
+/**
+ * Every frame's walk facts since the last call, recorded in the page by a requestAnimationFrame loop beside the page's own (it reads
+ * `window.__met.walk` and writes nothing of the page), at least one frame; the first call starts the recording.
+ */
+async function record(page: Page): Promise<Sample[]> {
+  const frames = await page.evaluate(
+    () =>
+      new Promise<Sample[]>((resolve) => {
+        const w = window as unknown as { walkFrames?: Sample[] };
+        if (w.walkFrames === undefined) {
+          const list: Sample[] = [];
+          w.walkFrames = list;
+          const tick = (): void => {
+            const walk = window.__met?.walk;
+            if (walk?.eye != null && walk.look !== null) list.push({ eye: [...walk.eye], look: [...walk.look], onGround: walk.onGround });
+            requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(() => {
+          resolve((w.walkFrames ?? []).splice(0));
+        });
+      }),
+  );
+  if (frames.length === 0) throw new Error('Walk mode is not walking: no frame had window.__met.walk.eye.');
+  return frames;
+}
+
 async function walking(page: Page): Promise<Sample> {
   await page.waitForFunction(() => window.__met?.walk.mode === 'walk' && !window.__met.walk.preparing && window.__met.walk.eye !== null, undefined, { timeout: 15_000 });
   return sample(page);
@@ -74,6 +106,7 @@ async function walking(page: Page): Promise<Sample> {
 /** Opens the finished building and enters walk mode by the view menu's "Walk from the Great Hall"; the walker stands on the main floor there. */
 async function walkFromGreatHall(page: Page): Promise<{ start: Sample; spawn: NonNullable<ReturnType<typeof spawnById>> }> {
   await open(page, '');
+  await throttle(page);
   await openMenu(page, 'view-menu');
   await press(page, 'walk-spawn-great-hall');
   await page.waitForFunction(() => window.__met?.walk.spawn === 'great-hall');
@@ -113,6 +146,9 @@ interface Leg {
   readonly label: string;
   readonly keys: readonly Move[];
   readonly past: (eye: Vec3) => number;
+  /** The level direction `past` measures along, and the position along it where the leg is done (`past` is 0). */
+  readonly axis: Facing;
+  readonly edge: number;
   readonly length: number;
   readonly corner: Corner | undefined;
 }
@@ -159,7 +195,8 @@ function legs(points: readonly XZ[], facing: Facing): Leg[] {
     const sense = along([axis[0], 0, axis[1]], onFacing ? facing : right) > 0;
     const keysOn: readonly [Move, Move] = onFacing ? ['KeyW', 'KeyS'] : ['KeyD', 'KeyA'];
     const corner: Corner | undefined = dropped.length > 0 && (onFacing || onRight) ? { axis, end, on: sense ? keysOn[0] : keysOn[1], back: sense ? keysOn[1] : keysOn[0] } : undefined;
-    return { label: s.label, keys: s.keys, past: (eye: Vec3) => along(eye, axis) - along(end, axis) + coast, length, corner };
+    const edge = along(end, axis) - coast;
+    return { label: s.label, keys: s.keys, past: (eye: Vec3) => along(eye, axis) - edge, axis, edge, length, corner };
   });
 }
 
@@ -167,6 +204,24 @@ function legs(points: readonly XZ[], facing: Facing): Leg[] {
 interface Stop {
   readonly name: string;
   readonly when: (eye: Vec3) => boolean;
+}
+
+/**
+ * Waits in the page, checking at every frame, until the eye's position along the level `axis` passes `edge` going up (`sense` 1) or down (-1), or
+ * `ms` pass; returns whether it did. The keys can then change a round trip after the frame that passed it, not a round trip of polling later.
+ */
+async function reached(page: Page, axis: Facing, edge: number, sense: 1 | -1, ms: number): Promise<boolean> {
+  return page.waitForFunction(
+    ([ax, az, at, s]) => {
+      const eye = window.__met?.walk.eye;
+      return eye != null && s * (eye[0] * ax + eye[2] * az - at) >= 0;
+    },
+    [axis[0], axis[1], edge, sense] as const,
+    { polling: 'raf', timeout: ms },
+  ).then(
+    () => true,
+    () => false,
+  );
 }
 
 /** Walks the legs at a run with real key presses, adding every sample to `samples`; stops for the frames asked for. */
@@ -186,7 +241,8 @@ async function walk(page: Page, route: string, list: readonly Leg[], samples: Sa
       held.add(key);
     }
   };
-  let last = await sample(page);
+  // Frames from before this walk (turns, earlier walks) are not its own.
+  let last = (await record(page)).at(-1) ?? (await sample(page));
   /** At a corner: lets the walker come to rest, then walks it back (or on) at a walk along the corner's axis until the eye is within 0.25 m of it. */
   const settle = async (c: Corner): Promise<void> => {
     await hold([]);
@@ -195,35 +251,36 @@ async function walk(page: Page, route: string, list: readonly Leg[], samples: Sa
       const error = along(last.eye, c.axis) - along(c.end, c.axis);
       if (Math.abs(error) <= 0.25) return;
       await hold([error > 0 ? c.back : c.on]);
-      const until = Date.now() + 3000;
-      for (;;) {
-        last = await sample(page);
-        samples.push(last);
-        const e = along(last.eye, c.axis) - along(c.end, c.axis);
-        if (Math.abs(e) <= 0.2 || Math.sign(e) !== Math.sign(error) || Date.now() > until) break;
-      }
+      // Let go once the eye comes within 0.2 m of the corner (or crosses it), at most 3 s.
+      const at = along(c.end, c.axis);
+      await reached(page, c.axis, error > 0 ? at + 0.2 : at - 0.2, error > 0 ? -1 : 1, 3000);
       await hold([]);
+      const frames = await record(page);
+      samples.push(...frames);
+      last = frames.at(-1) ?? last;
     }
   };
-  for (const leg of list) {
+  for (const [i, leg] of list.entries()) {
     let now = leg.past(last.eye);
     if (now >= 0) {
       if (leg.corner !== undefined) await settle(leg.corner);
       continue;
     }
-    const deadline = Date.now() + (leg.length / MOTION.walk) * 1000 + 5000;
     let best = now;
     let improved = Date.now();
     await hold(['Shift', ...leg.keys]);
     while (now < 0) {
-      last = await sample(page);
-      samples.push(last);
+      // The leg's end is watched in the page; once the eye passes it, the keys change at once to what comes next: none at a corner, else the next leg's.
+      if (await reached(page, leg.axis, leg.edge, 1, 300)) await hold(leg.corner !== undefined ? [] : ['Shift', ...(list[i + 1]?.keys ?? [])]);
+      const frames = await record(page);
+      samples.push(...frames);
+      last = frames.at(-1) ?? last;
       now = leg.past(last.eye);
       if (now > best + 0.05) {
         best = now;
         improved = Date.now();
       }
-      const stop = pending.find((s) => s.when(last.eye));
+      const stop = pending.find((s) => frames.some((f) => s.when(f.eye)));
       if (now < 0 && stop !== undefined) {
         pending.splice(pending.indexOf(stop), 1);
         await hold([]);
@@ -232,7 +289,7 @@ async function walk(page: Page, route: string, list: readonly Leg[], samples: Sa
         await hold(['Shift', ...leg.keys]);
         improved = Date.now();
       }
-      if (now < 0 && (Date.now() - improved > 1500 || Date.now() > deadline)) {
+      if (now < 0 && Date.now() - improved > 1500) {
         await hold([]);
         throw new Error(`${route}: stuck on the leg ${leg.label}, the eye at ${fmt(last.eye)} (on the ground: ${String(last.onGround)}), ${(-now).toFixed(2)} m short.`);
       }
@@ -299,7 +356,7 @@ const off = (samples: readonly Sample[], level: number, tolerance: number): stri
 const airborne = (samples: readonly Sample[]): string[] => samples.filter((s) => !s.onGround).map((s) => fmt(s.eye));
 
 test.describe('walk routes through real input', () => {
-  test.setTimeout(120_000);
+  test.setTimeout(120_000 * throttleRate());
   let errors: { expectClean: () => void };
   test.beforeEach(({ page }) => {
     errors = watchErrors(page);
@@ -311,6 +368,7 @@ test.describe('walk routes through real input', () => {
   test('R1: from the plaza up the front steps, through the central doors and round the desk onto the Great Hall floor', async ({ page }) => {
     const started = Date.now();
     const f = await open(page, '');
+    await throttle(page);
     expect(f.t, 'the finished building').toBe(f.n);
     await page.keyboard.press('KeyF');
     const start = await walking(page);
@@ -335,7 +393,6 @@ test.describe('walk routes through real input', () => {
     const desk = between(samples, NAVE_MID_Z + 0.5, NAVE_MID_Z - 0.5);
     expect(desk.length > 0 && desk.every((s) => s.eye[0] > 3.43), 'past the desk (3.08 m round, on the axis) on its north side').toBe(true);
     expect(airborne(samples), 'eyes where the walker was off the ground').toEqual([]);
-    expect(Date.now() - started, 'R1 milliseconds').toBeLessThan(45_000);
   });
 
   test('R2: from the Great Hall up the Grand Staircase over its landing to the second floor, a few metres on, and back down', async ({ page }) => {
@@ -374,7 +431,6 @@ test.describe('walk routes through real input', () => {
     expect(Math.abs(back.eye[1] - (MAIN_FLOOR_Y + EYE)), `${report}: back on the main floor`).toBeLessThan(0.03);
     expect(back.onGround, report).toBe(true);
     expect(back.eye[2] > HALL_WEST_Z && back.eye[2] < WALL_BACK_Z, `${report}: back in the Great Hall`).toBe(true);
-    expect(Date.now() - started, 'R2 milliseconds').toBeLessThan(45_000);
   });
 
   test('R3: from the Great Hall through the Egyptian galleries into the Temple of Dendur hall, to beside the platform', async ({ page }) => {
@@ -402,7 +458,6 @@ test.describe('walk routes through real input', () => {
     expect(end.onGround, report).toBe(true);
     expect(end.eye[0] > SACKLER_BLOCK.minX && end.eye[2] < SACKLER_BLOCK.maxZ, `${report}: inside the Sackler Wing`).toBe(true);
     expect(end.eye[0] - PLATFORM.maxX < 4 && end.eye[2] < PLATFORM.maxZ, `${report}: beside the platform`).toBe(true);
-    expect(Date.now() - started, 'R3 milliseconds').toBeLessThan(75_000);
   });
 
   test('R4: from the Great Hall past the desk through the Greek galleries into the Leon Levy and Shelby White Court', async ({ page }) => {
@@ -426,6 +481,5 @@ test.describe('walk routes through real input', () => {
     expect(end.eye[0] > x0 && end.eye[0] < x1 && end.eye[2] > z0 && end.eye[2] < z1, `${report}: inside the court`).toBe(true);
     expect(Math.abs(end.eye[1] - (ROUTE_R4.endY + EYE)), `${report}: on the court's floor`).toBeLessThan(0.03);
     expect(end.onGround, report).toBe(true);
-    expect(Date.now() - started, 'R4 milliseconds').toBeLessThan(60_000);
   });
 });
