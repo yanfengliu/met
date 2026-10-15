@@ -11,7 +11,9 @@ import type { Kit, StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';
 import { balustrade, columnParts, pilasterParts, surround, wall } from '../lib/index.js';
 import {
+  ARCH_INNER_SPAN,
   BALCONY_RAIL_H,
+  BAY_X,
   CENTRE_COLUMN_X,
   END_SCREEN_Z,
   HALL_ARCH_SPRING_Y,
@@ -23,6 +25,7 @@ import {
   NAVE_WEST_Z,
   PIER_W,
   PIER_X,
+  SCREEN_Z,
   SECOND,
   SLAB,
   STAIR_HALF,
@@ -126,6 +129,8 @@ function piers(kit: Kit): void {
 
 function floor(kit: Kit): void {
   box(kit, palette.marbleFloor, [-HALL_X, MAIN - 0.03, HALL_WEST_Z], [HALL_X, MAIN, WALL_BACK_Z], 0);
+  // The field runs on through each of the facade's arches to its screen, flush with the top of the steps inside the arch.
+  for (const x of BAY_X) box(kit, palette.marbleFloor, [x - ARCH_INNER_SPAN / 2, MAIN - 0.03, WALL_BACK_Z], [x + ARCH_INNER_SPAN / 2, MAIN, SCREEN_Z], 0);
   // Darker bands framing the fields: along both long walls, across each pier line, and round the desk's field (interior.md, Floor).
   const y0 = MAIN;
   const y1 = MAIN + 0.012;
