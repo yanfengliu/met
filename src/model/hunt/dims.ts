@@ -162,3 +162,18 @@ export const CROSS_HALL_FRONT_Z = -59.74;
 export const CROSS_HALL_BACK_Z = -66.79;
 export const CROSS_HALL_HALF = 9.8;
 export const GALLERY_OUTER_X = 9.75;
+
+// --- Passages into the McKim, Mead & White wings (floor map, main floor; map Z − 3.1) ----------------------------------------
+/**
+ * The seam walls on X +49.4 and −49.7 stand inside two galleries that the map draws running straight through them on the main floor: the Old Kingdom
+ * gallery (103) along the front, X +45.38..+89.75 from the front wall to Z −10.95, and the Greek gallery 153, X −89.29..−45.59 between Z −13.0 and −22.13.
+ * Each wall's opening spans that width, from the main floor to the underside of this wing's second floor.
+ */
+export const SEAM_PASSAGE_NORTH = { z0: -10.95, z1: EXT_FACE_Z - EXT_WALL_T } as const;
+export const SEAM_PASSAGE_SOUTH = { z0: -22.13, z1: -13.0 } as const;
+/**
+ * The map's main-floor doors on the wings' inner partitions, as spans of world Z. X +45.4: from gallery 101 into the Old Kingdom gallery (103), and from
+ * gallery 100 into its bay beyond. X −45.6: from galleries 152, 150 and 151 into the Greek galleries, the middle one on the Great Hall's axis.
+ */
+export const WING_DOORS_NORTH: readonly (readonly [number, number])[] = [[-7.48, -5.19], [-18.14, -16.38]];
+export const WING_DOORS_SOUTH: readonly (readonly [number, number])[] = [[-9.07, -7.3], [-19.24, -16.05], [-27.99, -26.2]];
