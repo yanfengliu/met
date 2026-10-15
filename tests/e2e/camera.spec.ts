@@ -1,6 +1,6 @@
 /**
  * The camera through real input (docs/design/spec.md, Page: View menu): a preset lands where it says and stays there, even when it is chosen
- * while the orbit controls are still coasting from a drag; the follow camera stays on through a press without movement and goes off with a drag;
+ * while the orbit controls are still coasting from a drag, or in walk mode, which it leaves first; the follow camera stays on through a press without movement and goes off with a drag;
  * a fit preset is fitted again when the window changes shape; an unknown view= starts the page as no view would.
  * Facts come from `window.__met`; presets are named only where the query needs one.
  * Bound: cameras are compared by position and target within 1 mm, read from `window.__met.camera`; "in frame" projects the model's bounding box with
@@ -67,6 +67,35 @@ test.describe('camera', () => {
     await dragCanvas(page, 15, 4, 8);
     await page.waitForFunction(() => window.__met?.follow === false);
     expect(await page.evaluate(() => window.__met?.view)).toBeNull();
+  });
+
+  test('a preset chosen from the menu in walk mode leaves walk mode and lands on it; walking again and leaving keeps the camera at the eye through a resize', async ({ page }) => {
+    await open(page);
+    await choosePreset(page, 'front');
+    const reference = await settledCamera(page);
+    const walkMode = (mode: 'walk' | 'orbit') => page.waitForFunction((m) => window.__met?.walk.mode === m && !window.__met.walk.preparing, mode, { timeout: 15_000 });
+    await page.keyboard.press('KeyF');
+    await walkMode('walk');
+    await choosePreset(page, 'front');
+    await walkMode('orbit');
+    const landed = await settledCamera(page);
+    expect(cameraGap(landed, reference), `the camera ${JSON.stringify(landed)} vs the preset ${JSON.stringify(reference)}`).toBeLessThan(1e-3);
+    expect(await page.evaluate(() => window.__met?.view), 'the preset in view').toBe('front');
+    // Into walk mode where the walker last stood and out again: the orbit camera stands at the eye, and a resize must not fit a preset over it.
+    await page.keyboard.press('KeyF');
+    await walkMode('walk');
+    await page.waitForFunction(() => window.__met?.walk.eye != null);
+    const eye = await page.evaluate(() => window.__met?.walk.eye ?? null);
+    if (eye === null) throw new Error('Walk mode reported no eye.');
+    await page.keyboard.press('KeyF');
+    await walkMode('orbit');
+    const before = await settledCamera(page);
+    expect(distance(before.position, eye), 'the orbit camera at the eye').toBeLessThan(0.01);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForFunction((aspect) => window.__met !== undefined && Math.abs(window.__met.camera.aspect - aspect) > 0.01, before.aspect);
+    const after = await settledCamera(page);
+    expect(distance(after.position, eye), 'the orbit camera still at the eye after the resize').toBeLessThan(0.01);
+    expect(await page.evaluate(() => window.__met?.view), 'no preset in view').toBeNull();
   });
 
   test('a fit preset is fitted again when the window changes shape', async ({ page }) => {

@@ -208,6 +208,9 @@ function boot(): void {
       applyPreset: (id: string) => {
         const pose = presetPose(id);
         if (pose === null) return;
+        // A preset is an orbit-view camera: in walk mode it leaves walk mode first, or the walker would take the camera back on the next frame
+        // while the preset stayed marked as in view, to be fitted again over the camera on the next resize.
+        if (walk.active) walk.exit();
         rig.setPose(pose);
         view = id;
         atPreset = true;
