@@ -2,19 +2,25 @@
  * The zoom through real wheel input, the gate for the class "camera input stops responding at a limit" (docs/learning/defect-register.md, "The
  * wheel stops zooming"; docs/design/spec.md, Camera). From two exterior presets, an interior one and after a move by the W key, many notches of
  * the wheel toward the middle of the view, then back:
- * - every notch in moves the camera at least min(ZOOM.minStep, what is left to the bound) − 1 mm, until the bound: the camera ZOOM.stop from the
- *   surface under the pointer, where the zoom puts the orbit target, so the camera-to-target distance reads it; the bound comes within 120 notches;
+ * - the surface under the pointer is found apart from the page: the pointer's ray rebuilt from the camera facts and the canvas, as the page's projection
+ *   casts it, and cast through the finished model built in this process, triangle by triangle (./surface.ts), never through the page's pick or target;
+ * - every notch in moves the camera along that ray at least min(ZOOM.minStep, what is left to the bound) − 1 mm, and never past the bound: the camera
+ *   ZOOM.stop before that surface; the bound comes within 120 notches, and the camera stops there within 1 mm;
  * - at that bound a notch in moves nothing, and every one of 8 notches out moves at least ZOOM.minStep;
  * - from aerial-ne, notches out reach the far bound (the target ZOOM.maxDistance away), where a notch out moves nothing and a notch in moves again.
- * Bound: one pointer position (the middle of the view above the bar) and wheel steps of 100 pixels; whether the stop lies in front of the first
- * surface is the pick's unit-tested contract (src/viewer/zoom.test.ts), not measured against the scene here.
+ * Bound: one pointer position (the middle of the view above the bar), wheel steps of 100 pixels, and the page at t = N with no cut and no floor view,
+ * which is the state ./surface.ts rebuilds.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { PerspectiveCamera, Vector3 } from 'three';
 
 import { ZOOM } from '../../src/viewer/zoom.js';
 import { camera, choosePreset, distance, open, settle, watchErrors } from './helpers.js';
 import type { Camera } from './helpers.js';
+import { firstSurface } from './surface.js';
+
+type Triple = readonly [number, number, number];
 
 const MAX_NOTCHES_IN = 120;
 const NOTCHES_OUT = 8;
@@ -37,27 +43,63 @@ async function notch(page: Page, deltaY: number): Promise<Camera> {
 
 const radius = (c: Camera): number => distance(c.position, c.target);
 
+/**
+ * The unit ray under the pointer at (x, y) from camera `c`, as the page casts it (src/viewer/zoom.ts `pointerRay`): the camera's projection covers the
+ * canvas above the bar (src/viewer/camera-rig.ts `resize`, whose visible height is the canvas width over the published aspect), +Y up.
+ */
+async function pointerRay(page: Page, c: Camera, x: number, y: number): Promise<Triple> {
+  const box = await page.getByTestId('canvas').boundingBox();
+  if (box === null) throw new Error('The canvas has no box.');
+  const projection = new PerspectiveCamera(c.fov, c.aspect, c.near, c.far);
+  const visible = box.width / c.aspect;
+  if (visible < box.height - 0.5) projection.setViewOffset(box.width, visible, 0, 0, box.width, box.height);
+  projection.updateProjectionMatrix();
+  projection.position.set(...c.position);
+  projection.lookAt(new Vector3(...c.target));
+  projection.updateMatrixWorld();
+  const d = new Vector3(((x - box.x) / box.width) * 2 - 1, -((y - box.y) / box.height) * 2 + 1, 0.5).unproject(projection).sub(projection.position).normalize();
+  return [d.x, d.y, d.z];
+}
+
 /** Zooms in to the near bound and back out, returning one message per notch that broke the gate. */
 async function zoomInAndOut(page: Page, what: string): Promise<string[]> {
   const problems: string[] = [];
   const centre = await viewCentre(page);
-  await page.mouse.move(centre.x, centre.y);
-  let before = await camera(page);
+  // Whole pixels, as the browser delivers the pointer, so the ray rebuilt here is the one the page casts.
+  const [x, y] = [Math.round(centre.x), Math.round(centre.y)];
+  await page.mouse.move(x, y);
+  const start = await camera(page);
+  const ray = await pointerRay(page, start, x, y);
+  const surface = firstSurface(start.position, ray);
+  if (surface === null) return [`${what}: the ray under the pointer meets no surface of the finished model, so there is no stop to check`];
+  // How far along the ray the camera may go: to ZOOM.stop before the surface.
+  const bound = surface - ZOOM.stop;
+  const along = (c: Camera): number => (c.position[0] - start.position[0]) * ray[0] + (c.position[1] - start.position[1]) * ray[1] + (c.position[2] - start.position[2]) * ray[2];
+  const off = (c: Camera): number => distance(c.position, [start.position[0] + along(c) * ray[0], start.position[1] + along(c) * ray[1], start.position[2] + along(c) * ray[2]]);
+  let before = start;
   let atBound = false;
   for (let k = 1; k <= MAX_NOTCHES_IN && !atBound; k += 1) {
     const after = await notch(page, -100);
     const moved = distance(after.position, before.position);
-    const left = radius(before) - ZOOM.stop;
+    const left = bound - along(before);
+    if (off(after) > 0.01) {
+      problems.push(`${what}: notch ${String(k)} in moved the camera ${off(after).toFixed(3)} m off the ray under the pointer`);
+      return problems;
+    }
+    if (along(after) > bound + MM) {
+      problems.push(`${what}: notch ${String(k)} in put the camera ${(along(after) - bound).toFixed(3)} m past its stop, ${String(ZOOM.stop)} m before the first surface ${surface.toFixed(3)} m along the ray under the pointer`);
+      return problems;
+    }
     if (left <= MM) {
       atBound = true;
       if (moved > MM) problems.push(`${what}: notch ${String(k)} in, at the bound, moved ${moved.toFixed(4)} m`);
     } else if (moved < Math.min(ZOOM.minStep, left) - MM) {
-      problems.push(`${what}: notch ${String(k)} in moved ${moved.toFixed(4)} m with ${left.toFixed(3)} m left to the bound (camera-to-target ${radius(before).toFixed(3)} m)`);
+      problems.push(`${what}: notch ${String(k)} in moved ${moved.toFixed(4)} m with ${left.toFixed(3)} m left to the stop (camera-to-target ${radius(before).toFixed(3)} m)`);
       return problems;
     }
     before = after;
   }
-  if (!atBound) problems.push(`${what}: ${String(MAX_NOTCHES_IN)} notches in did not reach the bound; camera-to-target ${radius(before).toFixed(3)} m`);
+  if (!atBound) problems.push(`${what}: ${String(MAX_NOTCHES_IN)} notches in did not reach the stop; ${(bound - along(before)).toFixed(3)} m left of ${surface.toFixed(3)} m to the surface`);
   for (let k = 1; k <= NOTCHES_OUT; k += 1) {
     const after = await notch(page, 100);
     const moved = distance(after.position, before.position);
