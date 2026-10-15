@@ -214,6 +214,29 @@ describe('timeline rest positions', () => {
     expect(landedMismatches(recorded.added, timeline, steps.length), `seed ${String(seed)} at t = N`).toEqual([]);
   });
 
+  it('reports every piece at rest whatever t is, with its mesh, final matrix and world box, and writes nothing the scene shows', () => {
+    const recorded = recording(steps);
+    const timeline = fresh(recorded.steps, 12.5);
+    const before = snapshot(timeline);
+    const key = (e: ArrayLike<number>): string => Array.from({ length: 16 }, (_, i) => Math.fround(e[i] ?? Number.NaN)).join(',');
+    timeline.steps.forEach((step, i) => {
+      const pieces = timeline.restingPieces(i);
+      const wanted = (recorded.added[i] ?? []).map((p) => `${p.geometry.uuid} ${p.material.uuid} ${key(p.matrix.elements)}`).sort();
+      const got = pieces.map((p) => {
+        const mesh = step.meshes[p.mesh];
+        const material = mesh === undefined || Array.isArray(mesh.material) ? undefined : mesh.material;
+        return `${mesh?.geometry.uuid ?? '?'} ${material?.uuid ?? '?'} ${key(p.matrix)}`;
+      }).sort();
+      expect(got, `${step.def.id}: resting pieces vs kit.add`).toEqual(wanted);
+      for (const p of pieces) {
+        const box = step.meshes[p.mesh]?.geometry.boundingBox?.clone().applyMatrix4(new Matrix4().fromArray(p.matrix));
+        expect(box?.equals(p.box), `${step.def.id}: a resting piece's box is its geometry's box at its final matrix`).toBe(true);
+      }
+    });
+    expect(firstDifference(snapshot(timeline), before), 'scene state after restingPieces').toBeNull();
+    expect(() => timeline.restingPieces(steps.length)).toThrow(/there is no step 40; steps run from 0 to 39/);
+  });
+
   it('moves pieces strictly inside a step and tints them', () => {
     const timeline = fresh(steps, 12.5);
     const step = timeline.steps[12];

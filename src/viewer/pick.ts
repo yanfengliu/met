@@ -1,12 +1,13 @@
 /**
  * What the zoom heads for (docs/design/spec.md, Camera): the distance along a ray to the first model surface drawn on screen, or to the workspace ground.
- * Only drawn instances count (the first `count` of a visible mesh), at their current matrices, so a piece still arriving is met where it is shown;
- * with the section cut on, a hit above the cut on a material the cut clips is passed through, as the eye sees through the removed part.
+ * Only drawn instances count (the first `count` of a visible mesh on a layer the camera draws), at their current matrices, so a piece still arriving
+ * is met where it is shown and landscape a floor view hides (src/viewer/floor-view.ts) is passed through; with the section cut on, a hit above the
+ * cut on a material the cut clips is passed through, as the eye sees through the removed part.
  * Each candidate instance is found by its bounding sphere, the ray taken into its frame and cast against its geometry's BVH (src/walk/bvh-cache.ts).
  * Reads the scene only. Bound: transparent pieces (glass) count as surfaces, so the zoom stops at a window as it does at a wall.
  */
 import { DoubleSide, Matrix4, Ray, Sphere, Vector3 } from 'three';
-import type { BufferGeometry, Intersection, InstancedMesh } from 'three';
+import type { BufferGeometry, Intersection, InstancedMesh, Layers } from 'three';
 
 import type { GeometryBvhs } from '../walk/bvh-cache.js';
 import { cutBySection } from './section-cut.js';
@@ -31,6 +32,8 @@ export class ModelPicker {
     private readonly bvhs: GeometryBvhs,
     private readonly groundY: number,
     private readonly cut: PickCut,
+    /** The camera's layers: a mesh on none of them is not drawn, so the ray passes through it. */
+    private readonly layers: Layers,
   ) {}
 
   /** The distance along `ray` (unit direction, world metres) to the first surface it meets, or null when it meets none. */
@@ -41,7 +44,7 @@ export class ModelPicker {
       if (t > 0) best = t;
     }
     for (const mesh of this.meshes) {
-      if (!mesh.visible || mesh.count === 0) continue;
+      if (!mesh.visible || mesh.count === 0 || !mesh.layers.test(this.layers)) continue;
       if (mesh.boundingSphere !== null && !ray.intersectsSphere(mesh.boundingSphere)) continue;
       const geometry = mesh.geometry;
       const local = this.localSphere(geometry);

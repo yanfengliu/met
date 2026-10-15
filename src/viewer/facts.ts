@@ -36,6 +36,8 @@ export interface MetFacts {
   /** Every chapter of src/build/chapters.ts in order; `count` is 0 for a chapter with no steps (shown disabled), whose `first` is where its steps would start. */
   readonly chapters: readonly { readonly id: string; readonly title: string; readonly years: string; readonly summary: string; readonly first: number; readonly count: number }[];
   readonly presets: readonly { readonly id: string; readonly label: string; readonly group: string }[];
+  /** The floor picker's floors (src/viewer/floors.ts) from the lowest up: each one's level and the section-cut height that shows it, in metres. */
+  readonly floors: readonly { readonly id: string; readonly label: string; readonly name: string; readonly level: number; readonly cut: number }[];
   /** World bounds of the built steps at their final matrices. */
   readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
   readonly stats: { readonly steps: number; readonly pieces: number; readonly meshes: number; readonly triangles: number; readonly lights: number };
@@ -51,6 +53,11 @@ export interface MetFacts {
   /** The pose the follow camera headed for in the last frame (from the step in motion), or null when it is not under way. */
   readonly followGoal: { readonly position: Vec3; readonly target: Vec3; readonly fov: number } | null;
   readonly cut: { readonly enabled: boolean; readonly height: number };
+  /**
+   * The floor view (src/viewer/floor-mode.ts): the picker's choice in view (`all` or a floor id), how many landscape meshes it hides, and the user's own
+   * cut it gives back when All is chosen (null when every floor shows).
+   */
+  readonly floor: { readonly id: string; readonly hidden: number; readonly ownCut: { readonly enabled: boolean; readonly height: number } | null };
   /** The preset in view, or null once the user moved the camera. */
   readonly view: string | null;
   /** `fov` is the vertical field of view in degrees and `aspect` the width over the height of the part of the canvas above the timeline bar, which the projection covers. */

@@ -9,7 +9,7 @@
  * Bound: determinism holds for everything this class writes (instance matrices, colours, counts, mesh visibility, light intensities);
  * it says nothing about GPU upload timing, which three.js does from the update ranges recorded here.
  */
-import { Box3, Group, SpotLight, Vector3 } from 'three';
+import { Box3, Group, Matrix4, SpotLight, Vector3 } from 'three';
 import type { InstancedMesh, Material, PointLight } from 'three';
 
 import { batchPieces, boxOf, setCullBounds } from './batch.js';
@@ -32,6 +32,16 @@ export interface BuiltStep {
   /** World bounds of this step's pieces at their final matrices. */
   readonly bounds: Box3;
   readonly pieceCount: number;
+}
+
+/** One piece of a step as it stands once the step is complete (`Timeline.restingPieces`). */
+export interface RestingPiece {
+  /** Its mesh: an index into the step's `meshes`. */
+  readonly mesh: number;
+  /** Its world bounding box at its final matrix. */
+  readonly box: Box3;
+  /** Its final world matrix, 16 numbers in column-major order (a copy). */
+  readonly matrix: Float64Array;
 }
 
 export interface TimelineStats {
@@ -151,6 +161,24 @@ export class Timeline {
       }
     }
     return { steps: this.n, pieces, meshes, triangles, lights };
+  }
+
+  /**
+   * Every piece of step `index` (0-based) as it stands once the step is complete, whatever t is now: its mesh, its world box and its final matrix,
+   * in arrival order. It reads the final matrices kept for rest positions, never the meshes' current ones, and writes nothing the scene shows.
+   */
+  restingPieces(index: number): RestingPiece[] {
+    const step = this.steps[index];
+    const state = this.states[index];
+    if (step === undefined || state === undefined) throw new Error(`Timeline.restingPieces: there is no step ${String(index)}; steps run from 0 to ${String(this.n - 1)}.`);
+    const matrix = new Matrix4();
+    return Array.from(state.mesh, (m, j) => {
+      const geometry = step.meshes[m]?.geometry;
+      if (geometry === undefined) throw new Error(`Timeline.restingPieces: step "${step.def.id}" piece ${String(j)} names mesh ${String(m)} of ${String(step.meshes.length)}.`);
+      if (geometry.boundingBox === null) geometry.computeBoundingBox();
+      const elements = state.finals.slice(j * 16, j * 16 + 16);
+      return { mesh: m, box: (geometry.boundingBox ?? new Box3()).clone().applyMatrix4(matrix.fromArray(elements)), matrix: elements };
+    });
   }
 
   private buildStep(def: StepDef, index: number, materials: Set<Material>): BuiltStep {

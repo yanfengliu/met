@@ -51,6 +51,7 @@ The keys work in two modes. W, A, S, D, Q, E and F are physical keys, so they si
 | Right and left arrows | Step forward, step back | Walk right, left |
 | Up and down arrows | Nothing | Walk forward, back |
 | Home, End | Go to start, go to end | Nothing |
+| Page Up, Page Down | Go up, down a floor (see Floor picker) | Nothing |
 | W, S | Move the camera forward, back over the ground | Walk forward, back |
 | A, D | Move the camera left, right | Walk left, right |
 | Q, E | Move the camera down, up | Nothing |
@@ -67,9 +68,20 @@ It lists the nine chapters with their years. Choosing one jumps to the start of 
 ### View menu
 
 - **Exterior** and **Interior**: camera presets. The ids for `view=` are in the tables below. The page opens on `aerial-ne`.
-- **Follow the build**: while the build plays, the camera frames what each step adds. It turns off as soon as you drag, zoom or move the camera yourself (a press without movement leaves it on), and the toggle turns it back on. It starts on unless the URL sets `shot=1`, a `view=` that names a preset, `cam=` or `walk=1`; a `view=` that names no preset is ignored.
+- **Follow the build**: while the build plays, the camera frames what each step adds. It turns off as soon as you drag, zoom or move the camera yourself (a press without movement leaves it on), and the toggle turns it back on. It starts on unless the URL sets `shot=1`, a `view=` that names a preset, `cam=`, `walk=1` or a `floor=` that names a floor; a `view=` that names no preset is ignored.
 - **Walk**: walk from the plaza, the Great Hall or the top of the Grand Staircase.
-- **Section cut**: Cut switches a horizontal cut on or off, and the slider sets its height in metres, in 0.1 m steps up to just above the model's top. Moving the slider switches the cut on. Only the building is cut: everything of it above the cut is removed, shadows included, and cut walls and slabs are drawn solid in one flat colour, as in an architect's section, while everything the site builds as landscape (trees, ground, streets, paths, rocks, walls, fences, lamps, benches, fountains and the plaza's furniture) stays whole. Use it, or an interior preset, to see inside.
+- **Section cut**: Cut switches a horizontal cut on or off, and the slider sets its height in metres, in 0.1 m steps up to just above the model's top. Moving the slider switches the cut on. Only the building is cut: everything of it above the cut is removed, shadows included, and cut walls and slabs are drawn solid in one flat colour, as in an architect's section, while everything the site builds as landscape (trees, ground, streets, paths, rocks, walls, fences, lamps, benches, fountains and the plaza's furniture) stays whole. Use it, the floor picker or an interior preset to see inside.
+
+### Floor picker
+
+The column of buttons at the left of the view shows one floor at a time: All at the top, then Roof (the roof garden), Second, Main and Ground. Page Up and Page Down move up and down it, with All above the top floor.
+
+- Choosing a floor sets the section cut to just under the slab over it, so its walls show cut like a plan: Ground at 3.1 m, Main at 7.8 m, Second at 12.7 m, and the roof garden at 27.4 m, over its own tallest piece. The heights were picked by looking at the model, and `src/viewer/floors.ts` says why for each.
+- Trees, lamps and the rest of the landscape that rise above the cut are hidden whole rather than cut, since the cut leaves landscape alone. The ground itself always stays.
+- The camera frames the floor from above at 65°, from the side you were looking from.
+- All gives back the cut you had before, on or off, and shows the landscape again. Moving the cut slider or pressing Cut by hand leaves the floor view instead, and your cut stands.
+- Walk mode leaves the floor view too, and the picker hides while you walk. What you collide with never changes.
+- No entry shows the map's floor-3 plates or the mezzanines. Where a wing's second floor lies higher than the Great Hall's balcony (the Fifth Avenue links, the American Wing), the Second view shows that wing's floor below.
 
 ### Camera
 
@@ -79,7 +91,7 @@ Drag to orbit, right-drag to pan, and use the wheel, a pinch or a middle-button 
 
 Press F or the Walk button, or choose a place under Walk in the View menu, to stand in the model in first person. Click the view to look around with the mouse; Esc frees the pointer again. Where the browser does not lock the pointer, or on a touch screen, drag to look. W, A, S, D or the arrow keys walk, Shift runs and Space jumps. F or the Walk button goes back to the orbit view, with the camera where you stood.
 
-You walk through what is built at the current point of the timeline: walls and columns stop you, and you slide along them. You climb stairs and the front steps just by walking, since you step up edges of up to 0.35 m. You can walk up slopes of up to 40°, steeper ones stop you, and you fall off ledges. You walk through water and foliage. The section cut does not change what you collide with. The first entry builds the collision for the whole finished building, in about a tenth of a second on a fast machine.
+You walk through what is built at the current point of the timeline: walls and columns stop you, and you slide along them. You climb stairs and the front steps just by walking, since you step up edges of up to 0.35 m. You can walk up slopes of up to 40°, steeper ones stop you, and you fall off ledges. You walk through water and foliage. Neither the section cut nor a floor view changes what you collide with, and entering walk mode leaves a floor view. The first entry builds the collision for the whole finished building, in about a tenth of a second on a fast machine.
 
 ### Exterior presets
 
@@ -130,12 +142,13 @@ The first four are fitted to the model's bounds. The `ref-` presets are cameras 
 | `autoplay=1` or `autoplay=0` | Play the build on load, from the empty site unless `t` or `step` sets a position; or do not play, which is the default. |
 | `walk=1` | Start in walk mode. |
 | `spawn=<id>` | With `walk=1`, where to start walking: `plaza` (the default), `great-hall` or `second-floor`. |
+| `floor=<id>` | Open on that floor of the floor picker: `ground`, `main`, `second` or `roof-garden` (`all` shows every floor). It is framed unless `view=` or `cam=` names a camera, and it is ignored with `walk=1`. |
 | `noui=1` | Hide the page chrome. |
 | `shot=1` | Capture mode: no autoplay, no follow camera, no animation. `window.__shotReady` becomes true once at least 5 frames have rendered at the requested state. |
 
 Coordinates are in the world frame: metres, +Y up, +X up Fifth Avenue (Manhattan north), +Z toward Fifth Avenue. The origin is at sidewalk grade on the central entrance axis, in the plane of the Hunt facade's main wall face.
 
-`window.__met` exposes read-only facts for tests and capture scripts: step ids, chapters, presets, the current position, camera and cut, budget statistics, build timings, and the walk mode's state (the eye, the look direction, the ground contact and the collision build time). Tests drive the page through its real controls and read state from it.
+`window.__met` exposes read-only facts for tests and capture scripts: step ids, chapters, presets, floors, the current position, camera, cut and floor view, budget statistics, build timings, and the walk mode's state (the eye, the look direction, the ground contact and the collision build time). Tests drive the page through its real controls and read state from it.
 
 ## Chapters
 
@@ -173,7 +186,7 @@ The list is in `src/build/chapters.ts`. `src/build/sequence.ts` composes each ch
 
 - `src/build/`: the build engine: step types, batching into instanced meshes, timeline evaluation, the player, the chapter list and the composed sequence.
 - `src/model/`: the model. `frame.ts` holds the world-frame constants, each with its source, `palette.ts` the shared materials, `lib/` the parametric parts, and `site`, `core`, `hunt`, `mmw`, `roche-north` and `roche-south` the six modelling areas.
-- `src/viewer/`: renderer, camera, zoom, presets, section cut and URL parsing. `src/walk/`: the walk mode, its walker and its collision. `src/ui/`: the timeline bar, menus and keys. `src/parts/`: the gallery page.
+- `src/viewer/`: renderer, camera, zoom, presets, section cut, floors and the floor view, and URL parsing. `src/walk/`: the walk mode, its walker and its collision. `src/ui/`: the timeline bar, menus, floor picker and keys. `src/parts/`: the gallery page.
 - `scripts/`: capture tooling. `tests/e2e/`: Playwright tests.
 - `docs/design/spec.md`: the contract for the world frame, the build-step API, the page and the budgets.
 - `docs/research/`: the research behind the model. `exterior.md` has the footprint, the blocks and the dimensions, `interior.md` the interior spaces, `history.md` the chronology and the chapter list, and `exterior-images.md` and `interior-images.md` the reference photographs.

@@ -59,8 +59,9 @@ function expectLaidOut(boxes: readonly Box[], viewport: { width: number; height:
 }
 
 /**
- * The controls docs/design/spec.md (Page) requires, by data-testid: the timeline bar's and the two menu buttons with the menus closed, and each menu's
- * items when it is open. Chapters, presets and walk spawns come from `window.__met`; the rest is the spec's own list, not read from the page.
+ * The controls docs/design/spec.md (Page) requires, by data-testid: the timeline bar's, the two menu buttons and the floor picker's with the menus
+ * closed, and each menu's items when it is open. Chapters, presets, walk spawns and floors come from `window.__met`; the rest is the spec's own list,
+ * not read from the page.
  */
 function requiredControls(f: Facts): { readonly closed: readonly string[]; readonly 'chapter-menu': readonly string[]; readonly 'view-menu': readonly string[] } {
   return {
@@ -69,6 +70,7 @@ function requiredControls(f: Facts): { readonly closed: readonly string[]; reado
       'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end',
       'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'walk-toggle',
       'chapter-menu-button', 'view-menu-button',
+      'floor-all', ...f.floors.map((floor) => `floor-${floor.id}`),
     ],
     'chapter-menu': f.chapters.map((c) => `chapter-${c.id}`),
     'view-menu': [...f.presets.map((p) => `preset-${p.id}`), 'follow-toggle', ...f.walk.spawns.map((id) => `walk-spawn-${id}`), 'cut-toggle', 'cut-slider', 'cut-value'],
@@ -144,7 +146,7 @@ for (const viewport of VIEWPORTS) {
       const f = await open(page, 'autoplay=0&t=0.5');
       const required = requiredControls(f);
       expect(await missingControls(page, required.closed), 'required controls with the menus closed').toEqual([]);
-      const closed = [...(await controlBoxes(page, '.met-bar')), ...(await controlBoxes(page, '.met-menus'))];
+      const closed = [...(await controlBoxes(page, '.met-bar')), ...(await controlBoxes(page, '.met-menus')), ...(await controlBoxes(page, '.met-floors'))];
       expect(required.closed.filter((id) => !closed.some((b) => b.id === id)), 'required controls missing from the layout check').toEqual([]);
       expectLaidOut(closed, viewport, 'menus closed');
       const bar = await page.getByTestId('timeline-bar').boundingBox();

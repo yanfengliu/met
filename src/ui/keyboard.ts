@@ -1,8 +1,9 @@
 /**
  * Keyboard shortcuts (docs/design/spec.md, Page: Keyboard), in two modes.
  * - Orbit view: Space play/pause, Shift+Space play backward, Right step forward, Left step back, Home start, End end; W A S D move the camera
- *   over the ground and Q E down and up while held (Shift doubles the speed; src/viewer/orbit-keys.ts); F enters walk mode.
- * - Walk mode: W A S D and the arrow keys walk while held, Shift runs, Space jumps, F returns to the orbit view; the timeline keys are off.
+ *   over the ground and Q E down and up while held (Shift doubles the speed; src/viewer/orbit-keys.ts); Page Up and Page Down go up and down a
+ *   floor (src/viewer/floors.ts); F enters walk mode.
+ * - Walk mode: W A S D and the arrow keys walk while held, Shift runs, Space jumps, F returns to the orbit view; the timeline and floor keys are off.
  * Held keys are physical keys (`event.code`), so W A S D sit in the same place on any layout; `bindKeys` returns the set of those held, which the
  * frame loop reads, and empties it when the page loses focus. A focused button keeps Space and Enter for itself, a focused slider other than the
  * scrubber keeps the keys it moves by (arrows, Home, End, Page Up and Page Down), and a text field keeps every key.
@@ -17,6 +18,8 @@ export interface KeyActions {
   toEnd(): void;
   toggleWalk(): void;
   jump(): void;
+  floorUp(): void;
+  floorDown(): void;
 }
 
 /** Keys whose holding the frame loop reads, by `event.code`. */
@@ -75,6 +78,12 @@ export function bindKeys(actions: KeyActions, walking: () => boolean): ReadonlyS
           break;
         case 'End':
           actions.toEnd();
+          break;
+        case 'PageUp':
+          actions.floorUp();
+          break;
+        case 'PageDown':
+          actions.floorDown();
           break;
         default:
           handled = false;

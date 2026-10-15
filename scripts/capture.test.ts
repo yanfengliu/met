@@ -26,6 +26,7 @@ const fake = vi.hoisted(() => {
     perf: { buildMs: 1, readyMs: 2 },
     stats: { pieces: 1, meshes: 1, triangles: 1 },
     walk: { spawns: ['plaza'] },
+    floors: [{ id: 'main' }],
     benchmark: () => {
       record.benchmarkedAt.push(record.current);
       return 3;
@@ -130,6 +131,9 @@ describe('the capture run', () => {
     expect(fake.record.benchmarkedAt, 'pages the frame benchmark ran on').toHaveLength(3);
     for (const url of fake.record.benchmarkedAt) expect(new URL(url).searchParams.get('t'), url).toBe(String(fake.facts.n));
     for (const url of fake.record.benchmarkedAt) expect(new URL(url).searchParams.get('solo'), url).toBe('hunt-1902');
+    // Each floor of the page's floor picker, framed on its own and from the aerial-ne and top presets.
+    const floorViews = fake.record.visited.filter((url) => new URL(url).searchParams.get('floor') === 'main').map((url) => new URL(url).searchParams.get('view'));
+    expect(floorViews, 'views of the main floor captured').toEqual([null, 'aerial-ne', 'top']);
   });
 
   it('refuses at the call site to empty a folder outside .shots/', async () => {

@@ -21,6 +21,8 @@ export interface Query {
   readonly walk: boolean;
   /** A walk spawn id (src/walk/spawns.ts); resolved by the walk mode, which warns about one it does not know. */
   readonly spawn: string | null;
+  /** `all` or a floor id (src/viewer/floors.ts); resolved by `startFloor`, which warns about one that names no floor. */
+  readonly floor: string | null;
   readonly warnings: readonly string[];
 }
 
@@ -73,6 +75,7 @@ export function parseQuery(search: string): Query {
     noui: flag(params, 'noui', warnings) === true,
     walk: flag(params, 'walk', warnings) === true,
     spawn: text('spawn'),
+    floor: text('floor'),
     warnings,
   };
 }

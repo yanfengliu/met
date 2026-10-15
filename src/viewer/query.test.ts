@@ -7,12 +7,12 @@ import { parseQuery, shouldAutoplay, startPosition } from './query.js';
 
 describe('parseQuery', () => {
   it('reads every parameter', () => {
-    const q = parseQuery('?shot=1&t=3.5&step=steps-flight&view=top&cam=1,2,3,4,5,6&cut=8.5&solo=hunt-1902&autoplay=0&noui=1&walk=1&spawn=great-hall');
-    expect(q).toMatchObject({ shot: true, t: 3.5, step: 'steps-flight', view: 'top', cam: [1, 2, 3, 4, 5, 6], cut: 8.5, solo: 'hunt-1902', autoplay: false, noui: true, walk: true, spawn: 'great-hall', warnings: [] });
+    const q = parseQuery('?shot=1&t=3.5&step=steps-flight&view=top&cam=1,2,3,4,5,6&cut=8.5&solo=hunt-1902&autoplay=0&noui=1&walk=1&spawn=great-hall&floor=main');
+    expect(q).toMatchObject({ shot: true, t: 3.5, step: 'steps-flight', view: 'top', cam: [1, 2, 3, 4, 5, 6], cut: 8.5, solo: 'hunt-1902', autoplay: false, noui: true, walk: true, spawn: 'great-hall', floor: 'main', warnings: [] });
   });
 
   it('defaults to nothing set', () => {
-    expect(parseQuery('')).toMatchObject({ shot: false, t: null, step: null, view: null, cam: null, cut: null, solo: null, autoplay: null, noui: false, walk: false, spawn: null, warnings: [] });
+    expect(parseQuery('')).toMatchObject({ shot: false, t: null, step: null, view: null, cam: null, cut: null, solo: null, autoplay: null, noui: false, walk: false, spawn: null, floor: null, warnings: [] });
   });
 
   it('ignores malformed values with a warning that names the parameter, the value and what is accepted', () => {

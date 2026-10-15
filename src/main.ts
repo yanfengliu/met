@@ -17,6 +17,9 @@ import { GeometryBvhs } from './walk/bvh-cache.js';
 import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
 import { publishFacts, snapshot } from './viewer/facts.js';
+import { FloorMode } from './viewer/floor-mode.js';
+import { FloorView } from './viewer/floor-view.js';
+import { ALL_FLOORS, FLOORS, floorById, floorPose, floorStep, startFloor } from './viewer/floors.js';
 import { orbitKeyMove, orbitKeys } from './viewer/orbit-keys.js';
 import { ModelPicker } from './viewer/pick.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
@@ -80,13 +83,16 @@ function boot(): void {
   app.appendChild(viewport);
   document.body.appendChild(app);
 
-  // The section cut's cap pass leaves out transparent meshes and those whose material the cut does not clip (src/viewer/section-cut.ts).
-  const capExcluded = timeline.steps.flatMap((s) => s.meshes).filter((m) => !Array.isArray(m.material) && !cappedBySection(m.material));
-  const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capExcluded });
+  // The section cut's cap pass leaves out transparent meshes and those whose material the cut does not clip (src/viewer/section-cut.ts); it draws
+  // the others where the cut passes through them.
+  const meshes = timeline.steps.flatMap((s) => s.meshes);
+  const capExcluded = meshes.filter((m) => !Array.isArray(m.material) && !cappedBySection(m.material));
+  const capped = meshes.filter((m) => Array.isArray(m.material) || cappedBySection(m.material));
+  const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capExcluded, capped });
   const rig = viewer.rig;
   // One BVH per geometry serves the zoom's pick and the walk's collision (src/walk/bvh-cache.ts).
   const bvhs = new GeometryBvhs();
-  const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, viewer.env.groundY, viewer.cut);
+  const picker = new ModelPicker(meshes, bvhs, viewer.env.groundY, viewer.cut, rig.camera.layers);
   rig.pick = (ray) => picker.distance(ray);
   const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs }, (message) => { console.warn(message); });
   const presetPose = (id: string): CameraPose | null => {
@@ -98,8 +104,10 @@ function boot(): void {
   if (query.view !== null && namedView === null) {
     warnings.push(`Query parameter view="${query.view}" names no preset; use one of ${PRESETS.map((p) => p.id).join(', ')}. It is ignored.`);
   }
+  const floorAtLoad = startFloor(query.floor, query.walk);
+  if (floorAtLoad.warning !== null) warnings.push(floorAtLoad.warning);
   let view: string | null = query.cam !== null ? null : (namedView ?? DEFAULT_PRESET);
-  let follow = !query.shot && namedView === null && query.cam === null;
+  let follow = !query.shot && namedView === null && query.cam === null && floorAtLoad.floor === null;
   /** Whether the camera stands where the preset in view puts it, so a resize fits that preset again; false once the follow camera or the user moves it. */
   let atPreset = view !== null;
 
@@ -107,6 +115,10 @@ function boot(): void {
   const cutMax = Math.ceil(top + 1);
   const defaultCut = Math.round(Math.max(1, top * 0.35) * 2) / 2;
   viewer.cut.set(query.cut !== null, query.cut ?? defaultCut);
+  // The floor view (src/viewer/floor-mode.ts): a floor's cut, and the landscape over it hidden, a view filter like the cut.
+  const floors = new FloorMode(viewer.cut, () => new FloorView(timeline.steps, (i) => timeline.restingPieces(i)));
+  /** Whether the camera stands where the floor view framed it, so a resize frames the floor again; false once the user moves it. */
+  let atFloor = false;
 
   const player = new Player(steps.map((s) => s.weight ?? 1), start.t);
   if (shouldAutoplay(query)) player.playForward();
@@ -127,13 +139,45 @@ function boot(): void {
     cutHeight: viewer.cut.height,
     walking: walk.active,
     walkStatus: walkStatus(),
+    floor: floors.id,
   });
   const act = (action: () => void) => (): void => {
     action();
     changed = true;
   };
-  /** Into walk mode (at `spawn`, or as walk-mode.ts decides): the follow camera and the preset in view go off, as for a move by the user. */
+  /** The cut or the landscape changed: shadows are drawn again on the next frame. */
+  const cutChanged = (): void => {
+    viewer.markShadowsDirty();
+    needsRender = true;
+  };
+  /** Frames the floor in view from above, from the side the camera looks from now; like a preset, it turns the follow camera off. */
+  const frameFloor = (): void => {
+    const floor = floors.floor;
+    if (floor === null) return;
+    rig.setPose(floorPose(floor, rig.pose(), rig.camera.aspect));
+    view = null;
+    atPreset = false;
+    follow = false;
+    atFloor = true;
+    needsRender = true;
+  };
+  /** The picker's choice `id` (`all` or a floor), in the orbit view only: a floor is framed, even when chosen again; All leaves the camera where it is. */
+  const chooseFloor = (id: string): void => {
+    if (walk.active) return;
+    const next = id === ALL_FLOORS ? null : (floorById(id) ?? null);
+    if (next === null && id !== ALL_FLOORS) return;
+    if (floors.show(next)) cutChanged();
+    if (next === null) atFloor = false;
+    else frameFloor();
+  };
+  const stepFloor = (direction: 1 | -1): void => {
+    const next = floorStep(floors.id, direction);
+    if (next !== floors.id) chooseFloor(next);
+  };
+  /** Into walk mode (at `spawn`, or as walk-mode.ts decides): the floor view ends as with All, and the follow camera and the preset in view go off, as for a move by the user. */
   const enterWalk = (spawn: string | null): void => {
+    if (floors.show(null)) cutChanged();
+    atFloor = false;
     follow = false;
     view = null;
     atPreset = false;
@@ -149,6 +193,7 @@ function boot(): void {
       presets: PRESETS,
       spawns: SPAWNS.map((spawn) => ({ id: spawn.id, label: spawn.label })),
       cutMax,
+      floors: [{ id: ALL_FLOORS, label: 'All', name: 'All floors' }, ...[...FLOORS].reverse().map((f) => ({ id: f.id, label: f.label, name: f.name }))],
     },
     {
       toStart: act(() => { player.toStart(); }),
@@ -166,6 +211,7 @@ function boot(): void {
         rig.setPose(pose);
         view = id;
         atPreset = true;
+        atFloor = false;
         follow = false;
         needsRender = true;
       },
@@ -174,14 +220,19 @@ function boot(): void {
         if (on) {
           view = null;
           atPreset = false;
+          atFloor = false;
         }
         needsRender = true;
       },
+      // The cut set by hand (the slider or the toggle) ends a floor view and stands as the user's own.
       setCut: (enabled: boolean, height: number) => {
+        if (floors.leaveForCut()) atFloor = false;
         viewer.cut.set(enabled, height);
-        viewer.markShadowsDirty();
-        needsRender = true;
+        cutChanged();
       },
+      chooseFloor,
+      floorUp: () => { stepFloor(1); },
+      floorDown: () => { stepFloor(-1); },
       toggleWalk: () => {
         if (walk.active) walk.exit();
         else enterWalk(null);
@@ -205,6 +256,11 @@ function boot(): void {
     const pose = presetPose(view ?? DEFAULT_PRESET);
     if (pose !== null) rig.setPose(pose);
   }
+  // floor= at load shows that floor, framed unless the query names a camera (view= or cam=), so captures can show a floor from any camera.
+  if (floorAtLoad.floor !== null) {
+    if (floors.show(floorAtLoad.floor)) cutChanged();
+    if (query.cam === null && namedView === null) frameFloor();
+  }
   if (query.walk) {
     const known = query.spawn === null || spawnById(query.spawn) !== undefined;
     if (!known) warnings.push(`Query parameter spawn="${query.spawn}" names no walk spawn; use one of ${SPAWNS.map((sp) => sp.id).join(', ')}. The walk starts at ${DEFAULT_SPAWN}.`);
@@ -216,16 +272,18 @@ function boot(): void {
     follow = false;
     view = null;
     atPreset = false;
+    atFloor = false;
     needsRender = true;
   };
   const resized = new ResizeObserver(() => {
     viewer.resize();
     fitInset();
-    // A fit preset depends on the canvas's shape, so the preset in view is fitted again (a look preset comes back unchanged).
+    // A fit preset depends on the canvas's shape, so the preset in view is fitted again (a look preset comes back unchanged); so is a floor's framing.
     if (atPreset && view !== null) {
       const pose = presetPose(view);
       if (pose !== null) rig.setPose(pose);
     }
+    if (atFloor) frameFloor();
   });
   resized.observe(viewport);
   resized.observe(ui.bar);
@@ -289,6 +347,7 @@ function boot(): void {
     })),
     chapters: snapshot(ranges.map((r) => ({ id: r.chapter.id, title: r.chapter.title, years: r.chapter.years, summary: r.chapter.summary, first: r.first, count: r.count }))),
     presets: snapshot(PRESETS.map((p) => ({ id: p.id, label: p.label, group: p.group }))),
+    floors: snapshot(FLOORS.map((f) => ({ id: f.id, label: f.label, name: f.name, level: f.level, cut: f.cut }))),
     bounds: snapshot({ min: vec(b.min), max: vec(b.max) }),
     stats: snapshot(timeline.stats()),
     warnings: snapshot([...warnings]),
@@ -303,6 +362,7 @@ function boot(): void {
       return g === null ? null : snapshot({ position: vec(g.position), target: vec(g.target), fov: g.fov });
     },
     get cut() { return snapshot({ enabled: viewer.cut.enabled, height: viewer.cut.height }); },
+    get floor() { return snapshot({ id: floors.id, hidden: floors.hidden, ownCut: floors.ownCut }); },
     get view() { return view; },
     get camera() {
       const c = rig.camera;

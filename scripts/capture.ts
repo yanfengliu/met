@@ -1,7 +1,8 @@
 /**
  * Capture tooling (docs/design/spec.md, Verification), run by Node's own TypeScript support:
  *   npm run shots                         the standard set: every preset at the finished state, the aerial preset at t = 0 and at each chapter boundary,
- *                                         the section cut, the walker's view at each walk spawn, and the page UI at 1280x720 and 390x844, into .shots/shots/
+ *                                         the section cut, each floor of the floor picker (framed on its own, and from aerial-ne and top), the walker's
+ *                                         view at each walk spawn, and the page UI at 1280x720 and 390x844, into .shots/shots/
  *   npm run shots -- [--solo <chapter>] [--presets id,id]
  *                                         the same set for one chapter (into .shots/shots-<chapter>/) and/or only the named presets;
  *                                         --solo must be one of the page's chapter ids (window.__met.chapters), or the run fails before writing anything
@@ -41,6 +42,7 @@ interface Facts {
   readonly perf: { readonly buildMs: number; readonly readyMs: number | null };
   readonly stats: { readonly pieces: number; readonly meshes: number; readonly triangles: number };
   readonly walk: { readonly spawns: readonly string[] };
+  readonly floors: readonly { readonly id: string }[];
 }
 
 interface Shot {
@@ -206,6 +208,10 @@ async function shots(origin: string, args: Map<string, string>): Promise<void> {
     ...f.chapters.flatMap((c, i) => (c.count === 0 ? [] : [{ name: `chapter-${String(i + 1).padStart(2, '0')}-${c.id}`, query: `shot=1&noui=1&t=${String(c.first + c.count)}&view=aerial-ne`, viewport: MODEL_VIEWPORT }])),
     { name: 'cut-aerial-ne', query: `shot=1&noui=1&t=${String(n)}&view=aerial-ne&cut=${String(cut)}`, viewport: MODEL_VIEWPORT },
     { name: 'cut-top', query: `shot=1&noui=1&t=${String(n)}&view=top&cut=${String(cut)}`, viewport: MODEL_VIEWPORT },
+    ...f.floors.flatMap((floor) => [
+      { name: `floor-${floor.id}`, query: `shot=1&noui=1&t=${String(n)}&floor=${floor.id}`, viewport: MODEL_VIEWPORT },
+      ...['aerial-ne', 'top'].map((view) => ({ name: `floor-${floor.id}-${view}`, query: `shot=1&noui=1&t=${String(n)}&floor=${floor.id}&view=${view}`, viewport: MODEL_VIEWPORT })),
+    ]),
     ...f.walk.spawns.map((id) => ({ name: `walk-${id}`, query: `shot=1&noui=1&t=${String(n)}&walk=1&spawn=${id}`, viewport: MODEL_VIEWPORT })),
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-${v.name}`, query: `shot=1&t=${String(n)}`, viewport: v })),
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-mid-${v.name}`, query: `shot=1&t=${String(Math.floor(n / 2) + 0.5)}`, viewport: v })),

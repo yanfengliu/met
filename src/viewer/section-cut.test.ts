@@ -3,9 +3,11 @@
  * the site builds as landscape (src/model/site/index.ts's siteSteps and plaza2014Steps) has a material with no plane, no shadow clipping and no cap
  * pass, except the building's own works there (the excavation faces and the pad); the park's and plaza's trees and the fountains are checked piece
  * by piece with no exception; and every material of a building step (every other step, the 1970 front steps included) gets the plane with shadow
- * clipping, so the building's courts, pools and roof garden stay cut.
- * Bound: the planes `attach` hands out, without WebGL; what the GPU draws is checked by eye in the cut-aerial-ne and cut-top captures.
+ * clipping, so the building's courts, pools and roof garden stay cut. The cap pass leaves out meshes wholly under the cut.
+ * Bound: the planes `attach` hands out, without WebGL; what the GPU draws is checked by eye in the cut-aerial-ne and cut-top captures, and the cut colour
+ * a floor view shows by tests/e2e/floors.spec.ts.
  */
+import { Box3, Vector3 } from 'three';
 import type { Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
@@ -15,7 +17,7 @@ import type { StepDef } from '../build/types.js';
 import { palette } from '../model/palette.js';
 import { plaza2014Steps, siteSteps } from '../model/site/index.js';
 import { siteMaterials } from '../model/site/materials.js';
-import { cappedBySection, cutBySection, SectionCut } from './section-cut.js';
+import { cappedBySection, cutBySection, SectionCut, wholeUnderCut } from './section-cut.js';
 
 const LANDSCAPE_STEPS: readonly StepDef[] = [...siteSteps, ...plaza2014Steps];
 const LANDSCAPE_IDS = new Set(LANDSCAPE_STEPS.map((s) => s.id));
@@ -85,5 +87,15 @@ describe('section cut materials', () => {
     expect(cappedBySection(palette.glass)).toBe(false);
     expect(cappedBySection(palette.limestone)).toBe(true);
     expect(cappedBySection(palette.water)).toBe(true);
+  });
+
+  it('leaves out of the cap pass each mesh wholly under the cut, keeping those it passes through and those with no bounds', () => {
+    const box = (y0: number, y1: number): { boundingBox: Box3 } => ({ boundingBox: new Box3(new Vector3(0, y0, 0), new Vector3(1, y1, 1)) });
+    const under = box(17, 19);
+    const through = box(20, 30);
+    const touching = box(10, 27.4);
+    const unknown = { boundingBox: null };
+    expect(wholeUnderCut([under, through, touching, unknown], 27.4)).toEqual([under, touching]);
+    expect(wholeUnderCut([under, through], 18)).toEqual([]);
   });
 });

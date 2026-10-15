@@ -1,7 +1,10 @@
 /**
- * The page chrome: timeline bar, chapter menu, view menu and keyboard shortcuts, wired to app actions. Plain DOM; `sync` is cheap to call every frame.
+ * The page chrome: timeline bar, chapter menu, view menu, floor picker and keyboard shortcuts, wired to app actions. Plain DOM; `sync` is cheap to
+ * call every frame.
  */
 import type { Chapter } from '../build/types.js';
+import { FloorPicker } from './floor-picker.js';
+import type { FloorEntry } from './floor-picker.js';
 import { bindKeys } from './keyboard.js';
 import { chapterAt } from './label.js';
 import type { LabelStep } from './label.js';
@@ -20,17 +23,27 @@ export interface UiInfo {
   readonly spawns: readonly SpawnEntry[];
   /** Top of the section-cut slider, in metres. */
   readonly cutMax: number;
+  /** The floor picker's entries from the top of its column down: All, then the floors from the highest. */
+  readonly floors: readonly FloorEntry[];
 }
 
 export interface UiActions extends BarActions, ViewActions {
   goToChapter(first: number): void;
   jump(): void;
+  /** Chooses a floor picker entry by id. */
+  chooseFloor(id: string): void;
+  floorUp(): void;
+  floorDown(): void;
 }
 
 /** What the walk status line says: nothing in the orbit view, then preparing, walking with the pointer free, or with it locked to the view. */
 export type WalkStatus = 'off' | 'preparing' | 'free' | 'locked';
 
-export type UiState = BarState & ViewState & { readonly walkStatus: WalkStatus };
+export type UiState = BarState & ViewState & {
+  readonly walkStatus: WalkStatus;
+  /** The floor picker's entry in view. */
+  readonly floor: string;
+};
 
 export interface Ui {
   sync(state: UiState): void;
@@ -55,6 +68,7 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   );
   const chapters = new ChapterMenu(info.ranges, (first) => { actions.goToChapter(first); });
   const view = new ViewMenu(info.presets, info.spawns, info.cutMax, initial, actions);
+  const floors = new FloorPicker(info.floors, (id) => { actions.chooseFloor(id); });
   const menus = document.createElement('div');
   menus.className = 'met-menus';
   menus.append(chapters.disclosure.element, view.disclosure.element);
@@ -63,13 +77,13 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   ui.dataset['testid'] = 'ui';
   const status = el('div', { className: 'met-walk-status', testid: 'walk-status', attrs: { role: 'status', 'aria-live': 'polite' } });
   status.hidden = true;
-  ui.append(menus, status, bar.element);
+  ui.append(menus, status, floors.element, bar.element);
   root.appendChild(ui);
   closeOnOutside([chapters.disclosure, view.disclosure]);
   let walking = initial.walking;
   const held = bindKeys(actions, () => walking);
 
-  // Panels never reach under the bar: their max height follows the bar's height.
+  // Panels never reach under the bar, and the floor picker centres in the view above it: both follow the bar's height.
   const fit = (): void => {
     document.documentElement.style.setProperty('--met-bar-h', `${String(Math.ceil(bar.element.getBoundingClientRect().height))}px`);
   };
@@ -81,6 +95,7 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     bar.sync(state);
     chapters.sync(chapterAt(state.t, info.ranges, info.steps.length));
     view.sync(state);
+    floors.sync(state);
     setText(status, WALK_STATUS[state.walkStatus]);
     if (status.hidden !== (state.walkStatus === 'off')) status.hidden = state.walkStatus === 'off';
   };

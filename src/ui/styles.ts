@@ -89,6 +89,14 @@ const CSS = /* css */ `
   font-size: 13px; line-height: 1.35; color: var(--met-text); pointer-events: none;
 }
 .met-walk-status[hidden] { display: none; }
+/* The floor picker: a column at the left, centred in the view above the bar; open menu panels (z-index 3) cover it on a narrow screen. */
+.met-floors {
+  position: absolute; left: 12px; top: calc((100% - var(--met-bar-h)) / 2); transform: translateY(-50%); z-index: 2;
+  display: flex; flex-direction: column; gap: 4px; padding: 4px; border-radius: 10px;
+  background: var(--met-panel); backdrop-filter: blur(8px); border: 1px solid var(--met-line);
+}
+.met-floors[hidden] { display: none; }
+.met-floor { min-width: 66px; height: 34px; padding: 0 8px; }
 .met-speed .met-button { min-width: 44px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 
 .met-error {
@@ -106,6 +114,8 @@ const CSS = /* css */ `
   .met-speed .met-button { min-width: 40px; padding: 0 4px; }
   .met-modes { gap: 10px; }
   .met-walk-status { font-size: 12px; padding: 6px 9px; }
+  .met-floors { left: 8px; gap: 3px; padding: 3px; }
+  .met-floor { min-width: 58px; height: 32px; padding: 0 6px; font-size: 13px; }
 }
 `;
 
