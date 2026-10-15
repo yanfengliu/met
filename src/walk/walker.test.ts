@@ -2,7 +2,7 @@
  * The walker (src/walk/walker.ts) on fixtures built from real pieces through the page's own collision path: step definitions of boxes and the parts
  * library's stair flight, built by the timeline, evaluated at t, selected by `collisionMeshes` and indexed by `CollisionWorld` over three-mesh-bvh.
  * Each case drives the walker with keys held for simulated seconds at 60 frames a second, as the page does, and reads its feet and eye.
- * Bound: fixtures are axis-aligned rooms, a straight flight and ledges; the real model is walked in tests/e2e/walk.spec.ts.
+ * Bound: fixtures are axis-aligned rooms, a straight flight (also under a low ceiling) and ledges; the real model is walked in tests/e2e/walk.spec.ts.
  */
 import { BoxGeometry, MathUtils, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import type { Material } from 'three';
@@ -140,6 +140,40 @@ describe('walker on stairs, ledges and drops', () => {
         expect(walker.feet.z, 'held off the ledge face').toBeGreaterThan(-2);
       }
     }
+  });
+
+  it('does not step up where the raised body would meet a ceiling: a 0.3 m step under a ceiling 1.8 m up stops it, its head never in it', () => {
+    const ceiling = 1.8;
+    const { walker } = walkerOn([floor, step('low-step', (kit) => {
+      block(kit, [-10, 0, -10], [10, 0.3, -2]);
+      block(kit, [-10, ceiling, -10], [10, ceiling + 0.4, 3]);
+    })]);
+    walker.place(0, 0, 0, facing(0, -1));
+    let head = 0;
+    hold(walker, 3, W, 60, () => {
+      head = Math.max(head, walker.feet.y + BODY.height, walker.eye().y);
+    });
+    expect(head, 'the highest the top of the body or the eye went').toBeLessThanOrEqual(ceiling + 1e-3);
+    expect(walker.feet.y, 'still on the floor').toBeCloseTo(0, 6);
+    expect(walker.feet.z, 'stopped at the step, its centre at the edge').toBeGreaterThan(-2.05);
+  });
+
+  it('climbs a stair of 0.17 m risers under a ceiling 2.5 m up only as far as its body fits under it', () => {
+    const flight = stairFlight({ width: 2.4, steps: 10, riser: 0.17, tread: 0.3, nosing: 0.02 });
+    const ceiling = 2.5;
+    const stairs = [floor, step('low-stair', (kit) => {
+      kit.add(flight.steps, stone, new Matrix4());
+      block(kit, [-3, ceiling, -6], [3, ceiling + 0.3, 3]);
+    })];
+    const { walker } = walkerOn(stairs);
+    walker.place(0, 0, 1.5, facing(0, -1));
+    let head = 0;
+    hold(walker, 4, W, 60, () => {
+      head = Math.max(head, walker.feet.y + BODY.height);
+    });
+    // Four risers (0.68 m) leave the top of the body at 2.43 m; a fifth would put it at 2.60 m, in the ceiling.
+    expect(head, 'the highest the top of the body went').toBeLessThanOrEqual(ceiling + 1e-3);
+    expect(walker.feet.y, 'on the fourth step').toBeCloseTo(4 * 0.17, 6);
   });
 
   it('falls off the edge of a landing at once, and lands on the floor below', () => {

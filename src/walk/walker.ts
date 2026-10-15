@@ -4,7 +4,8 @@
  *
  * Model. The body is a capsule of radius 0.35 m and height 1.75 m standing on its feet; the eye is 1.6 m above them. Walls are met by a "floating"
  * capsule that starts STEP (0.35 m) above the feet, so anything lower than that is stepped onto rather than walked into: vertical probes from
- * STEP above the feet find the ground, and the feet snap to it when it lies within STEP above or below and is walkable (no steeper than 40°).
+ * STEP above the feet find the ground, and the feet snap to it when it lies within STEP above or below and is walkable (no steeper than 40°);
+ * a rise is taken only where the raised capsule meets nothing overhead, else the move is refused as at a wall (a step under a low ceiling).
  * The ground is the surface under the body's centre or, over a gap or groove there, the lower rim of two opposite sides STRADDLE (0.3 m) out,
  * whichever is higher: a body bridges a gap narrower than itself, yet falls off an edge as soon as its centre passes it. A steeper surface is
  * met like a wall from the ground, and where the body lands on one it slides down it with only air control, the keys unable to push it uphill.
@@ -54,6 +55,8 @@ const STAIR_SNAP = 0.05;
 const EASE_TAU = 0.09;
 /** A jump pressed this long before landing still fires on landing. */
 const JUMP_BUFFER = 0.15;
+/** The raised body may meet something overhead by this much and still fit under it, metres. */
+const HEADROOM_SLOP = 1e-3;
 const MAX_STEPS_PER_UPDATE = 30;
 /** How far out the side probes stand, metres: a gap narrower than twice this is bridged. */
 export const STRADDLE = 0.3;
@@ -231,6 +234,11 @@ export class Walker {
       return;
     }
     const rise = hit.y - feet.y;
+    if (rise > HEADROOM_SLOP && this.bumpsHead(hit.y)) {
+      // The raised body would meet a ceiling, a soffit or a lintel: the step up is refused as a wall refuses a move.
+      this.refuse();
+      return;
+    }
     feet.y = hit.y;
     this.velocity.y = 0;
     if (hit.normalY >= MIN_WALKABLE_NORMAL_Y) {
@@ -264,7 +272,7 @@ export class Walker {
       }
     }
     const top = feet.y + BODY.step + PROBE_EPSILON;
-    if (!this.support(top, 2 * BODY.step + PROBE_EPSILON) || hit.normalY < MIN_WALKABLE_NORMAL_Y) {
+    if (!this.support(top, 2 * BODY.step + PROBE_EPSILON) || hit.normalY < MIN_WALKABLE_NORMAL_Y || (hit.y - feet.y > HEADROOM_SLOP && this.bumpsHead(hit.y))) {
       feet.x = before.x;
       feet.z = before.z;
       return;
@@ -283,6 +291,13 @@ export class Walker {
     }
     const top = feet.y + BODY.step + PROBE_EPSILON;
     if (this.support(top, BODY.step + PROBE_EPSILON - dy)) {
+      if (hit.y - feet.y > HEADROOM_SLOP && this.bumpsHead(hit.y)) {
+        // A ledge under a ceiling the raised body would meet: this step's level move is taken back and the fall goes on beside it.
+        this.refuse();
+        feet.y += dy;
+        this.slide = null;
+        return;
+      }
       feet.y = hit.y;
       velocity.y = 0;
       if (hit.normalY >= MIN_WALKABLE_NORMAL_Y) {
@@ -314,6 +329,27 @@ export class Walker {
       }
     }
     return found;
+  }
+
+  /**
+   * Whether the body, its feet raised to `y` where its centre stands, would meet something overhead: the floating capsule there is pushed down by
+   * more than HEADROOM_SLOP. The level pushes of `walls` skip such contacts, so every rise of the feet (a step up, a landing on a ledge) asks this first.
+   */
+  private bumpsHead(y: number): boolean {
+    const { feet, segment, push } = this;
+    const r = BODY.radius;
+    segment.start.set(feet.x, y + BODY.step + r, feet.z);
+    segment.end.set(feet.x, y + BODY.height - r, feet.z);
+    this.world.resolveCapsule(segment, r, false, push);
+    return push.y < -HEADROOM_SLOP;
+  }
+
+  /** Takes back this step's level move: the body stands where it stood, its level velocity gone, as at a wall walked straight into. */
+  private refuse(): void {
+    this.feet.x = this.before.x;
+    this.feet.z = this.before.z;
+    this.velocity.x = 0;
+    this.velocity.z = 0;
   }
 
   /** Pushes the floating capsule out of walls (level pushes unless `full`), removes the velocity into them; returns how far it moved. */
