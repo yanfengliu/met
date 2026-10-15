@@ -242,6 +242,8 @@ function boot(): void {
       jump: () => { walk.jump(); },
     },
     state(),
+    // The keys route by the mode now, not the mode the last frame drew: F and then Space in one frame jump rather than play.
+    () => walk.active,
   );
   // The camera frames the part of the canvas above the timeline bar (none with noui), so set the inset before the first pose.
   const fitInset = (): void => {

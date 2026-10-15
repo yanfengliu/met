@@ -1,9 +1,11 @@
 /**
  * Walk mode and the orbit view's movement keys through real input (docs/design/spec.md, Keyboard and Walk mode): the orbit keys move the camera and
  * its target together and leave the timeline keys alone; the Walk toggle, the F key, a view-menu spawn and `?walk=1&spawn=` enter walk mode; on the
- * real model, holding W walks from the plaza up the front steps; a drag turns the view; F returns to the orbit view where the walker stood.
+ * real model, holding W walks from the plaza up the front steps; a drag turns the view; F returns to the orbit view where the walker stood; a key
+ * pressed in the same frame as the F before it already has the new mode's meaning, both ways.
  * Facts come from `window.__met.walk` and `window.__met.camera`; spawn positions from src/walk/spawns.ts; levels from src/model/frame.ts.
- * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2); frame times are this machine's (an RTX 4090 in headless Chrome).
+ * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2); frame times are this machine's (an RTX 4090 in headless Chrome);
+ * "the same frame" is checked by a probe's requestAnimationFrame count at each keydown, and a run whose keys never shared a frame fails, not passes.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -35,6 +37,48 @@ async function hold(page: Page, key: string, ms: number): Promise<void> {
 
 const sub = (a: readonly number[], b: readonly number[]): Vec3 => [(a[0] ?? 0) - (b[0] ?? 0), (a[1] ?? 0) - (b[1] ?? 0), (a[2] ?? 0) - (b[2] ?? 0)];
 const dot = (a: readonly number[], b: readonly number[]): number => (a[0] ?? 0) * (b[0] ?? 0) + (a[1] ?? 0) * (b[1] ?? 0) + (a[2] ?? 0) * (b[2] ?? 0);
+
+/** What the browser's input pipeline needs to press a key by its code, as Playwright's own keyboard sends it (CDP Input.dispatchKeyEvent). */
+const KEYS: Readonly<Record<string, { key: string; keyCode: number; text?: string }>> = {
+  KeyF: { key: 'f', keyCode: 70, text: 'f' },
+  Space: { key: ' ', keyCode: 32, text: ' ' },
+  ArrowLeft: { key: 'ArrowLeft', keyCode: 37 },
+};
+
+/**
+ * Presses and releases each key of `codes` in order, as real input sent back to back, and returns the frame each keydown arrived in, counted by a
+ * probe's own requestAnimationFrame loop installed beside the page's (it reads nothing of the page and writes none of its state). Keys that share a
+ * frame number arrived with no frame of the page between them.
+ */
+async function pressInOneGo(page: Page, codes: readonly string[]): Promise<number[]> {
+  await page.evaluate(() => {
+    const w = window as unknown as { keyProbe?: { frame: number; downs: [string, number][] } };
+    if (w.keyProbe !== undefined) return;
+    const probe = { frame: 0, downs: [] as [string, number][] };
+    const tick = (): void => {
+      probe.frame += 1;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    window.addEventListener('keydown', (event) => { probe.downs.push([event.code, probe.frame]); }, true);
+    w.keyProbe = probe;
+  });
+  await page.evaluate(() => { (window as unknown as { keyProbe: { downs: unknown[] } }).keyProbe.downs.length = 0; });
+  const cdp = await page.context().newCDPSession(page);
+  const sends = codes.flatMap((code) => {
+    const k = KEYS[code];
+    if (k === undefined) throw new Error(`pressInOneGo: no key description for ${code}; add it to KEYS.`);
+    const down = { type: k.text === undefined ? 'rawKeyDown' : 'keyDown', key: k.key, code, windowsVirtualKeyCode: k.keyCode, ...(k.text === undefined ? {} : { text: k.text, unmodifiedText: k.text }) };
+    return [down, { type: 'keyUp', key: k.key, code, windowsVirtualKeyCode: k.keyCode }];
+  });
+  // Sent without waiting for one another, so nothing of the test's own pace comes between them.
+  await Promise.all(sends.map((params) => cdp.send('Input.dispatchKeyEvent', params as never)));
+  await cdp.detach();
+  await settle(page);
+  const downs = await page.evaluate(() => (window as unknown as { keyProbe: { downs: [string, number][] } }).keyProbe.downs);
+  expect(downs.map(([code]) => code), 'the keydowns the page received').toEqual([...codes]);
+  return downs.map(([, frame]) => frame);
+}
 
 /** The camera's view direction laid flat, and the level direction to its right. */
 function levelAxes(c: Camera): { forward: Vec3; right: Vec3 } {
@@ -204,5 +248,63 @@ test.describe('walk mode', () => {
     expect(gpu, report).toBeLessThan(16.7);
     expect(median(intervals), report).toBeLessThan(16.7 * 1.1);
     expect(await currentT(page)).toBe(f.n);
+  });
+});
+
+/**
+ * Opens the page with `query`, readies it with `prepare` and presses `codes` back to back, reopening until every keydown arrived in one frame (at
+ * most 5 tries), so the keys after the first meet the mode the first one set before any frame has drawn it.
+ */
+async function pressedInOneFrame(page: Page, query: string, prepare: () => Promise<void>, codes: readonly string[]): Promise<Facts> {
+  const seen: string[] = [];
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    const f = await open(page, query);
+    await prepare();
+    const frames = await pressInOneGo(page, codes);
+    if (frames.every((frame) => frame === frames[0])) return f;
+    seen.push(frames.join('/'));
+  }
+  throw new Error(`The keys ${codes.join(', ')} never arrived within one frame in 5 tries (frames ${seen.join(', ')}), so nothing was tested.`);
+}
+
+test.describe('keys right after a key that changes the mode', () => {
+  let errors: { expectClean: () => void };
+  test.beforeEach(({ page }) => {
+    errors = watchErrors(page);
+  });
+  test.afterEach(() => {
+    errors.expectClean();
+  });
+
+  const focusView = (page: Page) => async (): Promise<void> => {
+    await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
+  };
+
+  test('F and then Space in one frame: walk mode takes Space, so the finished build stays paused at t = N', async ({ page }) => {
+    const f = await pressedInOneFrame(page, '', focusView(page), ['KeyF', 'Space']);
+    await walking(page);
+    await settle(page);
+    const after = await facts(page);
+    expect([after.walk.mode, after.mode, after.t], 'walk mode, the player and t after F and Space').toEqual(['walk', 'paused', f.n]);
+  });
+
+  test('F and then ArrowLeft in one frame: the arrow walks instead of stepping the build back', async ({ page }) => {
+    const f = await pressedInOneFrame(page, '', focusView(page), ['KeyF', 'ArrowLeft']);
+    await walking(page);
+    await settle(page);
+    const after = await facts(page);
+    expect([after.walk.mode, after.mode, after.t], 'walk mode, the player and t after F and ArrowLeft').toEqual(['walk', 'paused', f.n]);
+  });
+
+  test('F and then Space in one frame while walking: the orbit view takes Space, which plays the build', async ({ page }) => {
+    const ready = async (): Promise<void> => {
+      await focusView(page)();
+      await page.keyboard.press('KeyF');
+      await walking(page);
+    };
+    await pressedInOneFrame(page, '', ready, ['KeyF', 'Space']);
+    await orbiting(page);
+    await page.waitForFunction(() => window.__met?.mode === 'playing', undefined, { timeout: 5000 });
+    expect((await facts(page)).walk.mode).toBe('orbit');
   });
 });

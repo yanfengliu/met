@@ -60,7 +60,11 @@ const WALK_STATUS: Readonly<Record<WalkStatus, string>> = {
   locked: 'Move the mouse to look. Esc frees the pointer; F leaves walk mode.',
 };
 
-export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, initial: UiState): Ui {
+/**
+ * Builds the chrome into `root`. `walking()` says whether walk mode is on now; the keys read it at each press, so a key right after one that
+ * changes the mode (F, then Space before the next frame) takes the new mode's meaning.
+ */
+export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, initial: UiState, walking: () => boolean): Ui {
   installStyles();
   const bar = new TimelineBar(
     { steps: info.steps, chapters: info.chapters, boundaries: info.ranges.filter((r) => r.count > 0).map((r) => ({ first: r.first, title: r.title })) },
@@ -80,8 +84,7 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   ui.append(menus, status, floors.element, bar.element);
   root.appendChild(ui);
   closeOnOutside([chapters.disclosure, view.disclosure]);
-  let walking = initial.walking;
-  const held = bindKeys(actions, () => walking);
+  const held = bindKeys(actions, walking);
 
   // Panels never reach under the bar, and the floor picker centres in the view above it: both follow the bar's height.
   const fit = (): void => {
@@ -91,7 +94,6 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   fit();
 
   const sync = (state: UiState): void => {
-    walking = state.walking;
     bar.sync(state);
     chapters.sync(chapterAt(state.t, info.ranges, info.steps.length));
     view.sync(state);
