@@ -68,7 +68,7 @@ Checks on `bec9ba5`: `npm run verify` green (315 unit tests in 32 files, 26 e2e 
 
 Review coverage: round 0 (Codex and Claude, whole codebase at `ad6f16f`, 18 findings), round 1 (both, the repair diff, 3 new low findings and 5 weak tests), round 2 (Codex, the second repair diff, clean); all findings fixed with red-then-green checks (`reviews/`). Claude's round 0 F1 was not fully independent: the plan named Codex's F1 while it ran.
 
-Limitations: sculpture, figures and portrait medallions are blocked out; the Dendur hall stops at the estimated block lines (about 5.6 m short of the real east end); the Hunt column positions follow the photographs where the floor map disagrees; the Wallace and Kravis park faces are estimated (no photographs found); the Wallace Wing is modelled as it stood until 2025. Not done, needing the owner: deployment, and the fleet runbook's stale note that the Codex pin has not returned a live review (it did, three times, on 2026-10-14).
+Limitations: sculpture, figures and portrait medallions are blocked out; the Dendur hall stops at the estimated block lines (about 5.6 m short of the real east end); the Hunt column positions follow the photographs where the floor map disagrees; the Wallace and Kravis park faces are estimated (no photographs found); the Wallace Wing is modelled as it stood until 2025. Owner-approved follow-ups, done 2026-10-14: deployed to https://yanfengliu.github.io/met/ by `.github/workflows/pages.yml` (`2846250`, first run green, live page verified); the fleet runbook's stale Codex-pin note replaced with the day's results (fleet `0ddc630`, fleet tests 113/113); the six unused claude.ai-synced plugins and the Figma connector turned off in the owner's user settings.
 
 ## Recovery
 
