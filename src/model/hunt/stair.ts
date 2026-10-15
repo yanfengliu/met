@@ -96,7 +96,8 @@ export const stairSteps: readonly StepDef[] = [
       box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, STAIR_TOP_Z], [STAIR_HALF, LANDING_Y, STAIR_MID_BACK_Z], 2);
       kit.add(upper.steps, palette.limestone, at(0, LANDING_Y, STAIR_MID_BACK_Z), 2);
       box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, CROSS_HALL_FRONT_Z], [STAIR_HALF, SECOND - SLAB, STAIR_TOP_Z], 3);
-      kit.add(stairLanding({ width: w, depth: STAIR_TOP_Z - CROSS_HALL_FRONT_Z, thickness: SLAB }), palette.limestone, at(0, SECOND, STAIR_TOP_Z), 3);
+      // The top landing runs on under the end wall's arch to the cross hall's floor (hunt-galleries), which starts behind that wall.
+      kit.add(stairLanding({ width: w, depth: STAIR_TOP_Z - CROSS_HALL_FRONT_Z + WALL_T, thickness: SLAB }), palette.limestone, at(0, SECOND, STAIR_TOP_Z), 3);
       sides(kit, lowerWall(), STAIR_HALF, MAIN, 4);
     },
   },

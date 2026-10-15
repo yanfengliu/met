@@ -5,9 +5,9 @@
  * Bounds: the block test checks each piece's world bounding box (a box overstepping a corner of an L-shaped edge counts against the nearer edge only);
  * the wings' front allowance is the spec's moulding rule (up to 1.5 m beyond the line), and pieces of the walls step get 2 cm. Budgets are this area's share
  * from the coordinator (650,000 triangles counting instances, 170 instanced meshes, 2 step lights).
- * The walk mode (plan docs/work/1_first-person-walk, M2): the central doors' glazing is passable to a walker and looks like the palette's, while the
- * palette and the other glazing stay solid; the floor is whole behind the three arches' screens, flush with the main floor (a 10 cm plan grid, against
- * this area's solid surfaces at t = N).
+ * The walk routes (plan docs/work/1_first-person-walk, M2; the whole walks are in routes.test.ts): the central doors' glazing is passable to the walk mode
+ * and looks like the palette's, while the palette and the other glazing stay solid; the floor is whole behind the three arches' screens and under the
+ * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's solid surfaces at t = N).
  */
 import { Box3, Vector3 } from 'three';
 import type { Material } from 'three';
@@ -21,7 +21,7 @@ import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
 import { palette } from '../palette.js';
 import { LUNETTE_GRILLE } from './arches.js';
-import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BAY_X, MAIN, SCREEN_HEAD_Y, SCREEN_Z, WALL_BACK_Z } from './dims.js';
+import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
 import { Solids } from './walk-probe.js';
@@ -198,7 +198,7 @@ function look(material: Material): string {
 }
 
 let solids: Solids | undefined;
-/** This area's solid surfaces at t = N round the three arches. */
+/** This area's solid surfaces at t = N round the three arches and the head of the Grand Staircase. */
 function areaSolids(): Solids {
   if (solids === undefined) {
     const timeline = new Timeline(AREA);
@@ -246,5 +246,11 @@ describe('the walk routes through the wing', () => {
     const half = ARCH_INNER_SPAN / 2;
     const found = BAY_X.flatMap((x) => holes(x - half + 0.05, x + half - 0.05, WALL_BACK_Z - 0.3, SCREEN_Z - 0.02, MAIN));
     expect(found.slice(0, 4), `${String(found.length)} points behind the screens with no floor at Y ${MAIN.toFixed(2)}`).toEqual([]);
+  });
+
+  it("carries the second floor whole from the Grand Staircase's top landing under the end wall's arch into the cross hall", () => {
+    // The end wall's arch is 5.4 m wide (stair.ts); the cross hall runs on west of it.
+    const found = holes(-2.6, 2.6, CROSS_HALL_FRONT_Z - 2, STAIR_TOP_Z - 0.02, SECOND);
+    expect(found.slice(0, 4), `${String(found.length)} points at the head of the stair with no floor at Y ${SECOND.toFixed(2)}`).toEqual([]);
   });
 });
