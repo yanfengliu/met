@@ -31,6 +31,8 @@ Milestone M1, engine (worker `walk`): default load at t = N and paused, `autopla
 
 - [x] M1 engine (worker `walk`, merged `48fe3e6`, deployed and checked live): default load at t = N; orbit WASD; walk mode with `three-mesh-bvh` 0.9.15 over 1.41M solid triangles, BVH 62–77 ms, frame about 4 ms; wheel zoom heads for the surface under the pointer (defect register entry, `zoom.spec`); verify green, 350 unit and 38 e2e; audits 0.
 - [ ] M2 routes R1 and R2 walkable, route e2e (worker `routes`, after M1).
+- [x] M2 routes R1 and R2 (worker `routes`, merged `1fa410d`): door, pit and landing fixes; route tests drive the real walker (`src/walk/walker.ts`) and real keys; verify green, 348 unit and 40 e2e.
+- [ ] M2b wings (worker `routes`, decided 2026-10-15): the seam walls at X −49.7 and +49.4 seal the McKim, Mead & White wings on every floor. Open the main-floor passages from the Great Hall where the real building has them, and gate route R3 (Great Hall → north wing → Temple of Dendur) and route R4 (Great Hall → south wing → Leon Levy and Shelby White Court) the same way.
 - [ ] M3 floor picker in the map view (worker `floors`, after M1, in parallel with M2: it touches `src/viewer` and `src/ui`, M2 touches `src/model`).
 - [ ] Independent review of the integrated change; repairs.
 - [ ] Merge, push, deploy check, worktree cleanup, outcome.
