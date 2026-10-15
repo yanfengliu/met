@@ -90,6 +90,8 @@ Node 24 (`.nvmrc`), npm, Vite, strict TypeScript, Vitest, ESLint and Playwright 
 
 Capture (not part of `verify`; run before a visual handoff and read every image at native resolution): `MET_PORT=<port> npm run shots` writes the standard set to `.shots/shots/` and prints the revision, dirty flag, GPU, build, ready and frame times; `npm run sweep -- --t <t> [--count 12] [--seed <n>] [--solo <chapter>]` writes seeded random cameras to `.shots/sweep-<seed>-t<t>/` and prints the seed. Both start and stop their own Vite server on `MET_PORT` and drive the system Chrome.
 
+Deploy (not part of `verify`): every push to `main` runs `.github/workflows/pages.yml`, which runs the unit tests, typecheck, lint and build, then deploys `dist/` to GitHub Pages; e2e stays local.
+
 Dependency audit gate: `npm run audit:runtime` (`npm audit --omit=dev --audit-level=high`) and `npm run audit:full` (`npm audit --audit-level=high`) must both report 0 vulnerabilities; rerun both on every dependency change.
 
 Ports: each worktree sets its own `MET_PORT` (default 5310) for `npm run dev` and `npm run test:e2e`, and a server is never reused across worktrees; a taken port fails the run.
