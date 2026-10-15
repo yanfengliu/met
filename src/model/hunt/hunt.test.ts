@@ -239,7 +239,9 @@ describe('the walk routes through the wing', () => {
     expect(new Set(doors.map((p) => look(p.material))), "the doors' looks: the palette's bronze and dark glass").toEqual(new Set([look(palette.bronze), look(palette.glassDark)]));
     const others = pieces.filter((p) => !doors.includes(p) && p.material.userData['solid'] === false);
     expect(others.map((p) => p.material.name), 'passable pieces of hunt-windows other than the doors').toEqual([]);
-    expect(Object.entries(palette).flatMap(([key, m]) => (m.userData['solid'] === false ? [key] : [])), 'passable shared palette materials').toEqual([]);
+    // Only the glazing and frame entries: the palette's water and foliage are passable on purpose (src/model/palette.ts, Walking).
+    const glazing = { glass: palette.glass, glassDark: palette.glassDark, bronze: palette.bronze, metalDark: palette.metalDark };
+    expect(Object.entries(glazing).flatMap(([key, m]) => (m.userData['solid'] === false ? [key] : [])), 'passable palette materials of glazing and frames').toEqual([]);
   });
 
   it("lays the floor whole behind each arch's screen, flush with the main floor from the top step to the hall's marble", () => {

@@ -3,11 +3,13 @@
  * DOM, no clock of its own (the caller passes seconds) and no scene writes.
  *
  * Model. The body is a capsule of radius 0.35 m and height 1.75 m standing on its feet; the eye is 1.6 m above them. Walls are met by a "floating"
- * capsule that starts STEP (0.35 m) above the feet, so anything lower than that is stepped onto rather than walked into: a vertical probe from
- * STEP above the feet finds the ground under the body's centre, and the feet snap to it when it lies within STEP above or below and is walkable
- * (no steeper than 40°). A steeper surface is stood on but slid down, with only air control. Off an edge higher than STEP the body falls under
- * gravity and lands on the first surface below; a jump starts at the speed that rises JUMP_HEIGHT. On the ground every push from the walls is
- * level, and the velocity into a wall is removed, so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`.
+ * capsule that starts STEP (0.35 m) above the feet, so anything lower than that is stepped onto rather than walked into: vertical probes from
+ * STEP above the feet find the ground, and the feet snap to it when it lies within STEP above or below and is walkable (no steeper than 40°).
+ * The ground is the surface under the body's centre or, over a gap or groove there, the lower rim of two opposite sides STRADDLE (0.3 m) out,
+ * whichever is higher: a body bridges a gap narrower than itself, yet falls off an edge as soon as its centre passes it. A steeper surface is
+ * stood on but slid down, with only air control. Off an edge higher than STEP the body falls under gravity and lands on the first surface below;
+ * a jump starts at the speed that rises JUMP_HEIGHT. On the ground every push from the walls is level, and the velocity into a wall is removed,
+ * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`.
  *
  * Time. Physics runs in fixed steps of 1/120 s, the remainder carried to the next frame, so a run is the same at any frame rate; the eye is
  * interpolated between the last two steps, and a snap up or down a stair is eased out over about 0.1 s for the eye only.
@@ -52,6 +54,11 @@ const EASE_TAU = 0.09;
 /** A jump pressed this long before landing still fires on landing. */
 const JUMP_BUFFER = 0.15;
 const MAX_STEPS_PER_UPDATE = 30;
+/** How far out the side probes stand, metres: a gap narrower than twice this is bridged. */
+export const STRADDLE = 0.3;
+const DIAGONAL = STRADDLE * Math.SQRT1_2;
+/** One of each pair of opposite side probes; the other is its negative. */
+const SIDES: readonly (readonly [number, number])[] = [[STRADDLE, 0], [0, STRADDLE], [DIAGONAL, DIAGONAL], [DIAGONAL, -DIAGONAL]];
 
 /** What the keys ask for: `forward` and `right` in [-1, 1] (back and left are negative), running, nothing else. */
 export interface WalkInput {
@@ -79,6 +86,8 @@ export class Walker {
   private readonly segment = new Line3();
   private readonly push = new Vector3();
   private readonly hit: GroundHit = { y: 0, normalY: 1, normalX: 0, normalZ: 0 };
+  private readonly sideA: GroundHit = { y: 0, normalY: 1, normalX: 0, normalZ: 0 };
+  private readonly sideB: GroundHit = { y: 0, normalY: 1, normalX: 0, normalZ: 0 };
 
   constructor(
     private readonly world: WalkWorld,
@@ -197,7 +206,7 @@ export class Walker {
   private follow(): void {
     const { feet, hit } = this;
     const top = feet.y + BODY.step + PROBE_EPSILON;
-    if (!this.world.groundBelow(feet.x, top, feet.z, 2 * BODY.step + PROBE_EPSILON, hit)) {
+    if (!this.support(top, 2 * BODY.step + PROBE_EPSILON)) {
       this.onGround = false;
       this.slide = null;
       this.velocity.y = 0;
@@ -225,7 +234,7 @@ export class Walker {
       return;
     }
     const top = feet.y + BODY.step + PROBE_EPSILON;
-    if (this.world.groundBelow(feet.x, top, feet.z, BODY.step + PROBE_EPSILON - dy, hit)) {
+    if (this.support(top, BODY.step + PROBE_EPSILON - dy)) {
       feet.y = hit.y;
       velocity.y = 0;
       if (hit.normalY >= MIN_WALKABLE_NORMAL_Y) {
@@ -238,6 +247,25 @@ export class Walker {
     }
     feet.y += dy;
     this.slide = null;
+  }
+
+  /**
+   * The ground under the body from height `top` down `length`, into `hit`: under the centre, or the lower rim of a pair of opposite side probes
+   * where that is higher (a gap or groove under the centre). The side probes run only when the centre finds nothing at the feet's level or above.
+   */
+  private support(top: number, length: number): boolean {
+    const { feet, hit, sideA, sideB } = this;
+    let found = this.world.groundBelow(feet.x, top, feet.z, length, hit);
+    if (found && hit.y >= feet.y - 1e-3) return true;
+    for (const [dx, dz] of SIDES) {
+      if (!this.world.groundBelow(feet.x + dx, top, feet.z + dz, length, sideA) || !this.world.groundBelow(feet.x - dx, top, feet.z - dz, length, sideB)) continue;
+      const rim = sideA.y <= sideB.y ? sideA : sideB;
+      if (!found || rim.y > hit.y) {
+        Object.assign(hit, rim);
+        found = true;
+      }
+    }
+    return found;
   }
 
   /** Pushes the floating capsule out of walls (level pushes unless `full`), removes the velocity into them; returns how far it moved. */

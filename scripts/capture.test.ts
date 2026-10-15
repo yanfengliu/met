@@ -25,6 +25,7 @@ const fake = vi.hoisted(() => {
     gpu: 'fake GPU',
     perf: { buildMs: 1, readyMs: 2 },
     stats: { pieces: 1, meshes: 1, triangles: 1 },
+    walk: { spawns: ['plaza'] },
     benchmark: () => {
       record.benchmarkedAt.push(record.current);
       return 3;

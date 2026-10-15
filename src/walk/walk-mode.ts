@@ -214,7 +214,7 @@ export class WalkMode {
     const spawn = this.pending;
     if (spawn !== null) {
       const [x, y, z] = spawn.feet;
-      this.walker.place(x, y, z, spawnYaw(spawn));
+      this.walker.place(x, y, z, spawnYaw(spawn), (spawn.pitch * Math.PI) / 180);
       this.spawnId = spawn.id;
       this.placed = true;
       this.pending = null;

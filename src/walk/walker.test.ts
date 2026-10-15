@@ -158,6 +158,29 @@ describe('walker on stairs, ledges and drops', () => {
     expect(walker.eye().y).toBeCloseTo(BODY.eye, 3);
   });
 
+  it('walks over a seam without a dip, over a half-metre gap with a small one, and falls into a gap wider than itself', () => {
+    for (const [width, dip] of [[0.25, 0.001], [0.5, 0.05], [1.2, null]] as const) {
+      const ground = step(`gap-${String(width)}`, (kit) => {
+        block(kit, [-10, -0.2, -2], [10, 0, 10]);
+        block(kit, [-10, -0.2, -20], [10, 0, -2 - width]);
+        block(kit, [-10, -1, -2 - width], [10, -0.8, -2]);
+      });
+      const { walker } = walkerOn([ground]);
+      walker.place(0, 0, 0, facing(0, -1));
+      let lowest = 0;
+      hold(walker, 2.5, W, 60, () => {
+        lowest = Math.min(lowest, walker.feet.y);
+      });
+      if (dip !== null) {
+        expect(lowest, `the lowest the feet went crossing a ${String(width)} m gap`).toBeGreaterThan(-dip);
+        expect(walker.feet.z, 'across it').toBeLessThan(-2 - width - 1);
+        expect(walker.feet.y).toBeCloseTo(0, 6);
+      } else {
+        expect(walker.feet.y, `in the ${String(width)} m gap`).toBeCloseTo(-0.8, 6);
+      }
+    }
+  });
+
   it('jumps about 0.45 m and comes back to the ground', () => {
     const { walker } = walkerOn([floor]);
     walker.place(0, 0, 0, 0);
