@@ -29,7 +29,7 @@ Milestone M1, engine (worker `walk`): default load at t = N and paused, `autopla
 
 ## Implementation steps
 
-- [ ] M1 engine: default state, orbit WASD, walk mode, spec, tests (worker `walk`).
+- [x] M1 engine (worker `walk`, merged `48fe3e6`, deployed and checked live): default load at t = N; orbit WASD; walk mode with `three-mesh-bvh` 0.9.15 over 1.41M solid triangles, BVH 62–77 ms, frame about 4 ms; wheel zoom heads for the surface under the pointer (defect register entry, `zoom.spec`); verify green, 350 unit and 38 e2e; audits 0.
 - [ ] M2 routes R1 and R2 walkable, route e2e (worker `routes`, after M1).
 - [ ] M3 floor picker in the map view (worker `floors`, after M1, in parallel with M2: it touches `src/viewer` and `src/ui`, M2 touches `src/model`).
 - [ ] Independent review of the integrated change; repairs.
