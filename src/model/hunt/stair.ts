@@ -29,7 +29,7 @@ import { at, box } from './shapes.js';
 import { STAIR_GABLE_TOP_Y, STAIR_VAULT_SPRING_Y } from './walls.js';
 
 /** The landing's level: 27 of the 46 risers. */
-const LANDING_Y = MAIN + ((SECOND - MAIN) * 27) / 46;
+export const STAIR_LANDING_Y = MAIN + ((SECOND - MAIN) * 27) / 46;
 const WALL_T = 0.8;
 /** Second-floor order (P3): columns on the walls' tops (a podium to Y 11.9), 7.5 m tall, coupled 1.05 m apart, carrying a 2.98 m entablature to the vault. */
 const PODIUM_Y = SECOND + 0.95;
@@ -89,12 +89,12 @@ export const stairSteps: readonly StepDef[] = [
     focus: { kind: 'preset', id: 'int-grand-stair-west' },
     build(kit) {
       const w = 2 * STAIR_HALF;
-      const lower = stairFlight({ width: w, steps: 27, riser: (LANDING_Y - MAIN) / 27, tread: (STAIR_FOOT_Z - STAIR_MID_FRONT_Z) / 27, nosing: 0.02 });
+      const lower = stairFlight({ width: w, steps: 27, riser: (STAIR_LANDING_Y - MAIN) / 27, tread: (STAIR_FOOT_Z - STAIR_MID_FRONT_Z) / 27, nosing: 0.02 });
       kit.add(lower.steps, palette.limestone, at(0, MAIN, STAIR_FOOT_Z), 0);
-      kit.add(stairLanding({ width: w, depth: STAIR_MID_FRONT_Z - STAIR_MID_BACK_Z, thickness: LANDING_Y - MAIN }), palette.limestone, at(0, LANDING_Y, STAIR_MID_FRONT_Z), 1);
-      const upper = stairFlight({ width: w, steps: 19, riser: (SECOND - LANDING_Y) / 19, tread: (STAIR_MID_BACK_Z - STAIR_TOP_Z) / 19, nosing: 0.02 });
-      box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, STAIR_TOP_Z], [STAIR_HALF, LANDING_Y, STAIR_MID_BACK_Z], 2);
-      kit.add(upper.steps, palette.limestone, at(0, LANDING_Y, STAIR_MID_BACK_Z), 2);
+      kit.add(stairLanding({ width: w, depth: STAIR_MID_FRONT_Z - STAIR_MID_BACK_Z, thickness: STAIR_LANDING_Y - MAIN }), palette.limestone, at(0, STAIR_LANDING_Y, STAIR_MID_FRONT_Z), 1);
+      const upper = stairFlight({ width: w, steps: 19, riser: (SECOND - STAIR_LANDING_Y) / 19, tread: (STAIR_MID_BACK_Z - STAIR_TOP_Z) / 19, nosing: 0.02 });
+      box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, STAIR_TOP_Z], [STAIR_HALF, STAIR_LANDING_Y, STAIR_MID_BACK_Z], 2);
+      kit.add(upper.steps, palette.limestone, at(0, STAIR_LANDING_Y, STAIR_MID_BACK_Z), 2);
       box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, CROSS_HALL_FRONT_Z], [STAIR_HALF, SECOND - SLAB, STAIR_TOP_Z], 3);
       // The top landing runs on under the end wall's arch to the cross hall's floor (hunt-galleries), which starts behind that wall.
       kit.add(stairLanding({ width: w, depth: STAIR_TOP_Z - CROSS_HALL_FRONT_Z + WALL_T, thickness: SLAB }), palette.limestone, at(0, SECOND, STAIR_TOP_Z), 3);

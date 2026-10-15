@@ -7,7 +7,8 @@
  * from the coordinator (650,000 triangles counting instances, 170 instanced meshes, 2 step lights).
  * The walk routes (plan docs/work/1_first-person-walk, M2; the whole walks are in routes.test.ts): the central doors' glazing is passable to the walk mode
  * and looks like the palette's, while the palette and the other glazing stay solid; the floor is whole behind the three arches' screens and under the
- * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's solid surfaces at t = N).
+ * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's walk collision at t = N,
+ * src/walk/collision.ts).
  */
 import { Box3, Vector3 } from 'three';
 import type { Material } from 'three';
@@ -16,6 +17,9 @@ import { describe, expect, it } from 'vitest';
 import { collectStep } from '../../build/kit.js';
 import type { CollectedPiece } from '../../build/kit.js';
 import { Timeline } from '../../build/timeline.js';
+import { GeometryBvhs } from '../../walk/bvh-cache.js';
+import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
+import type { GroundHit } from '../../walk/collision.js';
 import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAIR_CENTRE_X_INNER, HUNT_PAIR_CENTRE_X_OUTER } from '../frame.js';
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
@@ -24,7 +28,6 @@ import { LUNETTE_GRILLE } from './arches.js';
 import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
-import { Solids } from './walk-probe.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TOLERANCE = 0.3;
@@ -197,28 +200,30 @@ function look(material: Material): string {
   return JSON.stringify(Object.entries(material.toJSON()).filter(([key]) => !IDENTITY.has(key)));
 }
 
-let solids: Solids | undefined;
-/** This area's solid surfaces at t = N round the three arches and the head of the Grand Staircase. */
-function areaSolids(): Solids {
-  if (solids === undefined) {
+let area: CollisionWorld | undefined;
+/** This area's walk collision at t = N, built as the page builds it (src/walk/collision.ts). */
+function areaWorld(): CollisionWorld {
+  if (area === undefined) {
     const timeline = new Timeline(AREA);
     timeline.evaluate(timeline.n);
-    solids = new Solids(timeline, { min: [-23, 0, -63], max: [23, 12, 0] });
+    area = new CollisionWorld(new GeometryBvhs());
+    area.build(collisionMeshes(timeline.steps, timeline.n));
   }
-  return solids;
+  return area;
 }
 
 /**
- * Points of a 10 cm plan grid over [x0, x1] × [z0, z1] whose highest solid surface at or below `level` (5 mm slack) is not at `level`. The grid sits 3 mm
+ * Points of a 10 cm plan grid over [x0, x1] × [z0, z1] where the first solid surface below `level` (5 mm slack) is not at `level`. The grid sits 3 mm
  * off round coordinates, so no point falls exactly on a seam between two pieces, where float32 instance matrices can leave a sliver of 1e-7 m.
  */
 function holes(x0: number, x1: number, z0: number, z1: number, level: number): string[] {
   const out: string[] = [];
+  const hit: GroundHit = { y: 0, normalX: 0, normalY: 1, normalZ: 0 };
   for (let i = 0; x0 + 0.003 + i * 0.1 <= x1; i++) {
     for (let j = 0; z0 + 0.003 + j * 0.1 <= z1; j++) {
       const [x, z] = [x0 + 0.003 + i * 0.1, z0 + 0.003 + j * 0.1];
-      const floor = areaSolids().floor(x, z, level + 0.005);
-      if (floor === undefined || floor.y < level - 0.005) out.push(`(${x.toFixed(2)}, ${z.toFixed(2)}): ${floor === undefined ? 'nothing' : `${floor.label} at Y ${floor.y.toFixed(3)}`}`);
+      const found = areaWorld().groundBelow(x, level + 0.005, z, 10, hit);
+      if (!found || hit.y < level - 0.005) out.push(`(${x.toFixed(2)}, ${z.toFixed(2)}): ${found ? `floor at Y ${hit.y.toFixed(3)}` : 'nothing within 10 m below'}`);
     }
   }
   return out;
