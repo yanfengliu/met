@@ -11,7 +11,8 @@
  * met like a wall from the ground, and where the body lands on one it slides down it with only air control, the keys unable to push it uphill.
  * Off an edge higher than STEP the body falls under gravity and lands on the first surface below;
  * a jump starts at the speed that rises JUMP_HEIGHT. On the ground every push from the walls is level, and the velocity into a wall is removed,
- * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`.
+ * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`, where a body stands when nothing is built under it.
+ * After the world is built again, `settle` moves a body that new pieces bury or embed onto the lowest walkable surface over it where it stands clear.
  *
  * Time. Physics runs in fixed steps of 1/120 s, the remainder carried to the next frame, so a run is the same at any frame rate; the eye is
  * interpolated between the last two steps, and a snap up or down a stair is eased out over about 0.1 s for the eye only.
@@ -20,12 +21,29 @@
  */
 import { Line3, MathUtils, Vector3 } from 'three';
 
-import type { GroundHit } from './collision.js';
+import type { GroundHit, LineCrossings } from './collision.js';
 
-/** What the walker collides with: ./collision.ts `CollisionWorld`, or any stand-in with the same two queries. */
+/** What the walker collides with: ./collision.ts `CollisionWorld`, or any stand-in with the same queries. */
 export interface WalkWorld {
   resolveCapsule(segment: Line3, radius: number, horizontal: boolean, out: Vector3): Vector3;
   groundBelow(x: number, y: number, z: number, length: number, hit: GroundHit): boolean;
+  crossings(x: number, z: number, bottom: number, top: number): readonly LineCrossings[];
+}
+
+/** What `settle` did: left the walker where it stood, moved it onto a surface over its feet, or found none (the caller places it elsewhere). */
+export type Settled = 'kept' | 'moved' | 'lost';
+
+/** A surface less than this above the feet is the one they stand on, metres. */
+const STANDING = 1e-3;
+
+/**
+ * Whether a piece crossed at `heights` (lowest first) along a vertical line holds some of that line between `low` and `high` inside it: between its first
+ * and second crossings, its third and fourth, and so on. A piece crossed an odd number of times is open along the line and has no inside there.
+ */
+export function insideBetween(heights: readonly number[], low: number, high: number): boolean {
+  if (heights.length % 2 !== 0) return false;
+  for (let i = 0; i + 1 < heights.length; i += 2) if ((heights[i] ?? 0) < high && (heights[i + 1] ?? 0) > low) return true;
+  return false;
 }
 
 /** The body, in metres. */
@@ -99,7 +117,7 @@ export class Walker {
     private readonly floorY: number,
   ) {}
 
-  /** Puts the feet on the first surface below (x, y + 1 m, z), or leaves them at y to fall, facing `yaw` and `pitch`, at rest. */
+  /** Puts the feet on the first surface below (x, y + 1 m, z), or on the workspace ground where there is none, facing `yaw` and `pitch`, at rest. */
   place(x: number, y: number, z: number, yaw: number, pitch = 0): void {
     this.feet.set(x, Math.max(y, this.floorY), z);
     this.velocity.set(0, 0, 0);
@@ -113,6 +131,9 @@ export class Walker {
     if (this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit)) {
       this.feet.y = this.hit.y;
       this.onGround = this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
+    } else {
+      // Nothing built under the place (t = 0, for one): the workspace ground, at once rather than after a fall to it.
+      this.feet.y = this.floorY;
     }
     if (this.feet.y <= this.floorY) {
       this.feet.y = this.floorY;
@@ -120,6 +141,45 @@ export class Walker {
     }
     for (let k = 0; k < 4; k += 1) if (this.walls(false) < 1e-4) break;
     this.before.copy(this.feet);
+  }
+
+  /**
+   * Checks the walker against a world just built (docs/design/spec.md, Walk mode: When the build moves). It stays where it is unless it is buried,
+   * the model over it with nothing but the workspace ground under it, or embedded, the line from just over its feet to its head inside a piece
+   * numbered `from` or later (the pieces added since it was last checked). Then it moves, at rest, to the lowest walkable surface over its feet where
+   * its body stands clear (`clearAt`). Returns 'lost' when no surface over it will do.
+   */
+  settle(from: number): Settled {
+    const { feet } = this;
+    const lines = this.world.crossings(feet.x, feet.z, this.floorY, Number.POSITIVE_INFINITY);
+    const base = feet.y + STANDING;
+    const heights = lines.flatMap((p) => p.heights);
+    const buried = heights.length > 0 && heights.every((y) => y > base);
+    const embedded = lines.some((p) => p.instance >= from && insideBetween(p.heights, base, feet.y + BODY.height));
+    if (!buried && !embedded) return 'kept';
+    const surfaces = lines.flatMap((p) => p.heights.filter((y, i) => y > base && (p.normalYs[i] ?? 0) >= MIN_WALKABLE_NORMAL_Y)).sort((a, b) => a - b);
+    const y = surfaces.find((s) => this.clearAt(lines, s));
+    if (y === undefined) return 'lost';
+    feet.y = y;
+    this.velocity.set(0, 0, 0);
+    this.onGround = true;
+    this.slide = null;
+    this.jumpTimer = 0;
+    this.accumulator = 0;
+    this.ease = 0;
+    this.before.copy(feet);
+    return 'moved';
+  }
+
+  /**
+   * Whether the body stands clear with its feet at `y` over its place: no surface crosses its axis from STEP over its feet to its head, no piece's
+   * inside reaches that axis from just over its feet to its head, and nothing overhead meets the raised capsule (`bumpsHead`).
+   */
+  private clearAt(lines: readonly LineCrossings[], y: number): boolean {
+    const knee = y + BODY.step;
+    const head = y + BODY.height;
+    for (const p of lines) if (p.heights.some((h) => h > knee && h <= head) || insideBetween(p.heights, y + STANDING, head)) return false;
+    return !this.bumpsHead(y);
   }
 
   /** Turns by `yaw` and `pitch` radians; pitch stays within ±85°. */

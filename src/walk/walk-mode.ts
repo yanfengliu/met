@@ -3,7 +3,7 @@
  * at the current t, looking through the page's camera.
  * Entering prepares the world on the next frame, after the status line has been drawn ("Preparing walk mode"), and puts the walker at the spawn
  * asked for, else where it last stood in this page, else at the default spawn. While walking, the world is rebuilt whenever the set of complete
- * steps changes, and the orbit controls are off. Looking: pointer lock on a click of the view (the movement of the mouse turns the walker), or a
+ * steps changes, and after every build the walker's place is checked against it (src/walk/walker.ts, `settle`); the orbit controls are off. Looking: pointer lock on a click of the view (the movement of the mouse turns the walker), or a
  * drag with the mouse or a finger where the lock is not available. Leaving puts the orbit camera at the walker's eye, its target 5 m ahead.
  * The walk mode reads the scene and never writes it.
  */
@@ -13,9 +13,9 @@ import type { BuiltStep } from '../build/timeline.js';
 import type { Vec3 } from '../build/types.js';
 import type { CameraRig } from '../viewer/camera-rig.js';
 import type { GeometryBvhs } from './bvh-cache.js';
-import { CollisionWorld, collisionMeshes, completeSteps } from './collision.js';
+import { CollisionWorld, collisionMeshes, completeSteps, instancesBefore } from './collision.js';
 import type { CollisionStats } from './collision.js';
-import { DEFAULT_SPAWN, SPAWNS, spawnById, spawnYaw } from './spawns.js';
+import { DEFAULT_SPAWN, SPAWNS, nearestSpawn, spawnById, spawnYaw } from './spawns.js';
 import type { Spawn } from './spawns.js';
 import { Walker } from './walker.js';
 import type { WalkInput } from './walker.js';
@@ -79,6 +79,8 @@ export class WalkMode {
   private pending: Spawn | null = null;
   private placed = false;
   private builtFor = -1;
+  /** The complete steps the walker's place was last checked against (`settle`): pieces of later steps are new to it. */
+  private settledFor = 0;
   private stats: CollisionStats | null = null;
   private spawnId: string | null = null;
   private orbitFov = 45;
@@ -167,8 +169,8 @@ export class WalkMode {
       }
       this.build(t);
     } else if (completeSteps(t, this.host.steps.length) !== this.builtFor) {
-      this.stats = this.world.build(collisionMeshes(this.host.steps, t));
-      this.builtFor = completeSteps(t, this.host.steps.length);
+      this.rebuild(t);
+      this.settle(this.settledFor);
     }
     this.walker.update(seconds, walkInput(held));
     this.walker.eye(this.eye);
@@ -206,21 +208,45 @@ export class WalkMode {
   }
 
   private build(t: number): void {
-    const complete = completeSteps(t, this.host.steps.length);
-    if (complete !== this.builtFor || this.stats === null) {
-      this.stats = this.world.build(collisionMeshes(this.host.steps, t));
-      this.builtFor = complete;
-    }
+    if (completeSteps(t, this.host.steps.length) !== this.builtFor || this.stats === null) this.rebuild(t);
     const spawn = this.pending;
     if (spawn !== null) {
-      const [x, y, z] = spawn.feet;
-      this.walker.place(x, y, z, spawnYaw(spawn), (spawn.pitch * Math.PI) / 180);
-      this.spawnId = spawn.id;
-      this.placed = true;
+      this.placeAt(spawn);
       this.pending = null;
+      // A new place: every piece is new to it.
+      this.settle(0);
+    } else {
+      // Where it last stood, against what the build added since.
+      this.settle(this.settledFor);
     }
     this.prepare = false;
     this.lastEye.set(Number.NaN, 0, 0);
+  }
+
+  private rebuild(t: number): void {
+    this.stats = this.world.build(collisionMeshes(this.host.steps, t));
+    this.builtFor = completeSteps(t, this.host.steps.length);
+  }
+
+  /**
+   * Checks the walker against the world just built (src/walk/walker.ts, `settle`): pieces of the steps completed after the first `known` can embed it, and
+   * anything can bury it. With no surface over it to stand on, it goes to the nearest spawn.
+   */
+  private settle(known: number): void {
+    const from = this.builtFor > known ? instancesBefore(this.host.steps, known) : this.world.instances;
+    if (this.walker.settle(from) === 'lost') {
+      const { x, y, z } = this.walker.feet;
+      this.placeAt(nearestSpawn(x, y, z));
+      this.walker.settle(0);
+    }
+    this.settledFor = this.builtFor;
+  }
+
+  private placeAt(spawn: Spawn): void {
+    const [x, y, z] = spawn.feet;
+    this.walker.place(x, y, z, spawnYaw(spawn), (spawn.pitch * Math.PI) / 180);
+    this.spawnId = spawn.id;
+    this.placed = true;
   }
 
   private bindPointer(canvas: HTMLCanvasElement): void {

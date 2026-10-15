@@ -34,6 +34,12 @@ export function spawnById(id: string): Spawn | undefined {
   return SPAWNS.find((spawn) => spawn.id === id);
 }
 
+/** The spawn whose feet lie nearest (x, y, z): where walk mode puts a walker that has nowhere to stand after a build. */
+export function nearestSpawn(x: number, y: number, z: number): Spawn {
+  const away = (s: Spawn): number => Math.hypot(s.feet[0] - x, s.feet[1] - y, s.feet[2] - z);
+  return SPAWNS.reduce((best, s) => (away(s) < away(best) ? s : best));
+}
+
 /** The walker's yaw that faces the spawn's direction (yaw 0 faces −Z; src/walk/walker.ts). */
 export function spawnYaw(spawn: Spawn): number {
   return Math.atan2(-spawn.facing[0], -spawn.facing[1]);

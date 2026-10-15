@@ -1,7 +1,8 @@
 /**
  * The walk collision world (docs/design/spec.md, Walk mode): every piece of every step complete at the current t (f = 1) whose material is solid
  * (`userData.solid !== false`), in world space, as instances of per-geometry BVHs (./bvh-cache.ts) found through a uniform grid over X and Z.
- * Two queries: push a capsule out of every triangle it overlaps (`resolveCapsule`), and find the first surface below a point (`groundBelow`).
+ * Two queries: push a capsule out of every triangle it overlaps (`resolveCapsule`), and find the first surface below a point (`groundBelow`); a third,
+ * every crossing of a vertical line with each piece (`crossings`), checks the walker after a build.
  * A build reads the instance matrices of complete steps, which hold their final matrices (docs/design/spec.md, Timeline position), and never writes
  * the scene, so walking leaves the determinism contract alone. The section cut changes nothing here.
  * Bound: capsule-to-triangle distances are exact (three-mesh-bvh ExtendedTriangle) in world space for any affine piece matrix, because triangles are
@@ -36,6 +37,18 @@ export function completeSteps(t: number, n: number): number {
 /** The meshes walking collides with at `t`: those of steps complete at `t`, visible, with a solid material. */
 export function collisionMeshes(steps: readonly BuiltStep[], t: number): InstancedMesh[] {
   return steps.slice(0, completeSteps(t, steps.length)).flatMap((s) => s.meshes.filter((m) => m.visible && m.count > 0 && isSolid(m.material)));
+}
+
+/** How many instances the first `complete` steps put in a world `build` from `collisionMeshes`: its instances numbered from this on are later steps'. */
+export function instancesBefore(steps: readonly BuiltStep[], complete: number): number {
+  return collisionMeshes(steps, complete).reduce((sum, mesh) => sum + mesh.count, 0);
+}
+
+/** Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and its up-turned normal's Y. */
+export interface LineCrossings {
+  readonly instance: number;
+  readonly heights: readonly number[];
+  readonly normalYs: readonly number[];
 }
 
 export interface CollisionStats {
@@ -325,5 +338,42 @@ export class CollisionWorld {
     hit.normalY = ny;
     hit.normalZ = nz;
     return true;
+  }
+
+  /**
+   * Every crossing of the vertical line through (x, z) with each solid piece whose world box reaches the span from `bottom` to `top`, over the piece's
+   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`). A line through an edge or a vertex
+   * meets the triangles there at one height, which counts once, so a closed piece is crossed an even number of times.
+   */
+  crossings(x: number, z: number, bottom: number, top: number): LineCrossings[] {
+    const out: LineCrossings[] = [];
+    const ray = this.ray;
+    const point = this.onTri;
+    const normal = this.direction;
+    const e = this.inverses;
+    for (const k of [...this.candidates(x, bottom, z, x, top, z)]) {
+      const o = k * 16;
+      // From a metre over the piece's world box down through all of it; the world direction (0, -1, 0) in its frame, as in groundBelow.
+      transformPoint(e, o, tmpVector.set(x, (this.boxes[k * 6 + 4] ?? 0) + 1, z), ray.origin);
+      ray.direction.set(-(e[o + 4] ?? 0), -(e[o + 5] ?? 0), -(e[o + 6] ?? 0)).normalize();
+      const found: [number, number][] = [];
+      for (const local of this.bvhs[k]?.raycast(ray, DoubleSide) ?? []) {
+        transformPoint(this.matrices, o, local.point, point);
+        const n = local.face?.normal;
+        if (n === undefined) normal.set(0, 1, 0);
+        else normal.set((e[o] ?? 0) * n.x + (e[o + 1] ?? 0) * n.y + (e[o + 2] ?? 0) * n.z, (e[o + 4] ?? 0) * n.x + (e[o + 5] ?? 0) * n.y + (e[o + 6] ?? 0) * n.z, (e[o + 8] ?? 0) * n.x + (e[o + 9] ?? 0) * n.y + (e[o + 10] ?? 0) * n.z).normalize();
+        found.push([point.y, Math.abs(normal.y)]);
+      }
+      found.sort((a, b) => a[0] - b[0]);
+      const heights: number[] = [];
+      const normalYs: number[] = [];
+      for (const [y, ny] of found) {
+        if (heights.length > 0 && y - (heights[heights.length - 1] ?? 0) < 1e-6) continue;
+        heights.push(y);
+        normalYs.push(ny);
+      }
+      if (heights.length > 0) out.push({ instance: k, heights, normalYs });
+    }
+    return out;
   }
 }
