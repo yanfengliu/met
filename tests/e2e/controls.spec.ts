@@ -3,6 +3,8 @@
  * keyboard shortcut of the orbit view.
  * Each test checks the label, the scrubber value, the read-only `window.__met.t` and, where the scene must change, the canvas pixels.
  * Bound: pixel checks compare coarse luminance grids, so they prove that the drawing changed where the model is and not at the far corners, not that it is right.
+ * The speed ratio is read against the page's own frame timestamps, not a wall clock: it proves how fast `t` runs per second of frames at each speed, and
+ * needs at least one frame in each 1 s window short enough that the page does not cap its time.
  */
 import { expect, test } from '@playwright/test';
 
@@ -111,17 +113,41 @@ test.describe('timeline controls', () => {
   });
 
   test('speed buttons set the rate: 4x plays about eight times as fast as 0.5x', async ({ page }) => {
-    await open(page);
+    const f = await open(page);
+    // Playback at 1x from 0 to t, in units of a weight-1 step: step i takes weight_i of them (spec, Playback), so the rate in these units is the
+    // same in every step, and a window that crosses into a step of another weight measures the same rate.
+    const played = (t: number): number => f.steps.reduce((sum, step, i) => sum + step.weight * Math.min(1, Math.max(0, t - i)), 0);
+    // The rate is read frame by frame against the page's own frame timestamps, the clock the page feeds the player, not against this runner's
+    // clock between two round trips. The page caps the time of a long frame (src/main.ts, MAX_FRAME_SECONDS), so a frame can play slower than the
+    // speed but never faster, and the fastest frame of the window plays at the speed itself, however loaded the machine is.
     const rate = async (speed: string): Promise<number> => {
       await press(page, 'btn-start');
       await press(page, `speed-${speed}`);
       await expect(page.getByTestId(`speed-${speed}`)).toHaveAttribute('aria-pressed', 'true');
       await press(page, 'btn-play');
-      const t0 = await currentT(page);
-      await page.waitForTimeout(1000);
-      const t1 = await currentT(page);
+      // t at each animation frame for 1 s of frames, with the frame's timestamp; the page's own frame callback has run first in each frame.
+      const frames = await page.evaluate(
+        (ms) =>
+          new Promise<[number, number][]>((resolve) => {
+            const out: [number, number][] = [];
+            const sample = (ts: number): void => {
+              out.push([ts, window.__met?.t ?? Number.NaN]);
+              if (ts - (out[0]?.[0] ?? ts) < ms) requestAnimationFrame(sample);
+              else resolve(out);
+            };
+            requestAnimationFrame(sample);
+          }),
+        1000,
+      );
       await press(page, 'btn-play');
-      return t1 - t0;
+      let fastest = 0;
+      for (let i = 1; i < frames.length; i += 1) {
+        const a = frames[i - 1];
+        const b = frames[i];
+        if (a === undefined || b === undefined || !(b[0] > a[0])) continue;
+        fastest = Math.max(fastest, (played(b[1]) - played(a[1])) / ((b[0] - a[0]) / 1000));
+      }
+      return fastest;
     };
     const slow = await rate('0.5');
     const fast = await rate('4');
