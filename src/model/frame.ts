@@ -48,6 +48,7 @@ export const CORE_PARAPET_Y = 18.0; // E: parapet top of the 1880–1894 core's 
 export const CORE_COPING_TOP_Y = 18.15; // D: CORE_PARAPET_Y plus the 0.15 m stone coping; the Petrie Court's glass roof rests on Weston's south front here (Petrie Court photos, interior-images.md #33 and #35)
 export const KRAVIS_PARAPET_Y = 19.6; // D: the Kravis Wing's parapet top: its roof at the Petrie Court's eaves (CORE_COPING_TOP_Y plus the court roof's 0.45 m gutter, roche-south kravis.ts) plus a 1.0 m parapet (E); the south link's park wall on Z −69.0 rises to it (mmw party-walls.ts)
 export const GREAT_HALL_RIDGE_Y = 33.37; // D: MAIN_FLOOR_Y + 96'-0" (interior.md, Floor levels), medium-low
+export const ROOF_GARDEN_Y = 21.6; // E: the roof garden deck (map floor 5) on the Wallace Wing, one storey over the Patrons Lounge; photo ref-park-south (Peel 2024, EXIF 17 mm on APS-C) shows nothing of the garden over the south face near the tower, which keeps its parapet within about a metre of the sight line over that face, so this is the lowest storey that fits (roche-south modeller; moved here from wallace-plan.ts on 2026-10-15 for the floor picker)
 
 // --- Hunt central pavilion ------------------------------------------------------------------
 export const HUNT_PAVILION_HALF_WIDTH_BASE = 30.42; // [H1] M: OSM, base outline

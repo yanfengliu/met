@@ -5,7 +5,7 @@
  * glazed strips west and south of the roof garden, and the garden itself (map floor 5) with hedges along its west and south edges and a pergola along
  * its east edge (X −112 to −89, Z −119 to −108.3). Levels tagged E are estimates.
  */
-import { MAIN_FLOOR_Y } from '../frame.js';
+import { MAIN_FLOOR_Y, ROOF_GARDEN_Y } from '../frame.js';
 import { MAP_Z, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
 import type { P2 } from './poly.js';
 import type { Room } from './rooms.js';
@@ -15,11 +15,8 @@ export const WALLACE_MEZZANINE_Y = MAIN_FLOOR_Y + 4.3;
 export const WALLACE_SECOND_Y = ROCHE_SECOND_FLOOR_Y;
 /** E: roof over the second-floor galleries (5 m galleries on the second floor); the Patrons Lounge (map floor 4) stands on it. */
 export const WALLACE_ROOF_Y = 18.0;
-/**
- * E: the roof garden deck (map floor 5), one storey over the lounge. Photo ref-park-south (Peel 2024, EXIF 17 mm on APS-C) shows nothing of the garden
- * over the south face near the tower, which keeps its parapet within about a metre of the sight line over that face; this is the lowest storey that fits.
- */
-export const ROOF_GARDEN_Y = 21.6;
+/** The roof garden deck (map floor 5), one storey over the lounge: src/model/frame.ts, where the floor picker reads it too. */
+export { ROOF_GARDEN_Y };
 /** E: top of the park facade, under the glazed roof strip that rises from it to the main roof. */
 export const WALLACE_FACADE_TOP_Y = 16.0;
 
