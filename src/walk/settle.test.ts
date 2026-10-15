@@ -2,6 +2,7 @@
  * The walker when the build moves under it (src/walk/walker.ts `settle`; docs/design/spec.md, Walk mode: When the build moves), on fixtures built from
  * real pieces through the page's own collision path: box steps built by the timeline, evaluated at one t and then another, the collision rebuilt for each
  * as walk mode rebuilds it, and the walker settled against the pieces the second build added (`instancesBefore`), as walk mode settles it.
+ * One case runs the real sequence: the Grand Staircase's flights built where a walker stands (review of work unit 1, U1 part two).
  * Bound: fixtures are closed boxes, as the model's walls, slabs, desks and steps are; a piece the line through the walker crosses an odd number of times
  * (an open sheet) has no inside and is not tested here; walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.
  */
@@ -9,6 +10,7 @@ import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 
 import { describe, expect, it } from 'vitest';
 
 import { CHAPTERS } from '../build/chapters.js';
+import { SEQUENCE } from '../build/sequence.js';
 import { Timeline } from '../build/timeline.js';
 import type { Kit, StepDef } from '../build/types.js';
 import { GeometryBvhs } from './bvh-cache.js';
@@ -133,6 +135,18 @@ describe('the walker when the build moves under it', () => {
     // Off the ridge line, so the line through the walker crosses the turned faces rather than their shared edges.
     walker.place(0, 0, 0.4, 0);
     expect(to(2)).toBe('lost');
+  });
+
+  it('on the real sequence: the Grand Staircase built where a walker stands at X 0, Z -43 lifts it onto the flight', () => {
+    const k = SEQUENCE.findIndex((s) => s.id === 'grand-stair-flights');
+    expect(k, 'the step that builds the Grand Staircase flights').toBeGreaterThan(0);
+    const { walker, to } = site(SEQUENCE, k);
+    walker.place(0, 4.5, -43, 0);
+    const before = walker.feet.y;
+    expect(to(k + 1), `the flights built over feet at ${before.toFixed(3)} m`).toBe('moved');
+    rest(walker, 0.5);
+    expect(walker.feet.y, 'on a tread of the lower flight, over where the head was').toBeGreaterThan(before + 1.75);
+    expect(walker.onGround).toBe(true);
   });
 
   it('names the spawn nearest a point for a lost walker', () => {

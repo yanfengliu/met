@@ -5,7 +5,7 @@
  * pressed in the same frame as the F before it already has the new mode's meaning, both ways.
  * Facts come from `window.__met.walk` and `window.__met.camera`; spawn positions from src/walk/spawns.ts; levels from src/model/frame.ts.
  * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2), W held until the eye has climbed 2 m and the eye read once the
- * walker stands still, so a loaded machine changes how long it takes, not where it ends; frame times are this machine's (an RTX 4090 in headless Chrome);
+ * walker stands still, so a loaded machine changes how long it takes, not where it ends, within a timeout of 60 s times the CPU throttle; frame times are this machine's (an RTX 4090 in headless Chrome);
  * "the same frame" is checked by a probe's requestAnimationFrame count at each keydown, and a run whose keys never shared a frame fails, not passes.
  */
 import { expect, test } from '@playwright/test';
@@ -207,6 +207,8 @@ test.describe('walk mode', () => {
   });
 
   test('from the plaza, holding W walks forward and up the front steps; a drag turns the view; F returns to the orbit view', async ({ page }) => {
+    // One deadline over the inner waits (the climb's 20 s, walking's 15 s, rest's 5 s, the page load), scaled as they are by the CPU throttle.
+    test.setTimeout(60_000 * throttleRate());
     await open(page, 'walk=1&spawn=plaza');
     await throttle(page);
     const start = await walking(page);

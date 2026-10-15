@@ -2,9 +2,10 @@
  * The zoom through real wheel input, the gate for the class "camera input stops responding at a limit" (docs/learning/defect-register.md, "The
  * wheel stops zooming"; docs/design/spec.md, Camera). From two exterior presets, an interior one and after a move by the W key, many notches of
  * the wheel toward the middle of the view, then back:
- * - the surface under the pointer is found apart from the page: the pointer's ray rebuilt from the camera facts and the canvas, as the page's projection
- *   casts it, and cast through the finished model built in this process, triangle by triangle (./surface.ts), never through the page's pick or target;
- * - every notch in moves the camera along that ray at least min(ZOOM.minStep, what is left to the bound) − 1 mm, and never past the bound: the camera
+ * - the surface under the pointer is found apart from the page: along the line the first notch moves the camera on, which must be the pointer's ray
+ *   rebuilt from the camera facts and the canvas within 2 mrad, cast through the finished model built in this process, triangle by triangle
+ *   (./surface.ts), never through the page's pick or target;
+ * - every notch in keeps the camera on that line within 1 cm and moves it at least min(ZOOM.minStep, what is left to the bound) − 1 mm, never past the bound: the camera
  *   ZOOM.stop before that surface; the bound comes within 120 notches, and the camera stops there within 1 mm;
  * - at that bound a notch in moves nothing, and every one of 8 notches out moves at least ZOOM.minStep;
  * - from aerial-ne, notches out reach the far bound (the target ZOOM.maxDistance away), where a notch out moves nothing and a notch in moves again.
@@ -69,7 +70,14 @@ async function zoomInAndOut(page: Page, what: string): Promise<string[]> {
   const [x, y] = [Math.round(centre.x), Math.round(centre.y)];
   await page.mouse.move(x, y);
   const start = await camera(page);
-  const ray = await pointerRay(page, start, x, y);
+  const expected = await pointerRay(page, start, x, y);
+  // The first notch shows the line the zoom moves the camera on; the surface is then cast along it here, apart from the page.
+  const first = await notch(page, -100);
+  const step = distance(first.position, start.position);
+  if (!(step > MM)) return [`${what}: the first notch in moved the camera ${step.toFixed(4)} m, so it shows no line to check`];
+  const ray: Triple = [(first.position[0] - start.position[0]) / step, (first.position[1] - start.position[1]) / step, (first.position[2] - start.position[2]) / step];
+  const angle = Math.acos(Math.min(1, ray[0] * expected[0] + ray[1] * expected[1] + ray[2] * expected[2]));
+  if (angle > 2e-3) return [`${what}: the first notch moved the camera ${(angle * 1000).toFixed(2)} mrad off the ray under the pointer`];
   const surface = firstSurface(start.position, ray);
   if (surface === null) return [`${what}: the ray under the pointer meets no surface of the finished model, so there is no stop to check`];
   // How far along the ray the camera may go: to ZOOM.stop before the surface.
@@ -79,11 +87,11 @@ async function zoomInAndOut(page: Page, what: string): Promise<string[]> {
   let before = start;
   let atBound = false;
   for (let k = 1; k <= MAX_NOTCHES_IN && !atBound; k += 1) {
-    const after = await notch(page, -100);
+    const after = k === 1 ? first : await notch(page, -100);
     const moved = distance(after.position, before.position);
     const left = bound - along(before);
     if (off(after) > 0.01) {
-      problems.push(`${what}: notch ${String(k)} in moved the camera ${off(after).toFixed(3)} m off the ray under the pointer`);
+      problems.push(`${what}: notch ${String(k)} in moved the camera ${off(after).toFixed(3)} m off the line the first notch took`);
       return problems;
     }
     if (along(after) > bound + MM) {

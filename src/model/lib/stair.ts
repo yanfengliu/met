@@ -28,14 +28,17 @@ export interface StairFlightParams {
 }
 
 export interface StairFlight {
-  /** The steps as one solid (stone). */
+  /** The steps as one closed solid (stone), its underside on y = 0 included. */
   readonly steps: THREE.BufferGeometry;
   /** Both cheek walls: blocks whose tops run `height` above the nosing line, from just in front of the first riser to the top (stone). */
   readonly cheeks?: THREE.BufferGeometry;
 }
 
-/** Extrudes a side profile in (z, y), counter-clockwise seen from +X, across x ∈ [x0, x1]; `skipBottom` leaves out the face on y = 0. */
-function extrudeX(b: MeshBuilder, profile: readonly V2[], x0: number, x1: number, skipBottom: boolean): void {
+/**
+ * Extrudes a side profile in (z, y), counter-clockwise seen from +X, across x ∈ [x0, x1], as a closed solid: both sides and every edge's face, the
+ * underside on y = 0 too, so a line through the solid crosses it an even number of times (the walk's check for a walker built into it reads that).
+ */
+function extrudeX(b: MeshBuilder, profile: readonly V2[], x0: number, x1: number): void {
   // (z, y) on axes (+Z, +Y) faces Z × Y = −X: the x0 side as is; the x1 side mirrors y onto −Y to face +X.
   b.planar(profile, [], new THREE.Vector3(x0, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0));
   b.planar(
@@ -49,7 +52,6 @@ function extrudeX(b: MeshBuilder, profile: readonly V2[], x0: number, x1: number
     const a = profile[k];
     const c = profile[(k + 1) % profile.length];
     if (a === undefined || c === undefined) continue;
-    if (skipBottom && Math.abs(a[1]) < 1e-9 && Math.abs(c[1]) < 1e-9) continue;
     // Right of travel in (z, y) is outward for a counter-clockwise outline.
     b.polygon([new THREE.Vector3(x0, a[1], a[0]), new THREE.Vector3(x1, a[1], a[0]), new THREE.Vector3(x1, c[1], c[0]), new THREE.Vector3(x0, c[1], c[0])]);
   }
@@ -82,7 +84,7 @@ export function stairFlight(params: StairFlightParams): StairFlight {
     }
     profile.push([-steps * t, steps * r]);
     const b = new MeshBuilder();
-    extrudeX(b, profile, -full.width / 2, full.width / 2, true);
+    extrudeX(b, profile, -full.width / 2, full.width / 2);
     const out: { steps: THREE.BufferGeometry; cheeks?: THREE.BufferGeometry } = { steps: b.build() };
     if (full.cheeks !== null) {
       const front = 0.3;
@@ -97,8 +99,8 @@ export function stairFlight(params: StairFlightParams): StairFlight {
       ];
       const cb = new MeshBuilder();
       const w = full.width / 2;
-      extrudeX(cb, cheek, w, w + full.cheeks.width, true);
-      extrudeX(cb, cheek, -w - full.cheeks.width, -w, true);
+      extrudeX(cb, cheek, w, w + full.cheeks.width);
+      extrudeX(cb, cheek, -w - full.cheeks.width, -w);
       out.cheeks = cb.build();
     }
     return Object.freeze(out);
