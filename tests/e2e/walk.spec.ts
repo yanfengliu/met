@@ -1,0 +1,208 @@
+/**
+ * Walk mode and the orbit view's movement keys through real input (docs/design/spec.md, Keyboard and Walk mode): the orbit keys move the camera and
+ * its target together and leave the timeline keys alone; the Walk toggle, the F key, a view-menu spawn and `?walk=1&spawn=` enter walk mode; on the
+ * real model, holding W walks from the plaza up the front steps; a drag turns the view; F returns to the orbit view where the walker stood.
+ * Facts come from `window.__met.walk` and `window.__met.camera`; spawn positions from src/walk/spawns.ts; levels from src/model/frame.ts.
+ * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2); frame times are this machine's (an RTX 4090 in headless Chrome).
+ */
+import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import type { Vec3 } from '../../src/build/types.js';
+import { LANDING_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEPS_BOTTOM_Z } from '../../src/model/frame.js';
+import { spawnById } from '../../src/walk/spawns.js';
+import { camera, currentT, distance, facts, open, openMenu, press, settle, waitForT, watchErrors } from './helpers.js';
+import type { Camera, Facts } from './helpers.js';
+
+const EYE = 1.6;
+
+/** Waits until walk mode is on and prepared, and returns the walk facts. */
+async function walking(page: Page): Promise<Facts['walk']> {
+  await page.waitForFunction(() => window.__met?.walk.mode === 'walk' && !window.__met.walk.preparing && window.__met.walk.eye !== null, undefined, { timeout: 15_000 });
+  return (await facts(page)).walk;
+}
+
+async function orbiting(page: Page): Promise<void> {
+  await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
+}
+
+async function hold(page: Page, key: string, ms: number): Promise<void> {
+  await page.keyboard.down(key);
+  await page.waitForTimeout(ms);
+  await page.keyboard.up(key);
+  await settle(page);
+}
+
+const sub = (a: readonly number[], b: readonly number[]): Vec3 => [(a[0] ?? 0) - (b[0] ?? 0), (a[1] ?? 0) - (b[1] ?? 0), (a[2] ?? 0) - (b[2] ?? 0)];
+const dot = (a: readonly number[], b: readonly number[]): number => (a[0] ?? 0) * (b[0] ?? 0) + (a[1] ?? 0) * (b[1] ?? 0) + (a[2] ?? 0) * (b[2] ?? 0);
+
+/** The camera's view direction laid flat, and the level direction to its right. */
+function levelAxes(c: Camera): { forward: Vec3; right: Vec3 } {
+  const d = sub(c.target, c.position);
+  const length = Math.hypot(d[0], d[2]);
+  const forward: Vec3 = [d[0] / length, 0, d[2] / length];
+  return { forward, right: [-forward[2], 0, forward[0]] };
+}
+
+test.describe('orbit view keys', () => {
+  let errors: { expectClean: () => void };
+  test.beforeEach(({ page }) => {
+    errors = watchErrors(page);
+  });
+  test.afterEach(() => {
+    errors.expectClean();
+  });
+
+  test('W S A D move the camera and its target together over the ground, Q and E down and up, and the follow camera goes off', async ({ page }) => {
+    const f = await open(page, '');
+    expect(f.follow, 'the follow camera at load').toBe(true);
+    const moves: [string, (delta: Vec3, axes: { forward: Vec3; right: Vec3 }) => number][] = [
+      ['KeyW', (d, a) => dot(d, a.forward)],
+      ['KeyS', (d, a) => -dot(d, a.forward)],
+      ['KeyD', (d, a) => dot(d, a.right)],
+      ['KeyA', (d, a) => -dot(d, a.right)],
+      ['KeyE', (d) => d[1]],
+      ['KeyQ', (d) => -d[1]],
+    ];
+    for (const [key, along] of moves) {
+      const before = await camera(page);
+      await hold(page, key, 250);
+      const after = await camera(page);
+      const delta = sub(after.position, before.position);
+      expect(along(delta, levelAxes(before)), `${key}: metres moved the way it should`).toBeGreaterThan(5);
+      expect(distance(sub(after.target, before.target), delta), `${key}: the target moved with the camera`).toBeLessThan(1e-3);
+      if (key !== 'KeyE' && key !== 'KeyQ') expect(Math.abs(delta[1]), `${key}: height kept`).toBeLessThan(1e-3);
+    }
+    const after = await facts(page);
+    expect([after.follow, after.view]).toEqual([false, null]);
+  });
+
+  test('the arrows, Space, Home and End keep their timeline meaning in the orbit view', async ({ page }) => {
+    // A view= keeps the follow camera off, so the camera stays put while the timeline moves.
+    const f = await open(page, 'view=aerial-ne');
+    await press(page, 'speed-4');
+    await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
+    const cam = await camera(page);
+    await page.keyboard.press('ArrowLeft');
+    await waitForT(page, f.n - 1);
+    await page.keyboard.press('ArrowRight');
+    await waitForT(page, f.n);
+    await page.keyboard.press('Home');
+    await waitForT(page, 0);
+    await page.keyboard.press('End');
+    await waitForT(page, f.n);
+    await page.keyboard.press('Space');
+    await page.waitForFunction(() => window.__met?.mode === 'playing');
+    await page.keyboard.press('Space');
+    await page.waitForFunction(() => window.__met?.mode === 'paused');
+    expect(distance((await camera(page)).position, cam.position), 'the camera did not move').toBeLessThan(1e-3);
+    expect((await facts(page)).walk.mode).toBe('orbit');
+  });
+});
+
+test.describe('walk mode', () => {
+  let errors: { expectClean: () => void };
+  test.beforeEach(({ page }) => {
+    errors = watchErrors(page);
+  });
+  test.afterEach(() => {
+    errors.expectClean();
+  });
+
+  test('the Walk toggle and the F key enter and leave walk mode; a view-menu spawn enters it there', async ({ page }) => {
+    await open(page, '');
+    await press(page, 'walk-toggle');
+    const first = await walking(page);
+    const plaza = spawnById('plaza');
+    if (plaza === undefined) throw new Error('No plaza spawn.');
+    expect(first.spawn).toBe('plaza');
+    expect(first.spawns).toEqual(expect.arrayContaining(['plaza', 'great-hall', 'second-floor']));
+    expect(Math.hypot((first.eye?.[0] ?? 0) - plaza.feet[0], (first.eye?.[2] ?? 0) - plaza.feet[2]), 'on the plaza spawn').toBeLessThan(0.05);
+    expect(first.onGround).toBe(true);
+    await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('walk-status')).toBeVisible();
+    expect((await facts(page)).follow, 'the follow camera is off while walking').toBe(false);
+    // F leaves, with the orbit camera where the walker's eye was.
+    await page.keyboard.press('KeyF');
+    await orbiting(page);
+    expect(distance((await camera(page)).position, first.eye ?? [0, 0, 0]), 'the orbit camera at the eye').toBeLessThan(0.01);
+    await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByTestId('walk-status')).toBeHidden();
+    // F enters again, where the walker stood; the toggle leaves.
+    await page.keyboard.press('KeyF');
+    const again = await walking(page);
+    expect(distance(again.eye ?? [0, 0, 0], first.eye ?? [9, 9, 9]), 'back where it stood').toBeLessThan(0.01);
+    await press(page, 'walk-toggle');
+    await orbiting(page);
+    // A spawn from the view menu.
+    for (const [id, floor] of [['great-hall', MAIN_FLOOR_Y], ['second-floor', SECOND_FLOOR_Y]] as const) {
+      await openMenu(page, 'view-menu');
+      await press(page, `walk-spawn-${id}`);
+      await page.waitForFunction((s) => window.__met?.walk.spawn === s && !window.__met.walk.preparing && window.__met.walk.eye !== null, id);
+      const at = (await facts(page)).walk;
+      expect(at.eye?.[1] ?? 0, `${id}: eye height`).toBeCloseTo(floor + EYE, 1);
+      expect(at.onGround, `${id}: on the floor`).toBe(true);
+    }
+  });
+
+  test('from the plaza, holding W walks forward and up the front steps; a drag turns the view; F returns to the orbit view', async ({ page }) => {
+    await open(page, 'walk=1&spawn=plaza');
+    const start = await walking(page);
+    const ground = (start.eye?.[1] ?? Number.NaN) - EYE;
+    expect(start.eye?.[2] ?? 0, 'standing in front of the steps').toBeGreaterThan(STEPS_BOTTOM_Z);
+    await hold(page, 'KeyW', 4000);
+    const up = (await facts(page)).walk;
+    const eye = up.eye ?? [0, 0, 0];
+    expect((start.eye?.[2] ?? 0) - eye[2], 'metres walked forward').toBeGreaterThan(8);
+    expect(eye[1] - (ground + EYE), 'metres climbed up the front steps').toBeGreaterThan(1.5);
+    expect(eye[1], 'no higher than the landing before the doors').toBeLessThan(LANDING_Y + EYE + 0.05);
+    expect(up.onGround).toBe(true);
+    // A drag to the right turns the view to the right (+X when facing −Z).
+    const box = await page.getByTestId('canvas').boundingBox();
+    if (box === null) throw new Error('The canvas has no box.');
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 3;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let k = 1; k <= 10; k += 1) await page.mouse.move(x + k * 20, y);
+    await page.mouse.up();
+    await settle(page);
+    const turned = (await facts(page)).walk.look ?? [0, 0, -1];
+    expect(turned[0], 'the look direction turned right').toBeGreaterThan(0.3);
+    await page.keyboard.press('KeyF');
+    await orbiting(page);
+    const orbit = await camera(page);
+    expect(distance(orbit.position, eye), 'the orbit camera starts where the walker stood').toBeLessThan(0.2);
+    expect(dot(sub(orbit.target, orbit.position), turned), 'and looks where it looked').toBeGreaterThan(4.9);
+  });
+
+  test('walking holds 60 frames a second, and the collision for the finished building builds within 2 s', async ({ page }) => {
+    const f = await open(page, '');
+    expect(f.t).toBe(f.n);
+    await page.keyboard.press('KeyF');
+    const ready = await walking(page);
+    expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision at t = N').toBeLessThan(2000);
+    expect(ready.collision?.steps, 'every step is in the collision at t = N').toBe(f.n);
+    expect(ready.collision?.triangles ?? 0).toBeGreaterThan(1_000_000);
+    await page.keyboard.down('KeyW');
+    const intervals = await page.evaluate(() => new Promise<number[]>((resolve) => {
+      const times: number[] = [];
+      const tick = (now: number): void => {
+        times.push(now);
+        if (times.length < 121) requestAnimationFrame(tick);
+        else resolve(times.slice(1).map((t, i) => t - (times[i] ?? t)));
+      };
+      requestAnimationFrame(tick);
+    }));
+    await page.keyboard.up('KeyW');
+    const median = (values: readonly number[]): number => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? Number.NaN;
+    const walked = (await facts(page)).walk;
+    const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
+    const report = `walking at t = N: collision ${String(ready.bvhMs)} ms for ${String(ready.collision?.triangles)} triangles; frame interval median ${median(intervals).toFixed(2)} ms, work median ${String(walked.frameMs)} ms, render with GPU sync ${gpu.toFixed(2)} ms`;
+    console.log(report);
+    expect(walked.frameMs ?? Number.POSITIVE_INFINITY, report).toBeLessThan(16.7);
+    expect(gpu, report).toBeLessThan(16.7);
+    expect(median(intervals), report).toBeLessThan(16.7 * 1.1);
+    expect(await currentT(page)).toBe(f.n);
+  });
+});

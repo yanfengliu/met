@@ -10,6 +10,7 @@
  * glass and water because they are clear, and the flat ground materials because a slab on the ground shades nothing and would only widen the sun's shadow camera.
  * Section cut: a material with `userData.sectionCut === false` is landscape the cut leaves whole (src/viewer/section-cut.ts); here the lawns and the
  * roadway, which only the site uses. Foliage and bark stay cut, because the building's courts and roof garden use them; the site has its own copies.
+ * Walking: a material with `userData.solid === false` is walked through (src/walk/collision.ts): here water and foliage, which copies keep.
  */
 import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 import type { Material } from 'three';
@@ -22,6 +23,8 @@ interface Surface {
   readonly castShadow?: boolean;
   /** False for landscape the section cut leaves whole; see the header. */
   readonly sectionCut?: boolean;
+  /** False for what walking passes through; see the header. */
+  readonly solid?: boolean;
 }
 
 function standard(name: string, surface: Surface): MeshStandardMaterial {
@@ -33,6 +36,7 @@ function standard(name: string, surface: Surface): MeshStandardMaterial {
   });
   if (surface.castShadow === false) material.userData['castShadow'] = false;
   if (surface.sectionCut === false) material.userData['sectionCut'] = false;
+  if (surface.solid === false) material.userData['solid'] = false;
   return material;
 }
 
@@ -73,6 +77,7 @@ const water = new MeshPhysicalMaterial({
   clearcoatRoughness: 0.05,
 });
 water.userData['castShadow'] = false;
+water.userData['solid'] = false;
 
 export const palette = Object.freeze({
   /** Indiana limestone, the Hunt and McKim, Mead & White facades: [C1] attic wall #E4E0D7 overcast, piers #D5D4CF, shafts #CBC8C2..#D0CBC4; calibrated as the header says. */
@@ -105,7 +110,7 @@ export const palette = Object.freeze({
   copperGreen: standard('copperGreen', { colour: '#6e9e89', roughness: 0.6, metalness: 0.1 }),
   /** Wood doors, benches, floors. */
   wood: standard('wood', { colour: '#8b5c39', roughness: 0.62 }),
-  /** Fountain basins and pools. Never casts shadows. */
+  /** Fountain basins and pools. Never casts shadows; walked through. */
   water,
   /** Lawns. Never casts shadows; landscape, so the section cut leaves it whole. */
   grass: standard('grass', { colour: '#5a7a39', roughness: 1, castShadow: false, sectionCut: false }),
@@ -113,8 +118,8 @@ export const palette = Object.freeze({
   asphalt: standard('asphalt', { colour: '#4f585c', roughness: 0.95, castShadow: false, sectionCut: false }),
   /** Sidewalk and plaza paving ([C5] sidewalk concrete photographed #787878; base lifted for the sunlit render). Never casts shadows. */
   sidewalk: standard('sidewalk', { colour: '#9a9895', roughness: 0.9, castShadow: false }),
-  /** Tree crowns and hedges. */
-  foliage: standard('foliage', { colour: '#46702e', roughness: 0.9 }),
+  /** Tree crowns and hedges. Walked through. */
+  foliage: standard('foliage', { colour: '#46702e', roughness: 0.9, solid: false }),
   /** Tree trunks. */
   bark: standard('bark', { colour: '#4c3a2a', roughness: 1 }),
 } satisfies Record<string, Material>);

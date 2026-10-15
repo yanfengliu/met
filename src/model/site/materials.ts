@@ -7,6 +7,8 @@
  * building uses a palette material too (granite, dark metal, wood, glass, water, sidewalk paving, foliage, bark), the site takes its own copy, so the
  * building's courts, pools and roof garden stay cut with the building. Only the building's own works stay cut here: the excavation faces, the pad and
  * the front steps' treads (src/model/site/steps.ts builds those steps with the palette's granite and metal).
+ * Walking passes through water and foliage (`userData.solid === false`, src/walk/collision.ts): the jets and the site's own greens here, and the
+ * copies of the palette's water and foliage, which keep its flag.
  */
 import { Color, MeshStandardMaterial } from 'three';
 import type { Material } from 'three';
@@ -34,6 +36,11 @@ function landscapeCopy<T extends Material>(source: T, name: string): T {
 
 const jet = new MeshStandardMaterial({ name: 'siteJet', color: new Color('#eef5f8'), roughness: 0.15, metalness: 0, transparent: true, opacity: 0.7, depthWrite: false });
 jet.userData['castShadow'] = false;
+/** Marks `material` as walked through: foliage. */
+function soft<T extends Material>(material: T): T {
+  material.userData['solid'] = false;
+  return material;
+}
 
 export const siteMaterials = Object.freeze({
   /** Graded earth under the streets and drives before they are paved. */
@@ -59,7 +66,7 @@ export const siteMaterials = Object.freeze({
   /** The fountains' dark granite squares (Hałun 2023). */
   darkGranite: uncut(surface('siteDarkGranite', '#3b3d3e', 0.4, false)),
   /** Fountain jets: clear water. Transparent, so it never casts shadows. */
-  jet: uncut(jet),
+  jet: soft(uncut(jet)),
   /** The red angular parasols over the benches (orthophoto 2018, both end pavilions). */
   parasolRed: uncut(surface('siteParasolRed', '#c3302a', 0.6, true)),
   /** Decomposed granite under the grove trees (orthophoto 2018). */
@@ -83,9 +90,9 @@ export const siteMaterials = Object.freeze({
   /** The avenue's sidewalks: the palette's paving, as landscape. */
   sidewalk: landscapeCopy(palette.sidewalk, 'siteSidewalk'),
   /** A deeper green for some park crowns. */
-  foliageDeep: uncut(surface('siteFoliageDeep', '#3d5f2a', 0.9, true)),
+  foliageDeep: soft(uncut(surface('siteFoliageDeep', '#3d5f2a', 0.9, true))),
   /** A second, yellower foliage green, so the park's trees are not all one colour. */
-  foliageLight: uncut(surface('siteFoliageLight', '#5b7f34', 0.9, true)),
+  foliageLight: soft(uncut(surface('siteFoliageLight', '#5b7f34', 0.9, true))),
   /** The dark glossy evergreen of the southern magnolias by the steps (Hałun 2023). */
-  foliageDark: uncut(surface('siteFoliageDark', '#2e4a26', 0.7, true)),
+  foliageDark: soft(uncut(surface('siteFoliageDark', '#2e4a26', 0.7, true))),
 });

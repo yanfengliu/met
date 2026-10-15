@@ -1,5 +1,6 @@
 /**
- * Timeline controls through real input (docs/design/spec.md, Page): every transport button, speed, the scrubber by mouse drag, and every keyboard shortcut.
+ * Timeline controls through real input (docs/design/spec.md, Page): the first load, every transport button, speed, the scrubber by mouse drag, and every
+ * keyboard shortcut of the orbit view.
  * Each test checks the label, the scrubber value, the read-only `window.__met.t` and, where the scene must change, the canvas pixels.
  * Bound: pixel checks compare coarse luminance grids, so they prove that the drawing changed where the model is and not at the far corners, not that it is right.
  */
@@ -16,16 +17,36 @@ test.describe('timeline controls', () => {
     errors.expectClean();
   });
 
-  test('first load starts at t = 0 and plays forward with the follow camera on', async ({ page }) => {
-    await open(page, '');
+  test('first load shows the finished building, paused, in the orbit view, and Play runs the build from the start', async ({ page }) => {
+    const f = await open(page, '');
+    expect(f.t).toBe(f.n);
+    expect(f.mode).toBe('paused');
+    expect(f.walk.mode).toBe('orbit');
+    expect(f.view).toBe('aerial-ne');
+    await expect(page.getByTestId('btn-play')).toHaveAttribute('aria-label', 'Play');
+    await expect(page.getByTestId('step-label')).toHaveText(new RegExp(`^Step ${String(f.n)} / ${String(f.n)} · `));
+    await expect(page.getByTestId('scrubber')).toHaveValue(String(f.n));
+    await page.waitForTimeout(300);
+    expect(await currentT(page), 'still at the end without input').toBe(f.n);
+    await press(page, 'btn-play');
+    await page.waitForFunction(() => window.__met?.mode === 'playing');
+    const t = await currentT(page);
+    expect(t, 'Play at the end starts again from the empty site').toBeLessThan(1);
+  });
+
+  test('autoplay=1 plays the build from t = 0 with the follow camera on, and autoplay=0 opens as with no query', async ({ page }) => {
+    const plain = await open(page, 'autoplay=0');
+    expect([plain.t, plain.mode]).toEqual([plain.n, 'paused']);
+    await page.goto('/?autoplay=1');
+    await page.waitForFunction(() => window.__met?.mode === 'playing');
     await page.waitForFunction(() => (window.__met?.t ?? 0) > 0.05);
-    expect(await page.evaluate(() => window.__met?.mode)).toBe('playing');
+    expect(await currentT(page)).toBeLessThan(1.5);
     await expect(page.getByTestId('btn-play')).toHaveAttribute('aria-label', 'Pause');
     expect(await page.evaluate(() => window.__met?.follow)).toBe(true);
   });
 
   test('end and start jump to N and 0, and the model appears where it stands', async ({ page }) => {
-    const f = await open(page);
+    const f = await open(page, 't=0');
     const scrubber = page.getByTestId('scrubber');
     expect(await currentT(page)).toBe(0);
     expect(await labelStep(page)).toBe(0);
@@ -46,7 +67,7 @@ test.describe('timeline controls', () => {
   });
 
   test('step forward and step back animate to integers, and a second press retargets', async ({ page }) => {
-    const f = await open(page);
+    const f = await open(page, 't=0');
     test.skip(f.n < 3, 'needs at least three steps');
     await press(page, 'speed-4');
     await press(page, 'btn-step-forward');
@@ -63,7 +84,7 @@ test.describe('timeline controls', () => {
   });
 
   test('play pauses and resumes; play backward runs t down; both stop at the ends', async ({ page }) => {
-    const f = await open(page);
+    const f = await open(page, 't=0');
     await press(page, 'speed-4');
     await press(page, 'btn-play');
     await page.waitForFunction(() => (window.__met?.t ?? 0) > 0.3);
@@ -111,7 +132,7 @@ test.describe('timeline controls', () => {
   });
 
   test('every speed button sets its speed, marks only itself and plays at it', async ({ page }) => {
-    await open(page);
+    await open(page, 't=0');
     // The spec's speeds (docs/design/spec.md, Playback), not read from the page.
     const speeds = ['0.5', '1', '2', '4'] as const;
     for (const speed of speeds) {
@@ -128,7 +149,7 @@ test.describe('timeline controls', () => {
   });
 
   test('the scrubber follows a mouse drag', async ({ page }) => {
-    const f = await open(page);
+    const f = await open(page, 't=0');
     const before = await lumaGrid(page);
     const box = await page.getByTestId('scrubber').boundingBox();
     if (box === null) throw new Error('The scrubber has no box.');
@@ -157,7 +178,7 @@ test.describe('timeline controls', () => {
   });
 
   test('keyboard: Space, Shift+Space, arrows, Home and End', async ({ page }) => {
-    const f = await open(page);
+    const f = await open(page, 't=0');
     test.skip(f.n < 2, 'needs at least two steps');
     await press(page, 'speed-4');
     // A click on the canvas without a drag leaves focus on the page.

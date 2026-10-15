@@ -107,7 +107,7 @@ test.describe('menus', () => {
   });
 
   test('the follow camera is on during autoplay, a drag turns it off and the toggle turns it back on', async ({ page }) => {
-    await open(page, '');
+    await open(page, 'autoplay=1');
     expect(await page.evaluate(() => window.__met?.follow)).toBe(true);
     await openMenu(page, 'view-menu');
     await expect(page.getByTestId('follow-toggle')).toHaveAttribute('aria-pressed', 'true');

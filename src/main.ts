@@ -1,5 +1,5 @@
 /**
- * Boot (docs/design/spec.md, Modules): query, sequence, timeline, viewer, player, UI, frame loop and the read-only `window.__met`.
+ * Boot (docs/design/spec.md, Modules): query, sequence, timeline, viewer, player, walk mode, UI, frame loop and the read-only `window.__met`.
  * Frames render on demand: when t, the camera, the cut or the size changed, and for the first 5 frames, after which `window.__shotReady` is set.
  */
 import { Vector3 } from 'three';
@@ -12,8 +12,13 @@ import { Timeline } from './build/timeline.js';
 import type { BuiltStep } from './build/timeline.js';
 import { installStyles } from './ui/styles.js';
 import { createUi } from './ui/ui.js';
-import type { UiState } from './ui/ui.js';
+import type { UiState, WalkStatus } from './ui/ui.js';
+import { GeometryBvhs } from './walk/bvh-cache.js';
+import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
+import { WalkMode } from './walk/walk-mode.js';
 import { publishFacts, snapshot } from './viewer/facts.js';
+import { orbitKeyMove, orbitKeys } from './viewer/orbit-keys.js';
+import { ModelPicker } from './viewer/pick.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
 import type { CameraPose } from './viewer/presets.js';
 import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
@@ -79,6 +84,11 @@ function boot(): void {
   const capExcluded = timeline.steps.flatMap((s) => s.meshes).filter((m) => !Array.isArray(m.material) && !cappedBySection(m.material));
   const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capExcluded });
   const rig = viewer.rig;
+  // One BVH per geometry serves the zoom's pick and the walk's collision (src/walk/bvh-cache.ts).
+  const bvhs = new GeometryBvhs();
+  const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, viewer.env.groundY, viewer.cut);
+  rig.pick = (ray) => picker.distance(ray);
+  const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs }, (message) => { console.warn(message); });
   const presetPose = (id: string): CameraPose | null => {
     const preset = presetById(id);
     return preset === undefined ? null : resolvePreset(preset, timeline.bounds, rig.camera.aspect);
@@ -99,11 +109,13 @@ function boot(): void {
   viewer.cut.set(query.cut !== null, query.cut ?? defaultCut);
 
   const player = new Player(steps.map((s) => s.weight ?? 1), start.t);
-  if (shouldAutoplay(query, start)) player.playForward();
+  if (shouldAutoplay(query)) player.playForward();
+  if (query.spawn !== null && !query.walk) warnings.push(`Query parameter spawn="${query.spawn}" takes effect only with walk=1. It is ignored.`);
 
   let changed = true;
   let needsRender = true;
   const ranges = chapterRanges(steps);
+  const walkStatus = (): WalkStatus => (!walk.active ? 'off' : walk.preparing ? 'preparing' : walk.pointerLocked ? 'locked' : 'free');
   const state = (): UiState => ({
     t: player.t,
     mode: player.mode,
@@ -113,10 +125,20 @@ function boot(): void {
     follow,
     cutEnabled: viewer.cut.enabled,
     cutHeight: viewer.cut.height,
+    walking: walk.active,
+    walkStatus: walkStatus(),
   });
   const act = (action: () => void) => (): void => {
     action();
     changed = true;
+  };
+  /** Into walk mode (at `spawn`, or as walk-mode.ts decides): the follow camera and the preset in view go off, as for a move by the user. */
+  const enterWalk = (spawn: string | null): void => {
+    follow = false;
+    view = null;
+    atPreset = false;
+    walk.enter(spawn);
+    needsRender = true;
   };
   const ui = createUi(
     app,
@@ -125,6 +147,7 @@ function boot(): void {
       chapters: ranges.map((r) => r.chapter),
       ranges: ranges.map((r) => ({ id: r.chapter.id, title: r.chapter.title, years: r.chapter.years, summary: r.chapter.summary, first: r.first, count: r.count })),
       presets: PRESETS,
+      spawns: SPAWNS.map((spawn) => ({ id: spawn.id, label: spawn.label })),
       cutMax,
     },
     {
@@ -159,6 +182,13 @@ function boot(): void {
         viewer.markShadowsDirty();
         needsRender = true;
       },
+      toggleWalk: () => {
+        if (walk.active) walk.exit();
+        else enterWalk(null);
+        needsRender = true;
+      },
+      walkFrom: (spawn: string) => { enterWalk(spawn); },
+      jump: () => { walk.jump(); },
     },
     state(),
   );
@@ -174,6 +204,13 @@ function boot(): void {
   } else {
     const pose = presetPose(view ?? DEFAULT_PRESET);
     if (pose !== null) rig.setPose(pose);
+  }
+  if (query.walk) {
+    const known = query.spawn === null || spawnById(query.spawn) !== undefined;
+    if (!known) warnings.push(`Query parameter spawn="${query.spawn}" names no walk spawn; use one of ${SPAWNS.map((sp) => sp.id).join(', ')}. The walk starts at ${DEFAULT_SPAWN}.`);
+    enterWalk(known ? query.spawn : null);
+    // Capture mode shows the walker's view from its first frame.
+    if (query.shot) walk.prepareNow(player.t);
   }
   rig.onUserMove = () => {
     follow = false;
@@ -199,6 +236,7 @@ function boot(): void {
   /** The pose the follow camera headed for in the last frame, or null when it is not under way. */
   let followGoal: CameraPose | null = null;
   const frame = (now: number): void => {
+    const work = performance.now();
     const seconds = Math.min(MAX_FRAME_SECONDS, Math.max(0, (now - last) / 1000));
     last = now;
     if (!query.shot && player.tick(seconds)) changed = true;
@@ -207,8 +245,16 @@ function boot(): void {
       if (timeline.evaluate(player.t)) viewer.markShadowsDirty();
       needsRender = true;
     }
+    if (walk.active) {
+      if (walk.frame(query.shot ? 0 : seconds, player.t, ui.held)) needsRender = true;
+    } else {
+      // The orbit view's movement keys move the camera and its target together, like a pan, and turn the follow camera off like a drag.
+      const up = new Vector3(0, 1, 0).applyQuaternion(rig.camera.quaternion);
+      const move = orbitKeyMove(rig.camera.position, rig.controls.target, up, orbitKeys(ui.held), seconds);
+      if (move.lengthSq() > 0 && rig.translate(move)) rig.onUserMove?.();
+    }
     followGoal = null;
-    if (follow && player.moving) {
+    if (follow && player.moving && !walk.active) {
       const step = stepInMotion(timeline.steps, player.t, player.direction);
       followGoal = step === undefined ? null : rig.followGoal(step.def.focus, step.bounds, timeline.bounds);
       if (followGoal !== null && rig.approach(followGoal, seconds)) {
@@ -223,6 +269,7 @@ function boot(): void {
       frames += 1;
       needsRender = false;
     }
+    walk.noteFrame(performance.now() - work);
     if (readyMs === null && frames >= READY_FRAMES) {
       performance.mark('met:ready');
       readyMs = performance.now();
@@ -261,6 +308,7 @@ function boot(): void {
       const c = rig.camera;
       return snapshot({ position: vec(c.position), target: vec(rig.controls.target), near: c.near, far: c.far, fov: c.fov, aspect: c.aspect });
     },
+    get walk() { return snapshot(walk.facts()); },
     perf: Object.freeze({
       buildMs,
       get readyMs() { return readyMs; },

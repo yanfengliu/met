@@ -6,7 +6,8 @@ import { bindKeys } from './keyboard.js';
 import { chapterAt } from './label.js';
 import type { LabelStep } from './label.js';
 import { ChapterMenu, ViewMenu, closeOnOutside } from './menus.js';
-import type { ChapterEntry, PresetEntry, ViewActions, ViewState } from './menus.js';
+import type { ChapterEntry, PresetEntry, SpawnEntry, ViewActions, ViewState } from './menus.js';
+import { el, setText } from './dom.js';
 import { installStyles } from './styles.js';
 import { TimelineBar } from './timeline-bar.js';
 import type { BarActions, BarState } from './timeline-bar.js';
@@ -16,21 +17,35 @@ export interface UiInfo {
   readonly chapters: readonly Chapter[];
   readonly ranges: readonly ChapterEntry[];
   readonly presets: readonly PresetEntry[];
+  readonly spawns: readonly SpawnEntry[];
   /** Top of the section-cut slider, in metres. */
   readonly cutMax: number;
 }
 
 export interface UiActions extends BarActions, ViewActions {
   goToChapter(first: number): void;
+  jump(): void;
 }
 
-export type UiState = BarState & ViewState;
+/** What the walk status line says: nothing in the orbit view, then preparing, walking with the pointer free, or with it locked to the view. */
+export type WalkStatus = 'off' | 'preparing' | 'free' | 'locked';
+
+export type UiState = BarState & ViewState & { readonly walkStatus: WalkStatus };
 
 export interface Ui {
   sync(state: UiState): void;
   /** The timeline bar, whose height the camera keeps clear of. */
   readonly bar: HTMLElement;
+  /** The physical keys held now (src/ui/keyboard.ts). */
+  readonly held: ReadonlySet<string>;
 }
+
+const WALK_STATUS: Readonly<Record<WalkStatus, string>> = {
+  off: '',
+  preparing: 'Preparing walk mode…',
+  free: 'Walk mode. Click the view to look with the mouse, or drag. W A S D or the arrows walk, Shift runs, Space jumps, F leaves.',
+  locked: 'Move the mouse to look. Esc frees the pointer; F leaves walk mode.',
+};
 
 export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, initial: UiState): Ui {
   installStyles();
@@ -39,17 +54,20 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     actions,
   );
   const chapters = new ChapterMenu(info.ranges, (first) => { actions.goToChapter(first); });
-  const view = new ViewMenu(info.presets, info.cutMax, initial, actions);
+  const view = new ViewMenu(info.presets, info.spawns, info.cutMax, initial, actions);
   const menus = document.createElement('div');
   menus.className = 'met-menus';
   menus.append(chapters.disclosure.element, view.disclosure.element);
   const ui = document.createElement('div');
   ui.className = 'met-ui';
   ui.dataset['testid'] = 'ui';
-  ui.append(menus, bar.element);
+  const status = el('div', { className: 'met-walk-status', testid: 'walk-status', attrs: { role: 'status', 'aria-live': 'polite' } });
+  status.hidden = true;
+  ui.append(menus, status, bar.element);
   root.appendChild(ui);
   closeOnOutside([chapters.disclosure, view.disclosure]);
-  bindKeys(actions);
+  let walking = initial.walking;
+  const held = bindKeys(actions, () => walking);
 
   // Panels never reach under the bar: their max height follows the bar's height.
   const fit = (): void => {
@@ -59,10 +77,13 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   fit();
 
   const sync = (state: UiState): void => {
+    walking = state.walking;
     bar.sync(state);
     chapters.sync(chapterAt(state.t, info.ranges, info.steps.length));
     view.sync(state);
+    setText(status, WALK_STATUS[state.walkStatus]);
+    if (status.hidden !== (state.walkStatus === 'off')) status.hidden = state.walkStatus === 'off';
   };
   sync(initial);
-  return { sync, bar: bar.element };
+  return { sync, bar: bar.element, held };
 }

@@ -17,6 +17,10 @@ export interface Query {
   /** `autoplay=0` gives false, `autoplay=1` true, absent null. */
   readonly autoplay: boolean | null;
   readonly noui: boolean;
+  /** `walk=1`: start in walk mode. */
+  readonly walk: boolean;
+  /** A walk spawn id (src/walk/spawns.ts); resolved by the walk mode, which warns about one it does not know. */
+  readonly spawn: string | null;
   readonly warnings: readonly string[];
 }
 
@@ -67,6 +71,8 @@ export function parseQuery(search: string): Query {
     solo: text('solo'),
     autoplay: flag(params, 'autoplay', warnings),
     noui: flag(params, 'noui', warnings) === true,
+    walk: flag(params, 'walk', warnings) === true,
+    spawn: text('spawn'),
     warnings,
   };
 }
@@ -84,7 +90,10 @@ export interface Start {
   readonly warnings: readonly string[];
 }
 
-/** The start position: `step` (an id or 1-based index, meaning the end of that step) wins over `t`; `t` is clamped to [0, N]. */
+/**
+ * The start position: `step` (an id or 1-based index, meaning the end of that step) wins over `t`; `t` is clamped to [0, N]. With neither, the finished
+ * building (N), or the empty site (0) when `autoplay=1` asks to watch the build.
+ */
 export function startPosition(query: Query, stepIds: readonly string[]): Start {
   const n = stepIds.length;
   const warnings: string[] = [];
@@ -101,12 +110,10 @@ export function startPosition(query: Query, stepIds: readonly string[]): Start {
     if (query.t < 0 || query.t > n) warnings.push(`Query parameter t=${String(query.t)} is outside [0, ${String(n)}]; it is clamped.`);
     return { t: Math.min(Math.max(query.t, 0), n), positioned: true, warnings };
   }
-  return { t: 0, positioned: false, warnings };
+  return { t: query.autoplay === true ? 0 : n, positioned: false, warnings };
 }
 
-/** Whether the page starts playing: never in shot mode; `autoplay=1` forces it; otherwise only when the query set no position and not `autoplay=0`. */
-export function shouldAutoplay(query: Query, start: Start): boolean {
-  if (query.shot) return false;
-  if (query.autoplay !== null) return query.autoplay;
-  return !start.positioned;
+/** Whether the page starts playing: only when `autoplay=1` asks for it, and never in shot mode. */
+export function shouldAutoplay(query: Query): boolean {
+  return !query.shot && query.autoplay === true;
 }

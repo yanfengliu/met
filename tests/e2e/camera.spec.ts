@@ -41,7 +41,7 @@ test.describe('camera', () => {
   });
 
   test('a press without movement keeps the follow camera on during playback, and a drag turns it off', async ({ page }) => {
-    await open(page, '');
+    await open(page, 'autoplay=1');
     await page.waitForFunction(() => window.__met?.mode === 'playing');
     await press(page, 'speed-4');
     expect(await page.evaluate(() => window.__met?.follow)).toBe(true);

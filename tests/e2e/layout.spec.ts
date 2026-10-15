@@ -60,18 +60,18 @@ function expectLaidOut(boxes: readonly Box[], viewport: { width: number; height:
 
 /**
  * The controls docs/design/spec.md (Page) requires, by data-testid: the timeline bar's and the two menu buttons with the menus closed, and each menu's
- * items when it is open. Chapters and presets come from `window.__met`; the rest is the spec's own list, not read from the page.
+ * items when it is open. Chapters, presets and walk spawns come from `window.__met`; the rest is the spec's own list, not read from the page.
  */
 function requiredControls(f: Facts): { readonly closed: readonly string[]; readonly 'chapter-menu': readonly string[]; readonly 'view-menu': readonly string[] } {
   return {
     closed: [
       'step-label', 'step-detail', 'scrubber',
       'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end',
-      'speed-0.5', 'speed-1', 'speed-2', 'speed-4',
+      'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'walk-toggle',
       'chapter-menu-button', 'view-menu-button',
     ],
     'chapter-menu': f.chapters.map((c) => `chapter-${c.id}`),
-    'view-menu': [...f.presets.map((p) => `preset-${p.id}`), 'follow-toggle', 'cut-toggle', 'cut-slider', 'cut-value'],
+    'view-menu': [...f.presets.map((p) => `preset-${p.id}`), 'follow-toggle', ...f.walk.spawns.map((id) => `walk-spawn-${id}`), 'cut-toggle', 'cut-slider', 'cut-value'],
   };
 }
 

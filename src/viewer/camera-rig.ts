@@ -1,22 +1,26 @@
 /**
- * Camera and OrbitControls, tuned for both a 1 km aerial view and a 3 m interior close-up, plus the follow camera's smoothing.
+ * Camera and OrbitControls, tuned for both a 1 km aerial view and a 3 m interior close-up, plus the follow camera's smoothing, the keyboard moves of
+ * the orbit view (`translate`), the zoom toward the pointer (src/viewer/zoom.ts; the controls' own zoom is off) and the first-person pose of walk mode.
  * Depth precision: the near plane follows the distance to the orbit target (1%, from 3 cm to 20 m) and never exceeds half the camera's height above the
  * workspace ground, so a 24-bit depth buffer resolves about 1 cm at 1 km from an aerial view and well under 1 mm across a hall seen from inside.
  * The far plane is fixed beyond the haze, which hides the edge of the workspace ground.
  */
-import { Box3, MathUtils, PerspectiveCamera, Vector3 } from 'three';
+import { Box3, MathUtils, PerspectiveCamera, Ray, Vector3 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import type { CameraFocus } from '../build/types.js';
 import { DEFAULT_FOV, fitBox, presetById, resolvePreset } from './presets.js';
 import type { CameraPose } from './presets.js';
+import { bindZoomInput, dollyStep, pointerRay } from './zoom.js';
 
 const FAR = 25_000;
 const NEAR_MIN = 0.03;
 const NEAR_MAX = 20;
 const NEAR_PER_DISTANCE = 0.01;
 /** The camera stays this far above the workspace ground. */
-const CAMERA_FLOOR = 0.4;
+export const CAMERA_FLOOR = 0.4;
+/** In walk mode the orbit target stays this far ahead of the eye, so leaving walk mode orbits about what the walker looked at. */
+const WALK_TARGET_DISTANCE = 5;
 /** The follow camera frames at least a sphere of this radius, so a small step does not zoom in on one stone. */
 export const FOLLOW_MIN_RADIUS = 14;
 /** The follow camera stands this many times as far as the tightest fit of its box. */
@@ -31,12 +35,16 @@ export class CameraRig {
   readonly controls: OrbitControls;
   /** Called when the user moves the camera by dragging, wheeling or touching (not when code moves it, even while a pointer is down). */
   onUserMove: (() => void) | null = null;
+  /** The distance along a ray to the first surface the zoom heads for (src/viewer/pick.ts), or null; without it the zoom flies as over open sky. */
+  pick: ((ray: Ray) => number | null) | null = null;
+  /** In walk mode the controls are off and the walk mode poses the camera (`setWalkView`). */
+  private walk = false;
   private interacting = false;
   /** Above 0 while the rig itself runs the controls' update, whose `change` events are the rig's own moves (the follow camera, damping, a pose), not the user's. */
   private own = 0;
 
   constructor(
-    element: HTMLElement,
+    private readonly element: HTMLElement,
     private readonly groundY: number,
   ) {
     this.controls = new OrbitControls(this.camera, element);
@@ -44,9 +52,9 @@ export class CameraRig {
     c.enableDamping = true;
     c.dampingFactor = 0.12;
     c.screenSpacePanning = true;
-    c.zoomToCursor = true;
-    c.minDistance = 0.3;
-    c.maxDistance = 6000;
+    // The wheel, a pinch and a middle drag zoom through `dolly`; the controls' own zoom shrank its steps toward the target until it stalled.
+    c.enableZoom = false;
+    bindZoomInput(element, (x, y, factor) => { this.dolly(x, y, factor); }, () => !this.walk && c.enabled);
     // The full range, so interior presets can look straight up into a dome or skylight.
     c.maxPolarAngle = Math.PI;
     c.addEventListener('start', () => {
@@ -126,8 +134,12 @@ export class CameraRig {
     return true;
   }
 
-  /** Applies damping and the camera floor. Returns whether the camera moved. */
+  /** Applies damping and the camera floor. Returns whether the camera moved. In walk mode it only sets the clipping planes. */
   update(): boolean {
+    if (this.walk) {
+      this.updateClipping();
+      return false;
+    }
     const moved = this.sync();
     const floor = this.groundY + CAMERA_FLOOR;
     if (this.camera.position.y < floor) {
@@ -136,6 +148,67 @@ export class CameraRig {
     }
     this.updateClipping();
     return moved;
+  }
+
+  /**
+   * One zoom step toward the point under (clientX, clientY), by `factor` (below 1 in, above 1 out): src/viewer/zoom.ts says how far. A step at a
+   * bound changes nothing; any other counts as the user's move.
+   */
+  dolly(clientX: number, clientY: number, factor: number): void {
+    const direction = pointerRay(this.element, this.camera, clientX, clientY);
+    const hit = factor < 1 && this.pick !== null ? this.pick(new Ray(this.camera.position.clone(), direction)) : null;
+    const next = dollyStep(this.camera.position, this.controls.target, direction, hit, factor);
+    if (next === null) return;
+    const floor = this.groundY + CAMERA_FLOOR;
+    if (next.position.y < floor) {
+      next.target.y += floor - next.position.y;
+      next.position.y = floor;
+    }
+    this.stopInertia();
+    this.camera.position.copy(next.position);
+    this.controls.target.copy(next.target);
+    this.sync();
+    this.updateClipping();
+    this.onUserMove?.();
+  }
+
+  /** Moves the camera and its target together by `delta` (the orbit view's keys), never below the camera floor. Returns whether it moved. */
+  translate(delta: Vector3): boolean {
+    const floor = this.groundY + CAMERA_FLOOR;
+    const d = delta.clone();
+    if (this.camera.position.y + d.y < floor) d.y = Math.min(0, floor - this.camera.position.y);
+    if (d.lengthSq() < 1e-12) return false;
+    this.camera.position.add(d);
+    this.controls.target.add(d);
+    this.sync();
+    this.updateClipping();
+    return true;
+  }
+
+  /** Whether walk mode poses the camera. */
+  get walking(): boolean {
+    return this.walk;
+  }
+
+  /** Switches walk mode's camera on (the orbit controls off) or off again. */
+  setWalking(on: boolean): void {
+    if (on === this.walk) return;
+    if (on) this.stopInertia();
+    this.walk = on;
+    this.controls.enabled = !on;
+    if (!on) this.sync();
+  }
+
+  /** Walk mode: the camera at `eye` looking along the unit `look`, the orbit target WALK_TARGET_DISTANCE ahead. */
+  setWalkView(eye: Vector3, look: Vector3, fov: number): void {
+    if (this.camera.fov !== fov) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
+    this.camera.position.copy(eye);
+    this.controls.target.copy(eye).addScaledVector(look, WALK_TARGET_DISTANCE);
+    this.camera.lookAt(this.controls.target);
+    this.updateClipping();
   }
 
   /** Sets the near plane from the distance to the target and the height above ground; see the header. */

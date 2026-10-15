@@ -81,6 +81,14 @@ const CSS = /* css */ `
 .met-scrubber::-moz-range-thumb { width: var(--met-thumb); height: var(--met-thumb); border-radius: 50%; background: var(--met-text); border: 2px solid var(--met-accent); box-sizing: border-box; }
 .met-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .met-group { display: flex; gap: 6px; flex-wrap: nowrap; }
+.met-modes { gap: 16px; align-items: center; }
+.met-walk { padding: 0 12px 0 8px; }
+.met-walk-status {
+  position: absolute; top: 12px; left: 12px; z-index: 3; box-sizing: border-box; max-width: min(460px, calc(100vw - 210px));
+  padding: 8px 12px; border-radius: 8px; background: var(--met-panel); backdrop-filter: blur(8px); border: 1px solid var(--met-line);
+  font-size: 13px; line-height: 1.35; color: var(--met-text); pointer-events: none;
+}
+.met-walk-status[hidden] { display: none; }
 .met-speed .met-button { min-width: 44px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 
 .met-error {
@@ -96,6 +104,8 @@ const CSS = /* css */ `
   .met-group { gap: 5px; }
   .met-icon { width: 40px; }
   .met-speed .met-button { min-width: 40px; padding: 0 4px; }
+  .met-modes { gap: 10px; }
+  .met-walk-status { font-size: 12px; padding: 6px 9px; }
 }
 `;
 

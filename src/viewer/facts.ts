@@ -5,6 +5,7 @@
  */
 import type { PlayerMode, Speed } from '../build/player.js';
 import type { CameraFocus, Vec3 } from '../build/types.js';
+import type { WalkFacts } from '../walk/walk-mode.js';
 
 /** A detached copy of plain data `value`, frozen all the way down: no part of it is shared with the original. */
 export function snapshot<T>(value: T): T {
@@ -54,6 +55,8 @@ export interface MetFacts {
   readonly view: string | null;
   /** `fov` is the vertical field of view in degrees and `aspect` the width over the height of the part of the canvas above the timeline bar, which the projection covers. */
   readonly camera: { readonly position: Vec3; readonly target: Vec3; readonly near: number; readonly far: number; readonly fov: number; readonly aspect: number };
+  /** Walk mode (src/walk/walk-mode.ts, `WalkFacts`): the mode, the eye and look direction, the ground contact, the collision build and the spawn ids. */
+  readonly walk: WalkFacts;
   readonly perf: {
     /**
      * Milliseconds of the timeline build: every step's `build` and its meshes (performance marks met:build-start, met:build-end).

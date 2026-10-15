@@ -1,7 +1,8 @@
 /**
  * The chapter menu and the view menu (docs/design/spec.md, Page). Each is a disclosure button with a panel; Escape or a click outside closes it.
  * Chapter menu: the chapters in order; choosing one moves to the start of its first step.
- * View menu: exterior and interior presets, the follow-camera toggle and the section cut (a toggle and a height slider).
+ * View menu: exterior and interior presets, the follow-camera toggle, the walk spawns (each enters walk mode there) and the section cut (a toggle
+ * and a height slider).
  */
 import { button, el, setAttr, setText } from './dom.js';
 
@@ -100,6 +101,12 @@ export interface ViewActions {
   applyPreset(id: string): void;
   setFollow(on: boolean): void;
   setCut(enabled: boolean, height: number): void;
+  walkFrom(spawn: string): void;
+}
+
+export interface SpawnEntry {
+  readonly id: string;
+  readonly label: string;
 }
 
 export interface ViewState {
@@ -118,7 +125,7 @@ export class ViewMenu {
   private readonly cutValue: HTMLOutputElement;
   private state: ViewState;
 
-  constructor(presets: readonly PresetEntry[], cutMax: number, initial: ViewState, actions: ViewActions) {
+  constructor(presets: readonly PresetEntry[], spawns: readonly SpawnEntry[], cutMax: number, initial: ViewState, actions: ViewActions) {
     this.state = initial;
     this.disclosure = new Disclosure('View', 'view-menu', 'View', 'group');
     const panel = this.disclosure.panel;
@@ -136,6 +143,14 @@ export class ViewMenu {
     panel.appendChild(el('h2', { text: 'Camera' }));
     this.follow = button('Follow the build', 'follow-toggle', () => { actions.setFollow(!this.state.follow); }, { text: 'Follow the build', className: 'met-item' });
     panel.appendChild(this.follow);
+    panel.appendChild(el('h2', { text: 'Walk' }));
+    for (const spawn of spawns) {
+      const label = `Walk from ${spawn.label}`;
+      panel.appendChild(button(label, `walk-spawn-${spawn.id}`, () => {
+        actions.walkFrom(spawn.id);
+        this.disclosure.setOpen(false);
+      }, { text: label, className: 'met-item' }));
+    }
     panel.appendChild(el('h2', { text: 'Section cut' }));
     this.cutToggle = button('Section cut', 'cut-toggle', () => { actions.setCut(!this.state.cutEnabled, this.state.cutHeight); }, { text: 'Cut', className: 'met-button' });
     this.cutSlider = el('input', {

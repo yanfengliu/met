@@ -1,6 +1,6 @@
 /**
- * The timeline bar (docs/design/spec.md, Page): start, step back, play backward, play/pause, step forward, end; speed; a scrubber over [0, N] with
- * chapter boundaries marked; the label and the step's detail. Every control has an accessible name and a `data-testid`.
+ * The timeline bar (docs/design/spec.md, Page): start, step back, play backward, play/pause, step forward, end; speed; the walk-mode toggle; a scrubber
+ * over [0, N] with chapter boundaries marked; the label and the step's detail. Every control has an accessible name and a `data-testid`.
  */
 import type { PlayerMode, Speed } from '../build/player.js';
 import { SPEEDS } from '../build/player.js';
@@ -19,6 +19,7 @@ export interface BarActions {
   toEnd(): void;
   setSpeed(speed: Speed): void;
   scrub(t: number): void;
+  toggleWalk(): void;
 }
 
 export interface BarState {
@@ -26,6 +27,8 @@ export interface BarState {
   readonly mode: PlayerMode;
   readonly direction: 1 | -1;
   readonly speed: Speed;
+  /** Walk mode is on (or being prepared). */
+  readonly walking: boolean;
 }
 
 export interface BarInfo {
@@ -43,6 +46,7 @@ export class TimelineBar {
   private readonly play: HTMLButtonElement;
   private readonly playBackward: HTMLButtonElement;
   private readonly speeds: Map<Speed, HTMLButtonElement>;
+  private readonly walk: HTMLButtonElement;
   private dragging = false;
 
   constructor(
@@ -93,10 +97,13 @@ export class TimelineBar {
       }),
     );
     const speedGroup = el('div', { className: 'met-group met-speed', attrs: { role: 'group', 'aria-label': 'Speed' } }, [...this.speeds.values()]);
+    this.walk = button('Walk', 'walk-toggle', () => { actions.toggleWalk(); }, { icon: ICONS.walk, text: 'Walk', className: 'met-button met-walk' });
+    setAttr(this.walk, 'aria-pressed', 'false');
+    setAttr(this.walk, 'title', 'Walk in first person (F)');
     this.element = el('div', { className: 'met-bar', testid: 'timeline-bar', attrs: { role: 'region', 'aria-label': 'Build timeline controls' } }, [
       el('div', { className: 'met-label' }, [this.title, this.detail]),
       el('div', { className: 'met-scrub' }, [this.scrubber, marks]),
-      el('div', { className: 'met-controls' }, [transport, speedGroup]),
+      el('div', { className: 'met-controls' }, [transport, el('div', { className: 'met-group met-modes' }, [speedGroup, this.walk])]),
     ]);
   }
 
@@ -117,5 +124,6 @@ export class TimelineBar {
     }
     setAttr(this.playBackward, 'aria-pressed', String(state.mode === 'playing' && state.direction === -1));
     for (const [speed, b] of this.speeds) setAttr(b, 'aria-pressed', String(speed === state.speed));
+    setAttr(this.walk, 'aria-pressed', String(state.walking));
   }
 }

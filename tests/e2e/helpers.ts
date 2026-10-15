@@ -24,7 +24,7 @@ export function watchErrors(page: Page): { expectClean: () => void } {
   };
 }
 
-/** Opens the page with `query` and waits for the capture contract's ready flag. */
+/** Opens the page with `query` (by default the page's own default: the finished building, paused) and waits for the capture contract's ready flag. */
 export async function open(page: Page, query = 'autoplay=0'): Promise<Facts> {
   await page.goto(`/?${query}`);
   await page.waitForFunction(() => window.__shotReady === true);
