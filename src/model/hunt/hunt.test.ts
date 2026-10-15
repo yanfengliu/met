@@ -5,17 +5,22 @@
  * Bounds: the block test checks each piece's world bounding box (a box overstepping a corner of an L-shaped edge counts against the nearer edge only);
  * the wings' front allowance is the spec's moulding rule (up to 1.5 m beyond the line), and pieces of the walls step get 2 cm. Budgets are this area's share
  * from the coordinator (650,000 triangles counting instances, 170 instanced meshes, 2 step lights).
+ * The walk mode (plan docs/work/1_first-person-walk, M2): the central doors' glazing is passable to a walker and looks like the palette's, while the
+ * palette and the other glazing stay solid.
  */
 import { Box3, Vector3 } from 'three';
+import type { Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { collectStep } from '../../build/kit.js';
+import type { CollectedPiece } from '../../build/kit.js';
 import { Timeline } from '../../build/timeline.js';
 import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAIR_CENTRE_X_INNER, HUNT_PAIR_CENTRE_X_OUTER } from '../frame.js';
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
+import { palette } from '../palette.js';
 import { LUNETTE_GRILLE } from './arches.js';
-import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y } from './dims.js';
+import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, MAIN, SCREEN_HEAD_Y, SCREEN_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
 
@@ -176,5 +181,35 @@ describe('lunette grilles', () => {
       expect(top, `top of the grille at X ${cx.toFixed(2)}`).toBeLessThanOrEqual(ARCH_CROWN_Y);
       expect(reach, `grille at X ${cx.toFixed(2)}: furthest from the arch centre`).toBeLessThanOrEqual(half);
     }
+  });
+});
+
+function worldBox(piece: CollectedPiece): Box3 {
+  if (piece.geometry.boundingBox === null) piece.geometry.computeBoundingBox();
+  return (piece.geometry.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
+}
+
+/** What a material looks like: everything its JSON records but its identity (uuid, name) and its flags (userData). */
+const IDENTITY = new Set(['uuid', 'name', 'userData', 'metadata']);
+function look(material: Material): string {
+  return JSON.stringify(Object.entries(material.toJSON()).filter(([key]) => !IDENTITY.has(key)));
+}
+
+describe('the walk routes through the wing', () => {
+  it("opens the central doors: their bronze and glass are passable and look like the palette's; the palette and the other glazing stay solid", () => {
+    const step = huntSteps.find((s) => s.id === 'hunt-windows');
+    if (step === undefined) throw new Error('The Hunt chapter has no step hunt-windows.');
+    const pieces = collectStep(step).pieces;
+    const half = ARCH_INNER_SPAN / 2;
+    const doors = pieces.filter((p) => {
+      const b = worldBox(p);
+      return b.min.x >= -half && b.max.x <= half && b.min.y >= MAIN - 1e-6 && b.max.y <= SCREEN_HEAD_Y + 1e-6 && Math.abs(b.getCenter(new Vector3()).z - SCREEN_Z) < 0.3;
+    });
+    expect(doors, "the central arch's door pieces: three doors, each bronze and glass").toHaveLength(6);
+    expect(doors.filter((p) => p.material.userData['solid'] !== false).map((p) => p.material.name), 'door pieces a walker cannot pass').toEqual([]);
+    expect(new Set(doors.map((p) => look(p.material))), "the doors' looks: the palette's bronze and dark glass").toEqual(new Set([look(palette.bronze), look(palette.glassDark)]));
+    const others = pieces.filter((p) => !doors.includes(p) && p.material.userData['solid'] === false);
+    expect(others.map((p) => p.material.name), 'passable pieces of hunt-windows other than the doors').toEqual([]);
+    expect(Object.entries(palette).flatMap(([key, m]) => (m.userData['solid'] === false ? [key] : [])), 'passable shared palette materials').toEqual([]);
   });
 });

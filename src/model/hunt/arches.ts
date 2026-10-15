@@ -34,6 +34,7 @@ import {
   TRANSOM_TOP_Y,
   WALL_Z,
 } from './dims.js';
+import { hunt } from './materials.js';
 import { at, box, lunetteGrille, UNIT_BOX } from './shapes.js';
 import { EXT_WINDOW } from './walls.js';
 
@@ -197,8 +198,9 @@ export const archSteps: readonly StepDef[] = [
           const bottom = doors ? MAIN : WINDOW_SILL_Y;
           const unit = glazed({ width, height: SCREEN_HEAD_Y - bottom, cols: 2, rows: doors ? 3 : 4, frame: 0.09, bar: 0.05, depth: 0.14 });
           const m = at(x + (a + b) / 2, bottom, SCREEN_Z + 0.07);
-          kit.add(unit.metal, palette.bronze, m);
-          kit.add(unit.glass, palette.glassDark, m);
+          // The doors stand open to a walker in the walk mode (passable copies of the same bronze and glass); the windows stay solid.
+          kit.add(unit.metal, doors ? hunt.doorBronze : palette.bronze, m);
+          kit.add(unit.glass, doors ? hunt.doorGlass : palette.glassDark, m);
         }
       }
       // The wings: two tall pedimented windows over two ground-floor windows each (S7 at the pavilion's ends).
