@@ -7,7 +7,22 @@
  */
 import type { Kit, StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';
-import { BACK_Z, CROSS_HALL_FRONT_Z, EXT_FACE_Z, EXT_NORTH_X, EXT_SOUTH_X, EXT_WALL_T, HALL_END_WALL_X, HALL_WEST_WALL_Z, MAIN, SECOND, SLAB, STAIR_HALF } from './dims.js';
+import {
+  BACK_Z,
+  CROSS_HALL_FRONT_Z,
+  EXT_FACE_Z,
+  EXT_NORTH_X,
+  EXT_SOUTH_X,
+  EXT_WALL_T,
+  HALL_END_WALL_X,
+  HALL_WEST_WALL_Z,
+  MAIN,
+  SECOND,
+  SLAB,
+  STAIR_HALF,
+  WING_DOORS_NORTH,
+  WING_DOORS_SOUTH,
+} from './dims.js';
 import { box } from './shapes.js';
 import { GALLERY_ROOF_Y, WING_ROOF_Y } from './roof.js';
 
@@ -15,21 +30,24 @@ const WALL = 0.4;
 const DOOR = 2.0;
 const SIDE = 1.2;
 
-/** A partition from (x0, z0) to (x1, z1) (one of them constant) between y0 and y1, with a door gap centred at each fraction in `doors`. */
-function partition(kit: Kit, a: readonly [number, number], b: readonly [number, number], y0: number, y1: number, doors: readonly number[], order: number): void {
+/** A door gap in a partition: a fraction along it, for a 2 m door centred there, or the span it covers in world metres along the partition. */
+type Door = number | readonly [number, number];
+
+/** A partition from (x0, z0) to (x1, z1) (one of them constant) between y0 and y1, with a gap for each of `doors`. */
+function partition(kit: Kit, a: readonly [number, number], b: readonly [number, number], y0: number, y1: number, doors: readonly Door[], order: number): void {
   const alongX = Math.abs(a[1] - b[1]) < 1e-6;
   const lo = alongX ? Math.min(a[0], b[0]) : Math.min(a[1], b[1]);
   const hi = alongX ? Math.max(a[0], b[0]) : Math.max(a[1], b[1]);
-  const cuts = doors.map((f) => lo + f * (hi - lo)).sort((p, q) => p - q);
+  const gaps = doors.map((d) => (typeof d === 'number' ? [lo + d * (hi - lo) - DOOR / 2, lo + d * (hi - lo) + DOOR / 2] : [Math.min(...d), Math.max(...d)])).sort((p, q) => (p[0] ?? 0) - (q[0] ?? 0));
   let start = lo;
   const piece = (s: number, e: number): void => {
     if (e - s < 0.05) return;
     if (alongX) box(kit, palette.plaster, [s, y0, a[1] - WALL / 2], [e, y1, a[1] + WALL / 2], order);
     else box(kit, palette.plaster, [a[0] - WALL / 2, y0, s], [a[0] + WALL / 2, y1, e], order);
   };
-  for (const c of cuts) {
-    piece(start, c - DOOR / 2);
-    start = c + DOOR / 2;
+  for (const [g0 = 0, g1 = 0] of gaps) {
+    piece(start, g0);
+    start = g1;
   }
   piece(start, hi);
 }
@@ -65,10 +83,11 @@ export const gallerySteps: readonly StepDef[] = [
         const wingTop = Math.min(hi, WING_ROOF_Y - 0.4);
         partition(kit, [HALL_END_WALL_X, -10.95], [45.4, -10.95], lo, wingTop, [0.5], order);
         partition(kit, [HALL_END_WALL_X, -24.4], [EXT_NORTH_X - SIDE, -24.4], lo, wingTop, [0.3, 0.75], order);
-        partition(kit, [45.4, front], [45.4, -24.4], lo, wingTop, [0.5], order);
+        // The wings' inner partitions take the map's doors on the main floor (dims.ts WING_DOORS_*), the way on into the McKim, Mead & White wings.
+        partition(kit, [45.4, front], [45.4, -24.4], lo, wingTop, f === 0 ? WING_DOORS_NORTH : [0.5], order);
         partition(kit, [-45.6, -13.65], [-HALL_END_WALL_X, -13.65], lo, wingTop, [0.5], order);
         partition(kit, [-45.6, -21.6], [-HALL_END_WALL_X, -21.6], lo, wingTop, [0.5], order);
-        partition(kit, [-45.6, front], [-45.6, HALL_WEST_WALL_Z], lo, wingTop, [0.2, 0.62], order);
+        partition(kit, [-45.6, front], [-45.6, HALL_WEST_WALL_Z], lo, wingTop, f === 0 ? WING_DOORS_SOUTH : [0.2, 0.62], order);
         for (const x of [-9.75, 9.75]) partition(kit, [x, HALL_WEST_WALL_Z], [x, -66.79], lo, hi, [0.2, 0.55, 0.85], order);
         partition(kit, [-28.67, -37.72], [-28.67, -57.53], lo, hi, [0.5], order);
         partition(kit, [-28.67, -37.72], [-9.75, -37.72], lo, hi, [0.5], order);

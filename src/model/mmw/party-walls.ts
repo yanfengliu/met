@@ -7,10 +7,19 @@
  * galleries show sky between the old coping and their roofs (seen from inside, 2026-10-13).
  */
 import type { Kit } from '../../build/types.js';
+import { wall } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { END_PARAPET_Y, KRAVIS_LINE_TOP_Y, LINK_TIER, MORGAN_ROOF_Y, PARTY_WALL } from './dims.js';
+import { END_PARAPET_Y, KRAVIS_LINE_TOP_Y, LEVEL_1, LEVEL_2_NORTH, LINK_TIER, MORGAN_ROOF_Y, PARTY_WALL, SLAB } from './dims.js';
 import { WALL_FOOT_Y } from './facade-parts.js';
-import { addBox } from './shapes.js';
+import { addBox, placed } from './shapes.js';
+
+/** A passage through a party wall: from `a` to `b` along its line (world X or Z), between heights `y0` and `y1`. */
+interface Passage {
+  readonly a: number;
+  readonly b: number;
+  readonly y0: number;
+  readonly y1: number;
+}
 
 /** One party wall: a line of the block outline and the side its outer face looks to. */
 interface Party {
@@ -22,6 +31,7 @@ interface Party {
   readonly out: '+x' | '-x' | '+z' | '-z';
   /** Top of the coping. */
   readonly top: number;
+  readonly passages?: readonly Passage[];
 }
 
 /** A shared wall carried up: the wall it stands on, and the new coping's top. */
@@ -38,8 +48,15 @@ const AMERICAN_Z96: Party = { x0: 49.4, z0: -96.0, x1: 118.0, z1: -96.0, out: '-
 const ROCKEFELLER_X88: Party = { x0: -88.1, z0: -69.0, x1: -88.1, z1: -38.5, out: '-x', top: LINK_TIER.top };
 const KRAVIS_Z69: Party = { x0: -88.1, z0: -69.0, x1: -49.7, z1: -69.0, out: '-z', top: LINK_TIER.top };
 
+/**
+ * The Temple of Dendur hall runs on past this block line, to Z −35.7 (exterior.md [K3], the roche-north modeller): on the main floor its east walkway lies inside
+ * the end pavilion here, and the map draws no wall on Z −41.3 from the hall's south side (X 118.07) to the foot of its glass wall (X 151.95, interior.md, The
+ * Temple of Dendur). The wall stands open there under the pavilion's second floor, the way into the hall from the Egyptian galleries.
+ */
+const DENDUR_EAST_WALK: Passage = { a: 118.07, b: 151.95, y0: LEVEL_1, y1: LEVEL_2_NORTH - SLAB };
+
 /** North campaign: against the Sackler Wing (Z −41.3 and X 118.0) and the American Wing (Z −96.0). */
-export const NORTH_PARTY: readonly Party[] = [{ x0: 118.0, z0: -41.3, x1: 153.13, z1: -41.3, out: '-z', top: END_PARAPET_Y }, SACKLER_X118, AMERICAN_Z96];
+export const NORTH_PARTY: readonly Party[] = [{ x0: 118.0, z0: -41.3, x1: 153.13, z1: -41.3, out: '-z', top: END_PARAPET_Y, passages: [DENDUR_EAST_WALK] }, SACKLER_X118, AMERICAN_Z96];
 
 /** South campaign: against the Kravis Wing (Z −69.0) and the Rockefeller Wing (X −88.1 and Z −38.5). */
 export const SOUTH_PARTY: readonly Party[] = [KRAVIS_Z69, ROCKEFELLER_X88, { x0: -151.61, z0: -38.5, x1: -88.1, z1: -38.5, out: '-z', top: END_PARAPET_Y }];
@@ -71,10 +88,28 @@ function plan(p: Party): readonly [number, number, number, number] {
   return [p.x0, p.x0 + t, p.z0, p.z1];
 }
 
-/** A run of the wall from `y0` up to a dark coping 0.3 m deep at `top`, overhanging 5 cm. */
+/**
+ * A run of the wall from `y0` up to `y1` with `passages` cut through it, as one wall of the parts library: turned so its front is the outer face, on the line.
+ * In the wall's own frame x then runs toward +X or +Z for an outer face looking +Z or −X, and the other way for −Z or +X.
+ */
+function addOpenedWall(kit: Kit, p: Party, passages: readonly Passage[], y0: number, y1: number, order: number): void {
+  const alongX = p.out === '-z' || p.out === '+z';
+  const lo = alongX ? Math.min(p.x0, p.x1) : Math.min(p.z0, p.z1);
+  const hi = alongX ? Math.max(p.x0, p.x1) : Math.max(p.z0, p.z1);
+  const mid = (lo + hi) / 2;
+  const turn = { '+z': 0, '-z': Math.PI, '+x': Math.PI / 2, '-x': -Math.PI / 2 }[p.out];
+  const sign = p.out === '+z' || p.out === '-x' ? 1 : -1;
+  const openings = passages.map((s) => ({ x: sign * ((s.a + s.b) / 2 - mid), y: s.y0 - y0, width: Math.abs(s.b - s.a), height: s.y1 - s.y0 }));
+  const geometry = wall({ width: hi - lo, height: y1 - y0, thickness: PARTY_WALL, openings });
+  kit.add(geometry, palette.limestone, alongX ? placed(mid, y0, p.z0, turn) : placed(p.x0, y0, mid, turn), order);
+}
+
+/** A run of the wall from `y0` up to a dark coping 0.3 m deep at `top`, overhanging 5 cm, with any of its passages that fall in that height. */
 function addWall(kit: Kit, p: Party, y0: number, top: number, order: number): void {
   const [x0, x1, z0, z1] = plan(p);
-  addBox(kit, palette.limestone, x0, y0, z0, x1, top - 0.3, z1, order);
+  const passages = (p.passages ?? []).filter((s) => s.y0 < top - 0.3 && s.y1 > y0);
+  if (passages.length === 0) addBox(kit, palette.limestone, x0, y0, z0, x1, top - 0.3, z1, order);
+  else addOpenedWall(kit, p, passages, y0, top - 0.3, order);
   addBox(kit, palette.limestoneDark, x0 - 0.05, top - 0.3, z0 - 0.05, x1 + 0.05, top, z1 + 0.05, order);
 }
 

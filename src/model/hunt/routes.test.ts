@@ -1,10 +1,11 @@
 /**
- * The public routes of plan docs/work/1_first-person-walk (M2), walked by the walk mode's own walker, headless: the whole sequence's Timeline at t = N,
+ * The public routes of plan docs/work/1_first-person-walk (M2, M2b), walked by the walk mode's own walker, headless: the whole sequence's Timeline at t = N,
  * its collision world built as the page builds it (`collisionMeshes`, `CollisionWorld` over three-mesh-bvh BVHs), and src/walk/walker.ts stepped at
  * 60 frames a second as the page steps it, running, turned each frame toward the next point of the route (routes.ts). R1 runs from the plaza through
- * the central doors into the Great Hall, R2 up the Grand Staircase to the second floor, each both ways. The walker never leaves the ground (no drop over
- * a step), never stalls (a wall, a face over a step, a slope over 40°), keeps level behind the doors, crosses R2's landing at its level, walks the
- * second floor on its level, and ends on the route's floor.
+ * the central doors into the Great Hall, R2 up the Grand Staircase to the second floor, R3 from the Great Hall through the Egyptian galleries into the
+ * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, each both ways. The walker never leaves the ground (no
+ * drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
+ * crosses its landing and walks the second floor on their levels, and R3 and R4 cross the McKim, Mead & White seams on the main floor.
  * Bound: steering turns the walker directly (the e2e walks steer by real keys and drags, tests/e2e/routes.spec.ts); a stall is less than 5 cm of
  * progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts and ends within
  * one frame's two physics steps is not seen.
@@ -16,8 +17,10 @@ import { Timeline } from '../../build/timeline.js';
 import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import { BODY, NO_INPUT, Walker } from '../../walk/walker.js';
-import { MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
-import { reversed, ROUTE_R1, ROUTE_R2 } from './routes.js';
+import { ROMAN_COURT } from '../mmw/wings.js';
+import { DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../roche-north/plan.js';
+import { EXT_NORTH_X, EXT_SOUTH_X, MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
+import { reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4 } from './routes.js';
 import type { Route } from './routes.js';
 import { STAIR_LANDING_Y } from './stair.js';
 
@@ -115,7 +118,7 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
     return made;
   };
 
-  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2)])('walks $id end to end on the ground and ends on its floor', (route) => {
+  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4)])('walks $id end to end on the ground and ends on its floor', (route) => {
     const result = walked(route);
     expect(result.failure).toBeUndefined();
     expect(result.maxRise, `${route.id}: largest step up in a frame, metres`).toBeLessThanOrEqual(BODY.step);
@@ -139,5 +142,26 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
     expect(heightsOff(upstairs, SECOND), 'feet off the second floor past the top step').toEqual([]);
     const zs = upstairs.map((s) => s.z);
     expect(Math.max(...zs) - Math.min(...zs), 'metres walked on the second floor').toBeGreaterThan(4);
+  });
+
+  it('R3 crosses the north seam on the main floor and walks into the Temple of Dendur hall to beside the platform', () => {
+    const { samples, end } = walked(ROUTE_R3);
+    const seam = samples.filter((s) => s.x >= EXT_NORTH_X - 1.2 && s.x <= EXT_NORTH_X);
+    expect(seam.length, 'samples in the seam wall').toBeGreaterThan(5);
+    expect(heightsOff(seam, MAIN), 'feet off the main floor in the seam wall').toEqual([]);
+    const hall = samples.filter((s) => s.x > SACKLER_BLOCK.minX && s.z < SACKLER_BLOCK.maxZ);
+    expect(hall.length, 'samples inside the Sackler Wing').toBeGreaterThan(5);
+    expect(heightsOff(hall, DENDUR_FLOOR_Y), 'feet off the Dendur walkways').toEqual([]);
+    expect(end.x - PLATFORM.maxX, `metres from the platform's north side at ${where(end)}`).toBeLessThan(4);
+    expect(end.z < PLATFORM.maxZ && end.z > PLATFORM.minZ, `beside the platform at ${where(end)}`).toBe(true);
+  });
+
+  it('R4 crosses the south seam on the main floor and walks into the Leon Levy and Shelby White Court', () => {
+    const { samples, end } = walked(ROUTE_R4);
+    const seam = samples.filter((s) => s.x >= EXT_SOUTH_X && s.x <= EXT_SOUTH_X + 1.2);
+    expect(seam.length, 'samples in the seam wall').toBeGreaterThan(5);
+    expect(heightsOff(seam, MAIN), 'feet off the main floor in the seam wall').toEqual([]);
+    const [x0, z0, x1, z1] = ROMAN_COURT;
+    expect(end.x > x0 && end.x < x1 && end.z > z0 && end.z < z1, `inside the court at ${where(end)}`).toBe(true);
   });
 });

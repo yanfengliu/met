@@ -35,6 +35,8 @@ import {
   MAIN,
   PAIR_X,
   PAVILION_HALF,
+  SEAM_PASSAGE_NORTH,
+  SEAM_PASSAGE_SOUTH,
   SLAB,
   STAIR_HALF,
   WALL_BACK_Z,
@@ -172,6 +174,27 @@ function hallWalls(kit: Kit, floor: number, wingTop: number): void {
   box(kit, palette.limestone, [-PAVILION_HALF + 0.02, CORNICE_TOP_Y, WALL_BACK_Z], [PAVILION_HALF - 0.02, HALL_EAVES_Y, ATTIC_BACK_Z], 7);
 }
 
+const SEAM_WALL_T = 1.2;
+
+/**
+ * A side wall on a McKim, Mead & White seam, from Z −69 to the extension's front, `floor` to `top`, with its main-floor passage (dims.ts SEAM_PASSAGE_*)
+ * from the main floor to the underside of the second floor. `x` is its face toward the hall; `side` is +1 for the north wall (its body to +X), −1 for the south.
+ */
+function seamWall(kit: Kit, x: number, side: 1 | -1, passage: { readonly z0: number; readonly z1: number }, floor: number, top: number, order: number): void {
+  const z0 = BACK_Z;
+  const z1 = EXT_FACE_Z - 0.02;
+  const mid = (z0 + z1) / 2;
+  // Turned so the wall runs along Z, its front face on X = x toward the hall: in its own frame, x then runs toward +Z on the north wall and −Z on the south.
+  const along = (z: number): number => side * (z - mid);
+  const geometry = wall({
+    width: z1 - z0,
+    height: top - floor,
+    thickness: SEAM_WALL_T,
+    openings: [{ x: (along(passage.z0) + along(passage.z1)) / 2, y: MAIN - floor, width: passage.z1 - passage.z0, height: SECOND - SLAB - MAIN }],
+  });
+  kit.add(geometry, palette.limestone, at(x, floor, mid, (-side * Math.PI) / 2), order);
+}
+
 export const wallSteps: readonly StepDef[] = [
   {
     id: 'hunt-walls',
@@ -189,9 +212,9 @@ export const wallSteps: readonly StepDef[] = [
       extensionFront(kit, PAVILION_HALF, EXT_NORTH_X, 3);
       const top = EXT_PARAPET_Y;
       const floor = MAIN - SLAB;
-      // Side walls on the McKim, Mead & White seams, and the extensions' inner walls against the hall.
-      box(kit, palette.limestone, [EXT_SOUTH_X, floor, BACK_Z], [EXT_SOUTH_X + 1.2, top, EXT_FACE_Z - 0.02], 4);
-      box(kit, palette.limestone, [EXT_NORTH_X - 1.2, floor, BACK_Z], [EXT_NORTH_X, top, EXT_FACE_Z - 0.02], 4);
+      // Side walls on the McKim, Mead & White seams, each with the main floor's passage into the wing beyond, and the extensions' inner walls against the hall.
+      seamWall(kit, EXT_SOUTH_X + SEAM_WALL_T, -1, SEAM_PASSAGE_SOUTH, floor, top, 4);
+      seamWall(kit, EXT_NORTH_X - SEAM_WALL_T, 1, SEAM_PASSAGE_NORTH, floor, top, 4);
       hallWalls(kit, floor, top);
     },
   },
