@@ -23,12 +23,15 @@ Milestone M1, engine (worker `walk`): default load at t = N and paused, `autopla
 - In the orbit view, W, A, S and D move the camera over the ground and Q and E down and up, through real key presses; the timeline keys keep working. Checked by e2e.
 - Walk mode, entered by a button and a key and by `?walk=1`: mouse-look (pointer lock, with drag-to-look as a fallback), WASD and arrows to move, Shift to run, Space to jump, gravity, no walking through walls or columns, and stairs climbed by walking. Checked by unit tests on fixtures and by e2e on the real model.
 - Route R1: from the plaza, up the front steps, through the central doors, into the Great Hall at `MAIN_FLOOR_Y`. Route R2: from the Great Hall up the Grand Staircase to `SECOND_FLOOR_Y`, and back down. Each walked by e2e with real key presses, asserting the eye height on arrival.
+- Owner-reported defect (2026-10-15): the scroll wheel sometimes stops zooming, as if hard-capped. Root cause found and fixed in M1; `docs/learning/defect-register.md` entry; an e2e gate for the class (camera input stalling at a limit), shown red before the fix, that drives many real wheel notches both ways from several presets and after a WASD move.
+- Floor picker in the 3D map (orbit) view (owner, 2026-10-15): choose Ground, Main or Second floor (more where the model has real upper floors) or All. Choosing a floor hides everything above it that blocks the view, using the section cut set just below the next floor's slab (walls shown cut, like a plan). It also hides landscape above that height rather than cutting it. Choosing All restores everything. Checked by e2e through the real control, with images per floor inspected.
 - Entering walk mode at t = N takes at most 2 s on this machine; walking holds 60 fps. `npm run verify` and both dependency audits green; independent review of the integrated change; merged, pushed and deployed.
 
 ## Implementation steps
 
 - [ ] M1 engine: default state, orbit WASD, walk mode, spec, tests (worker `walk`).
 - [ ] M2 routes R1 and R2 walkable, route e2e (worker `routes`, after M1).
+- [ ] M3 floor picker in the map view (worker `floors`, after M1, in parallel with M2: it touches `src/viewer` and `src/ui`, M2 touches `src/model`).
 - [ ] Independent review of the integrated change; repairs.
 - [ ] Merge, push, deploy check, worktree cleanup, outcome.
 

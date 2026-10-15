@@ -155,6 +155,8 @@ export const podiumSteps: readonly StepDef[] = [
       order += 1;
       // Main-floor plate over the whole block behind the front walls; the stair and the hall's floor finish stand on it.
       box(kit, palette.limestoneDark, [EXT_SOUTH_X, MAIN - SLAB, BACK_Z], [EXT_NORTH_X, MAIN - 0.03, WALL_BACK_Z], order);
+      // Under each arch it runs on through the facade wall to the screen, where the steps inside the arch end, so the floor behind every screen is whole.
+      for (const x of BAY_X) box(kit, palette.limestoneDark, [x - ARCH_INNER_SPAN / 2, MAIN - SLAB, WALL_BACK_Z], [x + ARCH_INNER_SPAN / 2, MAIN - 0.03, SCREEN_Z], order);
       order += 1;
       // Three steps inside each arch's reveal, from the landing up to the main floor at the screen.
       const rise = (MAIN - LANDING) / 3;

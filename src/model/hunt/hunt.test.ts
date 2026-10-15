@@ -5,19 +5,26 @@
  * Bounds: the block test checks each piece's world bounding box (a box overstepping a corner of an L-shaped edge counts against the nearer edge only);
  * the wings' front allowance is the spec's moulding rule (up to 1.5 m beyond the line), and pieces of the walls step get 2 cm. Budgets are this area's share
  * from the coordinator (650,000 triangles counting instances, 170 instanced meshes, 2 step lights).
+ * The walk routes (plan docs/work/1_first-person-walk, M2; the whole walks are in routes.test.ts): the central doors' glazing is passable to the walk mode
+ * and looks like the palette's, while the palette and the other glazing stay solid; the floor is whole behind the three arches' screens and under the
+ * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's solid surfaces at t = N).
  */
 import { Box3, Vector3 } from 'three';
+import type { Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { collectStep } from '../../build/kit.js';
+import type { CollectedPiece } from '../../build/kit.js';
 import { Timeline } from '../../build/timeline.js';
 import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAIR_CENTRE_X_INNER, HUNT_PAIR_CENTRE_X_OUTER } from '../frame.js';
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
+import { palette } from '../palette.js';
 import { LUNETTE_GRILLE } from './arches.js';
-import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y } from './dims.js';
+import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
+import { Solids } from './walk-probe.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TOLERANCE = 0.3;
@@ -176,5 +183,74 @@ describe('lunette grilles', () => {
       expect(top, `top of the grille at X ${cx.toFixed(2)}`).toBeLessThanOrEqual(ARCH_CROWN_Y);
       expect(reach, `grille at X ${cx.toFixed(2)}: furthest from the arch centre`).toBeLessThanOrEqual(half);
     }
+  });
+});
+
+function worldBox(piece: CollectedPiece): Box3 {
+  if (piece.geometry.boundingBox === null) piece.geometry.computeBoundingBox();
+  return (piece.geometry.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
+}
+
+/** What a material looks like: everything its JSON records but its identity (uuid, name) and its flags (userData). */
+const IDENTITY = new Set(['uuid', 'name', 'userData', 'metadata']);
+function look(material: Material): string {
+  return JSON.stringify(Object.entries(material.toJSON()).filter(([key]) => !IDENTITY.has(key)));
+}
+
+let solids: Solids | undefined;
+/** This area's solid surfaces at t = N round the three arches and the head of the Grand Staircase. */
+function areaSolids(): Solids {
+  if (solids === undefined) {
+    const timeline = new Timeline(AREA);
+    timeline.evaluate(timeline.n);
+    solids = new Solids(timeline, { min: [-23, 0, -63], max: [23, 12, 0] });
+  }
+  return solids;
+}
+
+/**
+ * Points of a 10 cm plan grid over [x0, x1] × [z0, z1] whose highest solid surface at or below `level` (5 mm slack) is not at `level`. The grid sits 3 mm
+ * off round coordinates, so no point falls exactly on a seam between two pieces, where float32 instance matrices can leave a sliver of 1e-7 m.
+ */
+function holes(x0: number, x1: number, z0: number, z1: number, level: number): string[] {
+  const out: string[] = [];
+  for (let i = 0; x0 + 0.003 + i * 0.1 <= x1; i++) {
+    for (let j = 0; z0 + 0.003 + j * 0.1 <= z1; j++) {
+      const [x, z] = [x0 + 0.003 + i * 0.1, z0 + 0.003 + j * 0.1];
+      const floor = areaSolids().floor(x, z, level + 0.005);
+      if (floor === undefined || floor.y < level - 0.005) out.push(`(${x.toFixed(2)}, ${z.toFixed(2)}): ${floor === undefined ? 'nothing' : `${floor.label} at Y ${floor.y.toFixed(3)}`}`);
+    }
+  }
+  return out;
+}
+
+describe('the walk routes through the wing', () => {
+  it("opens the central doors: their bronze and glass are passable and look like the palette's; the palette and the other glazing stay solid", () => {
+    const step = huntSteps.find((s) => s.id === 'hunt-windows');
+    if (step === undefined) throw new Error('The Hunt chapter has no step hunt-windows.');
+    const pieces = collectStep(step).pieces;
+    const half = ARCH_INNER_SPAN / 2;
+    const doors = pieces.filter((p) => {
+      const b = worldBox(p);
+      return b.min.x >= -half && b.max.x <= half && b.min.y >= MAIN - 1e-6 && b.max.y <= SCREEN_HEAD_Y + 1e-6 && Math.abs(b.getCenter(new Vector3()).z - SCREEN_Z) < 0.3;
+    });
+    expect(doors, "the central arch's door pieces: three doors, each bronze and glass").toHaveLength(6);
+    expect(doors.filter((p) => p.material.userData['solid'] !== false).map((p) => p.material.name), 'door pieces a walker cannot pass').toEqual([]);
+    expect(new Set(doors.map((p) => look(p.material))), "the doors' looks: the palette's bronze and dark glass").toEqual(new Set([look(palette.bronze), look(palette.glassDark)]));
+    const others = pieces.filter((p) => !doors.includes(p) && p.material.userData['solid'] === false);
+    expect(others.map((p) => p.material.name), 'passable pieces of hunt-windows other than the doors').toEqual([]);
+    expect(Object.entries(palette).flatMap(([key, m]) => (m.userData['solid'] === false ? [key] : [])), 'passable shared palette materials').toEqual([]);
+  });
+
+  it("lays the floor whole behind each arch's screen, flush with the main floor from the top step to the hall's marble", () => {
+    const half = ARCH_INNER_SPAN / 2;
+    const found = BAY_X.flatMap((x) => holes(x - half + 0.05, x + half - 0.05, WALL_BACK_Z - 0.3, SCREEN_Z - 0.02, MAIN));
+    expect(found.slice(0, 4), `${String(found.length)} points behind the screens with no floor at Y ${MAIN.toFixed(2)}`).toEqual([]);
+  });
+
+  it("carries the second floor whole from the Grand Staircase's top landing under the end wall's arch into the cross hall", () => {
+    // The end wall's arch is 5.4 m wide (stair.ts); the cross hall runs on west of it.
+    const found = holes(-2.6, 2.6, CROSS_HALL_FRONT_Z - 2, STAIR_TOP_Z - 0.02, SECOND);
+    expect(found.slice(0, 4), `${String(found.length)} points at the head of the stair with no floor at Y ${SECOND.toFixed(2)}`).toEqual([]);
   });
 });
