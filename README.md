@@ -79,7 +79,7 @@ Drag to orbit, right-drag to pan, and use the wheel, a pinch or a middle-button 
 
 Press F or the Walk button, or choose a place under Walk in the View menu, to stand in the model in first person. Click the view to look around with the mouse; Esc frees the pointer again. Where the browser does not lock the pointer, or on a touch screen, drag to look. W, A, S, D or the arrow keys walk, Shift runs and Space jumps. F or the Walk button goes back to the orbit view, with the camera where you stood.
 
-You walk through what is built at the current point of the timeline: walls and columns stop you, and you slide along them. You climb stairs and the front steps just by walking, since you step up edges of up to 0.35 m. You can walk on slopes up to 40°, and you fall off ledges. You walk through water and foliage. The section cut does not change what you collide with. The first entry builds the collision for the whole finished building, in about a tenth of a second on a fast machine.
+You walk through what is built at the current point of the timeline: walls and columns stop you, and you slide along them. You climb stairs and the front steps just by walking, since you step up edges of up to 0.35 m. You can walk up slopes of up to 40°, steeper ones stop you, and you fall off ledges. You walk through water and foliage. The section cut does not change what you collide with. The first entry builds the collision for the whole finished building, in about a tenth of a second on a fast machine.
 
 ### Exterior presets
 

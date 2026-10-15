@@ -150,7 +150,14 @@ export class CollisionWorld {
         this.matrices.set(tmpMatrix.elements, k * 16);
         this.inverses.set(tmpMatrix.invert().elements, k * 16);
         tmpBox.copy(local).applyMatrix4(tmpMatrix.fromArray(source, i * 16));
-        this.boxes.set([tmpBox.min.x, tmpBox.min.y, tmpBox.min.z, tmpBox.max.x, tmpBox.max.y, tmpBox.max.z], k * 6);
+        const b = this.boxes;
+        const o = k * 6;
+        b[o] = tmpBox.min.x;
+        b[o + 1] = tmpBox.min.y;
+        b[o + 2] = tmpBox.min.z;
+        b[o + 3] = tmpBox.max.x;
+        b[o + 4] = tmpBox.max.y;
+        b[o + 5] = tmpBox.max.z;
         world.union(tmpBox);
         this.bvhs.push(bvh);
         triangles += perInstance;

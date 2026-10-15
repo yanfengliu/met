@@ -7,7 +7,8 @@
  * STEP above the feet find the ground, and the feet snap to it when it lies within STEP above or below and is walkable (no steeper than 40°).
  * The ground is the surface under the body's centre or, over a gap or groove there, the lower rim of two opposite sides STRADDLE (0.3 m) out,
  * whichever is higher: a body bridges a gap narrower than itself, yet falls off an edge as soon as its centre passes it. A steeper surface is
- * stood on but slid down, with only air control. Off an edge higher than STEP the body falls under gravity and lands on the first surface below;
+ * met like a wall from the ground, and where the body lands on one it slides down it with only air control, the keys unable to push it uphill.
+ * Off an edge higher than STEP the body falls under gravity and lands on the first surface below;
  * a jump starts at the speed that rises JUMP_HEIGHT. On the ground every push from the walls is level, and the velocity into a wall is removed,
  * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`.
  *
@@ -169,12 +170,25 @@ export class Walker {
     const sin = Math.sin(this.yaw);
     const cos = Math.cos(this.yaw);
     const k = 1 - Math.exp(-dt / (this.onGround ? MOTION.groundTau : MOTION.airTau));
-    velocity.x += ((-sin * f + cos * r) * speed - velocity.x) * k;
-    velocity.z += ((-cos * f - sin * r) * speed - velocity.z) * k;
-    if (this.slide !== null) {
-      // Down a slope too steep to stand on: the level part of gravity along it.
-      velocity.x += MOTION.gravity * this.slide.y * this.slide.x * dt;
-      velocity.z += MOTION.gravity * this.slide.y * this.slide.z * dt;
+    let wishX = (-sin * f + cos * r) * speed;
+    let wishZ = (-cos * f - sin * r) * speed;
+    const slide = this.slide;
+    if (slide !== null) {
+      // On a slope too steep to stand on the keys cannot push uphill; the level part of gravity along it pulls the body down.
+      const level = Math.hypot(slide.x, slide.z);
+      if (level > 1e-9) {
+        const into = (wishX * slide.x + wishZ * slide.z) / level;
+        if (into < 0) {
+          wishX -= (slide.x / level) * into;
+          wishZ -= (slide.z / level) * into;
+        }
+      }
+    }
+    velocity.x += (wishX - velocity.x) * k;
+    velocity.z += (wishZ - velocity.z) * k;
+    if (slide !== null) {
+      velocity.x += MOTION.gravity * slide.y * slide.x * dt;
+      velocity.z += MOTION.gravity * slide.y * slide.z * dt;
     }
     if (this.jumpTimer > 0) {
       this.jumpTimer = Math.max(0, this.jumpTimer - dt);
@@ -186,7 +200,7 @@ export class Walker {
     }
     feet.x += velocity.x * dt;
     feet.z += velocity.z * dt;
-    if (this.onGround) {
+    if (this.onGround || this.slide !== null) {
       this.walls(false);
       this.follow();
     } else {
@@ -212,6 +226,10 @@ export class Walker {
       this.velocity.y = 0;
       return;
     }
+    if (this.onGround && hit.normalY < MIN_WALKABLE_NORMAL_Y && hit.y > feet.y + 1e-3) {
+      this.blockSlope();
+      return;
+    }
     const rise = hit.y - feet.y;
     feet.y = hit.y;
     this.velocity.y = 0;
@@ -222,6 +240,36 @@ export class Walker {
       this.onGround = false;
       this.slide = { x: hit.normalX, z: hit.normalZ, y: hit.normalY };
     }
+  }
+
+  /**
+   * A slope too steep to stand on rises under the body's centre: from the ground it is met like a wall. The uphill part of this step's move and
+   * of the velocity goes, and where the body still stands over the slope it goes back to where it stood; its feet stay on the ground they were on.
+   */
+  private blockSlope(): void {
+    const { feet, before, velocity, hit } = this;
+    const level = Math.hypot(hit.normalX, hit.normalZ);
+    if (level > 1e-9) {
+      const nx = hit.normalX / level;
+      const nz = hit.normalZ / level;
+      const into = (feet.x - before.x) * nx + (feet.z - before.z) * nz;
+      if (into < 0) {
+        feet.x -= nx * into;
+        feet.z -= nz * into;
+      }
+      const v = velocity.x * nx + velocity.z * nz;
+      if (v < 0) {
+        velocity.x -= nx * v;
+        velocity.z -= nz * v;
+      }
+    }
+    const top = feet.y + BODY.step + PROBE_EPSILON;
+    if (!this.support(top, 2 * BODY.step + PROBE_EPSILON) || hit.normalY < MIN_WALKABLE_NORMAL_Y) {
+      feet.x = before.x;
+      feet.z = before.z;
+      return;
+    }
+    feet.y = hit.y;
   }
 
   /** In the air: gravity, then lands on the first surface met this step, from STEP above the feet down to where they arrive. */

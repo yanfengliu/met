@@ -4,7 +4,7 @@
  * Each case drives the walker with keys held for simulated seconds at 60 frames a second, as the page does, and reads its feet and eye.
  * Bound: fixtures are axis-aligned rooms, a straight flight and ledges; the real model is walked in tests/e2e/walk.spec.ts.
  */
-import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, MathUtils, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import type { Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
@@ -204,6 +204,57 @@ describe('walker on stairs, ledges and drops', () => {
     });
     const [a, b] = eyes;
     expect(a?.distanceTo(b ?? new Vector3()), 'eye positions after 1.5 s').toBeLessThan(0.01);
+  });
+});
+
+/** A ramp 4 m wide and 12 m long whose top rises at `degrees` toward −Z from the floor's level at Z 0, as one rotated box. */
+function ramp(degrees: number): StepDef {
+  const theta = MathUtils.degToRad(degrees);
+  const [length, thickness] = [12, 0.5];
+  // The box's top face, low edge at local (y, z) = (thickness / 2, length / 2), lands at world (0, 0) once rotated by theta about X.
+  const centre = new Vector3(0, (length / 2) * Math.sin(theta) - (thickness / 2) * Math.cos(theta), -(thickness / 2) * Math.sin(theta) - (length / 2) * Math.cos(theta));
+  return step(`ramp-${String(degrees)}`, (kit) => {
+    kit.add(cube, stone, new Matrix4().compose(centre, new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), theta), new Vector3(4, thickness, length)));
+  });
+}
+
+describe('walker on slopes and turned walls', () => {
+  it('walks up a slope of 38 degrees, and cannot climb one of 45 degrees even running', () => {
+    for (const [degrees, walkable] of [[38, true], [45, false]] as const) {
+      const { walker } = walkerOn([floor, ramp(degrees)]);
+      walker.place(0, 0, 2, facing(0, -1));
+      let highest = 0;
+      hold(walker, 3, { forward: 1, right: 0, run: !walkable }, 60, () => {
+        highest = Math.max(highest, walker.feet.y);
+      });
+      const rise = walker.feet.y;
+      if (walkable) {
+        expect(rise, `metres up the ${String(degrees)} degree slope`).toBeGreaterThan(2);
+        // Standing on the slope, its feet on the surface: z below the low edge, at height -z tan(theta).
+        expect(rise).toBeCloseTo(-walker.feet.z * Math.tan(MathUtils.degToRad(degrees)), 2);
+        expect(walker.onGround).toBe(true);
+      } else {
+        expect(highest, `the most metres up the ${String(degrees)} degree slope at any time`).toBeLessThan(0.05);
+      }
+    }
+  });
+
+  it('stops at a wall turned 30 degrees, its radius from the face, and slides along it', () => {
+    const turn = MathUtils.degToRad(30);
+    // A wall whose face passes through (0, 0, -3) with its normal turned 30 degrees from +Z toward +X.
+    const normal = new Vector3(Math.sin(turn), 0, Math.cos(turn));
+    const centre = new Vector3(0, 1.5, -3).addScaledVector(normal, -0.15);
+    const wall = step('turned-wall', (kit) => {
+      kit.add(cube, stone, new Matrix4().compose(centre, new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), turn), new Vector3(20, 3, 0.3)));
+    });
+    const { walker } = walkerOn([floor, wall]);
+    walker.place(0, 0, 0, facing(0, -1));
+    hold(walker, 3, W);
+    const gap = walker.feet.clone().sub(new Vector3(0, walker.feet.y, -3)).dot(normal);
+    expect(gap, 'distance from the face').toBeGreaterThan(BODY.radius - 0.01);
+    expect(gap).toBeLessThan(BODY.radius + 0.02);
+    // Walking straight at a wall turned 30 degrees slides along it: the level part of the walk along the face points toward +X here.
+    expect(walker.feet.x, 'slid along the face').toBeGreaterThan(1.5);
   });
 });
 
