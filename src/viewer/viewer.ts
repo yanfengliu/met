@@ -4,22 +4,21 @@
  * PCF soft shadows re-rendered only when the model or the cut changed, and local clipping for the section cut.
  */
 import { ACESFilmicToneMapping, PCFShadowMap, SRGBColorSpace, Scene, WebGLRenderer } from 'three';
-import type { Box3, InstancedMesh, Material, Mesh, Object3D } from 'three';
+import type { Box3, InstancedMesh, Material, Object3D } from 'three';
 
 import { CameraRig } from './camera-rig.js';
+import { CapPass } from './cap-pass.js';
 import { createEnvironment } from './environment.js';
 import type { Environment } from './environment.js';
 import { RendererError, rendererFailureMessage } from './renderer-error.js';
-import { SectionCut, wholeUnderCut } from './section-cut.js';
+import { SectionCut } from './section-cut.js';
 
 export interface ViewerModel {
   readonly root: Object3D;
   readonly bounds: Box3;
   readonly casterBounds: Box3;
   readonly materials: Iterable<Material>;
-  /** Meshes the section cap pass leaves out (transparent ones: glass would otherwise show its back faces in the cut colour). */
-  readonly capExcluded: readonly Mesh[];
-  /** The other meshes, which it draws while the cut passes through their bounds; one wholly under the cut is left out, as nothing of it is cut. */
+  /** The meshes the section cap pass may draw (not transparent, cut by the plane): of each, only the pieces the cut passes through (./cap-pass.ts). */
   readonly capped: readonly InstancedMesh[];
 }
 
@@ -40,6 +39,7 @@ export class Viewer {
   readonly rig: CameraRig;
   readonly cut = new SectionCut();
   readonly env: Environment;
+  private readonly capPass: CapPass;
   private shadowsDirty = true;
   private insetBottom = 0;
 
@@ -64,6 +64,7 @@ export class Viewer {
 
     this.env = createEnvironment(r, this.scene, model.bounds, model.casterBounds);
     this.cut.attach(model.materials);
+    this.capPass = new CapPass(model.capped, this.cut.capMaterial);
     this.scene.add(model.root);
     this.rig = new CameraRig(r.domElement, this.env.groundY);
     this.resize();
@@ -121,19 +122,12 @@ export class Viewer {
     return String(info === null ? gl.getParameter(gl.RENDERER) : gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
   }
 
-  /** The back-face pass that makes cut solids read as solid; see src/viewer/section-cut.ts. Meshes wholly under the cut have nothing cut to show. */
+  /** The back-face pass that makes cut solids read as solid (src/viewer/section-cut.ts), over the pieces the cut passes through (./cap-pass.ts). */
   private renderCap(): void {
-    const { renderer, scene, env } = this;
-    const background = scene.background;
-    const hidden = [env.sky, env.ground, ...this.model.capExcluded, ...wholeUnderCut(this.model.capped, this.cut.height)].filter((object) => object.visible);
-    for (const object of hidden) object.visible = false;
-    scene.background = null;
-    scene.overrideMaterial = this.cut.capMaterial;
+    if (this.capPass.update(this.cut.height) === 0) return;
+    const { renderer } = this;
     renderer.autoClear = false;
-    renderer.render(scene, this.rig.camera);
+    renderer.render(this.capPass.scene, this.rig.camera);
     renderer.autoClear = true;
-    scene.overrideMaterial = null;
-    scene.background = background;
-    for (const object of hidden) object.visible = true;
   }
 }

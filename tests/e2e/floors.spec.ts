@@ -2,12 +2,13 @@
  * The floor picker through real input (docs/design/spec.md, Page: Floor picker): each floor clicked sets the cut to its height, hides the landscape
  * over it, frames the floor from above from the side the user orbited to and changes the canvas, and All gives back the cut the user had; Page Up and
  * Page Down go up and down a floor; moving the cut slider or pressing the cut toggle by hand leaves the floor view; walk mode leaves it too, with the
- * same collision; `floor=` at load; no floor view shows a plate of the cut colour; a flight the Main floor view cuts through shows the cut colour down
- * to the floor it stands on, close up and a small orbit step away, where the cap pass and that floor once z-fought (section-cut.ts, CAP_DEPTH_BIAS).
+ * same collision; `floor=` at load; no floor view shows a plate of the cut colour; each of the four flights the Main floor view cuts through shows
+ * the cut colour across its section, close up and a small orbit step away, where the cap pass once z-fought with the floor or landing it meets
+ * (section-cut.ts, CAP_DEPTH_BIAS); a roof wholly under a cut keeps its own colour where the depth buffer is coarse (cap-pass.ts).
  * Facts come from `window.__met` (floors, floor, cut, camera, walk); nothing names a floor's height but the facts.
- * Bound: canvas checks compare coarse luminance grids (the drawing changed) and count pixels of the cut colour (no plate of it, or all of a flight's
- * section); what each floor shows is judged in the floor captures (npm run shots). The close-ups are this machine's GPU (an RTX 4090 through ANGLE's
- * Direct3D 11 in headless Chrome, 1280x720): where coplanar faces' depths round apart, and so where they z-fight, depends on the GPU.
+ * Bound: canvas checks compare coarse luminance grids (the drawing changed) and count pixels of the cut colour (no plate of it, all of a flight's
+ * section, none of an intact roof); what each floor shows is judged in the floor captures (npm run shots). The close-ups are this machine's GPU (an RTX
+ * 4090 through ANGLE's Direct3D 11 in headless Chrome, 1280x720): where coplanar faces' depths round apart, and so where they z-fight, depends on the GPU.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -58,12 +59,18 @@ async function cutColourAtCentre(page: Page, half: number): Promise<number> {
 }
 
 /**
- * Flights the Main floor view cuts through whose undersides lie on the floor under them, each by the middle of its section at the cut (X, Z) and the way
- * it climbs: Wing C's main stair (src/model/core/wings-walls.ts, C_STAIR) and the Engelhard Court's stair to the mezzanine (src/model/roche-north/engelhard.ts).
+ * The flights the Main floor view cuts through, each by the middle of its section at the cut (X, Z) and the way it climbs: Wing C's main stair
+ * (src/model/core/wings-walls.ts, C_STAIR) and the Engelhard Court's stair to the mezzanine (src/model/roche-north/engelhard.ts), whose undersides lie
+ * on the floor under them; the Grand Staircase's lower flight (src/model/hunt/stair.ts), whose top meets its landing and whose sides meet the
+ * staircase's walls; and the upper flight of the north Vaux iron U-stair (src/model/core/vaux-shell.ts), whose underside stands over the main floor.
+ * From 50 m above, the Grand flight's top riser, 19 cm over the cut and seen edge on, shows one antialiasing sample of its stone along a row across
+ * the square, with or without the cap pass (the clip is tested once per pixel, not per sample), so that flight is framed from 15 m only (`farthest`).
  */
-const FLUSH_FLIGHTS = [
-  { name: "Wing C's stair", middle: [31.5, -117.375], climbs: [-1, 0] },
-  { name: 'the Engelhard mezzanine stair', middle: [54.74, -125.5], climbs: [0, -1] },
+const CUT_FLIGHTS = [
+  { name: "Wing C's stair", middle: [31.5, -117.375], climbs: [-1, 0], farthest: 50 },
+  { name: 'the Engelhard mezzanine stair', middle: [54.74, -125.5], climbs: [0, -1], farthest: 50 },
+  { name: "the Grand Staircase's lower flight", middle: [0, -46.445], climbs: [0, -1], farthest: 15 },
+  { name: 'the north Vaux iron stair', middle: [12.55, -131.6], climbs: [0, 1], farthest: 50 },
 ] as const;
 /** Cameras on a flight's middle at the cut: from above (from the side of its foot) and from over its top looking down it, with the square measured. */
 const CLOSE_UPS = [
@@ -76,9 +83,15 @@ const ORBIT_STEP = { azimuth: 1.5, elevation: 0.75 };
 /**
  * The least share of a close-up's square in the cut colour. Measured on 2026-10-22: with the cap's depth bias every view reads 98.8 to 100% (the lowest,
  * the Engelhard stair from 50 m after the step, has 2 of 169 pixels holding one antialiasing sample of the lit floor, the same with a bias of 4, 6 or 8
- * steps); without it, 9 of the 12 views read 0 to 68%.
+ * steps); without it, 11 of the 22 views read 0 to 96% (Wing C's 4, the Engelhard stair's 5, the Grand flight's 2, the Vaux flight's none: its
+ * underside stands clear of the floor, so the view checks only that the flight is closed).
  */
-const FLUSH_CUT_SHARE = 0.97;
+const FLIGHT_CUT_SHARE = 0.97;
+/**
+ * The Hunt galleries' flat roof, its 5 cm lead skin at 20.45 to 20.50 m, under a 27.4 m cut, seen from 100 m over it with the orbit target 1 m away,
+ * so the near plane is 3 cm and the skin's two faces lie under 3 depth-buffer steps apart (work unit 1, review 3, U10), and from two cameras by it.
+ */
+const COARSE_DEPTH_VIEWS = ['30,120,-55,30,119,-55', '35,120,-55,35,119,-55', '30,100,-55,30,99,-55'] as const;
 
 async function floorFacts(page: Page): Promise<Pick<Facts, 'floor' | 'cut'>> {
   const f = await facts(page);
@@ -252,12 +265,14 @@ test.describe('floor picker', () => {
     expect(walk.collision, 'collision after a floor view vs none').toEqual((await walking()).collision);
   });
 
-  test('in the Main floor view a flight cut through shows the cut colour down to the floor it stands on, close up and a small orbit step away', async ({ page }) => {
+  test('in the Main floor view each flight cut through shows the cut colour across its section, close up and a small orbit step away', async ({ page }) => {
+    // 23 page loads, each building the model again: about 1.5 s apiece here, twice that on a loaded machine.
+    test.setTimeout(120_000);
     const main = (await open(page)).floors.find((fl) => fl.id === 'main');
     if (main === undefined) throw new Error('No main floor in window.__met.floors.');
     const problems: string[] = [];
-    for (const flight of FLUSH_FLIGHTS) {
-      for (const view of CLOSE_UPS) {
+    for (const flight of CUT_FLIGHTS) {
+      for (const view of CLOSE_UPS.filter((v) => v.distance <= flight.farthest)) {
         for (const step of [false, true]) {
           const target = new Vector3(flight.middle[0], main.cut, flight.middle[1]);
           const elevation = ((view.elevation + (step ? ORBIT_STEP.elevation : 0)) * Math.PI) / 180;
@@ -265,9 +280,19 @@ test.describe('floor picker', () => {
           const at = target.clone().addScaledVector(across, view.distance * Math.cos(elevation)).setY(target.y + view.distance * Math.sin(elevation));
           await open(page, `shot=1&noui=1&floor=main&cam=${[at.x, at.y, at.z, target.x, target.y, target.z].map((v) => v.toFixed(4)).join(',')}`);
           const share = await cutColourAtCentre(page, view.half);
-          if (share < FLUSH_CUT_SHARE) problems.push(`${flight.name}, ${view.name}${step ? ', after a small orbit step' : ''}: ${(share * 100).toFixed(1)}% of the middle of its section in the cut colour`);
+          if (share < FLIGHT_CUT_SHARE) problems.push(`${flight.name}, ${view.name}${step ? ', after a small orbit step' : ''}: ${(share * 100).toFixed(1)}% of the middle of its section in the cut colour`);
         }
       }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  test('a roof wholly under the cut keeps its own colour, even where the depth buffer is coarsest', async ({ page }) => {
+    const problems: string[] = [];
+    for (const cam of COARSE_DEPTH_VIEWS) {
+      await open(page, `shot=1&noui=1&cut=27.4&cam=${cam}`);
+      const share = await cutColourAtCentre(page, 40);
+      if (share > 0) problems.push(`cam=${cam}: ${(share * 100).toFixed(1)}% of the roof under the camera in the cut colour`);
     }
     expect(problems).toEqual([]);
   });

@@ -8,7 +8,10 @@
  *   the bound: ZOOM.stop before that surface or, if sooner, where the ray comes down to the camera floor (CAMERA_FLOOR over the workspace ground);
  *   the bound comes within 120 notches, and the camera stops there within 1 mm;
  * - at that bound a notch in moves nothing, and every one of 8 notches out moves at least ZOOM.minStep;
- * - from aerial-ne, notches out reach the far bound (the target ZOOM.maxDistance away), where a notch out moves nothing and a notch in moves again.
+ * - from aerial-ne, notches out reach the far bound (the target ZOOM.maxDistance away), where a notch out moves nothing and a notch in moves again;
+ * - lowered onto the camera floor by Q held: from the far bound looking down (both bounds at once), a notch in moves nothing and a notch out moves,
+ *   and from there the zoom holds as above; looking up, a notch out moves nothing (the floor), a notch in moves, and the next notch out comes back
+ *   onto the floor on the ray and stops there.
  * Bound: one pointer position (the middle of the view above the bar), wheel steps of 100 pixels, and the page at t = N with no cut and no floor view,
  * which is the state ./surface.ts rebuilds.
  */
@@ -18,7 +21,7 @@ import { PerspectiveCamera, Vector3 } from 'three';
 
 import { CAMERA_FLOOR } from '../../src/viewer/camera-rig.js';
 import { ZOOM } from '../../src/viewer/zoom.js';
-import { camera, choosePreset, distance, open, settle, watchErrors } from './helpers.js';
+import { camera, choosePreset, distance, open, settle, throttleRate, watchErrors } from './helpers.js';
 import type { Camera } from './helpers.js';
 import { firstSurface, workspaceGround } from './surface.js';
 
@@ -33,6 +36,22 @@ const MM = 1e-3;
  * that ground. After a long enough W move the front preset's ray does the same (work unit 1, review 2, U8).
  */
 const OVER_THE_PARK = [0, 30, -240, 0, 15, -440] as const;
+/** East of Fifth Avenue, 10 m up, looking west 45° up over the building into the sky: lowered onto the camera floor, a zoom out backs down the ray. */
+const LOOKING_UP = [0, 10, 80, 0, 20, 70] as const;
+
+/** The camera floor under the finished model: CAMERA_FLOOR over the workspace ground (src/viewer/camera-rig.ts). */
+const floorY = (): number => workspaceGround() + CAMERA_FLOOR;
+
+/** Holds Q (down, src/viewer/orbit-keys.ts) until the camera stands on the camera floor, then lets go, with the pointer back at (x, y). */
+async function lowerOntoFloor(page: Page, x: number, y: number): Promise<Camera> {
+  await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
+  await page.keyboard.down('KeyQ');
+  await page.waitForFunction((f) => (window.__met?.camera.position[1] ?? Number.POSITIVE_INFINITY) <= f + 1e-6, floorY(), { timeout: 20_000 * throttleRate() });
+  await page.keyboard.up('KeyQ');
+  await settle(page);
+  await page.mouse.move(x, y);
+  return camera(page);
+}
 
 /** The middle of the canvas above the timeline bar, where the view axis meets the screen. */
 async function viewCentre(page: Page): Promise<{ x: number; y: number }> {
@@ -179,6 +198,44 @@ test.describe('zoom', () => {
     expect(atBound, `reached ${String(ZOOM.maxDistance)} m from the target`).toBe(true);
     const back = await notch(page, -100);
     expect(distance(back.position, before.position), 'a notch in from the far bound').toBeGreaterThan(ZOOM.minStep);
+  });
+
+  test('zoomed out to the far bound and lowered onto the camera floor by Q, a notch in moves nothing, a notch out moves, and the zoom holds from there', async ({ page }) => {
+    await open(page, 'view=aerial-ne');
+    const centre = await viewCentre(page);
+    const [x, y] = [Math.round(centre.x), Math.round(centre.y)];
+    await page.mouse.move(x, y);
+    let before = await camera(page);
+    for (let k = 1; k <= 60 && radius(before) < ZOOM.maxDistance - MM; k += 1) before = await notch(page, 100);
+    expect(radius(before), 'at the far bound').toBeGreaterThan(ZOOM.maxDistance - MM);
+    const floored = await lowerOntoFloor(page, x, y);
+    expect(radius(floored), 'still at the far bound on the floor').toBeGreaterThan(ZOOM.maxDistance - MM);
+    expect(distance((await notch(page, -100)).position, floored.position), 'a notch in, on the floor').toBeLessThan(MM);
+    const out = await notch(page, 100);
+    expect(distance(out.position, floored.position), 'a notch out from both bounds at once').toBeGreaterThan(ZOOM.minStep - MM);
+    expect(await zoomInAndOut(page, 'back from both bounds', 'floor')).toEqual([]);
+  });
+
+  test('looking up from the camera floor, a notch out moves nothing, a notch in moves, and the next out comes back onto the floor on the ray', async ({ page }) => {
+    await open(page, `cam=${LOOKING_UP.join(',')}`);
+    const centre = await viewCentre(page);
+    const [x, y] = [Math.round(centre.x), Math.round(centre.y)];
+    const floored = await lowerOntoFloor(page, x, y);
+    const ray = await pointerRay(page, floored, x, y);
+    const off = (c: Camera): number => {
+      const along = (c.position[0] - floored.position[0]) * ray[0] + (c.position[1] - floored.position[1]) * ray[1] + (c.position[2] - floored.position[2]) * ray[2];
+      return distance(c.position, [floored.position[0] + along * ray[0], floored.position[1] + along * ray[1], floored.position[2] + along * ray[2]]);
+    };
+    expect(ray[1], 'the ray under the pointer points up').toBeGreaterThan(0.5);
+    const stuck = await notch(page, 100);
+    expect(distance(stuck.position, floored.position), 'a notch out on the floor, looking up').toBeLessThan(MM);
+    const up = await notch(page, -100);
+    expect(distance(up.position, floored.position), 'a notch in from the floor').toBeGreaterThan(ZOOM.minStep - MM);
+    expect(off(up), 'on the ray').toBeLessThan(0.01);
+    const down = await notch(page, 100);
+    expect(down.position[1], 'back on the floor').toBeCloseTo(floorY(), 3);
+    expect(off(down), 'on the ray').toBeLessThan(0.01);
+    expect(distance((await notch(page, 100)).position, down.position), 'a notch out on the floor again').toBeLessThan(MM);
   });
 
   test('a preset chosen after zooming lands exactly, so the zoom leaves no state behind', async ({ page }) => {

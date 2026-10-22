@@ -11,7 +11,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { CameraFocus } from '../build/types.js';
 import { DEFAULT_FOV, fitBox, presetById, resolvePreset } from './presets.js';
 import type { CameraPose } from './presets.js';
-import { bindZoomInput, dollyStep, pointerRay, zoomHit } from './zoom.js';
+import { bindZoomInput, pointerRay, zoomStep } from './zoom.js';
 
 const FAR = 25_000;
 const NEAR_MIN = 0.03;
@@ -151,20 +151,14 @@ export class CameraRig {
   }
 
   /**
-   * One zoom step toward the point under (clientX, clientY), by `factor` (below 1 in, above 1 out): src/viewer/zoom.ts says how far. A step at a
-   * bound changes nothing; any other counts as the user's move. Zooming in, the camera floor is a bound like a surface (`zoomHit`), so the camera
-   * stays on the ray; the lift below only catches a zoom out that heads down (the view looking up).
+   * One zoom step toward the point under (clientX, clientY), by `factor` (below 1 in, above 1 out): src/viewer/zoom.ts `zoomStep` says how far, the
+   * camera floor a bound both ways, so the camera stays on the ray. A step at a bound changes nothing; any other counts as the user's move.
    */
   dolly(clientX: number, clientY: number, factor: number): void {
     const direction = pointerRay(this.element, this.camera, clientX, clientY);
-    const floor = this.groundY + CAMERA_FLOOR;
-    const surface = factor < 1 && this.pick !== null ? this.pick(new Ray(this.camera.position.clone(), direction)) : null;
-    const next = dollyStep(this.camera.position, this.controls.target, direction, zoomHit(this.camera.position, direction, surface, floor), factor);
+    const surface = this.pick !== null ? this.pick(new Ray(this.camera.position.clone(), direction)) : null;
+    const next = zoomStep(this.camera.position, this.controls.target, direction, surface, factor, this.groundY + CAMERA_FLOOR);
     if (next === null) return;
-    if (next.position.y < floor) {
-      next.target.y += floor - next.position.y;
-      next.position.y = floor;
-    }
     this.stopInertia();
     this.camera.position.copy(next.position);
     this.controls.target.copy(next.target);

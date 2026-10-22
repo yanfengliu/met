@@ -83,12 +83,11 @@ function boot(): void {
   app.appendChild(viewport);
   document.body.appendChild(app);
 
-  // The section cut's cap pass leaves out transparent meshes and those whose material the cut does not clip (src/viewer/section-cut.ts); it draws
-  // the others where the cut passes through them.
+  // The section cut's cap pass leaves out transparent meshes and those whose material the cut does not clip (src/viewer/section-cut.ts); of the
+  // others it draws the pieces the cut passes through (src/viewer/cap-pass.ts).
   const meshes = timeline.steps.flatMap((s) => s.meshes);
-  const capExcluded = meshes.filter((m) => !Array.isArray(m.material) && !cappedBySection(m.material));
   const capped = meshes.filter((m) => Array.isArray(m.material) || cappedBySection(m.material));
-  const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capExcluded, capped });
+  const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capped });
   const rig = viewer.rig;
   // One BVH per geometry serves the zoom's pick and the walk's collision (src/walk/bvh-cache.ts).
   const bvhs = new GeometryBvhs();

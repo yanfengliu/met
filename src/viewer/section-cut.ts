@@ -8,14 +8,16 @@
  * buffer equal within a few of its 24-bit steps, rounded differently from triangle to triangle, and without help they z-fight in stripes or whole patches
  * that change with the smallest camera move (work unit 1, review 2, U7). The cap pass is drawn CAP_DEPTH_BIAS steps nearer, so it wins such ties.
  * Only the building is cut: a material with `userData.sectionCut === false` (the site's landscape: trees, ground, paths) gets no plane, and the cap pass
- * leaves its meshes out, so trees stay whole instead of showing cut-coloured crowns. It also leaves out each mesh whose bounds lie wholly under the
- * cut (src/viewer/viewer.ts), as nothing of it is cut, so a ceiling or roof surface far under a high cut does not show its back in the cut colour.
- * Bound: only closed meshes get a solid cut face; an open surface in a mesh the plane passes through, seen from behind, shows the cut colour too while
- * the cut is on. Transparent meshes are left out. Along an edge where a solid's front face meets its own back face, the bias lets the back face win a
- * sliver about 0.03 px wide, which shows as a rare antialiasing sample of the cut colour on that edge.
+ * leaves its meshes out, so trees stay whole instead of showing cut-coloured crowns. Of the other meshes it draws only the pieces the plane passes
+ * through (src/viewer/cap-pass.ts), so a piece under the cut never shows its back in the cut colour, however close its faces or coarse the depth buffer.
+ * Bound: only closed meshes get a solid cut face; an open surface in a piece the plane passes through, seen from behind, shows the cut colour too while
+ * the cut is on. Transparent meshes are left out. On a piece the plane passes through, the bias lets a back face win over a front face of that piece
+ * less than CAP_DEPTH_BIAS steps in front of it: along an edge where the two meet, a sliver about 0.03 px wide (a rare antialiasing sample of the cut
+ * colour), and across a part of the piece thinner than that, which needs a near plane far closer than what is in view (4 steps are 0.4 to 15 mm in the
+ * floor views and close-ups, 8 cm 100 m away with the near plane at 3 cm).
  */
 import { BackSide, Color, MeshBasicMaterial, Plane, Vector3 } from 'three';
-import type { Box3, Material } from 'three';
+import type { Material } from 'three';
 
 /** Plane constant while the cut is off: far above anything modelled. */
 const OFF = 1e6;
@@ -35,11 +37,6 @@ export function cutBySection(material: Material): boolean {
 /** Whether the cap pass draws meshes of `material`: those the cut clips, except transparent ones (glass would show its back faces in the cut colour). */
 export function cappedBySection(material: Material): boolean {
   return cutBySection(material) && !material.transparent;
-}
-
-/** Of `meshes` the cap pass draws, those it leaves out under a cut at `height`: each whose bounds (culling bounds, which hold every pose) lie wholly under it. */
-export function wholeUnderCut<T extends { readonly boundingBox: Box3 | null }>(meshes: readonly T[], height: number): T[] {
-  return meshes.filter((mesh) => mesh.boundingBox !== null && mesh.boundingBox.max.y <= height);
 }
 
 export class SectionCut {

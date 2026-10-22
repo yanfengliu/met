@@ -2,13 +2,14 @@
  * One zoom step (src/viewer/zoom.ts, `dollyStep`) and the wheel's factor, on numbers only: toward a surface every step moves at least ZOOM.minStep
  * or a tenth of the way, the camera stops ZOOM.stop short of the surface along the pointer ray and keeps its view direction; over open sky it flies
  * on; out, it stops with the target ZOOM.maxDistance away; either bound gives way to the other direction. Toward the ground at a slant (`zoomHit`),
- * the camera stops on the ray where it comes down to the camera floor, which it never goes under.
+ * the camera stops on the ray where it comes down to the camera floor, which it never goes under; backing down a ray that points up, it stops on the
+ * floor too, on the ray (`zoomStep`); at the far bound and the floor at once, a notch out moves.
  * Bound: the distance to the surface is given here; the page's pick (src/viewer/pick.ts) and real wheel input are in tests/e2e/zoom.spec.ts.
  */
 import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 
-import { ZOOM, dollyStep, wheelFactor, zoomHit } from './zoom.js';
+import { ZOOM, dollyStep, wheelFactor, zoomHit, zoomStep } from './zoom.js';
 
 const IN = 1 - ZOOM.notch;
 const OUT = 1 / IN;
@@ -122,6 +123,61 @@ describe('zoomHit', () => {
     expect(zoomHit(new Vector3(0, 19, 0), slant, 20, floorY)).toBe(20);
     expect(zoomHit(new Vector3(0, 5, 0), new Vector3(0, 0.3, -1).normalize(), 12, floorY)).toBe(12);
     expect(zoomHit(new Vector3(0, 5, 0), slant, null, floorY)).toBeNull();
+  });
+});
+
+describe('zoomStep', () => {
+  const floorY = 0.4;
+  const angled = (degrees: number): Vector3 => new Vector3(0, Math.sin((degrees * Math.PI) / 180), -Math.cos((degrees * Math.PI) / 180));
+  const offRay = (p: Vector3, start: Vector3, direction: Vector3): number => p.distanceTo(start.clone().addScaledVector(direction, p.clone().sub(start).dot(direction)));
+
+  it('backing down a ray that points up, stops on the camera floor, on the ray, and a notch in moves again', () => {
+    for (const degrees of [45, 89.9999]) {
+      const direction = angled(degrees);
+      const start = new Vector3(0, 1.5, 0);
+      let position = start.clone();
+      let target = start.clone().addScaledVector(direction, 1);
+      let steps = 0;
+      for (;;) {
+        // A ceiling 30 m up the ray: the zoom out does not look at it, the zoom in heads for it.
+        const next = zoomStep(position, target, direction, 30, OUT, floorY);
+        if (next === null) break;
+        expect(next.position.y, `${String(degrees)}°, step ${String(steps)}: over the floor`).toBeGreaterThanOrEqual(floorY - 1e-9);
+        expect(offRay(next.position, start, direction), `${String(degrees)}°, step ${String(steps)}: on the ray`).toBeLessThan(1e-9);
+        const moved = position.distanceTo(next.position);
+        expect(moved, `${String(degrees)}°, step ${String(steps)} out`).toBeGreaterThanOrEqual(Math.min(ZOOM.minStep, (position.y - floorY) / direction.y) - 1e-9);
+        position = next.position;
+        target = next.target;
+        steps += 1;
+        expect(steps).toBeLessThan(50);
+      }
+      expect(position.y, `${String(degrees)}°: stopped on the floor`).toBeCloseTo(floorY, 9);
+      const back = zoomStep(position, target, direction, 30, IN, floorY);
+      expect(back?.position.distanceTo(position), `${String(degrees)}°: a notch in from the floor`).toBeGreaterThanOrEqual(ZOOM.minStep - 1e-9);
+    }
+  });
+
+  it('at the far bound and on the floor at once, looking down, a notch out moves and a notch in comes back to the floor', () => {
+    const direction = angled(-45);
+    const position = new Vector3(0, floorY, 0);
+    const target = position.clone().addScaledVector(direction, ZOOM.maxDistance);
+    // The ground 0.4 m under the floor, along the ray.
+    const ground = (floorY - 0.4 - position.y) / direction.y;
+    expect(zoomStep(position, target, direction, ground, IN, floorY), 'a notch in, at the floor').toBeNull();
+    const out = zoomStep(position, target, direction, ground, OUT, floorY);
+    if (out === null) throw new Error('A notch out at the far bound and the floor at once moved nothing.');
+    expect(out.position.distanceTo(position), 'a notch out').toBeGreaterThanOrEqual(ZOOM.minStep - 1e-9);
+    expect(offRay(out.position, position, direction), 'on the ray').toBeLessThan(1e-9);
+    const back = zoomStep(out.position, out.target, direction, (floorY - 0.4 - out.position.y) / direction.y, IN, floorY);
+    expect(back?.position.y, 'a notch in, back on the floor').toBeCloseTo(floorY, 9);
+  });
+
+  it('keeps the far bound where the zoom in is free: 6 km from the target over the model, a notch out moves nothing and a notch in moves', () => {
+    const direction = angled(-30);
+    const position = new Vector3(0, 300, 0);
+    const target = position.clone().addScaledVector(direction, ZOOM.maxDistance);
+    expect(zoomStep(position, target, direction, 500, OUT, floorY)).toBeNull();
+    expect(zoomStep(position, target, direction, 500, IN, floorY)?.position.distanceTo(position)).toBeGreaterThan(ZOOM.minStep);
   });
 });
 
