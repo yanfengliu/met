@@ -1,9 +1,9 @@
 # Walk the finished building in first person
 
 Status: active
-Owner: Coordinator (Claude Code desktop session, 2026-10-14; handed to a successor session 2026-10-21, see Handoff)
+Owner: Coordinator (Claude Code desktop session, 2026-10-14)
 Created: 2026-10-15
-Updated: 2026-10-21
+Updated: 2026-10-22
 
 ## Problem and outcome
 
@@ -37,11 +37,11 @@ Milestone M1, engine (worker `walk`): default load at t = N and paused, `autopla
 - [ ] Independent review of the integrated change; repairs. Round 0 (Codex; Claude abstained): U1–U5 and the worker's U6, all accepted. Round 1 (Codex, focused): U2–U5 verified, U1 and U6 repaired again in `e760a84`. Round 2 (Codex, focused, plus the coordinator's shot comparison): U1 and U6 verified; U7, U8 and U9 open. Records in `reviews/`.
 - [ ] Merge, push, deploy check, worktree cleanup, outcome.
 
-## Handoff (2026-10-21)
+## Remaining work (2026-10-22)
 
-The coordinator session that ran M1–M3 and review rounds 0–2 passed its ten-turn limit (R6), so it assigns no more work. The next coordinator owns what follows.
+On 2026-10-21 this unit was handed to a successor coordinator under the ten-turn rollover rule. The owner removed that rule on 2026-10-22 (fleet `65ef6ac`: sessions run long), so the coordinator that ran M1–M3 and review rounds 0–2 keeps the unit and the handoff is withdrawn.
 
-- State: branch `repair-u1` in worktree `../met-worktrees/repair-u1`, head `e760a84`, clean and unmerged, holding the U1–U6 repairs `f66e724`..`e760a84`. Its repair worker did not survive a restart. Main is at this commit, which adds only the AGENTS.md canon sync (`6451f7c`..`4849135`) and these records to `6f8892f`; merge main into the branch first.
+- State: branch `repair-u1` in worktree `../met-worktrees/repair-u1`, head `e760a84`, clean and unmerged, holding the U1–U6 repairs `f66e724`..`e760a84`. Its repair worker did not survive a restart. Main has moved past `6f8892f` only by AGENTS.md canon syncs and these records; merge main into the branch first.
 - Next: a repair worker on `repair-u1` for U7, U8 and U9, whose instructions are their dispositions in `reviews/2_implementation.md`, with `MET_PORT=5470 npm run verify` green. Then a focused Codex check of its diff as round 3 (`reviews/3_implementation.md`). Then merge to main, run `npm run verify` on main (port 5300), push, watch `pages.yml` and check the live page. Finally fill the dispositions' repair columns, tick the steps, write the Outcome, set Status complete, add a devlog line, and remove the worktree and branch.
 - Evidence, ignored, in the main checkout: `tmp/review-runs/` holds the prompts (`prompt-u1-final.md`, `prompt-u1r.md`, `prompt-u1r2.md`), the reports (`codex-u1.txt`, `codex-u1r.txt`, `codex-u1r2.txt`), the diffs (`u1.diff`, `u1r.diff`, `u1r2.diff`), and the shot diff tools `pngdiff.cjs` and `crop.cjs` with `u1r2-shots-diff.txt`. Shots at `e760a84` are in `../met-worktrees/repair-u1/.shots/shots/`, and at `4849135` in `.shots/shots/`.
 
