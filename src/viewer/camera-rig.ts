@@ -141,25 +141,41 @@ export class CameraRig {
       return false;
     }
     const moved = this.sync();
-    const floor = this.groundY + CAMERA_FLOOR;
-    if (this.camera.position.y < floor) {
-      this.camera.position.y = floor;
-      this.sync();
-    }
+    this.ontoFloor();
     this.updateClipping();
     return moved;
   }
 
   /**
+   * Brings a camera under the camera floor (a pan or an orbit took it there) back onto it, its target moved up with it, so the view does not turn.
+   * Lifting the camera alone turned it toward a near target, 96° after a pan under the floor and a zoom toward the ground over it (work unit 1,
+   * review 4, U12). Returns whether it moved the camera.
+   */
+  private ontoFloor(): boolean {
+    const under = this.groundY + CAMERA_FLOOR - this.camera.position.y;
+    if (!(under > 0)) return false;
+    this.camera.position.y += under;
+    this.controls.target.y += under;
+    this.sync();
+    return true;
+  }
+
+  /**
    * One zoom step toward the point under (clientX, clientY), by `factor` (below 1 in, above 1 out): src/viewer/zoom.ts `zoomStep` says how far, the
-   * camera floor a bound both ways, so the camera stays on the ray. A step at a bound changes nothing; any other counts as the user's move.
+   * camera floor a bound both ways, so the camera stays on the ray. It steps from the pose the controls are headed for: a drag's motion still owed is
+   * spent first, and a camera under the floor brought back onto it, before the ray and the pick. A step at a bound changes nothing else; any other
+   * counts as the user's move.
    */
   dolly(clientX: number, clientY: number, factor: number): void {
+    this.stopInertia();
+    this.ontoFloor();
     const direction = pointerRay(this.element, this.camera, clientX, clientY);
     const surface = this.pick !== null ? this.pick(new Ray(this.camera.position.clone(), direction)) : null;
     const next = zoomStep(this.camera.position, this.controls.target, direction, surface, factor, this.groundY + CAMERA_FLOOR);
-    if (next === null) return;
-    this.stopInertia();
+    if (next === null) {
+      this.updateClipping();
+      return;
+    }
     this.camera.position.copy(next.position);
     this.controls.target.copy(next.target);
     this.sync();

@@ -11,7 +11,10 @@
  * - from aerial-ne, notches out reach the far bound (the target ZOOM.maxDistance away), where a notch out moves nothing and a notch in moves again;
  * - lowered onto the camera floor by Q held: from the far bound looking down (both bounds at once), a notch in moves nothing and a notch out moves,
  *   and from there the zoom holds as above; looking up, a notch out moves nothing (the floor), a notch in moves, and the next notch out comes back
- *   onto the floor on the ray and stops there.
+ *   onto the floor on the ray and stops there;
+ * - under a footing on the floor, looking up, a right-drag that pans the camera under the floor and a wheel notch sent at once leave the view where
+ *   it looked, and the camera on the floor. Chrome hands the page the notch a frame after the drag's move (its input router waits for each mouse
+ *   event's answer), so the page lifts the camera between them; the two in one frame are src/viewer/camera-floor.test.ts, through the same handlers.
  * Bound: one pointer position (the middle of the view above the bar), wheel steps of 100 pixels, and the page at t = N with no cut and no floor view,
  * which is the state ./surface.ts rebuilds.
  */
@@ -21,7 +24,7 @@ import { PerspectiveCamera, Vector3 } from 'three';
 
 import { CAMERA_FLOOR } from '../../src/viewer/camera-rig.js';
 import { ZOOM } from '../../src/viewer/zoom.js';
-import { camera, choosePreset, distance, open, settle, throttleRate, watchErrors } from './helpers.js';
+import { camera, choosePreset, distance, open, settle, settledCamera, throttleRate, watchErrors } from './helpers.js';
 import type { Camera } from './helpers.js';
 import { firstSurface, workspaceGround } from './surface.js';
 
@@ -38,6 +41,12 @@ const MM = 1e-3;
 const OVER_THE_PARK = [0, 30, -240, 0, 15, -440] as const;
 /** East of Fifth Avenue, 10 m up, looking west 45° up over the building into the sky: lowered onto the camera floor, a zoom out backs down the ray. */
 const LOOKING_UP = [0, 10, 80, 0, 20, 70] as const;
+
+/**
+ * Over the Hunt pavilion's footing at X −11.2 to −6.0, Z −11.8 to −7.0 (src/model/hunt/podium.ts), whose underside at −4.54 m is the model's lowest
+ * point, looking 45° up toward the west with the target 100 m away: lowered onto the floor by Q, the camera stands 10 cm under that footing.
+ */
+const UNDER_A_FOOTING = [-8.6, 10, -9.4, -8.6, 80.711, -80.111] as const;
 
 /** The camera floor under the finished model: CAMERA_FLOOR over the workspace ground (src/viewer/camera-rig.ts). */
 const floorY = (): number => workspaceGround() + CAMERA_FLOOR;
@@ -236,6 +245,28 @@ test.describe('zoom', () => {
     expect(down.position[1], 'back on the floor').toBeCloseTo(floorY(), 3);
     expect(off(down), 'on the ray').toBeLessThan(0.01);
     expect(distance((await notch(page, 100)).position, down.position), 'a notch out on the floor again').toBeLessThan(MM);
+  });
+
+  test('a right-drag that pans the camera under the floor and a wheel notch sent at once leave the view where it looked', async ({ page }) => {
+    await open(page, `cam=${UNDER_A_FOOTING.join(',')}`);
+    const centre = await viewCentre(page);
+    const [x, y] = [Math.round(centre.x), Math.round(centre.y)];
+    const floored = await lowerOntoFloor(page, x, y);
+    // The drag up and the notch in, sent back to back without waiting on one another.
+    const cdp = await page.context().newCDPSession(page);
+    const send = (params: Record<string, unknown>): Promise<unknown> => cdp.send('Input.dispatchMouseEvent', params as never);
+    await Promise.all([
+      send({ type: 'mousePressed', x, y, button: 'right', buttons: 2, clickCount: 1 }),
+      send({ type: 'mouseMoved', x, y: y - 100, button: 'right', buttons: 2 }),
+      send({ type: 'mouseWheel', x, y: y - 100, deltaX: 0, deltaY: -100 }),
+      send({ type: 'mouseReleased', x, y: y - 100, button: 'right', buttons: 0, clickCount: 1 }),
+    ]);
+    await cdp.detach();
+    // The drag's pan runs on over the frames after it (the controls' damping); wait until the camera has stopped.
+    const after = await settledCamera(page);
+    const view = (c: Camera): Vector3 => new Vector3(...c.target).sub(new Vector3(...c.position)).normalize();
+    expect((view(after).angleTo(view(floored)) * 180) / Math.PI, 'degrees the view turned').toBeLessThan(0.01);
+    expect(after.position[1], 'on the floor or over it').toBeGreaterThan(floorY() - 1e-4);
   });
 
   test('a preset chosen after zooming lands exactly, so the zoom leaves no state behind', async ({ page }) => {
