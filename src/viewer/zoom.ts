@@ -4,6 +4,7 @@
  * depth of what the zoom heads for, so orbiting then turns about it.
  * - In: by `1 − factor` of the distance to the surface under the pointer (src/viewer/pick.ts), at least ZOOM.minStep, and never closer to that
  *   surface than ZOOM.stop: there the zoom in stops, at a bound the eye can see. Over open sky it flies on, as if a surface stood ZOOM.flyDepth ahead.
+ *   Where the ray comes down to the camera floor sooner, the zoom heads for the floor instead (`zoomHit`) and stops on it, still on the ray.
  * - Out: by `factor − 1` of the distance to the target, at least ZOOM.minStep, until the target is ZOOM.maxDistance away.
  * Steps never shrink with the distance to an invisible point, so every notch moves the camera until one of the two bounds, and either bound gives
  * way at once to the other direction.
@@ -27,6 +28,17 @@ export const ZOOM = Object.freeze({
 export interface DollyResult {
   readonly position: Vector3;
   readonly target: Vector3;
+}
+
+/**
+ * The distance the zoom in heads for along the unit ray `direction` from `position`: `hit`, the first surface (null over open sky stays null), unless
+ * the ray comes down to the camera floor `floorY` first, less than `hit − ZOOM.stop` along it; then the distance whose stop lies on that floor.
+ * Without it a zoom toward the workspace ground at a slant met the camera floor before its stop, was lifted off the ray, and slid along the floor
+ * without end, the ground always as far ahead (work unit 1, review 2, U8; docs/learning/defect-register.md, "The wheel stops zooming").
+ */
+export function zoomHit(position: Vector3, direction: Vector3, hit: number | null, floorY: number): number | null {
+  if (hit === null || !(direction.y < 0)) return hit;
+  return Math.min(hit, Math.max(0, (floorY - position.y) / direction.y) + ZOOM.stop);
 }
 
 /**

@@ -19,25 +19,26 @@ import type { Camera, Facts } from './helpers.js';
 
 const EYE = 1.6;
 
-/** The walk facts once the eye has stood still from one frame to the next, within 0.1 mm; fails after 5 s. */
+/** The walk facts once the eye has stood still from one frame to the next, within 0.1 mm; fails after 5 s times the CPU throttle. */
 async function rest(page: Page): Promise<Facts['walk']> {
   const eye = (): Promise<number[]> => page.evaluate(() => new Promise<number[]>((resolve) => {
     requestAnimationFrame(() => { resolve([...(window.__met?.walk.eye ?? [Number.NaN, 0, 0])]); });
   }));
   let before = await eye();
-  const until = Date.now() + 5000;
+  const limit = 5000 * throttleRate();
+  const until = Date.now() + limit;
   for (;;) {
     const now = await eye();
     const moved = Math.hypot(...now.map((v, i) => v - (before[i] ?? 0)));
     if (moved < 1e-4) return (await facts(page)).walk;
-    if (Date.now() > until) throw new Error(`The walker did not come to rest within 5 s: its eye last moved ${moved.toFixed(4)} m from one frame to a later one.`);
+    if (Date.now() > until) throw new Error(`The walker did not come to rest within ${String(limit / 1000)} s: its eye last moved ${moved.toFixed(4)} m from one frame to a later one.`);
     before = now;
   }
 }
 
-/** Waits until walk mode is on and prepared, and returns the walk facts. */
+/** Waits until walk mode is on and prepared, within 15 s times the CPU throttle, and returns the walk facts. */
 async function walking(page: Page): Promise<Facts['walk']> {
-  await page.waitForFunction(() => window.__met?.walk.mode === 'walk' && !window.__met.walk.preparing && window.__met.walk.eye !== null, undefined, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__met?.walk.mode === 'walk' && !window.__met.walk.preparing && window.__met.walk.eye !== null, undefined, { timeout: 15_000 * throttleRate() });
   return (await facts(page)).walk;
 }
 

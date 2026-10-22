@@ -24,6 +24,11 @@ function finished(): { readonly meshes: readonly InstancedMesh[]; readonly groun
   return model;
 }
 
+/** The workspace ground's height under the finished model, by the same rule (the camera floor stands CAMERA_FLOOR over it). */
+export function workspaceGround(): number {
+  return finished().groundY;
+}
+
 /** The distance from `origin` along the unit `direction` to the first surface of the finished model or the workspace ground, or null over open sky. */
 export function firstSurface(origin: Triple, direction: Triple): number | null {
   const { meshes, groundY } = finished();

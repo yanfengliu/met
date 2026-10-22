@@ -2,13 +2,16 @@
  * The floor picker through real input (docs/design/spec.md, Page: Floor picker): each floor clicked sets the cut to its height, hides the landscape
  * over it, frames the floor from above from the side the user orbited to and changes the canvas, and All gives back the cut the user had; Page Up and
  * Page Down go up and down a floor; moving the cut slider or pressing the cut toggle by hand leaves the floor view; walk mode leaves it too, with the
- * same collision; `floor=` at load; no floor view shows a plate of the cut colour.
+ * same collision; `floor=` at load; no floor view shows a plate of the cut colour; a flight the Main floor view cuts through shows the cut colour down
+ * to the floor it stands on, close up and a small orbit step away, where the cap pass and that floor once z-fought (section-cut.ts, CAP_DEPTH_BIAS).
  * Facts come from `window.__met` (floors, floor, cut, camera, walk); nothing names a floor's height but the facts.
- * Bound: canvas checks compare coarse luminance grids (the drawing changed) and count pixels of the cut colour (no plate of it); what each floor
- * shows is judged in the floor captures (npm run shots).
+ * Bound: canvas checks compare coarse luminance grids (the drawing changed) and count pixels of the cut colour (no plate of it, or all of a flight's
+ * section); what each floor shows is judged in the floor captures (npm run shots). The close-ups are this machine's GPU (an RTX 4090 through ANGLE's
+ * Direct3D 11 in headless Chrome, 1280x720): where coplanar faces' depths round apart, and so where they z-fight, depends on the GPU.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { Vector3 } from 'three';
 
 import { CUT_COLOUR } from '../../src/viewer/section-cut.js';
 import { camera, changedCells, dragCanvas, facts, lumaGrid, open, openMenu, press, settle, settledCamera, watchErrors } from './helpers.js';
@@ -37,6 +40,45 @@ async function cutColourShare(page: Page): Promise<number> {
     return hits / (w * h);
   }, [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255] as const);
 }
+
+/** The share of the square `half` pixels each side of the canvas centre drawn in the section cut's flat colour, from the drawing buffer. */
+async function cutColourAtCentre(page: Page, half: number): Promise<number> {
+  await settle(page);
+  const hex = CUT_COLOUR.getHex();
+  return page.evaluate(([cr, cg, cb, n]) => {
+    const gl = document.querySelector('canvas')?.getContext('webgl2');
+    if (!gl) throw new Error('cutColourAtCentre: the page has no WebGL2 canvas.');
+    const size = 2 * n + 1;
+    const px = new Uint8Array(size * size * 4);
+    gl.readPixels(Math.floor(gl.drawingBufferWidth / 2) - n, Math.floor(gl.drawingBufferHeight / 2) - n, size, size, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    let hits = 0;
+    for (let i = 0; i < px.length; i += 4) if (Math.abs((px[i] ?? 0) - cr) <= 6 && Math.abs((px[i + 1] ?? 0) - cg) <= 6 && Math.abs((px[i + 2] ?? 0) - cb) <= 6) hits += 1;
+    return hits / (size * size);
+  }, [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255, half] as const);
+}
+
+/**
+ * Flights the Main floor view cuts through whose undersides lie on the floor under them, each by the middle of its section at the cut (X, Z) and the way
+ * it climbs: Wing C's main stair (src/model/core/wings-walls.ts, C_STAIR) and the Engelhard Court's stair to the mezzanine (src/model/roche-north/engelhard.ts).
+ */
+const FLUSH_FLIGHTS = [
+  { name: "Wing C's stair", middle: [31.5, -117.375], climbs: [-1, 0] },
+  { name: 'the Engelhard mezzanine stair', middle: [54.74, -125.5], climbs: [0, -1] },
+] as const;
+/** Cameras on a flight's middle at the cut: from above (from the side of its foot) and from over its top looking down it, with the square measured. */
+const CLOSE_UPS = [
+  { name: 'from above at 50 m', distance: 50, elevation: 88, toward: -1, half: 6 },
+  { name: 'from above at 15 m', distance: 15, elevation: 88, toward: -1, half: 20 },
+  { name: 'down the flight from 15 m', distance: 15, elevation: 40, toward: 1, half: 20 },
+] as const;
+/** The small orbit step taken from each close-up, degrees of azimuth and of elevation. */
+const ORBIT_STEP = { azimuth: 1.5, elevation: 0.75 };
+/**
+ * The least share of a close-up's square in the cut colour. Measured on 2026-10-22: with the cap's depth bias every view reads 98.8 to 100% (the lowest,
+ * the Engelhard stair from 50 m after the step, has 2 of 169 pixels holding one antialiasing sample of the lit floor, the same with a bias of 4, 6 or 8
+ * steps); without it, 9 of the 12 views read 0 to 68%.
+ */
+const FLUSH_CUT_SHARE = 0.97;
 
 async function floorFacts(page: Page): Promise<Pick<Facts, 'floor' | 'cut'>> {
   const f = await facts(page);
@@ -208,6 +250,26 @@ test.describe('floor picker', () => {
     await open(page);
     await press(page, 'walk-toggle');
     expect(walk.collision, 'collision after a floor view vs none').toEqual((await walking()).collision);
+  });
+
+  test('in the Main floor view a flight cut through shows the cut colour down to the floor it stands on, close up and a small orbit step away', async ({ page }) => {
+    const main = (await open(page)).floors.find((fl) => fl.id === 'main');
+    if (main === undefined) throw new Error('No main floor in window.__met.floors.');
+    const problems: string[] = [];
+    for (const flight of FLUSH_FLIGHTS) {
+      for (const view of CLOSE_UPS) {
+        for (const step of [false, true]) {
+          const target = new Vector3(flight.middle[0], main.cut, flight.middle[1]);
+          const elevation = ((view.elevation + (step ? ORBIT_STEP.elevation : 0)) * Math.PI) / 180;
+          const across = new Vector3(flight.climbs[0] * view.toward, 0, flight.climbs[1] * view.toward).applyAxisAngle(new Vector3(0, 1, 0), step ? (ORBIT_STEP.azimuth * Math.PI) / 180 : 0);
+          const at = target.clone().addScaledVector(across, view.distance * Math.cos(elevation)).setY(target.y + view.distance * Math.sin(elevation));
+          await open(page, `shot=1&noui=1&floor=main&cam=${[at.x, at.y, at.z, target.x, target.y, target.z].map((v) => v.toFixed(4)).join(',')}`);
+          const share = await cutColourAtCentre(page, view.half);
+          if (share < FLUSH_CUT_SHARE) problems.push(`${flight.name}, ${view.name}${step ? ', after a small orbit step' : ''}: ${(share * 100).toFixed(1)}% of the middle of its section in the cut colour`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
   });
 
   test('floor= at load shows that floor framed from above; one that names no floor, or comes with walk=1, is ignored with a warning', async ({ page }) => {
