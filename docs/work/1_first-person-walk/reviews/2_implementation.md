@@ -64,3 +64,5 @@ Reported by the repair worker at `e760a84`, not rerun by the coordinator: `verif
 ## Round outcome
 
 U1 and U6 verified. U7, U8 and U9 accepted and open; `e760a84` is not merged because of U8. Round 3 is a focused check of their repair.
+
+Correction (2026-10-22): no handoff took place. The owner removed the session rollover rule, and this coordinator's worker repaired U7, U8 and U9 in `8a5f651` (round 3), so "Repair worker after the handoff" above reads "repair worker `repair-r2`, `8a5f651`".
