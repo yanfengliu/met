@@ -8,6 +8,10 @@
     {
       "id": 1,
       "theme": "first-person-walk"
+    },
+    {
+      "id": 2,
+      "theme": "doors-and-collection"
     }
   ]
 }

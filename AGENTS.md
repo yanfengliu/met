@@ -4,7 +4,7 @@
 
 A procedural three.js reconstruction of The Metropolitan Museum of Art's Fifth Avenue building in New York, outside and inside, whose construction is the product: the model is assembled by an ordered list of build steps that play forward and backward, one step at a time or scrubbed, and the finished building is only the last frame.
 
-Non-goals: no imported meshes, scans or photo textures; no runtime network assets; no gallery-by-gallery interior (the major public spaces only); no artworks beyond a few landmark objects that define a space, such as the Temple of Dendur.
+Non-goals: no imported meshes, scans or photo textures; no runtime network assets; no gallery-by-gallery interior (the major public spaces only). Artworks are procedural placeholders of real objects on view, built from The Met's CC0 collection data, which a script fetches by hand and never at runtime (owner, 2026-10-25); colours sampled from a public-domain object's image are data, not a photo texture.
 
 Stack: Vite + TypeScript (strict) + Vitest + three.js, Playwright for capture and control tests. Node 24 (`.nvmrc`).
 
