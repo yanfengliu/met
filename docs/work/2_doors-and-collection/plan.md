@@ -33,23 +33,33 @@ Milestones, each on its own worker, branch and worktree, merged to main once gre
 
 Shared contracts, agreed before parallel work: the look target (M1) is the only way M2 and M3b find what the visitor looks at; M3a adds steps only through area modules that `COMPOSITION` reaches; no milestone changes the determinism contract.
 
+### Amendments after review 0 (2026-10-25)
+
+Codex's plan review (`reviews/0_plan.md`) found eleven gaps, all accepted:
+- Contract C1, piece tags, owned by M1: `Kit.addTagged(geometry, material, matrix, tag, order?)` with `tag: { kind: 'door' | 'artwork', id }`; the timeline keeps each instance's tag, not as timeline state; a door's pieces never share a mesh with anything else.
+- Contract C2, the hit query, owned by M1: mesh, instance, distance and tag, optionally through transparent pieces (walls still block); the walking eye's `window.__met.walk.target` and an orbit pointer use it, refreshed when an action reads it.
+- M2: door leaves hidden by a presentation filter (layers), never through timeline-owned fields; a dynamic collision update with the swept leaf checked both ways; stand-ins registered with the picker and the cap pass; the lifecycle at f < 1 and f = 1 defined; `doors=open` never unlocks a locked door; `shot=1` sets doors before walk placement.
+- M3a: committed provenance and fixture tests; all-or-nothing writes; measurement and colour rules with estimated and derived values marked; full placed bounds kept 1 m clear of every walking corridor and door swing; artworks untagged until M3b.
+- Budgets: placeholders at most 110 meshes and 600k triangles; doors at most 20 meshes or draws, viewer-side draws counted; walking with the look target and door cycles measured in populated interiors.
+- Order: M3b after both M2 and M3a. After integration, every affected route and passage is walked both ways.
+
 ## Acceptance criteria
 
 - [ ] The eye never drops while climbing: checked every frame on the front steps and the Grand Staircase, both ways, walking and running, red before the fix.
 - [ ] Walk mode shows a crosshair and hides what it does not need; the drag, click, speed and sensitivity choices are in the spec; checked at 1280×720 and 390×844.
 - [ ] No trap and no dead end: the pool cannot trap a walker, the dais is crossed where the real building allows it, and a route from the top of the Grand Staircase into gallery 600 is walked by e2e through real keys.
-- [ ] The Hunt central entrance's doors and the Weston door open and close with E or a click while looked at within 2 m, with a prompt; the link and Bank doors say Locked; collision follows each leaf; `doors=` and the shot contract hold; `src/build/timeline.test.ts` passes unchanged; R1 opens a door with E in e2e; a walking frame stays under 16.7 ms.
+- [ ] The Hunt central entrance's doors and the Weston door open and close with E or a click while looked at within 2 m, with a prompt; the link and Bank doors say Locked; collision follows each leaf; `doors=` and the shot contract hold; the assertions of `src/build/timeline.test.ts` hold unchanged (its recording Kit may gain `addTagged`); R1 opens a door with E in e2e; a walking frame stays under 16.7 ms.
 - [ ] `src/model/collection/catalogue.ts` comes from `scripts/met-catalogue.ts` and The Met's API, checked offline; placeholders of real objects stand in at least eight of the spaces above, at real size, by kind, coloured from their samples, built in their spaces' chapters; meshes stay under 900 and triangles under 3M; the 4 s build budget holds; e2e sees no request to any metmuseum.org host.
 - [ ] Looking at an artwork within 6 m, or clicking one in the orbit view, shows its label; checked through real input.
 - [ ] Each milestone: `npm run verify` green (and both audits if a dependency changes), the standard shot set inspected against the last merged one, an independent review, merged to main, deployed and checked live. AGENTS.md's non-goals and `docs/research/` record the owner's decision and the data's source and licence.
 
 ## Implementation steps
 
-- [ ] Plan review (Codex), in parallel with M1 and M3a starting.
+- [x] Plan review (Codex, `reviews/0_plan.md`): eleven findings accepted, the plan amended; sent to M1 and M3a, which had started.
 - [ ] M1 the walk, with the look target (worker `walk2`).
 - [ ] M3a the catalogue and the placeholders (worker `collection`).
 - [ ] M2 doors (worker `doors`, after M1).
-- [ ] M3b labels (worker `collection`, after M2).
+- [ ] M3b labels (worker `collection`, after M2 and M3a).
 - [ ] Integration, review, deploy, outcome.
 
 ## Outcome
