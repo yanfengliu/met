@@ -80,6 +80,23 @@ export class CameraRig {
   }
 
   /**
+   * Runs the controls' update as the rig's own move without spending any of the rotation or pan a drag still owes: with damping on at a factor of 0,
+   * the update takes the camera and target as they stand and carries all of it over to the next update. Returns whether the camera moved, as the
+   * controls count a move (over 1 mm or 1 mrad since the last move they reported).
+   */
+  private settle(): boolean {
+    const { enableDamping, dampingFactor } = this.controls;
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0;
+    try {
+      return this.sync();
+    } finally {
+      this.controls.enableDamping = enableDamping;
+      this.controls.dampingFactor = dampingFactor;
+    }
+  }
+
+  /**
    * Sizes the projection to a canvas of `width` by `height` pixels whose bottom `insetBottom` pixels are covered by page chrome:
    * the field of view and the centre of projection belong to the visible part, so presets and the follow camera frame the model where it can be seen.
    */
@@ -134,30 +151,34 @@ export class CameraRig {
     return true;
   }
 
-  /** Applies damping and the camera floor. Returns whether the camera moved. In walk mode it only sets the clipping planes. */
+  /**
+   * Applies damping, then the camera floor, the last move before the frame renders, so the frame never renders from under the floor. Returns whether
+   * the camera moved. In walk mode it only sets the clipping planes.
+   */
   update(): boolean {
     if (this.walk) {
       this.updateClipping();
       return false;
     }
     const moved = this.sync();
-    this.ontoFloor();
+    const lifted = this.ontoFloor();
     this.updateClipping();
-    return moved;
+    return moved || lifted;
   }
 
   /**
    * Brings a camera under the camera floor (a pan or an orbit took it there) back onto it, its target moved up with it, so the view does not turn.
    * Lifting the camera alone turned it toward a near target, 96° after a pan under the floor and a zoom toward the ground over it (work unit 1,
-   * review 4, U12). Returns whether it moved the camera.
+   * review 4, U12). The controls then take the lift without spending what a drag still owes: spending it took the camera back under the floor before
+   * the frame rendered, 66 cm under it after the first frame of a pan (review 5, U13). The next update spends it, and this lifts again.
+   * Returns whether the camera moved, as the controls count a move.
    */
   private ontoFloor(): boolean {
     const under = this.groundY + CAMERA_FLOOR - this.camera.position.y;
     if (!(under > 0)) return false;
     this.camera.position.y += under;
     this.controls.target.y += under;
-    this.sync();
-    return true;
+    return this.settle();
   }
 
   /**
