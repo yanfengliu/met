@@ -3,7 +3,7 @@
 Status: complete
 Owner: Coordinator (Claude Code desktop session, 2026-10-14)
 Created: 2026-10-15
-Updated: 2026-10-22
+Updated: 2026-10-25
 
 ## Problem and outcome
 
@@ -34,7 +34,7 @@ Milestone M1, engine (worker `walk`): default load at t = N and paused, `autopla
 - [x] M2b merged `1b8fc64`: R3 and R4 walk both ways (unit and e2e), through openings cut from the floor map in the Hunt seams and partitions and the MMW party wall at Z −41.3; verify green, 354 unit and 42 e2e. Accepted limitation (coordinator, 2026-10-15): steps only add pieces, so these openings stand open before the newer wings close round them (the Hunt seams 1902 to the MMW links, the Dendur opening 1910 to 1978); the finished state is right, and a fix would need steps that remove pieces, a contract change not worth this flaw.
 - [x] M2b wings (worker `routes`, decided 2026-10-15): the seam walls at X −49.7 and +49.4 seal the McKim, Mead & White wings on every floor. Open the main-floor passages from the Great Hall where the real building has them, and gate route R3 (Great Hall → north wing → Temple of Dendur) and route R4 (Great Hall → south wing → Leon Levy and Shelby White Court) the same way.
 - [x] M3 floor picker in the map view (workers `floors` and `floors2`, merged `6f8892f`): Ground, Main, Second and the roof garden, cut at 3.1, 7.8, 12.7 and 27.4 m, the landscape over the cut hidden whole, Page Up and Page Down, `floor=`; verify green, 375 unit and 47 e2e.
-- [x] Independent review of the integrated change; repairs. Rounds 0–5 in `reviews/`, by Codex; Claude abstained in round 0 and was not run for the focused rounds 1–5. U1–U12 accepted and repaired on `repair-u1` (`f66e724`..`3fb0d40`); U13, an older orbit-camera limit, recorded and not repaired.
+- [x] Independent review of the integrated change; repairs. Rounds 0–6 in `reviews/`, by Codex; Claude abstained in round 0 and was not run for the focused rounds 1–6. U1–U12 accepted and repaired on `repair-u1` (`f66e724`..`3fb0d40`); U13, an older orbit-camera limit, repaired after the unit closed in `10d714f` (review 6).
 - [x] Merge, push, deploy check, worktree cleanup, outcome: main fast-forwarded to `3fb0d40`, deployed by `pages.yml` run 39848903774, the live page checked; worktree and branch `repair-u1` removed.
 
 ## Outcome
@@ -48,4 +48,4 @@ Complete on 2026-10-22; the code is at `3fb0d40` on main and live at https://yan
 
 Checks at `3fb0d40`, run by the coordinator: `npm run verify` green (395 unit tests in 43 files, typecheck, lint, build, 60 e2e); the standard shot set compared with `e760a84` and `8a5f651`; with the cut on, a frame took 9.9–12.3 ms in the floor views. Live, headless: ready in 3.2 s cold; walk mode at the plaza with the eye at 1.64 m; the Main floor view; no console errors. The dependency audits were not rerun, since no dependency changed after M1.
 
-Known limits: U13, a pan near the ground can leave the orbit camera under the floor for some frames (review 5); at the floor, looking up at a surface within 0.5 m, both wheel directions stop; the M2b build-order limitation above. The 2026-10-21 handoff to a successor was withdrawn when the owner removed the fleet's session rollover rule (fleet `65ef6ac`).
+U13, a pan near the ground leaving the orbit camera under the floor for some frames (review 5), was repaired on 2026-10-25 in `10d714f` (review 6). Known limits: at the floor, looking up at a surface within 0.5 m, both wheel directions stop; the M2b build-order limitation above. The 2026-10-21 handoff to a successor was withdrawn when the owner removed the fleet's session rollover rule (fleet `65ef6ac`).
