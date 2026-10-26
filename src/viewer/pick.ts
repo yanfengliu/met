@@ -4,7 +4,8 @@
  *   ray, glass included, so the zoom stops at a window as it does at a wall.
  * - `hit`, what a visitor looks at or points to: the nearest piece a query accepts (by its tag, src/build/types.ts `PieceTag`, and its distance),
  *   with its mesh, instance, distance and tag. A surface the query does not accept stops the ray, unless the query passes through transparent pieces
- *   and it is one (glass, water): an artwork in a vitrine is found through the glass, never through a wall. The walking eye's look target
+ *   and it is an untagged one (glass, water): an artwork in a vitrine is found through the glass, never through a wall or a glass door the query
+ *   rejects. The walking eye's look target
  *   (src/walk/look.ts) runs it every frame; a pointer ray from an orbit-view click runs it the same way.
  * Only drawn instances count (the first `count` of a visible mesh on a layer the camera draws), at their current matrices, so a piece still arriving
  * is met where it is shown and landscape a floor view hides (src/viewer/floor-view.ts) is passed through; with the section cut on, a hit above the
@@ -29,7 +30,7 @@ export type TagOf = (mesh: InstancedMesh, instance: number) => PieceTag | null;
 
 /** What `hit` looks for. */
 export interface HitQuery {
-  /** Pass through transparent pieces (glass, water) the query does not accept; any other surface still stops the ray. Default false: every surface stops it. */
+  /** Pass through untagged transparent pieces (glass, water); a tagged piece the query does not accept and every other surface still stop the ray. Default false: every surface stops it. */
   readonly throughTransparent?: boolean;
   /** Only surfaces nearer than this count, metres. Default: no limit. */
   readonly far?: number;
@@ -47,6 +48,11 @@ export interface PickHit {
 
 const noTags: TagOf = () => null;
 const acceptAll = (): boolean => true;
+/**
+ * Whether the ray goes on past a piece the query did not accept. Accepting a target and passing through are apart: only an untagged transparent piece
+ * (glass, water) lets it on, and only when the query asks; a tagged piece the query rejects, a glass door out of reach for one, stops it as a wall does.
+ */
+const passes = (tag: PieceTag | null, material: Material, through: boolean): boolean => through && tag === null && material.transparent;
 
 export class ModelPicker {
   private readonly spheres = new WeakMap<BufferGeometry, Sphere>();
@@ -83,7 +89,8 @@ export class ModelPicker {
 
   /**
    * The nearest piece along `ray` (unit direction, world metres) that `query` accepts, before the ray stops: at the first surface it does not accept,
-   * or with `throughTransparent` at the first such surface that is not transparent. Null when there is none within `far`. The workspace ground is no piece.
+   * or with `throughTransparent` at the first such surface that is not an untagged transparent one. Null when there is none within `far`. The workspace
+   * ground is no piece.
    */
   hit(ray: Ray, query: HitQuery = {}): PickHit | null {
     const accept = query.accept ?? acceptAll;
@@ -94,7 +101,7 @@ export class ModelPicker {
       const tag = this.tagOf(mesh, instance);
       if (accept(tag, t)) {
         if (best.found === null || t < best.found.distance) best.found = { mesh, instance, distance: t, tag };
-      } else if (!through || !material.transparent) {
+      } else if (!passes(tag, material, through)) {
         best.stop = Math.min(best.stop, t);
       }
     });

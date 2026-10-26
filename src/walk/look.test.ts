@@ -1,7 +1,7 @@
 /**
  * The walking eye's look target (src/walk/look.ts) through the page's hit query (src/viewer/pick.ts) on fixture steps built by the real timeline:
  * a door within 2 m and an artwork within 6 m are targets, just past their reach they are not; an artwork in a vitrine is found through its glass, never
- * through a wall or past a door not in reach; an untagged piece is never a target; the eye's height and direction come in as the walker gives them.
+ * through a wall or past a door, glazed or not, out of reach; an untagged piece is never a target; the eye's height and direction come in as the walker gives them.
  * Bound: boxes on a straight ray from an eye 1.6 m up; the walk mode's own use (every frame, and afresh when read) is in src/walk/walk-mode.ts.
  */
 import { BoxGeometry, Layers, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
@@ -70,6 +70,7 @@ describe('the look target', () => {
     expect(lookTarget(hitIn([{ near: 2, material: glass }, { near: 2.4, material: bronze, tag: art }]), eye, ahead)?.id).toBe('11013');
     expect(lookTarget(hitIn([{ near: 2, material: stone }, { near: 2.4, material: bronze, tag: art }]), eye, ahead)).toBeNull();
     expect(lookTarget(hitIn([{ near: 3, material: bronze, tag: door }, { near: 4, material: bronze, tag: art }]), eye, ahead), 'a closed door 3 m off hides the artwork behind it').toBeNull();
+    expect(lookTarget(hitIn([{ near: 3, material: glass, tag: door }, { near: 4, material: bronze, tag: art }]), eye, ahead), 'so does a glass door 3 m off, out of its reach').toBeNull();
   });
 
   it('is never an untagged piece, and is the nearer of two tagged ones', () => {

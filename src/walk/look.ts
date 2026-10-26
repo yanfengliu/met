@@ -1,7 +1,8 @@
 /**
  * The look target (docs/design/spec.md, Walk mode: Look target), the one way doors and labels find what the visitor looks at: the nearest tagged piece
  * (src/build/types.ts, `PieceTag`) on the eye's ray within its kind's reach, found by the page's hit query (src/viewer/pick.ts, `ModelPicker.hit`),
- * which passes through glass and water but stops at any other surface, so a wall or a closed door hides what is behind it.
+ * which passes through untagged glass and water but stops at any other surface, a tagged one it does not accept included, so a wall or a closed
+ * door, glazed or not, hides what is behind it.
  * Walk mode runs it every walking frame and again whenever something reads the target, so an action reads the target as the view stands then.
  */
 import { Ray } from 'three';
@@ -13,7 +14,7 @@ import type { HitQuery, PickHit } from '../viewer/pick.js';
 /** How far from the eye each kind of tagged piece can be looked at, metres: a door at arm's reach and a step, an artwork across a gallery. */
 export const LOOK_REACH: Readonly<Record<PieceTag['kind'], number>> = Object.freeze({ door: 2, artwork: 6 });
 
-/** The query the walking eye runs: through transparent pieces, walls blocking, for a tagged piece within its kind's reach. */
+/** The query the walking eye runs: through untagged transparent pieces, walls and tagged pieces out of reach blocking, for a tagged piece within its kind's reach. */
 export const LOOK_QUERY: HitQuery = Object.freeze({
   throughTransparent: true,
   far: Math.max(...Object.values(LOOK_REACH)),

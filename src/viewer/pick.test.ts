@@ -2,7 +2,8 @@
  * What a ray meets (src/viewer/pick.ts). The zoom's `distance` on one instanced box: met where it is drawn, passed through when the camera's layers do not
  * draw its mesh (the landscape a floor view hides), and passed through above the section cut on a material the cut clips. The hit query `hit` on
  * fixture steps built by the real timeline, with tags from `Timeline.tagOf`: the nearest accepted piece with its mesh, instance, distance and tag;
- * a wall in front hides it; glass stops it unless the query passes through transparent pieces, while a tagged glass piece is found; `far` and the
+ * a wall in front hides it; glass stops it unless the query passes through transparent pieces, while a tagged glass piece is found when accepted
+ * and stops the ray when not, as a glazed door out of reach does; `far` and the
  * accepted distance bound it; only drawn instances count; and a pointer ray from an orbit camera far off finds an artwork in a vitrine under a skylight.
  * Bound: boxes and straight rays, no WebGL.
  */
@@ -118,6 +119,15 @@ describe('ModelPicker.hit, the hit query', () => {
     const hit = picker.hit(eye, { ...tagged, throughTransparent: true });
     expect(hit?.tag).toEqual(door);
     expect(hit?.distance).toBeCloseTo(1.5, 6);
+  });
+
+  it('stops at a tagged glass piece it does not accept, as at a wall: a glazed door out of reach or of another kind hides what is behind it', () => {
+    const { picker } = scene([{ near: 3, material: glass, tag: door }, { near: 4, material: bronze, tag: art }]);
+    const inReach = (tag: PieceTag | null, d: number): boolean => tag !== null && d <= (tag.kind === 'door' ? 2 : 6);
+    expect(picker.hit(eye, { throughTransparent: true, accept: inReach }), 'a glass door 3 m off, out of its 2 m reach').toBeNull();
+    expect(picker.hit(eye, { throughTransparent: true, accept: (tag) => tag?.kind === 'artwork' }), 'a glass door to a query for artworks').toBeNull();
+    // Untagged glass in the same place still lets the ray on.
+    expect(scene([{ near: 3, material: glass }, { near: 4, material: bronze, tag: art }]).picker.hit(eye, { throughTransparent: true, accept: inReach })?.tag).toEqual(art);
   });
 
   it('counts only what the query accepts at its distance and what lies within far', () => {
