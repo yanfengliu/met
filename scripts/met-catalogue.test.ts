@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import type { Pick, SpacePicks } from '../src/model/collection/types.js';
 import * as rules from './met-catalogue-rules.js';
 import type { Bins, MetRecord } from './met-catalogue-rules.js';
-import { BLOCK_WAIT_MS, BlockedError, Fetcher, formatCatalogue, retryAt, runCatalogue } from './met-catalogue-run.js';
+import { BLOCK_WAIT_MS, BlockedError, Fetcher, formatCatalogue, httpDate, retryAt, runCatalogue } from './met-catalogue-run.js';
 import type { Cached, Store } from './met-catalogue-run.js';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'met-api');
@@ -247,15 +247,31 @@ describe('fetcher', () => {
     const iso = (header: string | null): string => retryAt(header, at).toISOString();
     expect([iso('120'), iso(' 0 ')]).toEqual(['2026-10-25T12:02:00.000Z', '2026-10-25T12:00:00.000Z']);
     expect([iso('Sun, 25 Oct 2026 13:00:00 GMT'), iso('Sunday, 25-Oct-26 13:00:00 GMT'), iso('Sun Oct 25 13:00:00 2026')]).toEqual(Array(3).fill('2026-10-25T13:00:00.000Z'));
-    // A date already past means now; anything else, the default wait (V8's Date.parse would take '-5' for 1 May 2001).
+    // A date already past means now; anything else, the default wait (V8's Date.parse would take '-5' for 1 May 2001), as does a delay or date no
+    // Date holds: 309 nines overflow to Infinity, 20 nines of seconds lie past the year 275760, and 31 February is no day.
     expect(iso('Sun, 25 Oct 2026 11:00:00 GMT')).toBe('2026-10-25T12:00:00.000Z');
-    for (const bad of [null, '', 'soon', '-5', '1.5', '12 s', 'Sun, 25 Oct 2026 13:00:00']) expect(iso(bad)).toBe('2026-10-25T12:10:00.000Z');
+    for (const bad of [null, '', 'soon', '-5', '1.5', '12 s', 'Sun, 25 Oct 2026 13:00:00', '9'.repeat(309), '9'.repeat(20), 'Sat, 31 Feb 2026 13:00:00 GMT']) {
+      expect(iso(bad), `Retry-After ${String(bad).slice(0, 40)}`).toBe('2026-10-25T12:10:00.000Z');
+    }
     // Through the fetcher: a 429 that gives a date an hour on.
     const clock = fakeClock();
     const hour = new Date(clock.now() + 3_600_000);
     const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('slow', { status: 429, headers: { 'Retry-After': hour.toUTCString() } })), clock, store: memoryStore(), gapMs: 0, userAgent: 'test' });
     const slow = await fetcher.get('https://example.test/date').catch((e: unknown) => e);
     expect((slow as Error).message).toContain(`Retry after ${hour.toISOString()}`);
+  });
+
+  it('reads an RFC 850 date’s two-digit year by HTTP’s rolling 50 years (RFC 9110 §5.6.7), not by a fixed cutoff', () => {
+    const at = new Date('2026-10-25T12:00:00.000Z');
+    const iso = (value: string): string => new Date(httpDate(value, at)).toISOString();
+    // Date.parse reads 50 as 1950; 24 years after `at`, it is 2050.
+    expect(iso('Tuesday, 25-Oct-50 13:00:00 GMT')).toBe('2050-10-25T13:00:00.000Z');
+    expect(retryAt('Tuesday, 25-Oct-50 13:00:00 GMT', at).toISOString()).toBe('2050-10-25T13:00:00.000Z');
+    // 76 is 2076 up to 50 years after `at`; an hour later, more than 50 years ahead, it is the most recent past 76, and 77 always is.
+    expect(iso('Sunday, 25-Oct-76 11:00:00 GMT')).toBe('2076-10-25T11:00:00.000Z');
+    expect(iso('Monday, 25-Oct-76 13:00:00 GMT')).toBe('1976-10-25T13:00:00.000Z');
+    expect(iso('Tuesday, 25-Oct-77 12:00:00 GMT')).toBe('1977-10-25T12:00:00.000Z');
+    expect(iso('Sunday, 25-Oct-26 13:00:00 GMT')).toBe('2026-10-25T13:00:00.000Z');
   });
 
   it('names any other status', async () => {
@@ -290,6 +306,18 @@ describe('the run', () => {
     const { run, writes } = recorder((url) => (++n === 7 ? Promise.reject(new BlockedError('blocked')) : ok(url)));
     await expect(runCatalogue(run)).rejects.toBeInstanceOf(BlockedError);
     expect(writes).toEqual([]);
+  });
+
+  it('stops at the first 403 or 429, after one request, whatever its Retry-After holds', async () => {
+    const headers = [null, '', '120', '9'.repeat(309), '9'.repeat(20), 'soon', 'Tuesday, 25-Oct-50 13:00:00 GMT', 'Sat, 31 Feb 2026 13:00:00 GMT'];
+    for (const status of [403, 429]) {
+      for (const header of headers) {
+        const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('no', { status, headers: header === null ? {} : { 'Retry-After': header } })), clock: fakeClock(), store: memoryStore(), gapMs: 0, userAgent: 'test' });
+        const { run, writes } = recorder((url) => fetcher.get(url));
+        const result = await runCatalogue(run).catch((e: unknown) => e);
+        expect([result instanceof BlockedError, fetcher.requests, writes.length], `HTTP ${String(status)}, Retry-After ${String(header).slice(0, 40)}`).toEqual([true, 1, 0]);
+      }
+    }
   });
 
   it('writes nothing, and lists the problem, when a record names another gallery', async () => {

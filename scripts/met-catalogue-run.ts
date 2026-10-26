@@ -38,21 +38,56 @@ export class BlockedError extends Error {
 export const BLOCK_WAIT_MS = 10 * 60 * 1000;
 
 const DAY = '(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)';
-const MONTH = '(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)';
-const TIME = '\\d{2}:\\d{2}:\\d{2}';
-/** RFC 9110 §5.6.7's three HTTP-date forms: IMF-fixdate, the obsolete RFC 850 date and asctime's (which names no zone, as its time is GMT). */
-const HTTP_DATE = new RegExp(`^(?:${DAY}, \\d{2} ${MONTH} \\d{4} ${TIME} GMT|${DAY}[a-z]{0,6}, \\d{2}-${MONTH}-\\d{2} ${TIME} GMT|${DAY} ${MONTH} [ \\d]\\d ${TIME} \\d{4})$`);
+const WEEKDAY = '(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)';
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+const MONTH = `(${MONTHS.join('|')})`;
+const TIME = '(\\d{2}):(\\d{2}):(\\d{2})';
+/** RFC 9110 §5.6.7's three HTTP-date forms, all in GMT: IMF-fixdate, the obsolete RFC 850 date (a two-digit year) and asctime's (no zone named). */
+const IMF_FIXDATE = new RegExp(`^${DAY}, (\\d{2}) ${MONTH} (\\d{4}) ${TIME} GMT$`);
+const RFC850_DATE = new RegExp(`^${WEEKDAY}, (\\d{2})-${MONTH}-(\\d{2}) ${TIME} GMT$`);
+const ASCTIME_DATE = new RegExp(`^${DAY} ${MONTH} ([ \\d]\\d) ${TIME} (\\d{4})$`);
+
+/** A day and time in GMT as ms since the epoch, or NaN for one that does not exist (31 Feb, 24:00, a year Date.UTC would read as 19xx). */
+function gmt(year: number, month: string | undefined, day: number, hours: number, minutes: number, seconds: number): number {
+  const m = MONTHS.findIndex((name) => name === month);
+  const time = Date.UTC(year, m, day, hours, minutes, seconds);
+  const d = new Date(time);
+  return m >= 0 && d.getUTCFullYear() === year && d.getUTCMonth() === m && d.getUTCDate() === day && hours < 24 && minutes < 60 && seconds < 60 ? time : Number.NaN;
+}
+
+/**
+ * The time an HTTP-date names (RFC 9110 §5.6.7), received at `at`, or NaN when `value` is none of its three forms or names no real time. An RFC 850
+ * date's two-digit year takes HTTP's rolling rule, not Date.parse's fixed cutoff: the latest year with those digits whose time is at most 50 years
+ * after `at`, so one that would be more than 50 years ahead is the most recent past year with those digits.
+ */
+export function httpDate(value: string, at: Date): number {
+  const imf = IMF_FIXDATE.exec(value);
+  if (imf !== null) return gmt(Number(imf[3]), imf[2], Number(imf[1]), Number(imf[4]), Number(imf[5]), Number(imf[6]));
+  const asc = ASCTIME_DATE.exec(value);
+  if (asc !== null) return gmt(Number(asc[6]), asc[1], Number(asc[2]), Number(asc[3]), Number(asc[4]), Number(asc[5]));
+  const rfc = RFC850_DATE.exec(value);
+  if (rfc === null) return Number.NaN;
+  const limit = new Date(at.getTime());
+  limit.setUTCFullYear(limit.getUTCFullYear() + 50);
+  const top = limit.getUTCFullYear();
+  const year = top - ((((top - Number(rfc[3])) % 100) + 100) % 100);
+  const time = (y: number): number => gmt(y, rfc[2], Number(rfc[1]), Number(rfc[4]), Number(rfc[5]), Number(rfc[6]));
+  return time(year) > limit.getTime() ? time(year - 100) : time(year);
+}
 
 /**
  * When a refused request may be retried, from its Retry-After header (RFC 9110 §10.2.3): delay-seconds, a run of digits, after `at`; or an
- * HTTP-date in any of its three forms, a past one meaning `at`. A missing or unreadable value gives BLOCK_WAIT_MS after `at`.
+ * HTTP-date in any of its three forms, a past one meaning `at`. A missing or unreadable value, or a time no Date holds (309 nines of seconds
+ * overflow to Infinity), gives BLOCK_WAIT_MS after `at`.
  */
 export function retryAt(header: string | null, at: Date): Date {
   const value = (header ?? '').trim();
-  if (/^\d+$/.test(value)) return new Date(at.getTime() + Number(value) * 1000);
-  const date = HTTP_DATE.test(value) ? Date.parse(value.endsWith(' GMT') ? value : `${value} GMT`) : Number.NaN;
-  return Number.isFinite(date) ? new Date(Math.max(date, at.getTime())) : new Date(at.getTime() + BLOCK_WAIT_MS);
+  const retry = new Date(/^\d+$/.test(value) ? at.getTime() + Number(value) * 1000 : Math.max(httpDate(value, at), at.getTime()));
+  return Number.isNaN(retry.getTime()) ? new Date(at.getTime() + BLOCK_WAIT_MS) : retry;
 }
+
+/** A Date as ISO text, or 'an unknown time' for an invalid one, so that a block's message can never throw before its BlockedError. */
+const isoOf = (date: Date): string => (Number.isNaN(date.getTime()) ? 'an unknown time' : date.toISOString());
 
 export interface FetcherOptions {
   readonly fetch: (url: string, init: { headers: Record<string, string> }) => Promise<Response>;
@@ -100,7 +135,7 @@ export class Fetcher {
       if (response.status === 403 || response.status === 429) {
         const retry = retryAt(response.headers.get('retry-after'), at);
         throw new BlockedError(
-          `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${at.toISOString()} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after ${retry.toISOString()} with npm run met-catalogue; the cache lets the rerun start where this one stopped.`,
+          `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${isoOf(at)} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after ${isoOf(retry)} with npm run met-catalogue; the cache lets the rerun start where this one stopped.`,
         );
       }
       if (response.status !== 200) throw new Error(`GET ${url} answered HTTP ${String(response.status)} at ${at.toISOString()}; check the object ID in src/model/collection/picks.ts.`);
