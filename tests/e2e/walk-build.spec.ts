@@ -37,6 +37,8 @@ async function builtTo(page: Page, steps: number): Promise<Walk & { eye: readonl
 const workspaceGround = (f: Facts): number => Math.min(0, f.bounds.min[1]) - 0.5;
 
 test.describe('walk mode while the build moves', () => {
+  // Each test takes 10 to 15 s here; the deadline covers a loaded machine, which slows the walks and builds without changing where they end.
+  test.setTimeout(60_000);
   let errors: { expectClean: () => void };
   test.beforeEach(({ page }) => {
     errors = watchErrors(page);
@@ -117,12 +119,14 @@ test.describe('walk mode while the build moves', () => {
     expect(tread, `the feet at ${feet.toFixed(3)} m, Z ${z.toFixed(2)}, on the tread of the row there (${stepRows().map((r) => `${r.y.toFixed(2)} at Z ${r.zIn.toFixed(2)}..${r.z.toFixed(2)}`).join('; ')})`).toBeDefined();
     expect(Math.abs(z - inside.eye[2]), 'lifted straight up').toBeLessThan(0.05);
     await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
+    // W is held until the eye stands over the landing (a position, not a time, so the walking speed and a loaded machine change only how long).
     await page.keyboard.down('KeyW');
-    await page.waitForTimeout(2500);
+    const climbed = await page.waitForFunction((y) => (window.__met?.walk.eye?.[1] ?? 0) > y, LANDING_Y + EYE - 0.05, { timeout: 15_000 }).then(() => true, () => false);
     await page.keyboard.up('KeyW');
     await page.waitForTimeout(400);
     const up = await walking(page);
-    expect(up.eye[1], 'walked on up the steps to the landing').toBeGreaterThan(LANDING_Y + EYE - 0.05);
+    expect(climbed, `walked on up the steps to the landing within 15 s; the eye at ${up.eye.join(', ')}`).toBe(true);
+    expect(up.eye[1], 'on the landing').toBeGreaterThan(LANDING_Y + EYE - 0.05);
     expect(up.onGround).toBe(true);
   });
 });

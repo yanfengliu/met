@@ -95,12 +95,13 @@ describe('walker in a box room', () => {
   it('slides along a wall it walks into at 45 degrees instead of stopping', () => {
     const { walker } = walkerOn(room);
     walker.place(3, 0, 0, facing(-Math.SQRT1_2, -Math.SQRT1_2));
-    hold(walker, 2.3, W);
+    // Long enough to walk 6.9 m: to the wall and some way along it.
+    hold(walker, 6.9 / MOTION.walk, W);
     const atWall = walker.feet.clone();
     expect(atWall.z).toBeLessThan(-4);
     hold(walker, 1, W);
-    // Along the wall at the level part of walking speed (3 × cos 45° = 2.1 m/s), held off it by the radius.
-    expect(atWall.x - walker.feet.x, 'metres slid along the wall in 1 s').toBeGreaterThan(1.8);
+    // Along the wall at the level part of walking speed (cos 45° of it), held off it by the radius.
+    expect(atWall.x - walker.feet.x, 'metres slid along the wall in 1 s').toBeGreaterThan(0.85 * MOTION.walk * Math.SQRT1_2);
     expect(walker.feet.z).toBeGreaterThan(-5 + BODY.radius - 0.01);
   });
 });
@@ -181,7 +182,7 @@ describe('walker on stairs, ledges and drops', () => {
     walker.place(0, 2, 2, facing(0, -1));
     expect(walker.feet.y).toBeCloseTo(2, 6);
     const seen = { pastEdge: Number.NaN, fallen: Number.NaN };
-    hold(walker, 3, W, 60, (elapsed) => {
+    hold(walker, 4, W, 60, (elapsed) => {
       if (Number.isNaN(seen.pastEdge) && walker.feet.z < -3 - 0.05) seen.pastEdge = elapsed;
       if (Number.isNaN(seen.fallen) && walker.feet.y < 2 - 0.3) seen.fallen = elapsed;
     });
@@ -283,7 +284,8 @@ describe('walker on slopes and turned walls', () => {
     });
     const { walker } = walkerOn([floor, wall]);
     walker.place(0, 0, 0, facing(0, -1));
-    hold(walker, 3, W);
+    // Long enough to walk 9 m: to the wall and on along it.
+    hold(walker, 9 / MOTION.walk, W);
     const gap = walker.feet.clone().sub(new Vector3(0, walker.feet.y, -3)).dot(normal);
     expect(gap, 'distance from the face').toBeGreaterThan(BODY.radius - 0.01);
     expect(gap).toBeLessThan(BODY.radius + 0.02);

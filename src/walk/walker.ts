@@ -14,9 +14,9 @@
  * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`, where a body stands when nothing is built under it.
  * After the world is built again, `settle` moves a body that new pieces bury or embed onto the lowest walkable surface over it where it stands clear.
  *
- * Time. Physics runs in fixed steps of 1/120 s, the remainder carried to the next frame, so a run is the same at any frame rate; the eye is
- * interpolated between the last two steps, and a snap up or down a stair is eased out over about 0.1 s for the eye only.
- * Bound: a step moves the body at most 6 m/s × 1/120 s = 5 cm sideways and 40 m/s × 1/120 s = 0.33 m down, less than the capsule's radius and
+ * Time. Physics runs in fixed steps of 1/120 s, the remainder carried to the next frame, so a run is the same at any frame rate; a snap up or down a
+ * stair is eased out over about 0.1 s for the eye only, and the eye is the eased eye of the last two steps, interpolated between them.
+ * Bound: a step moves the body at most 5 m/s × 1/120 s = 4 cm sideways and 40 m/s × 1/120 s = 0.33 m down, less than the capsule's radius and
  * the probe's reach, so it cannot pass a wall or a floor; geometry thinner than that is crossed only by a capsule pushed out the far side.
  */
 import { Line3, MathUtils, Vector3 } from 'three';
@@ -49,10 +49,13 @@ export function insideBetween(heights: readonly number[], low: number, high: num
 /** The body, in metres. */
 export const BODY = Object.freeze({ radius: 0.35, height: 1.75, eye: 1.6, step: 0.35, maxSlopeDeg: 40 });
 
-/** Motion, in metres and seconds. */
+/**
+ * Motion, in metres and seconds. Walking is 2 m/s, a brisk walk indoors: about 1.4 times a person's comfortable 1.4 m/s, because motion seen on a screen
+ * looks slower than the same walk in life; 3 m/s read as a jog. Running is 5 m/s, 2.5 times the walk, to cross the 300 m building in a minute (docs/design/spec.md, Walk mode).
+ */
 export const MOTION = Object.freeze({
-  walk: 3,
-  run: 6,
+  walk: 2,
+  run: 5,
   gravity: 9.81,
   jumpHeight: 0.45,
   maxFall: 40,
@@ -102,7 +105,9 @@ export class Walker {
   pitch = 0;
   private readonly before = new Vector3();
   private accumulator = 0;
+  /** The eye's offset from 1.6 m over the feet as it eases out of stair snaps: after the last fixed step, and after the one before it. */
   private ease = 0;
+  private easeBefore = 0;
   private jumpTimer = 0;
   private slide: { x: number; z: number; y: number } | null = null;
   private readonly segment = new Line3();
@@ -128,6 +133,7 @@ export class Walker {
     this.jumpTimer = 0;
     this.accumulator = 0;
     this.ease = 0;
+    this.easeBefore = 0;
     if (this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit)) {
       this.feet.y = this.hit.y;
       this.onGround = this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
@@ -167,6 +173,7 @@ export class Walker {
     this.jumpTimer = 0;
     this.accumulator = 0;
     this.ease = 0;
+    this.easeBefore = 0;
     this.before.copy(feet);
     return 'moved';
   }
@@ -205,10 +212,14 @@ export class Walker {
     if (steps === MAX_STEPS_PER_UPDATE) this.accumulator = 0;
   }
 
-  /** The eye: interpolated between the last two fixed steps and eased out of stair snaps. */
+  /**
+   * The eye: the eased eye of the last two fixed steps (the feet plus 1.6 m plus that step's ease), interpolated between them. Interpolating the
+   * eased heights keeps the eye continuous; adding the newest ease to a height still partly interpolated dropped it by about (1 − α) × the riser
+   * for one frame after each stair snap, 10 to 16 cm (work unit 2, M1; src/walk/stairs.test.ts).
+   */
   eye(out = new Vector3()): Vector3 {
     const alpha = MathUtils.clamp(this.accumulator / MOTION.fixedStep, 0, 1);
-    return out.lerpVectors(this.before, this.feet, alpha).setY(MathUtils.lerp(this.before.y, this.feet.y, alpha) + BODY.eye + this.ease);
+    return out.lerpVectors(this.before, this.feet, alpha).setY(MathUtils.lerp(this.before.y + this.easeBefore, this.feet.y + this.ease, alpha) + BODY.eye);
   }
 
   /** The unit look direction. */
@@ -221,6 +232,7 @@ export class Walker {
     const dt = MOTION.fixedStep;
     const { feet, velocity } = this;
     this.before.copy(feet);
+    this.easeBefore = this.ease;
     // What the keys ask for, in the plane, relative to where the body faces.
     let f = input.forward;
     let r = input.right;
