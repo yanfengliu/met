@@ -12,8 +12,8 @@ import { addBox } from './shapes.js';
 import { insideAny, subtract } from './wings.js';
 import type { Rect, Storey, Wing } from './wings.js';
 
-/** Interior masonry partitions on the map's room lines. E: the section cut reads them as solid. */
-const PARTITION = 0.45;
+/** Interior masonry partitions on the map's room lines, centred on them. E: the section cut reads them as solid. The collection hangs a relief on one (src/model/collection/spaces-b.ts). */
+export const PARTITION = 0.45;
 
 /** Lays one slab: the union of `rects` less `voids`, its top at `y`. */
 function slab(kit: Kit, material: Material, rects: readonly Rect[], voids: readonly Rect[], y: number, thickness: number, order: number): void {

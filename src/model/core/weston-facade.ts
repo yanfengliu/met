@@ -35,6 +35,8 @@ const GROUND_X = [-1.3, 1.3];
 const ARCH_SILL = 0.35;
 const PAVILION_WINDOW = { width: 5.0, sill: 0.5, spring: 2.6 } as const;
 const DOOR = { width: 2.6, height: 5.0 } as const;
+/** The 1888 entrance door into the Petrie Court: the plane of its frame (X), its middle (Z) and its width, for what must keep clear of it and its swing. */
+export const WESTON_DOOR = { x: B_SOUTH_X + 0.3, z: CENTRE_Z, width: DOOR.width } as const;
 
 function westonBay(): BufferGeometry {
   const holes: Hole[] = [

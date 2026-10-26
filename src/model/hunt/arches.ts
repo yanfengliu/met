@@ -43,7 +43,8 @@ const HALF = ARCH_INNER_SPAN / 2;
 const SCREEN_PILASTER = 0.85;
 const SCREEN_COLUMN_X = 1.2;
 const SCREEN_COLUMN_D = 0.6;
-const OPENINGS: readonly (readonly [number, number])[] = [
+/** The screen's three openings across each arch, X spans about the arch's centre; in the central arch they are the entrance's doors (src/model/collection/placement.test.ts keeps clear of their swing). */
+export const OPENINGS: readonly (readonly [number, number])[] = [
   [-HALF + SCREEN_PILASTER, -SCREEN_COLUMN_X - SCREEN_COLUMN_D / 2],
   [-SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2, SCREEN_COLUMN_X - SCREEN_COLUMN_D / 2],
   [SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2, HALF - SCREEN_PILASTER],

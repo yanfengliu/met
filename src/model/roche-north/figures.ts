@@ -1,6 +1,6 @@
 /**
- * Stand-ins for the court's sculpture (no artworks are modelled beyond landmark objects; AGENTS.md non-goals): turned figures with arms, one merged geometry each.
- * - `STATUE`: a draped standing figure 1 m tall, arms at its sides, for the marbles round the Engelhard Court and the bronze fountain figures.
+ * The Engelhard Court's landmark figure, a turned figure with arms in one merged geometry; the court's other sculpture is the collection's placeholders
+ * (src/model/collection/spaces-a.ts).
  * - `DIANA`: Saint-Gaudens' Diana (1892–93), 1 m tall: a slender figure on one foot on a ball, drawing a bow held out to her left (local −X).
  * Origin at the base centre, front +Z. Scale through the piece's matrix (Diana stands 101¾ in, 2.58 m: Met API object 11998).
  */
@@ -27,36 +27,6 @@ function limb(builder: MeshBuilder, a: readonly [number, number, number], b: rea
   else if (cos < 0) m.makeRotationX(Math.PI);
   builder.append(geometry, new Matrix4().makeTranslation(a[0], a[1], a[2]).multiply(m));
 }
-
-export const STATUE: BufferGeometry = (() => {
-  const b = new MeshBuilder();
-  b.append(
-    lathe(
-      {
-        closed: false,
-        points: [
-          [0, 0],
-          [0.14, 0],
-          [0.14, 0.04],
-          [0.12, 0.06],
-          [0.115, 0.3],
-          [0.1, 0.48],
-          [0.085, 0.58],
-          [0.11, 0.72],
-          [0.125, 0.77],
-          [0.05, 0.81],
-          [0.055, 0.84],
-          [0.068, 0.9],
-          [0.058, 0.96],
-          [0, 0.99],
-        ],
-      },
-      { segments: 10 },
-    ),
-  );
-  for (const s of [-1, 1]) limb(b, [s * 0.13, 0.76, 0], [s * 0.15, 0.5, 0.03], 0.035, 0.028);
-  return b.build();
-})();
 
 export const DIANA: BufferGeometry = (() => {
   const b = new MeshBuilder();

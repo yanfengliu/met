@@ -14,7 +14,6 @@ import type { Kit, StepDef } from '../../build/types.js';
 import { column, hippedSkylight, lathe, MeshBuilder, moulding, ProfilePen } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { END_ROOF_Y, LEVEL_1, LEVEL_2_FRONT, SLAB, SOUTH_HIP_RISE } from './dims.js';
-import { extrudeOutline } from './facade-parts.js';
 import { mmwMaterials } from './materials.js';
 import { merged } from './merge.js';
 import { addBox, placed } from './shapes.js';
@@ -124,47 +123,11 @@ function basin(): { readonly stone: BufferGeometry; readonly water: BufferGeomet
   return basinCache;
 }
 
-let pedestalStatue: BufferGeometry | null = null;
-
-/** A white marble figure, standing: a simple draped column of stone 1.9 m tall with a head. Origin at its base. */
-function statue(): BufferGeometry {
-  if (pedestalStatue !== null) return pedestalStatue;
-  const b = new MeshBuilder();
-  const outline: [number, number][] = [
-    [-0.24, 0],
-    [0.24, 0],
-    [0.22, 0.9],
-    [0.26, 1.4],
-    [0.17, 1.62],
-    [0.1, 1.68],
-    [0.12, 1.86],
-    [0, 1.92],
-    [-0.12, 1.86],
-    [-0.1, 1.68],
-    [-0.17, 1.62],
-    [-0.26, 1.4],
-    [-0.22, 0.9],
-  ];
-  extrudeOutline(b, outline, 0.32);
-  pedestalStatue = b.build();
-  return pedestalStatue;
-}
-
-/** The basin at the centre, and marble figures on dark pedestals round the peristyle (P6). */
+/** The basin at the centre of the peristyle (P6). The court's sculpture is the collection's, set in 2007 (src/model/collection/spaces-a.ts). */
 function buildFountain(kit: Kit): void {
   const bowl = basin();
   kit.add(bowl.stone, mmwMaterials.marbleWhite, placed(BASIN.x, LEVEL_1, BASIN.z), 0);
   kit.add(bowl.water, palette.water, placed(BASIN.x, LEVEL_1, BASIN.z), 0);
-  const figure = statue();
-  const spots = [
-    [-129.1, -22.4], [-124.2, -22.4], [-114.4, -22.4], [-109.5, -22.4],
-    [-129.1, -12.8], [-124.2, -12.8], [-114.4, -12.8], [-109.5, -12.8],
-    [-136.0, -28.5], [-102.6, -28.5], [-136.0, -6.0], [-102.6, -6.0],
-  ] as const;
-  spots.forEach(([x, z], i) => {
-    addBox(kit, mmwMaterials.pedestalGrey, x - 0.45, LEVEL_1, z - 0.45, x + 0.45, LEVEL_1 + 1.15, z + 0.45, 1 + i);
-    kit.add(figure, mmwMaterials.marbleWhite, placed(x, LEVEL_1 + 1.15, z, (i * Math.PI) / 3), 1 + i);
-  });
 }
 
 let gridCache: BufferGeometry | null = null;
@@ -271,8 +234,8 @@ export const romanCourtSteps: readonly StepDef[] = [
     id: 'greek-court-fountain',
     chapter: 'mckim-mead-white-1926',
     year: '1926',
-    title: 'Set the basin and the marbles',
-    detail: 'A round marble basin at the centre of the peristyle and marble figures on dark pedestals in the porticoes.',
+    title: 'Set the round basin in the peristyle',
+    detail: 'A round marble basin on a low step at the centre of the peristyle, its water a hand under the rim.',
     motion: { kind: 'pop' },
     stagger: 'order',
     focus: VIEW,
