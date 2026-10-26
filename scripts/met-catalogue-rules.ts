@@ -74,6 +74,10 @@ type Partial3 = Partial<Record<Axis, number>>;
 const PROPER = /\bwithout (?:a |its )?(?:frame|base|pedestal|mount|stand|plinth)\b/i;
 /** An element that measures something other than the object itself: a frame, pedestal, base, mount, stand, case, foot or display. */
 const NOT_THE_OBJECT = /\b(?:frame|framed|pedestal|base|mount|stand|case|foot|plinth|display)\b/i;
+/** An element the record marks as replaced ("historic dimensions, superceded"): never used, for the object or for any axis. */
+const SUPERSEDED = /\bsupersed|\bsuperced|\bhistoric dimensions?\b/i;
+/** An element whose measurement the record marks as checked ("Overall (confirmed)"): preferred to one that is not. */
+const CONFIRMED = /\bconfirmed\b/i;
 const SPATIAL = ['Height', 'Width', 'Depth', 'Length', 'Diameter'] as const;
 
 const cmToM = (cm: number): number => Math.round(cm * 10) / 1000;
@@ -97,15 +101,17 @@ function axesOf(e: MetMeasurement): Partial3 {
 }
 
 /**
- * The element that measures the object (docs/research/collection.md, Measurements). Of the elements with a spatial measurement, those that name a frame,
- * pedestal, base, mount, stand, case, foot or display are left out, unless they measure the object without one ("without base"). Of those left, the
- * first that holds of: 'Overall' with no description; one without its frame or base; 'Overall' with a description; one whose description says
- * overall; the first. Axes it lacks are taken from the others left, in order (records that give height and width as separate 'Other' elements).
+ * The element that measures the object (docs/research/collection.md, Measurements). Of the elements with a spatial measurement, those the record marks
+ * as superseded are left out, and so are those that name a frame, pedestal, base, mount, stand, case, foot or display, unless they measure the object
+ * without one ("without base"). Of those left, the first that holds of: 'Overall' with no description; one marked confirmed; one without its frame
+ * or base; 'Overall' with a description; one whose description says overall; the first. Axes it lacks are taken from the others left, in order
+ * (records that give height and width as separate 'Other' elements), so a superseded element never fills one.
  */
 export function objectElement(measurements: readonly MetMeasurement[] | null): { readonly element: string; readonly axes: Partial3 } | null {
-  const candidates = (measurements ?? []).filter((e) => spatial(e) && (PROPER.test(label(e)) || !NOT_THE_OBJECT.test(label(e))));
+  const candidates = (measurements ?? []).filter((e) => spatial(e) && !SUPERSEDED.test(label(e)) && (PROPER.test(label(e)) || !NOT_THE_OBJECT.test(label(e))));
   const chosen =
     candidates.find((e) => e.elementName === 'Overall' && e.elementDescription === null) ??
+    candidates.find((e) => CONFIRMED.test(e.elementDescription ?? '')) ??
     candidates.find((e) => PROPER.test(label(e))) ??
     candidates.find((e) => e.elementName === 'Overall') ??
     candidates.find((e) => /overall/i.test(e.elementDescription ?? '')) ??
@@ -122,7 +128,7 @@ export function objectElement(measurements: readonly MetMeasurement[] | null): {
 
 /** An element whose name matches `pattern` and gives all three axes (a pedestal), or height and width (a frame). */
 function namedElement(measurements: readonly MetMeasurement[] | null, pattern: RegExp): Partial3 | null {
-  const e = (measurements ?? []).find((m) => pattern.test(label(m)) && !PROPER.test(label(m)) && spatial(m));
+  const e = (measurements ?? []).find((m) => pattern.test(label(m)) && !PROPER.test(label(m)) && !SUPERSEDED.test(label(m)) && spatial(m));
   return e === undefined ? null : axesOf(e);
 }
 
@@ -178,16 +184,21 @@ const MAX_M = 25;
 /** The object's size by the rules of docs/research/collection.md (Measurements); throws, naming the object, when no height can be found or a value is implausible. */
 export function sizeOf(record: MetRecord, kind: ArtKind, pick: Pick): SizeResult {
   const from = objectElement(record.measurements);
-  let axes: Partial3 = { ...(from?.axes ?? {}) };
+  const axes: Partial3 = { ...(from?.axes ?? {}) };
   const sources: Partial<Record<Axis, SizeSource>> = {};
   for (const axis of ['h', 'w', 'd'] as const) if (axes[axis] !== undefined) sources[axis] = 'measurements';
   let element = from?.element ?? 'none';
   if (axes.h === undefined) {
+    // The text fills only the axes the measurements lack, and each axis keeps the mark of where it came from.
     const text = dimensionsFromText(record.dimensions);
     if (text.h !== undefined) {
-      axes = text;
-      for (const axis of ['h', 'w', 'd'] as const) if (axes[axis] !== undefined) sources[axis] = 'dimensions';
-      element = 'dimensions text';
+      for (const axis of ['h', 'w', 'd'] as const) {
+        const value = text[axis];
+        if (axes[axis] !== undefined || value === undefined) continue;
+        axes[axis] = value;
+        sources[axis] = 'dimensions';
+      }
+      element = from === null ? 'dimensions text' : `${from.element}, dimensions text`;
     }
   }
   for (const axis of ['h', 'w', 'd'] as const) {

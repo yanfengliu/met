@@ -37,6 +37,23 @@ export class BlockedError extends Error {
 /** How long to wait before retrying after a block when the response says nothing: the survey of 2026-10-25 saw a 403 block clear within 8 minutes. */
 export const BLOCK_WAIT_MS = 10 * 60 * 1000;
 
+const DAY = '(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)';
+const MONTH = '(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)';
+const TIME = '\\d{2}:\\d{2}:\\d{2}';
+/** RFC 9110 §5.6.7's three HTTP-date forms: IMF-fixdate, the obsolete RFC 850 date and asctime's (which names no zone, as its time is GMT). */
+const HTTP_DATE = new RegExp(`^(?:${DAY}, \\d{2} ${MONTH} \\d{4} ${TIME} GMT|${DAY}[a-z]{0,6}, \\d{2}-${MONTH}-\\d{2} ${TIME} GMT|${DAY} ${MONTH} [ \\d]\\d ${TIME} \\d{4})$`);
+
+/**
+ * When a refused request may be retried, from its Retry-After header (RFC 9110 §10.2.3): delay-seconds, a run of digits, after `at`; or an
+ * HTTP-date in any of its three forms, a past one meaning `at`. A missing or unreadable value gives BLOCK_WAIT_MS after `at`.
+ */
+export function retryAt(header: string | null, at: Date): Date {
+  const value = (header ?? '').trim();
+  if (/^\d+$/.test(value)) return new Date(at.getTime() + Number(value) * 1000);
+  const date = HTTP_DATE.test(value) ? Date.parse(value.endsWith(' GMT') ? value : `${value} GMT`) : Number.NaN;
+  return Number.isFinite(date) ? new Date(Math.max(date, at.getTime())) : new Date(at.getTime() + BLOCK_WAIT_MS);
+}
+
 export interface FetcherOptions {
   readonly fetch: (url: string, init: { headers: Record<string, string> }) => Promise<Response>;
   readonly clock: Clock;
@@ -48,7 +65,7 @@ export interface FetcherOptions {
 
 /**
  * Gets a URL through the cache: a cached 200 makes no request; otherwise it waits until `gapMs` after the last request, fetches, and caches a 200.
- * A 403 or 429 throws BlockedError, with the time to retry (the response's Retry-After, else BLOCK_WAIT_MS); another status throws an error naming
+ * A 403 or 429 throws BlockedError, with the time to retry (`retryAt`: the response's Retry-After, else BLOCK_WAIT_MS); another status throws an error naming
  * it; a network failure is retried twice, each retry also waiting its turn.
  */
 export class Fetcher {
@@ -81,8 +98,7 @@ export class Fetcher {
       }
       const at = new Date(this.options.clock.now());
       if (response.status === 403 || response.status === 429) {
-        const after = Number(response.headers.get('retry-after'));
-        const retry = new Date(at.getTime() + (Number.isFinite(after) && after > 0 ? after * 1000 : BLOCK_WAIT_MS));
+        const retry = retryAt(response.headers.get('retry-after'), at);
         throw new BlockedError(
           `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${at.toISOString()} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after ${retry.toISOString()} with npm run met-catalogue; the cache lets the rerun start where this one stopped.`,
         );

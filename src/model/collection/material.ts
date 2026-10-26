@@ -2,7 +2,8 @@
  * Materials of the collection (docs/design/spec.md, Collection). Every artwork of a step shares one material, so its pieces batch by form whatever their
  * colours: the material's vertex shader finds which artwork an instance is by the instance's plan position (the translation of its matrix, which no
  * motion this module's steps use moves in X or Z) in a small table of the step's artworks, and takes that artwork's colour, roughness and metalness, and
- * for a painting's canvas its 8 × 8 colour grid on the front face. The table is a float DataTexture read with texelFetch; the timeline's own instance
+ * for a painting's canvas its 8 × 8 colour grid on the front face, blended bilinearly between cell centres (four texelFetch reads, so no float
+ * filtering is needed and no other row bleeds in). The table is a float DataTexture read with texelFetch; the timeline's own instance
  * colour (the arrival tint) still multiplies it. Colours are the catalogue's sRGB values, converted to linear for the table.
  * Rows: 0 holds each artwork's plan position (x, z); 1 its linear colour; 2 its roughness, metalness and the first row of its grid (−1 for none);
  * from row 3, 8 rows of 8 cells per painting, top row first.
@@ -10,6 +11,7 @@
  * 5 cm or more); the shadow, cap and pick passes do not read the table, and need no colour.
  */
 import { Color, DataTexture, FloatType, MeshStandardMaterial, NearestFilter, RGBAFormat } from 'three';
+import type { Material } from 'three';
 
 /** One artwork as its material draws it. */
 export interface ArtSurface {
@@ -109,12 +111,23 @@ varying vec3 vArtLocal;
 const FRAGMENT_COLOUR = /* glsl */ `
   vec3 artColour = vArtColour;
   if (vArtGrid >= 0 && vArtLocal.z > 0.499) {
-    int artCol = clamp(int(floor((vArtLocal.x + 0.5) * 8.0)), 0, 7);
-    int artRow = 7 - clamp(int(floor(vArtLocal.y * 8.0)), 0, 7);
-    artColour = texelFetch(artTable, ivec2(artCol, vArtGrid + artRow), 0).rgb;
+    // The canvas's grid, bilinear between cell centres (rows from the top), held flat beyond the outer centres.
+    vec2 artCell = vec2((vArtLocal.x + 0.5) * 8.0, (1.0 - vArtLocal.y) * 8.0) - 0.5;
+    vec2 artFloor = floor(artCell);
+    vec2 artMix = artCell - artFloor;
+    ivec2 artLo = clamp(ivec2(artFloor), ivec2(0), ivec2(7));
+    ivec2 artHi = clamp(ivec2(artFloor) + 1, ivec2(0), ivec2(7));
+    vec3 artTop = mix(texelFetch(artTable, ivec2(artLo.x, vArtGrid + artLo.y), 0).rgb, texelFetch(artTable, ivec2(artHi.x, vArtGrid + artLo.y), 0).rgb, artMix.x);
+    vec3 artBottom = mix(texelFetch(artTable, ivec2(artLo.x, vArtGrid + artHi.y), 0).rgb, texelFetch(artTable, ivec2(artHi.x, vArtGrid + artHi.y), 0).rgb, artMix.x);
+    artColour = mix(artTop, artBottom, artMix.y);
   }
   diffuseColor.rgb *= artColour;
 `;
+
+const TABLES = new WeakMap<Material, DataTexture>();
+
+/** The table an artwork material reads (`artMaterial`), for tests that check which artwork each drawn instance finds; undefined for any other material. */
+export const artTableOf = (material: Material): DataTexture | undefined => TABLES.get(material);
 
 /**
  * The material of one step's artworks: white, its colour, roughness and metalness taken per instance from the table (see the header). All such materials
@@ -123,6 +136,7 @@ const FRAGMENT_COLOUR = /* glsl */ `
 export function artMaterial(name: string, surfaces: readonly ArtSurface[]): MeshStandardMaterial {
   const material = new MeshStandardMaterial({ name, color: new Color(1, 1, 1), roughness: 0.6, metalness: 0 });
   const table = artTable(surfaces);
+  TABLES.set(material, table);
   material.onBeforeCompile = (shader) => {
     shader.uniforms['artTable'] = { value: table };
     shader.uniforms['artCount'] = { value: surfaces.length };

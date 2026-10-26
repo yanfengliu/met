@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import type { Pick, SpacePicks } from '../src/model/collection/types.js';
 import * as rules from './met-catalogue-rules.js';
 import type { Bins, MetRecord } from './met-catalogue-rules.js';
-import { BLOCK_WAIT_MS, BlockedError, Fetcher, formatCatalogue, runCatalogue } from './met-catalogue-run.js';
+import { BLOCK_WAIT_MS, BlockedError, Fetcher, formatCatalogue, retryAt, runCatalogue } from './met-catalogue-run.js';
 import type { Cached, Store } from './met-catalogue-run.js';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'met-api');
@@ -97,6 +97,39 @@ describe('catalogue entries from committed records', () => {
     expect([e.kind, e.display, e.element]).toEqual(['slab', 'vitrine', 'Other (Width)']);
     expect(e.size).toEqual({ h: 0.165, w: 0.47, d: 0.02 });
     expect(e.sizeFrom).toEqual({ h: 'measurements', w: 'measurements', d: 'estimate' });
+  });
+
+  it('leaves out measurements the record marks as superseded and prefers the confirmed ones', () => {
+    // First 'Overall (historic dimensions, superceded)' 120 × 125 cm, then 'Overall (confirmed)' 100.3302 × 125.730255 × 14.605029 cm.
+    const relief = entry(231004, ['548']);
+    expect([relief.kind, relief.display, relief.element]).toEqual(['slab', 'wall', 'Overall (confirmed)']);
+    expect(relief.size).toEqual({ h: 1.003, w: 1.257, d: 0.146 });
+    expect(relief.sizeFrom).toEqual({ h: 'measurements', w: 'measurements', d: 'measurements' });
+    // Historic height 180.3 and diameter 135.89027 cm; confirmed 179.38786 and 132.71527 cm; the base gives only a weight.
+    const vase = entry(204619, ['548']);
+    expect([vase.kind, vase.element]).toEqual(['vessel', 'Overall (confirmed, wt. includes strapping and accessories for rigging)']);
+    expect(vase.size).toEqual({ h: 1.794, w: 1.327, d: 1.327 });
+    // Nor does a superseded element fill an axis: beside a confirmed height alone, width and depth are a slab's estimates (0.8 and 0.12 of 1.003 m).
+    const historic = { elementName: 'Overall', elementDescription: 'historic dimensions, superceded', elementMeasurements: { Height: 120, Width: 125, Depth: 10 } };
+    const heightOnly = { ...record(231004), measurements: [historic, { elementName: 'Overall', elementDescription: 'confirmed', elementMeasurements: { Height: 100.3302 } }] };
+    const e = rules.catalogueEntry({ record: heightOnly, pick: { id: 231004 }, space: space(['548']), fetched: '2026-10-25', sha256: '00' });
+    expect([e.size, e.sizeFrom]).toEqual([{ h: 1.003, w: 0.802, d: 0.12 }, { h: 'measurements', w: 'estimate', d: 'estimate' }]);
+    // Of two current 'Overall' elements, the confirmed one, though it comes second.
+    const approximate = { elementName: 'Overall', elementDescription: 'approximate', elementMeasurements: { Height: 110, Width: 120 } };
+    const two = { ...record(231004), measurements: [approximate, ...(record(231004).measurements ?? [])] };
+    const confirmed = rules.catalogueEntry({ record: two, pick: { id: 231004 }, space: space(['548']), fetched: '2026-10-25', sha256: '00' });
+    expect([confirmed.element, confirmed.size]).toEqual(['Overall (confirmed)', { h: 1.003, w: 1.257, d: 0.146 }]);
+  });
+
+  it('fills from the dimensions text only the axes the measurements lack, each marked with where it came from', () => {
+    // A measured width of 47 cm and no height: the height from the text ('H. as mounted 69 ½ in. (176.5 cm)'), the depth a figure's estimate (0.3 h).
+    const width = [{ elementName: 'Other', elementDescription: 'Width', elementMeasurements: { Width: 47 } }];
+    const make = (dimensions: string) => rules.catalogueEntry({ record: { ...record(22973), measurements: width, dimensions }, pick: { id: 22973 }, space: space(['371']), fetched: '2026-10-25', sha256: '00' });
+    const mixed = make(record(22973).dimensions);
+    expect([mixed.size, mixed.sizeFrom, mixed.element]).toEqual([{ h: 1.765, w: 0.47, d: 0.53 }, { h: 'dimensions', w: 'measurements', d: 'estimate' }, 'Other (Width), dimensions text']);
+    // Where both give an axis the measurement stands; the text gives the rest.
+    const both = make('H. 69 1/2 in. (176.5 cm); W. 30 in. (76.2 cm); D. 20 in. (50.8 cm)');
+    expect([both.size, both.sizeFrom]).toEqual([{ h: 1.765, w: 0.47, d: 0.508 }, { h: 'dimensions', w: 'measurements', d: 'dimensions' }]);
   });
 
   it('never samples a record that is not public domain: the colour falls back by medium', () => {
@@ -207,6 +240,22 @@ describe('fetcher', () => {
     expect((slow as Error).message).toContain(`HTTP 429 at ${new Date(clock.now()).toISOString()} (https://example.test/three): too many requests`);
     expect((slow as Error).message).toContain(`Retry after ${new Date(clock.now() + 120_000).toISOString()}`);
     expect([...store.map.keys()]).toEqual(['https://example.test/ok']);
+  });
+
+  it('reads Retry-After as delay-seconds or as an HTTP-date in any of its three forms (RFC 9110 §10.2.3)', async () => {
+    const at = new Date('2026-10-25T12:00:00.000Z');
+    const iso = (header: string | null): string => retryAt(header, at).toISOString();
+    expect([iso('120'), iso(' 0 ')]).toEqual(['2026-10-25T12:02:00.000Z', '2026-10-25T12:00:00.000Z']);
+    expect([iso('Sun, 25 Oct 2026 13:00:00 GMT'), iso('Sunday, 25-Oct-26 13:00:00 GMT'), iso('Sun Oct 25 13:00:00 2026')]).toEqual(Array(3).fill('2026-10-25T13:00:00.000Z'));
+    // A date already past means now; anything else, the default wait (V8's Date.parse would take '-5' for 1 May 2001).
+    expect(iso('Sun, 25 Oct 2026 11:00:00 GMT')).toBe('2026-10-25T12:00:00.000Z');
+    for (const bad of [null, '', 'soon', '-5', '1.5', '12 s', 'Sun, 25 Oct 2026 13:00:00']) expect(iso(bad)).toBe('2026-10-25T12:10:00.000Z');
+    // Through the fetcher: a 429 that gives a date an hour on.
+    const clock = fakeClock();
+    const hour = new Date(clock.now() + 3_600_000);
+    const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('slow', { status: 429, headers: { 'Retry-After': hour.toUTCString() } })), clock, store: memoryStore(), gapMs: 0, userAgent: 'test' });
+    const slow = await fetcher.get('https://example.test/date').catch((e: unknown) => e);
+    expect((slow as Error).message).toContain(`Retry after ${hour.toISOString()}`);
   });
 
   it('names any other status', async () => {
