@@ -3,7 +3,8 @@
  * Bound: the synthetic fixture crosses all 5 motions with all 8 staggers; the determinism check also runs on whatever src/build/sequence.ts exports.
  * Snapshots compare raw float32 bytes of every instance matrix and colour, plus counts, mesh visibility and light intensities; a fresh evaluation is a new Timeline evaluated once.
  * Landed pieces are also checked against the kit itself, not another evaluation: at t = N (fixture and real sequence) and after random histories, each mesh
- * holds exactly the float32 matrices `kit.add` was given with its geometry and material, recorded by wrapping each step's build.
+ * holds exactly the float32 matrices `kit.add` (or `kit.addTagged`) was given with its geometry and material, and a door's piece with its door, recorded
+ * by wrapping each step's build.
  */
 import { BoxGeometry, Matrix4, MeshStandardMaterial, PointLight } from 'three';
 import type { BufferGeometry, Material } from 'three';
@@ -26,9 +27,11 @@ interface Added {
   readonly geometry: BufferGeometry;
   readonly material: Material;
   readonly matrix: Matrix4;
+  /** The door the piece is part of, or '' for any other piece: a door's pieces batch only with its own (src/build/batch.ts). */
+  readonly door: string;
 }
 
-/** `steps` with each build wrapped to record what it hands `kit.add`, so the pieces are the very ones the timeline built from. */
+/** `steps` with each build wrapped to record what it hands `kit.add` and `kit.addTagged`, so the pieces are the very ones the timeline built from. */
 function recording(steps: readonly StepDef[]): { readonly steps: StepDef[]; readonly added: Added[][] } {
   const added: Added[][] = steps.map(() => []);
   const wrapped = steps.map((step, i): StepDef => ({
@@ -36,8 +39,12 @@ function recording(steps: readonly StepDef[]): { readonly steps: StepDef[]; read
     build(kit) {
       step.build({
         add(geometry, material, matrix, order) {
-          added[i]?.push({ geometry, material, matrix: matrix.clone() });
+          added[i]?.push({ geometry, material, matrix: matrix.clone(), door: '' });
           kit.add(geometry, material, matrix, order);
+        },
+        addTagged(geometry, material, matrix, tag, order) {
+          added[i]?.push({ geometry, material, matrix: matrix.clone(), door: tag.kind === 'door' ? tag.id : '' });
+          kit.addTagged(geometry, material, matrix, tag, order);
         },
         light(light) {
           kit.light(light);
@@ -64,15 +71,18 @@ function landedMismatches(added: readonly (readonly Added[])[], timeline: Timeli
       continue;
     }
     const step = built.def;
-    const groups = new Map<BufferGeometry, Map<Material, string[]>>();
+    const groups = new Map<BufferGeometry, Map<Material, Map<string, string[]>>>();
     for (const p of pieces) {
-      const byMaterial = groups.get(p.geometry) ?? new Map<Material, string[]>();
+      const byMaterial = groups.get(p.geometry) ?? new Map<Material, Map<string, string[]>>();
       groups.set(p.geometry, byMaterial);
-      byMaterial.set(p.material, [...(byMaterial.get(p.material) ?? []), key(p.matrix.elements)]);
+      const byDoor = byMaterial.get(p.material) ?? new Map<string, string[]>();
+      byMaterial.set(p.material, byDoor);
+      byDoor.set(p.door, [...(byDoor.get(p.door) ?? []), key(p.matrix.elements)]);
     }
     let matched = 0;
     for (const mesh of built.meshes) {
-      const expected = Array.isArray(mesh.material) ? undefined : groups.get(mesh.geometry)?.get(mesh.material);
+      const tag = timeline.tagOf(mesh, 0);
+      const expected = Array.isArray(mesh.material) ? undefined : groups.get(mesh.geometry)?.get(mesh.material)?.get(tag?.kind === 'door' ? tag.id : '');
       if (expected === undefined) {
         problems.push(`${step.id}: mesh ${mesh.name} has no kit.add pieces of its geometry and material`);
         continue;
@@ -84,7 +94,7 @@ function landedMismatches(added: readonly (readonly Added[])[], timeline: Timeli
       const wrong = actual.filter((a, j) => a !== wanted[j]).length + Math.abs(actual.length - wanted.length);
       if (wrong > 0) problems.push(`${step.id}: mesh ${mesh.name} holds ${String(wrong)} instance matrices other than its kit.add matrices`);
     }
-    const pairs = [...groups.values()].reduce((n, m) => n + m.size, 0);
+    const pairs = [...groups.values()].reduce((n, m) => n + [...m.values()].reduce((d, doors) => d + doors.size, 0), 0);
     if (matched !== pairs) problems.push(`${step.id}: ${String(pairs)} geometry and material pairs but ${String(matched)} meshes for them`);
   }
   return problems;

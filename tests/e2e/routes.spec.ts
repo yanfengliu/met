@@ -30,7 +30,7 @@ import { ROMAN_COURT } from '../../src/model/mmw/wings.js';
 import { DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../../src/model/roche-north/plan.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { BODY, MOTION } from '../../src/walk/walker.js';
-import { open, openMenu, press, throttle, throttleRate, watchErrors } from './helpers.js';
+import { expectWalkingBudget, open, openMenu, press, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
 
 type XZ = readonly [number, number];
 /** A level unit direction along an axis, as [x, z]. */
@@ -458,6 +458,8 @@ test.describe('walk routes through real input', () => {
     expect(end.onGround, report).toBe(true);
     expect(end.eye[0] > SACKLER_BLOCK.minX && end.eye[2] < SACKLER_BLOCK.maxZ, `${report}: inside the Sackler Wing`).toBe(true);
     expect(end.eye[0] - PLATFORM.maxX < 4 && end.eye[2] < PLATFORM.maxZ, `${report}: beside the platform`).toBe(true);
+    // The frame budget walking on along the walkway with the look target on, in the glazed hall round the temple (unthrottled only: it is this machine's).
+    if (throttleRate() === 1) expectWalkingBudget(await walkingBudget(page), 'in the Temple of Dendur hall');
   });
 
   test('R4: from the Great Hall past the desk through the Greek galleries into the Leon Levy and Shelby White Court', async ({ page }) => {
@@ -481,5 +483,7 @@ test.describe('walk routes through real input', () => {
     expect(end.eye[0] > x0 && end.eye[0] < x1 && end.eye[2] > z0 && end.eye[2] < z1, `${report}: inside the court`).toBe(true);
     expect(Math.abs(end.eye[1] - (ROUTE_R4.endY + EYE)), `${report}: on the court's floor`).toBeLessThan(0.03);
     expect(end.onGround, report).toBe(true);
+    // The frame budget walking on into the court with the look target on (unthrottled only: it is this machine's).
+    if (throttleRate() === 1) expectWalkingBudget(await walkingBudget(page), 'in the Leon Levy and Shelby White Court');
   });
 });

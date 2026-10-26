@@ -47,6 +47,15 @@ export type CameraFocus =
   | { readonly kind: 'preset'; readonly id: string };
 
 /**
+ * What a tagged piece is part of, for the page to find it by (docs/design/spec.md, Build-step API: Piece tags): a door or an artwork, and its id,
+ * stable and unique within its kind (a door's own id; an artwork's Met object ID).
+ */
+export interface PieceTag {
+  readonly kind: 'door' | 'artwork';
+  readonly id: string;
+}
+
+/**
  * What a step's `build` receives.
  * Materials: a material whose `userData.castShadow === false`, or any `transparent` material, never casts shadows.
  * The engine adds the section-cut clipping plane to every material it receives, so builders never set `clippingPlanes` themselves.
@@ -54,6 +63,11 @@ export type CameraFocus =
 export interface Kit {
   /** One piece: a shared geometry, a shared material and its final world matrix. Pieces with equal `order` arrive together under the `order` stagger. */
   add(geometry: BufferGeometry, material: Material, matrix: Matrix4, order?: number): void;
+  /**
+   * One piece of a door or an artwork, as `add` but tagged: the timeline keeps the tag with the piece's instance (`Timeline.tagOf`), and the look
+   * target and the hit query report it. A door's pieces get meshes of their own, one door per mesh; an artwork's batch as untagged pieces do.
+   */
+  addTagged(geometry: BufferGeometry, material: Material, matrix: Matrix4, tag: PieceTag, order?: number): void;
   /** A light that switches on with the step (its intensity follows the step's progress); at most 8 in the whole sequence, never shadow-casting. */
   light(light: PointLight | SpotLight): void;
 }

@@ -1,11 +1,11 @@
 /**
  * The kit a step's `build` receives: it records pieces and lights and rejects malformed input with a message naming the step, the piece and the fix.
- * Bound: it checks each piece's own inputs (geometry with positions, a single material, a finite affine matrix, a finite order) and each light's type and shadow flag;
- * whole-sequence rules (the light cap, site bounds, budgets) are checked by the timeline and the sequence tests.
+ * Bound: it checks each piece's own inputs (geometry with positions, a single material, a finite affine matrix, a finite order, a tag's kind and id) and
+ * each light's type and shadow flag; whole-sequence rules (the light cap, site bounds, budgets) are checked by the timeline and the sequence tests.
  */
 import { BufferGeometry, Material, Matrix4, PointLight, SpotLight } from 'three';
 
-import type { Kit, StepDef } from './types.js';
+import type { Kit, PieceTag, StepDef } from './types.js';
 
 export interface CollectedPiece {
   readonly geometry: BufferGeometry;
@@ -13,6 +13,8 @@ export interface CollectedPiece {
   /** A copy of the final world matrix, so later changes by the builder do not move the piece. */
   readonly matrix: Matrix4;
   readonly order: number;
+  /** A frozen copy of the tag `kit.addTagged` was given, or null for `kit.add`. */
+  readonly tag: PieceTag | null;
 }
 
 export interface CollectedStep {
@@ -21,6 +23,7 @@ export interface CollectedStep {
 }
 
 const AFFINE_ROW_TOLERANCE = 1e-9;
+const TAG_KINDS: readonly PieceTag['kind'][] = ['door', 'artwork'];
 
 function fail(step: StepDef, what: string): never {
   throw new Error(`Step "${step.id}": ${what}`);
@@ -39,23 +42,38 @@ function checkMatrix(step: StepDef, index: number, matrix: unknown): Matrix4 {
   return matrix.clone();
 }
 
+/** A frozen copy of `tag`, or a failure naming what is wrong with it. */
+function checkTag(step: StepDef, index: number, tag: unknown): PieceTag {
+  if (typeof tag !== 'object' || tag === null) fail(step, `piece ${String(index)} has no tag; kit.addTagged takes { kind: 'door' | 'artwork', id }, and an untagged piece goes through kit.add.`);
+  const { kind, id } = tag as { kind?: unknown; id?: unknown };
+  if (!TAG_KINDS.includes(kind as PieceTag['kind'])) fail(step, `piece ${String(index)} has a tag of kind "${String(kind)}"; use 'door' or 'artwork'.`);
+  if (typeof id !== 'string' || id.length === 0) fail(step, `piece ${String(index)} has a ${String(kind)} tag with no id; give each ${String(kind)} a stable, non-empty id.`);
+  return Object.freeze({ kind: kind as PieceTag['kind'], id });
+}
+
 /** Runs `step.build` against a recording kit and returns what it added. Throws if the step adds no piece. */
 export function collectStep(step: StepDef): CollectedStep {
   const pieces: CollectedPiece[] = [];
   const lights: (PointLight | SpotLight)[] = [];
+  const piece = (geometry: BufferGeometry, material: Material, matrix: Matrix4, order: number | undefined, tag: PieceTag | null): void => {
+    const index = pieces.length;
+    if (!(geometry instanceof BufferGeometry) || !geometry.hasAttribute('position')) {
+      fail(step, `piece ${String(index)} has no BufferGeometry with a position attribute; pass a geometry from src/model/lib/ or THREE.`);
+    }
+    if (!(material instanceof Material)) {
+      fail(step, `piece ${String(index)} has no single THREE.Material; a piece of several materials is several add calls with the same order.`);
+    }
+    if (order !== undefined && !Number.isFinite(order)) {
+      fail(step, `piece ${String(index)} has a non-finite order (${String(order)}); pass a finite number or leave it out.`);
+    }
+    pieces.push({ geometry, material, matrix: checkMatrix(step, index, matrix), order: order ?? index, tag });
+  };
   const kit: Kit = {
     add(geometry: BufferGeometry, material: Material, matrix: Matrix4, order?: number): void {
-      const index = pieces.length;
-      if (!(geometry instanceof BufferGeometry) || !geometry.hasAttribute('position')) {
-        fail(step, `piece ${String(index)} has no BufferGeometry with a position attribute; pass a geometry from src/model/lib/ or THREE.`);
-      }
-      if (!(material instanceof Material)) {
-        fail(step, `piece ${String(index)} has no single THREE.Material; a piece of several materials is several add calls with the same order.`);
-      }
-      if (order !== undefined && !Number.isFinite(order)) {
-        fail(step, `piece ${String(index)} has a non-finite order (${String(order)}); pass a finite number or leave it out.`);
-      }
-      pieces.push({ geometry, material, matrix: checkMatrix(step, index, matrix), order: order ?? index });
+      piece(geometry, material, matrix, order, null);
+    },
+    addTagged(geometry: BufferGeometry, material: Material, matrix: Matrix4, tag: PieceTag, order?: number): void {
+      piece(geometry, material, matrix, order, checkTag(step, pieces.length, tag));
     },
     light(light: PointLight | SpotLight): void {
       if (!(light instanceof PointLight) && !(light instanceof SpotLight)) {

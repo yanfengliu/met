@@ -187,6 +187,47 @@ export async function choosePreset(page: Page, id: string): Promise<void> {
   await press(page, `preset-${id}`);
 }
 
+/** A walking frame's cost where the walker stands: the median frame interval, the page's median work per walking frame, a GPU-synced render (ms). */
+export interface WalkingBudget {
+  readonly interval: number;
+  readonly work: number;
+  readonly gpu: number;
+}
+
+/**
+ * Holds W (with Shift when `run`) for 120 frames where the walker stands, so every frame walks, runs the look target and renders, and reports the
+ * frame interval's median over them, the page's median work per walking frame over the same window (`window.__met.walk.frameMs`: physics, the look
+ * target, the camera and the render call) and the mean of 30 renders each synced with the GPU (`benchmark`).
+ */
+export async function walkingBudget(page: Page, run = false): Promise<WalkingBudget> {
+  if (run) await page.keyboard.down('Shift');
+  await page.keyboard.down('KeyW');
+  const intervals = await page.evaluate(() => new Promise<number[]>((resolve) => {
+    const times: number[] = [];
+    const tick = (now: number): void => {
+      times.push(now);
+      if (times.length < 121) requestAnimationFrame(tick);
+      else resolve(times.slice(1).map((t, i) => t - (times[i] ?? t)));
+    };
+    requestAnimationFrame(tick);
+  }));
+  const work = await page.evaluate(() => window.__met?.walk.frameMs ?? Number.NaN);
+  await page.keyboard.up('KeyW');
+  if (run) await page.keyboard.up('Shift');
+  const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
+  const sorted = [...intervals].sort((a, b) => a - b);
+  return { interval: sorted[Math.floor(sorted.length / 2)] ?? Number.NaN, work, gpu };
+}
+
+/** The 60-frames-a-second budget a walking frame keeps on this machine: work and a GPU-synced render under 16.7 ms, the interval within 10% of it. */
+export function expectWalkingBudget(budget: WalkingBudget, where: string): void {
+  const report = `walking ${where}: frame interval median ${budget.interval.toFixed(2)} ms, work median ${budget.work.toFixed(2)} ms, render with GPU sync ${budget.gpu.toFixed(2)} ms`;
+  console.log(report);
+  expect(budget.work, report).toBeLessThan(16.7);
+  expect(budget.gpu, report).toBeLessThan(16.7);
+  expect(budget.interval, report).toBeLessThan(16.7 * 1.1);
+}
+
 /** Drags across the canvas with the primary button from its centre, `steps` moves of (dx, dy) pixels each, as a quick flick. */
 export async function dragCanvas(page: Page, dx: number, dy: number, steps: number): Promise<void> {
   const box = await page.getByTestId('canvas').boundingBox();

@@ -63,7 +63,7 @@ const MOULDING_ZONES: readonly Rect[] = FRONTS.flatMap((front) =>
 /** The geometries the exterior-moulding rule covers. */
 function mouldingGeometries(): Set<BufferGeometry> {
   const found = new Set<BufferGeometry>();
-  const kit: Kit = { add: (geometry) => found.add(geometry), light: () => undefined };
+  const kit: Kit = { add: (geometry) => found.add(geometry), addTagged: (geometry) => found.add(geometry), light: () => undefined };
   for (const front of FRONTS) {
     buildFrontCornices(kit, front);
     buildFrontOrders(kit, front);

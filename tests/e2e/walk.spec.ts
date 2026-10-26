@@ -14,7 +14,7 @@ import type { Page } from '@playwright/test';
 import type { Vec3 } from '../../src/build/types.js';
 import { LANDING_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEPS_BOTTOM_Z } from '../../src/model/frame.js';
 import { spawnById } from '../../src/walk/spawns.js';
-import { camera, currentT, distance, facts, open, openMenu, press, settle, throttle, throttleRate, waitForT, watchErrors } from './helpers.js';
+import { camera, currentT, distance, expectWalkingBudget, facts, open, openMenu, press, settle, throttle, throttleRate, waitForT, walkingBudget, watchErrors } from './helpers.js';
 import type { Camera, Facts } from './helpers.js';
 
 const EYE = 1.6;
@@ -181,6 +181,7 @@ test.describe('walk mode', () => {
     expect(first.spawns).toEqual(expect.arrayContaining(['plaza', 'great-hall', 'second-floor']));
     expect(Math.hypot((first.eye?.[0] ?? 0) - plaza.feet[0], (first.eye?.[2] ?? 0) - plaza.feet[2]), 'on the plaza spawn').toBeLessThan(0.05);
     expect(first.onGround).toBe(true);
+    expect(first.target, 'the look target: nothing tagged in reach on the plaza').toBeNull();
     await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('walk-status')).toBeVisible();
     expect((await facts(page)).follow, 'the follow camera is off while walking').toBe(false);
@@ -245,33 +246,26 @@ test.describe('walk mode', () => {
     expect(dot(sub(orbit.target, orbit.position), turned), 'and looks where it looked').toBeGreaterThan(4.9);
   });
 
-  test('walking holds 60 frames a second, and the collision for the finished building builds within 2 s', async ({ page }) => {
+  test('walking holds 60 frames a second with the look target on, on the plaza, in the Great Hall and at the top of the Grand Staircase; the collision builds within 2 s', async ({ page }) => {
     const f = await open(page, '');
     expect(f.t).toBe(f.n);
     await page.keyboard.press('KeyF');
     const ready = await walking(page);
+    console.log(`collision at t = N: ${String(ready.bvhMs)} ms for ${String(ready.collision?.triangles)} triangles`);
     expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision at t = N').toBeLessThan(2000);
     expect(ready.collision?.steps, 'every step is in the collision at t = N').toBe(f.n);
     expect(ready.collision?.triangles ?? 0).toBeGreaterThan(1_000_000);
-    await page.keyboard.down('KeyW');
-    const intervals = await page.evaluate(() => new Promise<number[]>((resolve) => {
-      const times: number[] = [];
-      const tick = (now: number): void => {
-        times.push(now);
-        if (times.length < 121) requestAnimationFrame(tick);
-        else resolve(times.slice(1).map((t, i) => t - (times[i] ?? t)));
-      };
-      requestAnimationFrame(tick);
-    }));
-    await page.keyboard.up('KeyW');
-    const median = (values: readonly number[]): number => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? Number.NaN;
-    const walked = (await facts(page)).walk;
-    const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
-    const report = `walking at t = N: collision ${String(ready.bvhMs)} ms for ${String(ready.collision?.triangles)} triangles; frame interval median ${median(intervals).toFixed(2)} ms, work median ${String(walked.frameMs)} ms, render with GPU sync ${gpu.toFixed(2)} ms`;
-    console.log(report);
-    expect(walked.frameMs ?? Number.POSITIVE_INFINITY, report).toBeLessThan(16.7);
-    expect(gpu, report).toBeLessThan(16.7);
-    expect(median(intervals), report).toBeLessThan(16.7 * 1.1);
+    // Walking and running from the plaza, then from the view menu's spawns in the populated interiors (the hall's desk, columns and domes; the stair's
+    // colonnades and vault): each frame walks, finds the look target and renders.
+    expectWalkingBudget(await walkingBudget(page), 'on the plaza');
+    expectWalkingBudget(await walkingBudget(page, true), 'running up the front steps');
+    for (const id of ['great-hall', 'second-floor']) {
+      await openMenu(page, 'view-menu');
+      await press(page, `walk-spawn-${id}`);
+      await page.waitForFunction((s) => window.__met?.walk.spawn === s && !window.__met.walk.preparing && window.__met.walk.eye !== null, id);
+      expectWalkingBudget(await walkingBudget(page), `from the ${id} spawn`);
+      expect((await facts(page)).walk.target, `${id}: nothing tagged is in reach in this model yet`).toBeNull();
+    }
     expect(await currentT(page)).toBe(f.n);
   });
 });

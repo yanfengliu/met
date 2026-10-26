@@ -5,6 +5,7 @@
  * its motion matrix and tint at its own progress. `mesh.count` is the number of pieces that have started (slots are in arrival order).
  * Caching: a step whose local progress did not change is skipped, and within a step only the pieces moving before or after are rewritten.
  * Per evaluation the cost is O(steps) plus the pieces in motion plus a binary search per mesh of each changed step.
+ * Piece tags (`Kit.addTagged`) are kept per instance slot for `tagOf`; they are fixed when the step is built and are not state at `t`.
  *
  * Bound: determinism holds for everything this class writes (instance matrices, colours, counts, mesh visibility, light intensities);
  * it says nothing about GPU upload timing, which three.js does from the update ranges recorded here.
@@ -17,7 +18,7 @@ import { collectStep } from './kit.js';
 import { lightRamp, startBox, writeMotionParams, writeMovingMatrix, writeTint } from './motion.js';
 import type { PieceBox } from './motion.js';
 import { staggerKeys, windowsFromKeys } from './stagger.js';
-import type { Motion, StepDef } from './types.js';
+import type { Motion, PieceTag, StepDef } from './types.js';
 
 /** docs/design/spec.md, Kit: at most 8 step lights in the whole sequence. */
 export const MAX_LIGHTS = 8;
@@ -32,6 +33,8 @@ export interface BuiltStep {
   /** World bounds of this step's pieces at their final matrices. */
   readonly bounds: Box3;
   readonly pieceCount: number;
+  /** Per mesh, each instance slot's tag (`Kit.addTagged`, null where untagged), or null for a mesh with no tagged piece. Not timeline state: it never changes with t. */
+  readonly tags: readonly (readonly (PieceTag | null)[] | null)[];
 }
 
 /** One piece of a step as it stands once the step is complete (`Timeline.restingPieces`). */
@@ -100,6 +103,8 @@ export class Timeline {
   /** Every material any piece uses: the viewer gives each the section-cut plane. */
   readonly materials: ReadonlySet<Material>;
   private readonly states: StepState[] = [];
+  /** The tags of every mesh with a tagged piece, by mesh (`tagOf`). */
+  private readonly tagged = new Map<InstancedMesh, readonly (PieceTag | null)[]>();
   private current = 0;
 
   constructor(defs: readonly StepDef[]) {
@@ -126,6 +131,14 @@ export class Timeline {
   /** The position last evaluated. */
   get t(): number {
     return this.current;
+  }
+
+  /**
+   * The tag `kit.addTagged` gave the piece in slot `instance` of `mesh` (docs/design/spec.md, Build-step API: Piece tags), or null for an untagged
+   * piece, a slot past the mesh or a mesh this timeline did not build. Tags are not timeline state: they never change with t.
+   */
+  tagOf(mesh: InstancedMesh, instance: number): PieceTag | null {
+    return this.tagged.get(mesh)?.[instance] ?? null;
   }
 
   /** Shows the scene at `t` (clamped to [0, N]). Returns whether anything changed. */
@@ -215,6 +228,7 @@ export class Timeline {
     const meshStarts = meshes.map((m) => new Float64Array(m.instanceMatrix.count));
     const finalBoxes = meshes.map(() => new Box3());
     const cullBoxes = meshes.map(() => new Box3());
+    const tags = meshes.map((): (PieceTag | null)[] | null => null);
     arrival.forEach((pieceIndex, j) => {
       const piece = pieces[pieceIndex];
       const box = boxes[pieceIndex];
@@ -236,7 +250,12 @@ export class Timeline {
       if (target !== undefined) {
         // Canonical rest values: hidden and landed pieces both hold the final matrix and white.
         target.instanceMatrix.array.set(piece.matrix.elements, s * 16);
+        if (piece.tag !== null) (tags[m] ??= new Array<PieceTag | null>(target.instanceMatrix.count).fill(null))[s] = piece.tag;
       }
+    });
+    tags.forEach((list, i) => {
+      const m = meshes[i];
+      if (list !== null && m !== undefined) this.tagged.set(m, list);
     });
 
     const group = new Group();
@@ -255,7 +274,7 @@ export class Timeline {
       if (light instanceof SpotLight && light.target.parent === null) group.add(light.target);
     }
     this.states.push({ f: 0, kind: def.motion.kind, start, end, mesh, slot, finals, params, meshStarts, baseIntensity });
-    return { def, index, group, meshes, lights, bounds, pieceCount: count };
+    return { def, index, group, meshes, lights, bounds, pieceCount: count, tags };
   }
 
   private updateStep(step: BuiltStep, state: StepState, f: number): void {

@@ -89,11 +89,12 @@ function boot(): void {
   const capped = meshes.filter((m) => Array.isArray(m.material) || cappedBySection(m.material));
   const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capped });
   const rig = viewer.rig;
-  // One BVH per geometry serves the zoom's pick and the walk's collision (src/walk/bvh-cache.ts).
+  // One BVH per geometry serves the zoom's pick, the hit query and the walk's collision (src/walk/bvh-cache.ts).
   const bvhs = new GeometryBvhs();
-  const picker = new ModelPicker(meshes, bvhs, viewer.env.groundY, viewer.cut, rig.camera.layers);
+  const picker = new ModelPicker(meshes, bvhs, viewer.env.groundY, viewer.cut, rig.camera.layers, (mesh, instance) => timeline.tagOf(mesh, instance));
   rig.pick = (ray) => picker.distance(ray);
-  const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs }, (message) => { console.warn(message); });
+  // The walking eye's look target runs the hit query (src/walk/look.ts); an orbit-view pointer can run the same query on its own ray.
+  const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query) }, (message) => { console.warn(message); });
   const presetPose = (id: string): CameraPose | null => {
     const preset = presetById(id);
     return preset === undefined ? null : resolvePreset(preset, timeline.bounds, rig.camera.aspect);

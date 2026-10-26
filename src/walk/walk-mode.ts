@@ -5,6 +5,7 @@
  * asked for, else where it last stood in this page, else at the default spawn. While walking, the world is rebuilt whenever the set of complete
  * steps changes, and after every build the walker's place is checked against it (src/walk/walker.ts, `settle`); the orbit controls are off. Looking: pointer lock on a click of the view (the movement of the mouse turns the walker), or a
  * drag with the mouse or a finger where the lock is not available. Leaving puts the orbit camera at the walker's eye, its target 5 m ahead.
+ * Every walking frame, and afresh whenever something reads it, the look target (./look.ts) is found along the eye's ray.
  * The walk mode reads the scene and never writes it.
  */
 import { Vector3 } from 'three';
@@ -15,6 +16,8 @@ import type { CameraRig } from '../viewer/camera-rig.js';
 import type { GeometryBvhs } from './bvh-cache.js';
 import { CollisionWorld, collisionMeshes, completeSteps, instancesBefore } from './collision.js';
 import type { CollisionStats } from './collision.js';
+import { lookTarget } from './look.js';
+import type { HitFn, LookTarget } from './look.js';
 import { DEFAULT_SPAWN, SPAWNS, nearestSpawn, spawnById, spawnYaw } from './spawns.js';
 import type { Spawn } from './spawns.js';
 import { Walker } from './walker.js';
@@ -36,6 +39,8 @@ export interface WalkHost {
   /** The workspace ground, below everything. */
   readonly floorY: number;
   readonly bvhs: GeometryBvhs;
+  /** The page's hit query (src/viewer/pick.ts `ModelPicker.hit`), for the look target; without it the eye looks at nothing. */
+  readonly hit?: HitFn;
 }
 
 /** Walk facts for `window.__met.walk` (src/viewer/facts.ts). */
@@ -54,8 +59,10 @@ export interface WalkFacts {
   readonly bvhMs: number | null;
   /** What the last build holds: the complete steps it was built for, their solid instances and triangles. */
   readonly collision: { readonly steps: number; readonly instances: number; readonly triangles: number } | null;
-  /** Median milliseconds of the page's work per walking frame over the last 120 (physics, camera and the render call), or null. */
+  /** Median milliseconds of the page's work per walking frame over the last 120 (physics, the look target, camera and the render call), or null. */
   readonly frameMs: number | null;
+  /** The look target as the view stands when it is read: the tagged piece's kind and id and its distance from the eye in metres, or null. */
+  readonly target: { readonly kind: LookTarget['kind']; readonly id: string; readonly distance: number } | null;
 }
 
 const keyAxis = (held: ReadonlySet<string>, plus: readonly string[], minus: readonly string[]): number => (plus.some((k) => held.has(k)) ? 1 : 0) - (minus.some((k) => held.has(k)) ? 1 : 0);
@@ -86,8 +93,12 @@ export class WalkMode {
   private orbitFov = 45;
   private locked = false;
   private drag: { id: number; x: number; y: number; moved: number } | null = null;
+  /** The look target the last walking frame found. */
+  private seen: LookTarget | null = null;
   private readonly eye = new Vector3();
   private readonly look = new Vector3();
+  private readonly targetEye = new Vector3();
+  private readonly targetLook = new Vector3();
   private readonly lastEye = new Vector3(Number.NaN, 0, 0);
   private readonly lastLook = new Vector3();
   private readonly frameTimes: number[] = [];
@@ -113,6 +124,11 @@ export class WalkMode {
     return this.locked;
   }
 
+  /** The look target the last walking frame found, or null; `target()` finds it afresh. */
+  get lastTarget(): LookTarget | null {
+    return this.on && !this.prepare ? this.seen : null;
+  }
+
   /** Enters walk mode at the spawn `id`, or where the walker last stood, or at the default spawn; an unknown id warns and is treated as none. */
   enter(id: string | null = null): void {
     let spawn = id === null ? undefined : spawnById(id);
@@ -125,6 +141,7 @@ export class WalkMode {
     this.on = true;
     this.prepare = true;
     this.waited = 0;
+    this.seen = null;
     this.host.rig.setWalking(true);
   }
 
@@ -139,6 +156,7 @@ export class WalkMode {
     this.on = false;
     this.prepare = false;
     this.drag = null;
+    this.seen = null;
     if (document.pointerLockElement === this.host.canvas) document.exitPointerLock();
     const rig = this.host.rig;
     rig.setWalking(false);
@@ -158,7 +176,7 @@ export class WalkMode {
 
   /**
    * One frame of `seconds` at timeline position `t` with the physical keys `held`: prepares, rebuilds the world when the complete steps changed,
-   * moves the walker and poses the camera. Returns whether the view changed.
+   * moves the walker, poses the camera and finds the look target. Returns whether the view changed.
    */
   frame(seconds: number, t: number, held: ReadonlySet<string>): boolean {
     if (!this.on) return false;
@@ -176,10 +194,18 @@ export class WalkMode {
     this.walker.eye(this.eye);
     this.walker.look(this.look);
     this.host.rig.setWalkView(this.eye, this.look, WALK_FOV);
+    this.seen = this.find();
     const changed = !(this.eye.distanceToSquared(this.lastEye) < 1e-10 && this.look.distanceToSquared(this.lastLook) < 1e-12);
     this.lastEye.copy(this.eye);
     this.lastLook.copy(this.look);
     return changed;
+  }
+
+  /** The look target as the view stands now, found afresh: what an action reads, so a turn since the last frame counts. Null outside walking. */
+  target(): LookTarget | null {
+    if (!this.on || this.prepare) return null;
+    this.seen = this.find();
+    return this.seen;
   }
 
   /** Records the milliseconds one walking frame's work took, for `frameMs`. */
@@ -192,6 +218,7 @@ export class WalkMode {
   facts(): WalkFacts {
     const walking = this.on && !this.prepare;
     const times = [...this.frameTimes].sort((a, b) => a - b);
+    const target = this.target();
     return {
       mode: this.on ? 'walk' : 'orbit',
       preparing: this.preparing,
@@ -204,7 +231,15 @@ export class WalkMode {
       bvhMs: this.stats?.ms ?? null,
       collision: this.stats === null ? null : { steps: this.builtFor, instances: this.stats.instances, triangles: this.stats.triangles },
       frameMs: times.length === 0 ? null : (times[Math.floor(times.length / 2)] ?? null),
+      target: target === null ? null : { kind: target.kind, id: target.id, distance: target.distance },
     };
+  }
+
+  /** The look target from the walker's eye along its look direction, as they stand now (`lookTarget`). */
+  private find(): LookTarget | null {
+    const hit = this.host.hit;
+    if (hit === undefined) return null;
+    return lookTarget(hit, this.walker.eye(this.targetEye), this.walker.look(this.targetLook));
   }
 
   private build(t: number): void {
