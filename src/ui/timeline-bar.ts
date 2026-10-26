@@ -1,6 +1,8 @@
 /**
  * The timeline bar (docs/design/spec.md, Page): start, step back, play backward, play/pause, step forward, end; speed; the walk-mode toggle; a scrubber
  * over [0, N] with chapter boundaries marked; the label and the step's detail. Every control has an accessible name and a `data-testid`.
+ * While walking the bar folds into a small strip at the bottom right holding the Timeline button (`bar-toggle`), which unfolds it and folds it again,
+ * and the Walk toggle, which leaves walk mode; in the orbit view it is always whole and the Timeline button is hidden.
  */
 import type { PlayerMode, Speed } from '../build/player.js';
 import { SPEEDS } from '../build/player.js';
@@ -20,6 +22,8 @@ export interface BarActions {
   setSpeed(speed: Speed): void;
   scrub(t: number): void;
   toggleWalk(): void;
+  /** Unfolds the bar while walking, or folds it again. */
+  toggleBar(): void;
 }
 
 export interface BarState {
@@ -29,6 +33,8 @@ export interface BarState {
   readonly speed: Speed;
   /** Walk mode is on (or being prepared). */
   readonly walking: boolean;
+  /** While walking, whether the bar is unfolded. */
+  readonly barOpen: boolean;
 }
 
 export interface BarInfo {
@@ -47,6 +53,7 @@ export class TimelineBar {
   private readonly playBackward: HTMLButtonElement;
   private readonly speeds: Map<Speed, HTMLButtonElement>;
   private readonly walk: HTMLButtonElement;
+  private readonly fold: HTMLButtonElement;
   private dragging = false;
 
   constructor(
@@ -100,10 +107,13 @@ export class TimelineBar {
     this.walk = button('Walk', 'walk-toggle', () => { actions.toggleWalk(); }, { icon: ICONS.walk, text: 'Walk', className: 'met-button met-walk' });
     setAttr(this.walk, 'aria-pressed', 'false');
     setAttr(this.walk, 'title', 'Walk in first person (F)');
+    this.fold = button('Show the timeline', 'bar-toggle', () => { actions.toggleBar(); }, { icon: ICONS.unfold, text: 'Timeline', className: 'met-button met-bar-toggle' });
+    setAttr(this.fold, 'aria-expanded', 'false');
+    this.fold.hidden = true;
     this.element = el('div', { className: 'met-bar', testid: 'timeline-bar', attrs: { role: 'region', 'aria-label': 'Build timeline controls' } }, [
       el('div', { className: 'met-label' }, [this.title, this.detail]),
       el('div', { className: 'met-scrub' }, [this.scrubber, marks]),
-      el('div', { className: 'met-controls' }, [transport, el('div', { className: 'met-group met-modes' }, [speedGroup, this.walk])]),
+      el('div', { className: 'met-controls' }, [transport, el('div', { className: 'met-group met-modes' }, [speedGroup, this.fold, this.walk])]),
     ]);
   }
 
@@ -125,5 +135,20 @@ export class TimelineBar {
     setAttr(this.playBackward, 'aria-pressed', String(state.mode === 'playing' && state.direction === -1));
     for (const [speed, b] of this.speeds) setAttr(b, 'aria-pressed', String(speed === state.speed));
     setAttr(this.walk, 'aria-pressed', String(state.walking));
+    setAttr(this.walk, 'title', state.walking ? 'Leave walk mode (F)' : 'Walk in first person (F)');
+    // While walking the bar folds into the strip unless unfolded; the Timeline button belongs to walk mode.
+    const folded = state.walking && !state.barOpen;
+    if (this.element.classList.contains('met-bar-folded') !== folded) this.element.classList.toggle('met-bar-folded', folded);
+    if (this.fold.hidden !== !state.walking) this.fold.hidden = !state.walking;
+    const open = state.walking && state.barOpen;
+    setAttr(this.fold, 'aria-expanded', String(open));
+    setAttr(this.fold, 'aria-label', open ? 'Hide the timeline' : 'Show the timeline');
+    setAttr(this.fold, 'title', open ? 'Hide the timeline' : 'Show the timeline');
+    // Folded, the button says Timeline beside its chevron; in the unfolded bar, beside the speeds, the chevron alone fits a narrow screen.
+    if (this.fold.dataset['icon'] !== (open ? 'fold' : 'unfold')) {
+      this.fold.dataset['icon'] = open ? 'fold' : 'unfold';
+      this.fold.innerHTML = open ? ICONS.fold : `${ICONS.unfold}Timeline`;
+      this.fold.className = open ? 'met-button met-icon met-bar-toggle' : 'met-button met-bar-toggle';
+    }
   }
 }

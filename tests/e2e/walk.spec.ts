@@ -14,6 +14,7 @@ import type { Page } from '@playwright/test';
 import type { Vec3 } from '../../src/build/types.js';
 import { LANDING_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEPS_BOTTOM_Z } from '../../src/model/frame.js';
 import { spawnById } from '../../src/walk/spawns.js';
+import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
 import { camera, currentT, distance, expectWalkingBudget, facts, open, openMenu, press, settle, throttle, throttleRate, waitForT, walkingBudget, watchErrors } from './helpers.js';
 import type { Camera, Facts } from './helpers.js';
 
@@ -238,12 +239,59 @@ test.describe('walk mode', () => {
     await page.mouse.up();
     await settle(page);
     const turned = (await facts(page)).walk.look ?? [0, 0, -1];
-    expect(turned[0], 'the look direction turned right').toBeGreaterThan(0.3);
+    expect(turned[0], 'the look direction turned right, by about 200 × LOOK_PER_PIXEL').toBeGreaterThan(0.9 * Math.sin(200 * LOOK_PER_PIXEL));
     await page.keyboard.press('KeyF');
     await orbiting(page);
     const orbit = await camera(page);
     expect(distance(orbit.position, eye), 'the orbit camera starts where the walker stood').toBeLessThan(0.2);
     expect(dot(sub(orbit.target, orbit.position), turned), 'and looks where it looked').toBeGreaterThan(4.9);
+  });
+
+  test('a drag turns the view the way the pointer moves, LOOK_PER_PIXEL a pixel; a press that travels under 5 px is a click, which asks for pointer lock', async ({ page }) => {
+    await open(page, 'walk=1&spawn=great-hall');
+    await walking(page);
+    // A probe that counts the page's requests for pointer lock and passes each on to the browser's own.
+    await page.evaluate(() => {
+      const w = window as unknown as { lockRequests: number };
+      w.lockRequests = 0;
+      const proto = HTMLCanvasElement.prototype;
+      const own = Reflect.get(proto, 'requestPointerLock') as (this: HTMLCanvasElement, ...args: unknown[]) => Promise<void>;
+      Reflect.set(proto, 'requestPointerLock', function (this: HTMLCanvasElement, ...args: unknown[]) {
+        w.lockRequests += 1;
+        return own.apply(this, args);
+      });
+    });
+    const requests = (): Promise<number> => page.evaluate(() => (window as unknown as { lockRequests: number }).lockRequests);
+    const angles = async (): Promise<{ yaw: number; pitch: number }> => {
+      await settle(page);
+      const l = (await facts(page)).walk.look ?? [0, 0, -1];
+      return { yaw: Math.atan2(-l[0], -l[2]), pitch: Math.asin(l[1]) };
+    };
+    const box = await page.getByTestId('canvas').boundingBox();
+    if (box === null) throw new Error('The canvas has no box.');
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    /** A press at the centre that travels through `path` (offsets in pixels) and is released at its last point. */
+    const press = async (path: readonly (readonly [number, number])[]): Promise<void> => {
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      for (const [dx, dy] of path) await page.mouse.move(x + dx, y + dy);
+      await page.mouse.up();
+    };
+    const start = await angles();
+    await press(Array.from({ length: 10 }, (_, k) => [20 * (k + 1), 0] as const));
+    const right = await angles();
+    expect(right.yaw - start.yaw, 'a drag 200 px to the right turns right by 200 × LOOK_PER_PIXEL').toBeCloseTo(-200 * LOOK_PER_PIXEL, 3);
+    expect(right.pitch - start.pitch, 'and does not tilt').toBeCloseTo(0, 6);
+    await press(Array.from({ length: 5 }, (_, k) => [0, 20 * (k + 1)] as const));
+    const down = await angles();
+    expect(down.pitch - right.pitch, 'a drag 100 px down looks down by 100 × LOOK_PER_PIXEL').toBeCloseTo(-100 * LOOK_PER_PIXEL, 3);
+    expect(await requests(), 'a drag asks for no pointer lock').toBe(0);
+    // A press that travels 6 px is a drag (it turns the view 6 × LOOK_PER_PIXEL); one that travels 3 px, out and back, is a click.
+    await press([[3, 0], [6, 0]]);
+    expect(await requests(), `a press that travels ${String(CLICK_SLOP + 1)} px asks for none`).toBe(0);
+    await press([[1, 0], [2, 0], [1, 0]]);
+    expect(await requests(), `a press that travels under ${String(CLICK_SLOP)} px is a click, which asks for pointer lock once`).toBe(1);
   });
 
   test('walking holds 60 frames a second with the look target on, on the plaza, in the Great Hall and at the top of the Grand Staircase; the collision builds within 2 s', async ({ page }) => {

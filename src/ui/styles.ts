@@ -89,6 +89,20 @@ const CSS = /* css */ `
   font-size: 13px; line-height: 1.35; color: var(--met-text); pointer-events: none;
 }
 .met-walk-status[hidden] { display: none; }
+/* While walking the bar folds into a strip at the bottom right holding the Timeline button and the Walk toggle; the Timeline button unfolds it. */
+.met-bar-toggle[hidden] { display: none; }
+.met-bar.met-bar-folded { left: auto; right: 12px; bottom: 12px; padding: 6px; border: 1px solid var(--met-line); border-radius: 10px; }
+.met-bar-folded .met-label, .met-bar-folded .met-scrub, .met-bar-folded .met-transport, .met-bar-folded .met-speed { display: none; }
+.met-bar-folded .met-modes { gap: 8px; }
+/* The crosshair marks the eye's ray at the centre of the walking view; gold while a door or an artwork is within reach of it. */
+.met-crosshair { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; z-index: 1; pointer-events: none; }
+.met-crosshair[hidden] { display: none; }
+.met-crosshair::before, .met-crosshair::after {
+  content: ''; position: absolute; border-radius: 1px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+.met-crosshair::before { left: 7px; top: 0; width: 2px; height: 16px; }
+.met-crosshair::after { left: 0; top: 7px; width: 16px; height: 2px; }
+.met-crosshair[data-target]::before, .met-crosshair[data-target]::after { background: var(--met-accent); }
 /* The floor picker: a column at the left, centred in the view above the bar; open menu panels (z-index 3) cover it on a narrow screen. */
 .met-floors {
   position: absolute; left: 12px; top: calc((100% - var(--met-bar-h)) / 2); transform: translateY(-50%); z-index: 2;
@@ -114,6 +128,7 @@ const CSS = /* css */ `
   .met-speed .met-button { min-width: 40px; padding: 0 4px; }
   .met-modes { gap: 10px; }
   .met-walk-status { font-size: 12px; padding: 6px 9px; }
+  .met-bar.met-bar-folded { right: 8px; bottom: 8px; padding: 5px; }
   .met-floors { left: 8px; gap: 3px; padding: 3px; }
   .met-floor { min-width: 58px; height: 32px; padding: 0 6px; font-size: 13px; }
 }

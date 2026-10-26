@@ -1,6 +1,6 @@
 /**
- * Walk mode while the build moves (docs/design/spec.md, Walk mode: When the build moves), through the timeline bar's real buttons with the walker
- * on the real model: at t = 0 it stands on the workspace ground; End builds the plaza over it and it stands where the plaza spawn stands at t = N;
+ * Walk mode while the build moves (docs/design/spec.md, Walk mode: When the build moves), through the timeline bar's real buttons, unfolded by its
+ * Timeline button as a visitor unfolds it while walking, with the walker on the real model: at t = 0 it stands on the workspace ground; End builds the plaza over it and it stands where the plaza spawn stands at t = N;
  * Home lets it fall to the workspace ground and End lifts it again; playing the site chapter from its end while walking restarts the build under
  * the walker, which is never left under a surface once the step that built it completes and ends where the spawn stands; and the front steps built
  * through a walker standing in their place lift it onto its tread, from where it walks on up them.
@@ -24,6 +24,12 @@ async function walking(page: Page): Promise<Walk & { eye: readonly [number, numb
   const walk = (await facts(page)).walk;
   if (walk.eye === null) throw new Error('Walk mode reported no eye.');
   return { ...walk, eye: walk.eye };
+}
+
+/** Unfolds the timeline bar, folded while walking, by its Timeline button, so its controls can be pressed. */
+async function unfold(page: Page): Promise<void> {
+  if ((await page.getByTestId('bar-toggle').getAttribute('aria-expanded')) !== 'true') await press(page, 'bar-toggle');
+  await expect(page.getByTestId('btn-end')).toBeVisible();
 }
 
 /** The walk facts once the collision holds `steps` complete steps and the eye has eased out of any snap (0.3 s). */
@@ -55,6 +61,7 @@ test.describe('walk mode while the build moves', () => {
     const start = await walking(page);
     expect(start.eye[1], 'at t = 0, on the workspace ground at once').toBeCloseTo(ground + EYE, 3);
     expect(start.onGround).toBe(true);
+    await unfold(page);
     for (const round of [1, 2]) {
       await press(page, 'btn-end');
       const lifted = await builtTo(page, f.n);
@@ -73,6 +80,7 @@ test.describe('walk mode while the build moves', () => {
     await open(page, 'solo=site&walk=1&spawn=plaza');
     const reference = await walking(page);
     const f = await facts(page);
+    await unfold(page);
     await press(page, 'speed-4');
     await press(page, 'btn-play');
     const samples = await page.evaluate((n) => new Promise<{ t: number; steps: number; eye: number[] }[]>((resolve, reject) => {
@@ -110,6 +118,7 @@ test.describe('walk mode while the build moves', () => {
     await page.waitForTimeout(400);
     const inside = await walking(page);
     expect(inside.eye[1] - EYE, 'at grade where the flight will stand').toBeLessThan(0.2);
+    await unfold(page);
     await press(page, 'btn-end');
     const lifted = await builtTo(page, plain.n);
     await page.screenshot({ path: test.info().outputPath('front-steps-after-end.png') });

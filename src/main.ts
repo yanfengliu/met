@@ -126,6 +126,8 @@ function boot(): void {
 
   let changed = true;
   let needsRender = true;
+  /** While walking, whether the timeline bar is unfolded; each entry into walk mode starts with it folded. */
+  let barOpen = false;
   const ranges = chapterRanges(steps);
   const walkStatus = (): WalkStatus => (!walk.active ? 'off' : walk.preparing ? 'preparing' : walk.pointerLocked ? 'locked' : 'free');
   const state = (): UiState => ({
@@ -138,7 +140,10 @@ function boot(): void {
     cutEnabled: viewer.cut.enabled,
     cutHeight: viewer.cut.height,
     walking: walk.active,
+    barOpen,
     walkStatus: walkStatus(),
+    walkHint: walk.hint,
+    walkTarget: walk.lastTarget?.kind ?? null,
     floor: floors.id,
   });
   const act = (action: () => void) => (): void => {
@@ -181,6 +186,7 @@ function boot(): void {
     follow = false;
     view = null;
     atPreset = false;
+    barOpen = false;
     walk.enter(spawn);
     needsRender = true;
   };
@@ -243,17 +249,21 @@ function boot(): void {
       },
       walkFrom: (spawn: string) => { enterWalk(spawn); },
       jump: () => { walk.jump(); },
+      toggleBar: () => { barOpen = !barOpen; },
     },
     state(),
     // The keys route by the mode now, not the mode the last frame drew: F and then Space in one frame jump rather than play.
     () => walk.active,
   );
-  // The camera frames the part of the canvas above the timeline bar (none with noui), so set the inset before the first pose.
+  // The camera frames the part of the canvas above the timeline bar (none with noui), so set the inset before the first pose. Walking, the view is the
+  // whole canvas, centred on the crosshair, whether the bar is folded or not, so unfolding it never moves the view.
   const fitInset = (): void => {
-    viewer.setInsetBottom(query.noui ? 0 : Math.round(ui.bar.getBoundingClientRect().height));
+    viewer.setInsetBottom(query.noui || walk.active ? 0 : Math.round(ui.bar.getBoundingClientRect().height));
     needsRender = true;
   };
   fitInset();
+  /** Whether the inset was last fitted for walking. */
+  let insetWalking = false;
   if (query.cam !== null) {
     const [px, py, pz, tx, ty, tz] = query.cam;
     rig.setPose({ position: new Vector3(px, py, pz), target: new Vector3(tx, ty, tz), fov: DEFAULT_FOV });
@@ -327,6 +337,11 @@ function boot(): void {
     }
     if (rig.update()) needsRender = true;
     ui.sync(state());
+    // Into or out of walk mode: the inset changes with it, measured after the bar has folded or unfolded.
+    if (walk.active !== insetWalking) {
+      insetWalking = walk.active;
+      fitInset();
+    }
     if (needsRender || frames < READY_FRAMES) {
       viewer.render();
       frames += 1;

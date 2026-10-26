@@ -4,9 +4,10 @@
  * Entering prepares the world on the next frame, after the status line has been drawn ("Preparing walk mode"), and puts the walker at the spawn
  * asked for, else where it last stood in this page, else at the default spawn. While walking, the world is rebuilt whenever the set of complete
  * steps changes, and after every build the walker's place is checked against it (src/walk/walker.ts, `settle`); the orbit controls are off. Looking: pointer lock on a click of the view (the movement of the mouse turns the walker), or a
- * drag with the mouse or a finger where the lock is not available. Leaving puts the orbit camera at the walker's eye, its target 5 m ahead.
- * Every walking frame, and afresh whenever something reads it, the look target (./look.ts) is found along the eye's ray.
- * The walk mode reads the scene and never writes it.
+ * drag with the mouse or a finger, which turns the view the way the pointer moves, as the locked mouse does. Leaving puts the orbit camera at the
+ * walker's eye, its target 5 m ahead. The status line's hint shows how to look, move and leave until the visitor first walks or looks, at most
+ * `HINT_SECONDS`, and again when the pointer is freed. Every walking frame, and afresh whenever something reads it, the look target (./look.ts) is
+ * found along the eye's ray. The walk mode reads the scene and never writes it.
  */
 import { Vector3 } from 'three';
 
@@ -25,10 +26,18 @@ import type { WalkInput } from './walker.js';
 
 /** The vertical field of view in walk mode, degrees. */
 export const WALK_FOV = 60;
-/** Radians the walker turns per pixel the mouse or a finger moves. */
-const LOOK_PER_PIXEL = 0.0022;
-/** A press that moves less than this many pixels before it is released is a click, which asks for pointer lock. */
-const CLICK_SLOP = 5;
+/**
+ * Radians the walker turns per pixel the mouse or a finger moves, locked or dragging: a drag across the view turns it by about the view's own width
+ * (91.5° over 1280 px at 1280×720, 29.8° over 390 px at 390×844), precise enough to look round a gallery; 0.0022 turned 1.8 times that.
+ */
+export const LOOK_PER_PIXEL = 0.0013;
+/**
+ * A press that travels less than this many pixels before it is released is a click, which asks for pointer lock; more is a drag, which looks. A still
+ * click travels 0 to 2 px, and under 5 px a drag would have turned the view by under 0.4°, which nobody means as a look.
+ */
+export const CLICK_SLOP = 5;
+/** Seconds the status line shows how to look, move and leave after walking starts or the pointer is freed, unless the visitor walks or looks first. */
+export const HINT_SECONDS = 6;
 /** Walking frames whose work times `frameMs` takes the median of. */
 const FRAME_WINDOW = 120;
 
@@ -93,6 +102,8 @@ export class WalkMode {
   private orbitFov = 45;
   private locked = false;
   private drag: { id: number; x: number; y: number; moved: number } | null = null;
+  /** Seconds left of the status line's hint. */
+  private hintLeft = 0;
   /** The look target the last walking frame found. */
   private seen: LookTarget | null = null;
   private readonly eye = new Vector3();
@@ -122,6 +133,11 @@ export class WalkMode {
 
   get pointerLocked(): boolean {
     return this.locked;
+  }
+
+  /** Whether the status line shows how to look, move and leave (`HINT_SECONDS`). */
+  get hint(): boolean {
+    return this.on && !this.prepare && this.hintLeft > 0;
   }
 
   /** The look target the last walking frame found, or null; `target()` finds it afresh. */
@@ -156,6 +172,7 @@ export class WalkMode {
     this.on = false;
     this.prepare = false;
     this.drag = null;
+    this.hintLeft = 0;
     this.seen = null;
     if (document.pointerLockElement === this.host.canvas) document.exitPointerLock();
     const rig = this.host.rig;
@@ -171,7 +188,9 @@ export class WalkMode {
 
   /** Asks the walker to jump (Space). */
   jump(): void {
-    if (this.on && !this.prepare) this.walker.jump();
+    if (!this.on || this.prepare) return;
+    this.walker.jump();
+    this.hintLeft = 0;
   }
 
   /**
@@ -190,7 +209,10 @@ export class WalkMode {
       this.rebuild(t);
       this.settle(this.settledFor);
     }
-    this.walker.update(seconds, walkInput(held));
+    const input = walkInput(held);
+    // The hint goes at the first step, or when its time is up.
+    this.hintLeft = input.forward !== 0 || input.right !== 0 ? 0 : Math.max(0, this.hintLeft - seconds);
+    this.walker.update(seconds, input);
     this.walker.eye(this.eye);
     this.walker.look(this.look);
     this.host.rig.setWalkView(this.eye, this.look, WALK_FOV);
@@ -255,6 +277,7 @@ export class WalkMode {
       this.settle(this.settledFor);
     }
     this.prepare = false;
+    this.hintLeft = this.locked ? 0 : HINT_SECONDS;
     this.lastEye.set(Number.NaN, 0, 0);
   }
 
@@ -284,9 +307,18 @@ export class WalkMode {
     this.placed = true;
   }
 
+  /** Turns the walker by a pointer's movement of (dx, dy) pixels: the view turns the way the pointer moves, right for right and up for up. */
+  private turnBy(dx: number, dy: number): void {
+    this.walker.turn(-dx * LOOK_PER_PIXEL, -dy * LOOK_PER_PIXEL);
+    this.hintLeft = 0;
+  }
+
   private bindPointer(canvas: HTMLCanvasElement): void {
     document.addEventListener('pointerlockchange', () => {
-      this.locked = document.pointerLockElement === canvas;
+      const locked = document.pointerLockElement === canvas;
+      // Freed while walking (Esc): the hint says again how to look and leave; locked, the browser says how to free the pointer.
+      if (this.on && !this.prepare) this.hintLeft = locked ? 0 : HINT_SECONDS;
+      this.locked = locked;
     });
     canvas.addEventListener('pointerdown', (event) => {
       if (!this.on || this.locked || this.drag !== null) return;
@@ -296,7 +328,7 @@ export class WalkMode {
     canvas.addEventListener('pointermove', (event) => {
       if (!this.on || this.prepare) return;
       if (this.locked) {
-        this.walker.turn(-event.movementX * LOOK_PER_PIXEL, -event.movementY * LOOK_PER_PIXEL);
+        this.turnBy(event.movementX, event.movementY);
         return;
       }
       const drag = this.drag;
@@ -306,7 +338,7 @@ export class WalkMode {
       drag.x = event.clientX;
       drag.y = event.clientY;
       drag.moved += Math.abs(dx) + Math.abs(dy);
-      this.walker.turn(-dx * LOOK_PER_PIXEL, -dy * LOOK_PER_PIXEL);
+      this.turnBy(dx, dy);
     });
     const release = (event: PointerEvent, cancelled: boolean): void => {
       const drag = this.drag;

@@ -298,6 +298,8 @@ test.describe('floor picker', () => {
   });
 
   test('floor= at load shows that floor framed from above; one that names no floor, or comes with walk=1, is ignored with a warning', async ({ page }) => {
+    // Three page loads, about 3 s each here and 10 s each with other worktrees' gates running; the deadline covers the loaded machine.
+    test.setTimeout(60_000);
     const f = await open(page, 'floor=second');
     const second = f.floors.find((fl) => fl.id === 'second');
     expect(f.floor.id).toBe('second');

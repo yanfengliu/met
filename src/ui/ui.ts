@@ -1,6 +1,6 @@
 /**
- * The page chrome: timeline bar, chapter menu, view menu, floor picker and keyboard shortcuts, wired to app actions. Plain DOM; `sync` is cheap to
- * call every frame.
+ * The page chrome: timeline bar, chapter menu, view menu, floor picker, the walk mode's crosshair and status line, and keyboard shortcuts, wired to app
+ * actions. Plain DOM; `sync` is cheap to call every frame.
  */
 import type { Chapter } from '../build/types.js';
 import { FloorPicker } from './floor-picker.js';
@@ -10,7 +10,7 @@ import { chapterAt } from './label.js';
 import type { LabelStep } from './label.js';
 import { ChapterMenu, ViewMenu, closeOnOutside } from './menus.js';
 import type { ChapterEntry, PresetEntry, SpawnEntry, ViewActions, ViewState } from './menus.js';
-import { el, setText } from './dom.js';
+import { el, setAttr, setText } from './dom.js';
 import { installStyles } from './styles.js';
 import { TimelineBar } from './timeline-bar.js';
 import type { BarActions, BarState } from './timeline-bar.js';
@@ -41,13 +41,17 @@ export type WalkStatus = 'off' | 'preparing' | 'free' | 'locked';
 
 export type UiState = BarState & ViewState & {
   readonly walkStatus: WalkStatus;
+  /** While walking, whether the status line shows how to look, move and leave (src/walk/walk-mode.ts, `HINT_SECONDS`). */
+  readonly walkHint: boolean;
+  /** The kind of tagged piece the walking eye looks at within reach (src/walk/look.ts), or null. */
+  readonly walkTarget: string | null;
   /** The floor picker's entry in view. */
   readonly floor: string;
 };
 
 export interface Ui {
   sync(state: UiState): void;
-  /** The timeline bar, whose height the camera keeps clear of. */
+  /** The timeline bar, whose height the camera keeps clear of in the orbit view. */
   readonly bar: HTMLElement;
   /** The physical keys held now (src/ui/keyboard.ts). */
   readonly held: ReadonlySet<string>;
@@ -81,7 +85,10 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   ui.dataset['testid'] = 'ui';
   const status = el('div', { className: 'met-walk-status', testid: 'walk-status', attrs: { role: 'status', 'aria-live': 'polite' } });
   status.hidden = true;
-  ui.append(menus, status, floors.element, bar.element);
+  // The crosshair marks the eye's ray: the canvas's centre, where walk mode's projection is centred (src/main.ts sets no inset while walking).
+  const crosshair = el('div', { className: 'met-crosshair', testid: 'crosshair', attrs: { 'aria-hidden': 'true' } });
+  crosshair.hidden = true;
+  ui.append(crosshair, menus, status, floors.element, bar.element);
   root.appendChild(ui);
   closeOnOutside([chapters.disclosure, view.disclosure]);
   const held = bindKeys(actions, walking);
@@ -98,8 +105,14 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     chapters.sync(chapterAt(state.t, info.ranges, info.steps.length));
     view.sync(state);
     floors.sync(state);
-    setText(status, WALK_STATUS[state.walkStatus]);
-    if (status.hidden !== (state.walkStatus === 'off')) status.hidden = state.walkStatus === 'off';
+    // The status line says "Preparing walk mode…", then shows how to look, move and leave only while the hint lasts.
+    const shown = state.walkStatus === 'preparing' || (state.walkHint && state.walkStatus !== 'off');
+    setText(status, shown ? WALK_STATUS[state.walkStatus] : '');
+    if (status.hidden !== !shown) status.hidden = !shown;
+    const aiming = state.walkStatus === 'free' || state.walkStatus === 'locked';
+    if (crosshair.hidden !== !aiming) crosshair.hidden = !aiming;
+    if (state.walkTarget === null) crosshair.removeAttribute('data-target');
+    else setAttr(crosshair, 'data-target', state.walkTarget);
   };
   sync(initial);
   return { sync, bar: bar.element, held };
