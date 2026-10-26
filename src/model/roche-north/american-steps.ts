@@ -4,6 +4,7 @@
  * and last the glass: the roofs, the court's ribbed glass roof and the west curtain wall, so the interior shows before it is enclosed.
  */
 import type { StepDef } from '../../build/types.js';
+import { engelhardCollectionStep } from '../collection/spaces-a.js';
 import { americanFloors, americanFoundations, americanRoofs, americanWalls } from './american.js';
 import { engelhardColonnades, engelhardCurtain, engelhardFloor, engelhardGlassRoof, engelhardLoggia, engelhardSculpture } from './engelhard.js';
 
@@ -76,14 +77,15 @@ export const americanSteps: readonly StepDef[] = [
     id: 'engelhard-sculpture',
     chapter: CHAPTER,
     year: '1980',
-    title: 'Sculpture, fountains and lamp standards',
-    detail: "Saint-Gaudens' gilded Diana high on her pedestal, marbles round the court, two bronze fountains in the pool and cast-iron lamp standards.",
+    title: 'Diana and the lamp standards',
+    detail: "Saint-Gaudens' gilded Diana high on her pedestal, and cast-iron lamp standards before the bank facade and along the colonnades.",
     motion: { kind: 'pop' },
     stagger: 'order',
     weight: 0.8,
     focus: { kind: 'preset', id: 'int-engelhard-north' },
     build: engelhardSculpture,
   },
+  engelhardCollectionStep,
   {
     id: 'american-roofs',
     chapter: CHAPTER,

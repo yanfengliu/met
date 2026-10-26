@@ -7,6 +7,7 @@
  * Each array's steps must name the chapter given in its comment (src/build/sequence.test.ts checks it).
  */
 import type { StepDef } from '../../build/types.js';
+import { balconyCollectionStep } from '../collection/spaces-b.js';
 import { archSteps } from './arches.js';
 import { entablatureSteps } from './entablature.js';
 import { gallerySteps } from './galleries.js';
@@ -20,7 +21,7 @@ import { sculptureSteps } from './sculpture.js';
 import { stairSteps } from './stair.js';
 import { wallSteps } from './walls.js';
 
-/** Chapter `hunt-1902`: Hunt's Fifth Avenue pavilion, Great Hall and Grand Staircase. */
+/** Chapter `hunt-1902`: Hunt's Fifth Avenue pavilion, Great Hall and Grand Staircase, with the collection's ceramics on the hall's balcony (src/model/collection/). */
 export const huntSteps: readonly StepDef[] = [
   ...podiumSteps,
   ...wallSteps,
@@ -33,6 +34,7 @@ export const huntSteps: readonly StepDef[] = [
   ...fitoutSteps,
   ...stairSteps,
   ...gallerySteps,
+  balconyCollectionStep,
   ...roofSteps,
 ];
 

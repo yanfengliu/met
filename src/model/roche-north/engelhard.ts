@@ -11,7 +11,7 @@ import type { Kit } from '../../build/types.js';
 import { MAIN_FLOOR_Y } from '../frame.js';
 import { palette } from '../palette.js';
 import { AW_SLOT } from './american.js';
-import { DIANA, STATUE } from './figures.js';
+import { DIANA } from './figures.js';
 import { areaMaterials } from './materials.js';
 import {
   AW_EAST_Z,
@@ -154,14 +154,9 @@ function loggia(kit: Kit): void {
 /** The loggia's capitals: a swelling cluster of glass blossoms round the column head. */
 const CAPITAL = memo('rn-loggia-capital', () => new CylinderGeometry(0.42, 0.2, 0.6, 12, 2).translate(0, 0.3, 0));
 
-/** A statue in white marble on a grey pedestal, as stand round the court (P5): an abstract figure of the given height. */
-function statue(kit: Kit, x: number, z: number, height: number, pedestal: number): void {
-  boxAt(kit, palette.granite, [x - 0.55, F, z - 0.55], [x + 0.55, F + pedestal, z + 0.55]);
-  kit.add(STATUE, areaMaterials.whiteMarble, new Matrix4().makeTranslation(x, F + pedestal, z).multiply(new Matrix4().makeScale(height, height, height)));
-}
-
 function sculpture(kit: Kit): void {
-  // Saint-Gaudens' Diana (1892–93, cast 1928, 101¾ in), gilded, high on a white pedestal; the marbles round the court; the lamp standards.
+  // Saint-Gaudens' Diana (1892–93, cast 1928, 101¾ in), gilded, high on a white pedestal, and the lamp standards. The marbles round the court and the
+  // bronzes in the pool are the collection's (src/model/collection/spaces-a.ts), built in the next step.
   // P5: about 11 m in front of the camera at the court's south end and 2 m west of the centre line, with the facade 33 m away.
   const dx = 71.0;
   const dz = COURT_AXIS_Z - 2.2;
@@ -170,21 +165,6 @@ function sculpture(kit: Kit): void {
   boxAt(kit, areaMaterials.whiteMarble, [dx - 0.62, F + 4.1, dz - 0.62], [dx + 0.62, F + 4.3, dz + 0.62]);
   // She draws her bow toward the park (world −Z): her local −X turned onto world −Z.
   kit.add(DIANA, areaMaterials.gilt, new Matrix4().makeTranslation(dx, F + 4.3, dz).multiply(new Matrix4().makeRotationY(Math.PI / 2)).multiply(new Matrix4().makeScale(2.58, 2.58, 2.58)));
-  for (const [x, z, h] of [
-    [61.5, WEST_EDGE + 2.0, 1.7],
-    [61.5, EAST_EDGE - 2.0, 1.7],
-    [76.0, WEST_EDGE + 1.6, 1.9],
-    [76.0, EAST_EDGE - 1.6, 1.9],
-    [80.6, BEDS.southMaxZ - 1.4, 1.8],
-    [80.6, BEDS.northMinZ + 1.4, 1.8],
-  ] as const) {
-    statue(kit, x, z, h, 1.25);
-  }
-  // The MacMonnies and Scudder bronzes in the pool.
-  for (const z of [COURT_POOL.minZ + 1.6, COURT_POOL.maxZ - 1.6]) {
-    boxAt(kit, palette.granite, [64.1, F + 0.32, z - 0.3], [64.9, F + 0.8, z + 0.3]);
-    kit.add(STATUE, palette.bronze, new Matrix4().makeTranslation(64.5, F + 0.8, z).multiply(new Matrix4().makeScale(0.9, 0.9, 0.9)));
-  }
   const lamp = lampPost({ height: 5.4, arms: 2 });
   for (const [x, z] of [
     [81.6, BEDS.southMaxZ - 0.7],

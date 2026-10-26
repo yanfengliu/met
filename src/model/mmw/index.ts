@@ -5,6 +5,8 @@
  * with their courts' interiors, and the roofs and skylights last so the build shows the interiors before the roofs close over them.
  */
 import type { StepDef } from '../../build/types.js';
+import { armorCollectionStep, greekCourtCollectionStep } from '../collection/spaces-a.js';
+import { greekGalleriesCollectionStep } from '../collection/spaces-b.js';
 import { armorCourtSteps, armorCourtVaultStep } from './armor-court.js';
 import { astorCourtSteps } from './astor-court.js';
 import { greekCourt2007, romanCourtSteps } from './greek-court.js';
@@ -12,11 +14,23 @@ import { northFrontSteps, southFrontSteps } from './steps-fronts.js';
 import { northWallsRaisedStep, southWallsRaisedStep } from './steps-raised.js';
 import { roofSteps } from './steps-roofs.js';
 
-/** Chapter `mckim-mead-white-1926`: the Fifth Avenue wings by McKim, Mead & White. */
-export const mmwSteps: readonly StepDef[] = [...northFrontSteps, ...armorCourtSteps, ...southFrontSteps, ...romanCourtSteps, armorCourtVaultStep, ...roofSteps];
+/**
+ * Chapter `mckim-mead-white-1926`: the Fifth Avenue wings by McKim, Mead & White, with the collection's armours in the Arms and Armor Court after its
+ * parade and its Greek marbles in gallery 153 once the south wings stand (src/model/collection/).
+ */
+export const mmwSteps: readonly StepDef[] = [
+  ...northFrontSteps,
+  ...armorCourtSteps,
+  armorCollectionStep,
+  ...southFrontSteps,
+  greekGalleriesCollectionStep,
+  ...romanCourtSteps,
+  armorCourtVaultStep,
+  ...roofSteps,
+];
 
-/** Chapter `koch-plaza-2014`: the Greek and Roman court's upper storey and skylight (2007). */
-export const greekRomanCourt2007Steps: readonly StepDef[] = greekCourt2007;
+/** Chapter `koch-plaza-2014`: the Greek and Roman court's upper storey and skylight (2007), then its sculpture as reinstalled (src/model/collection/). */
+export const greekRomanCourt2007Steps: readonly StepDef[] = [...greekCourt2007, greekCourtCollectionStep];
 
 /** Chapter `roche-north-1980`, composed before rocheNorthSteps: the Morgan wing's walls raised against the Sackler and American wings (1978–1980), before their roofs. */
 export const northWallsRaised1978Steps: readonly StepDef[] = [northWallsRaisedStep];

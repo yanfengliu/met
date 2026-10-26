@@ -5,6 +5,7 @@
  * Wallace 1987, Kravis 1990.
  */
 import type { StepDef } from '../../build/types.js';
+import { lehmanCollectionStep, petrieCollectionStep } from '../collection/spaces-b.js';
 import { kravisSteps } from './kravis.js';
 import { lehmanStructureSteps } from './lehman.js';
 import { lehmanGlassSteps } from './lehman-glass.js';
@@ -12,8 +13,8 @@ import { rockefellerSteps } from './rockefeller.js';
 import { wallaceSteps } from './wallace.js';
 import { roofGardenSteps } from './wallace-garden.js';
 
-/** Chapter `roche-steps-lehman-1975`: the Robert Lehman Wing (1975). */
-export const lehmanSteps: readonly StepDef[] = [...lehmanStructureSteps, ...lehmanGlassSteps];
+/** Chapter `roche-steps-lehman-1975`: the Robert Lehman Wing (1975), the collection's paintings in its rooms once they are roofed (src/model/collection/), then its glass. */
+export const lehmanSteps: readonly StepDef[] = [...lehmanStructureSteps, lehmanCollectionStep, ...lehmanGlassSteps];
 
-/** Chapter `roche-south-1990`: the Rockefeller, Wallace and Kravis wings and the roof garden. */
-export const rocheSouthSteps: readonly StepDef[] = [...rockefellerSteps, ...wallaceSteps, ...roofGardenSteps, ...kravisSteps];
+/** Chapter `roche-south-1990`: the Rockefeller, Wallace and Kravis wings and the roof garden, then the collection's sculpture in the Petrie Court. */
+export const rocheSouthSteps: readonly StepDef[] = [...rockefellerSteps, ...wallaceSteps, ...roofGardenSteps, ...kravisSteps, petrieCollectionStep];

@@ -260,8 +260,14 @@ function ringWalls(kit: Kit): void {
 
 // --- Period rooms ---------------------------------------------------------------------------------------------------------------------
 
-/** Walls between the period rooms (map galleries 950 to 960), from the outer ring wall to the outer wall, each with a door. */
-const ROOM_WALLS: readonly [P2, P2][] = (
+/** The period rooms' walls: their thickness and the width of the door at the middle of each. */
+export const ROOM_WALL = { thickness: 0.4, door: 1.8 } as const;
+
+/**
+ * Walls between the period rooms (map galleries 950 to 960), from the outer ring wall (the first point) to the outer wall, each with a door at its middle.
+ * The collection hangs the Lehman paintings on them (src/model/collection/spaces-b.ts).
+ */
+export const ROOM_WALLS: readonly [P2, P2][] = (
   [
     [[17.6, -152.82], [22.68, -157.9]],
     [[12.53, -157.9], [17.61, -162.98]],
@@ -280,8 +286,8 @@ function galleries(kit: Kit): void {
   const height = LEHMAN_ROOF_Y - MAIN_SLAB - M;
   ROOM_WALLS.forEach(([a, b], k) => {
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    const geometry = wall({ width: Number(length.toFixed(2)), height, thickness: 0.4, openings: [{ width: 1.8, height: 3.3 }] });
-    kit.add(geometry, palette.plaster, libraryWallOn(a, b, M, 0.2), k);
+    const geometry = wall({ width: Number(length.toFixed(2)), height, thickness: ROOM_WALL.thickness, openings: [{ width: ROOM_WALL.door, height: 3.3 }] });
+    kit.add(geometry, palette.plaster, libraryWallOn(a, b, M, ROOM_WALL.thickness / 2), k);
   });
 }
 

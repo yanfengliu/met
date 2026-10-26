@@ -5,6 +5,7 @@
  * the 1924 American Wing core is its own array in the McKim, Mead & White chapter.
  */
 import type { StepDef } from '../../build/types.js';
+import { dendurCollectionStep } from '../collection/spaces-a.js';
 import { americanWing1924 } from './american-1924.js';
 import { americanSteps } from './american-steps.js';
 import { sacklerSteps } from './sackler.js';
@@ -12,5 +13,8 @@ import { sacklerSteps } from './sackler.js';
 /** Chapter `mckim-mead-white-1926`: the 1924 American Wing. */
 export const americanWing1924Steps: readonly StepDef[] = americanWing1924;
 
-/** Chapter `roche-north-1980`: the Sackler Wing and the Temple of Dendur, then the American Wing with the Charles Engelhard Court. */
-export const rocheNorthSteps: readonly StepDef[] = [...sacklerSteps, ...americanSteps];
+/**
+ * Chapter `roche-north-1980`: the Sackler Wing and the Temple of Dendur with the collection's objects round it (src/model/collection/), then the American
+ * Wing with the Charles Engelhard Court.
+ */
+export const rocheNorthSteps: readonly StepDef[] = [...sacklerSteps, dendurCollectionStep, ...americanSteps];
