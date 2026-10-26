@@ -9,7 +9,8 @@
  * floor through the floor map's doors (docs/research/interior.md, Plan source; the map in research/cache/). R3: north through gallery 100 and 101 into the
  * Old Kingdom gallery (103), on through 104 and 132 to 128, the lobby and 130, then into the Temple of Dendur hall at its south-east corner and along its
  * east walkway and the north walkway by the glass, to beside the platform. R4: south past the desk, through gallery 150 and the Greek galleries (153,
- * 160) into the Leon Levy and Shelby White Court, east of its basin.
+ * 160) into the Leon Levy and Shelby White Court, east of its basin. R5 (work unit 2, M1): from where R2 starts, up the Grand Staircase, across the
+ * cross hall and through its doorway on the axis into gallery 600 (interior.md, The Grand Staircase), to the gallery's middle.
  */
 import { PAVING_GAP, walkWestY } from '../site/ground.js';
 import { HALL_X, MAIN, NAVE_MID_Z, SECOND } from './dims.js';
@@ -42,6 +43,16 @@ export const ROUTE_R1: Route = {
 export const ROUTE_R2: Route = {
   id: 'R2',
   points: [NAVE_WEST, [0, -63.5]],
+  startY: MAIN,
+  endY: SECOND,
+};
+
+/** Gallery 600's middle on the axis: between the core's east wall (inner face Z −70.0) and its wall with gallery 601 (Z −75.05; core/plan-data.ts). */
+export const GALLERY_600_MID_Z = -72.5;
+
+export const ROUTE_R5: Route = {
+  id: 'R5',
+  points: [NAVE_WEST, [0, GALLERY_600_MID_Z]],
   startY: MAIN,
   endY: SECOND,
 };

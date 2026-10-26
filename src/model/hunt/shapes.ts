@@ -164,3 +164,28 @@ export function medallionDisc(radius: number, thickness: number, segments: numbe
     return g;
   });
 }
+
+/**
+ * The lining of a round-arched passage: two jambs and an arch `band` thick round an opening `2 * half` wide whose arch springs at `spring`, `depth`
+ * long. Origin on the floor at the opening's middle; the passage runs from z = 0 toward −Z; the feet, on the floor, have no faces. The arch is 12
+ * flat facets, as the core's round heads (core/arches.ts holeOutline and holeLining), so it meets the core's lining of the same section flush.
+ */
+export function archedPassage(half: number, band: number, spring: number, depth: number): THREE.BufferGeometry {
+  return once(`archedPassage|${String(half)}|${String(band)}|${String(spring)}|${String(depth)}`, () => {
+    const arc = (r: number): [number, number][] => Array.from({ length: 13 }, (_, k): [number, number] => [r * Math.cos((Math.PI * k) / 12), spring + r * Math.sin((Math.PI * k) / 12)]);
+    const outer = half + band;
+    // Counter-clockwise seen from +Z: along the left foot, up the left jamb's inner face, under the arch and down, along the right foot, then the outer face.
+    const outline: [number, number][] = [[-outer, 0], [-half, 0], ...arc(half).reverse(), [half, 0], [outer, 0], ...arc(outer)];
+    const b = new MeshBuilder();
+    b.planar(outline, [], new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0));
+    b.planar(outline.map(([u, v]): [number, number] => [-u, v]), [], new THREE.Vector3(0, 0, -depth), new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0));
+    // Each edge's face looks out of the band, to the right of travel: into the opening on the inner faces, away from it on the outer.
+    for (let k = 0; k < outline.length; k++) {
+      const p = outline[k];
+      const q = outline[(k + 1) % outline.length];
+      if (p === undefined || q === undefined || (p[1] === 0 && q[1] === 0)) continue;
+      b.polygon([new THREE.Vector3(p[0], p[1], -depth), new THREE.Vector3(q[0], q[1], -depth), new THREE.Vector3(q[0], q[1], 0), new THREE.Vector3(p[0], p[1], 0)]);
+    }
+    return b.build();
+  });
+}

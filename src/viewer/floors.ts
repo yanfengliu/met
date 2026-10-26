@@ -60,8 +60,9 @@ const ROOF_GARDEN: PlanArea = { minX: ROOF_GARDEN_MIN_X, maxX: ROOF_GARDEN_MAX_X
 
 /** The floors from the lowest up. */
 export const FLOORS: readonly Floor[] = [
-  // 3.1 m: just under the Temple of Dendur pool's slab (underside 3.11 m), the lowest slab over the ground floor; the main floor's own slabs start at
-  // 3.51 m. At 3.4 m the cut sliced that slab and capped the pool's footprint in the cut colour. The plaza fountains' jets (3.08 m) stay whole.
+  // 3.1 m: under the Temple of Dendur pool's slab (underside 3.41 m, 3.11 m until work unit 2 raised the pool's bottom), the lowest slab over the
+  // ground floor; the main floor's own slabs start at 3.51 m. At 3.4 m the cut sliced that slab (then at 3.11 m) and capped the pool's footprint in
+  // the cut colour. The plaza fountains' jets (3.08 m) stay whole.
   { id: 'ground', label: 'Ground', name: 'Ground floor', level: GROUND_FLOOR_Y, cut: 3.1, area: BUILDING },
   // 7.8 m: just under the Wallace Wing's mezzanine (map floor 1M, underside 7.91 m), the lowest slab over the main floor. A cut under the second floor
   // (10.4 m) left four mezzanines (8.4 to 10.0 m) over about 6,200 m² of the main floor. The Grand Staircase shows its lower flight, cut.

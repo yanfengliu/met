@@ -2,15 +2,18 @@
  * The Vaux and Mould building's shell and frame (history.md section 2): footings and basement slab, the brick side and east walls (exterior in
  * 1880, party walls since 1888, their 1880 windows bricked up as blind pointed arches), Radford's iron frame with the floors and the restored iron
  * staircases, and the central hall's end walls and iron roof frame (the hall itself is the Medieval Sculpture Hall of 1939, medieval-hall.ts).
- * Side-wall bays follow the hall's pier lines (interior.md: piers 5.65 m apart); doors follow the floor map's openings.
+ * Side-wall bays follow the hall's pier lines (interior.md: piers 5.65 m apart); doors follow the floor map's openings. The east wall takes, on the axis
+ * at the second floor, the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand Staircase;
+ * work unit 2, M1), lined in granite with a threshold, so its central main-floor arch is a lower drop arch whose voussoirs stay under it.
  */
 import { Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
 import type { Kit } from '../../build/types.js';
+import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
 import { MeshBuilder, stairFlight } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { openWall, voussoirRing, type Hole } from './arches.js';
+import { holeLining, openWall, voussoirRing, type Hole } from './arches.js';
 import {
   A_HALF,
   EAST_Z,
@@ -50,6 +53,14 @@ import { FACING, UNIT_BOX, addBox, cylinder, keyOf, memo, placed } from './shape
 import { WALL_BASE_Y } from './vaux-front.js';
 
 const [AX0, , AX1] = INTERIOR.a;
+/**
+ * E: the east wall's central main-floor arch rises 1.8 m over its springing, not VAUX_ARCH_RISE, so its apex (10.41 m) and its voussoirs and hood
+ * (to 10.92 m) stay under the doorway into gallery 600 over it, whose hole starts at its threshold (10.94 m); no source shows this arch.
+ */
+export const VAUX_EAST_CENTRE_RISE = 1.8;
+const eastRise = (k: number): number => (k === 0 ? VAUX_EAST_CENTRE_RISE : VAUX_ARCH_RISE);
+/** E: the granite threshold through the east wall under the doorway into gallery 600, this deep, its top on the second floor. */
+const DOOR_THRESHOLD = 0.03;
 
 /** Pier lines of the side walls: the hall's seven, extended three bays west and two east at the same spacing. */
 export const SIDE_BAY = (HALL_PIER_Z[6] - HALL_PIER_Z[0]) / 6;
@@ -91,11 +102,22 @@ export function vauxWalls(kit: Kit): void {
   for (const k of [-3, -2, -1, 0, 1, 2, 3]) {
     const through = k === 0 || Math.abs(k) === 3;
     const sill = through ? 0 : VAUX_ARCH_SILL;
-    holes.push({ head: 'pointed', x: k * VAUX_BAY, y: L1 + sill - WALL_BASE_Y, width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING + VAUX_ARCH_RISE - sill, rise: VAUX_ARCH_RISE, ...(through ? {} : { depth: 0.25 }) });
+    const rise = eastRise(k);
+    holes.push({ head: 'pointed', x: k * VAUX_BAY, y: L1 + sill - WALL_BASE_Y, width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING + rise - sill, rise, ...(through ? {} : { depth: 0.25 }) });
   }
   for (const x of [-10.3, 10.3]) holes.push({ x, y: L2 - WALL_BASE_Y, width: 2.6, height: 3.2 });
+  // The doorway into gallery 600, cut for its granite lining and a threshold under it, flush with the floors on both sides; the Hunt wing lines the
+  // passage on through the cavity to its cross hall in the same section (hunt/stair.ts).
+  const sill = L2 - WALL_BASE_Y;
+  const lined = GALLERY_600_DOOR_HALF_WIDTH + GALLERY_600_DOOR_LINING;
+  const outer: Hole = { head: 'round', x: 0, y: sill, width: 2 * lined, height: GALLERY_600_DOOR_CROWN + GALLERY_600_DOOR_LINING };
+  holes.push({ ...outer, y: sill - DOOR_THRESHOLD, height: outer.height + DOOR_THRESHOLD });
   const east = openWall({ width: 2 * A_HALF, height: PARAPET_Y - WALL_BASE_Y, thickness: OUTER_WALL, holes });
-  kit.add(east, palette.brick, placed(0, WALL_BASE_Y, EAST_Z, FACING.east), SIDE_LINES.length + 1);
+  const frame = placed(0, WALL_BASE_Y, EAST_Z, FACING.east);
+  kit.add(east, palette.brick, frame, SIDE_LINES.length + 1);
+  const inner: Hole = { head: 'round', x: 0, y: sill, width: 2 * GALLERY_600_DOOR_HALF_WIDTH, height: GALLERY_600_DOOR_CROWN };
+  kit.add(holeLining(outer, inner, OUTER_WALL), core.granite, frame, SIDE_LINES.length + 1);
+  addBox(kit, core.granite, -lined, L2 - DOOR_THRESHOLD, INNER_EAST_Z, lined, L2, EAST_Z, SIDE_LINES.length + 1);
 }
 
 /** Strip footings under every wall of the block, pads under the iron columns, and the ground-floor slab. */
@@ -253,8 +275,9 @@ export function vauxHall(kit: Kit): void {
 /** Granite trim of the side and east walls: polychrome voussoirs over every 1880 arch and the floor, impost and ground-storey bands. */
 export function vauxSideTrim(kit: Kit): void {
   const spring = L1 + VAUX_ARCH_SPRING;
-  const ring = (parity: 0 | 1) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.42, count: 15, projection: 0.06, parity });
-  const hood = voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.09, count: 15, projection: 0.1, parity: 'all', inset: 0.42 });
+  const ring = (parity: 0 | 1, rise = VAUX_ARCH_RISE) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise, band: 0.42, count: 15, projection: 0.06, parity });
+  const hoodOf = (rise: number) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise, band: 0.09, count: 15, projection: 0.1, parity: 'all', inset: 0.42 });
+  const hood = hoodOf(VAUX_ARCH_RISE);
   const proud = 0.08;
   for (const [x, facing, out] of [
     [-A_HALF, FACING.south, -1],
@@ -276,9 +299,10 @@ export function vauxSideTrim(kit: Kit): void {
     }
   }
   for (const k of [-3, -2, -1, 0, 1, 2, 3]) {
-    kit.add(ring(0), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
-    kit.add(ring(1), palette.brick, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
-    kit.add(hood, core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+    const rise = eastRise(k);
+    kit.add(ring(0, rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+    kit.add(ring(1, rise), palette.brick, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+    kit.add(hoodOf(rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
   }
   addBox(kit, core.granite, -A_HALF, spring - VAUX_BAND, EAST_Z, A_HALF, spring, EAST_Z + proud, 12);
   addBox(kit, core.granite, -A_HALF, L1 - 0.2, EAST_Z, A_HALF, L1 + 0.12, EAST_Z + proud, 12);

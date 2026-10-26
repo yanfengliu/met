@@ -5,12 +5,16 @@
  * Plan: the floor map in the canonical frame (interior.md, The Grand Staircase; Z − 3.1): flight X ±3.69, foot at Z −36.57, landing −46.87..−49.88,
  * top −56.89, cross hall −59.74..−66.79. Risers and goings are not published: 27 and 19 risers of 0.149 m divide the measured rise and run (an estimate).
  * Evidence: P3 (颐园居 2024) for the coupled columns, the entablature and its modillions, the ribbed vault and the arched opening at the top; LPC77 for
- * the five arches a side and Bitter's angels in their spandrels (blocked out here as plain spandrels).
+ * the five arches a side and Bitter's angels in their spandrels (blocked out here as plain spandrels). The cross hall's back wall opens on the axis into
+ * gallery 600 through a round-arched doorway (interior.md, The Grand Staircase; interior-images.md 36 and 42; work unit 2, M1), with a stone-lined
+ * passage behind it through the core's east wall.
  */
 import type { Kit, StepDef } from '../../build/types.js';
+import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
 import { palette } from '../palette.js';
 import { archivolt, barrelVault, columnParts, entablature, stairFlight, stairLanding, wall, type V3 } from '../lib/index.js';
 import {
+  BACK_Z,
   CROSS_HALL_BACK_Z,
   CROSS_HALL_FRONT_Z,
   CROSS_HALL_HALF,
@@ -25,7 +29,7 @@ import {
   STAIR_TOP_Z,
 } from './dims.js';
 import { hunt } from './materials.js';
-import { at, box } from './shapes.js';
+import { archedPassage, at, box } from './shapes.js';
 import { STAIR_GABLE_TOP_Y, STAIR_VAULT_SPRING_Y } from './walls.js';
 
 /** The landing's level: 27 of the 46 risers. */
@@ -160,7 +164,14 @@ export const stairSteps: readonly StepDef[] = [
       kit.add(end, hunt.stairStone, at(0, SECOND, CROSS_HALL_FRONT_Z), 3);
       const ceiling = SECOND + 6.6;
       box(kit, palette.plaster, [-CROSS_HALL_HALF, ceiling, CROSS_HALL_BACK_Z], [CROSS_HALL_HALF, ceiling + 0.4, CROSS_HALL_FRONT_Z - WALL_T], 4);
-      box(kit, hunt.stairStone, [-CROSS_HALL_HALF, SECOND, CROSS_HALL_BACK_Z - WALL_T], [CROSS_HALL_HALF, ceiling + 0.4, CROSS_HALL_BACK_Z], 4);
+      // The back wall and its round-arched doorway on the axis into gallery 600; behind it the passage, lined in the same stone through the cavity to
+      // the core's east wall, on the wing's second-floor plate (./galleries.ts), where the core's own granite lining of the same section takes over
+      // (src/model/core/vaux-shell.ts).
+      const hw = GALLERY_600_DOOR_HALF_WIDTH;
+      const back = wall({ width: 2 * CROSS_HALL_HALF, height: ceiling + 0.4 - SECOND, thickness: WALL_T, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
+      kit.add(back, hunt.stairStone, at(0, SECOND, CROSS_HALL_BACK_Z), 4);
+      const behind = CROSS_HALL_BACK_Z - WALL_T;
+      kit.add(archedPassage(hw, GALLERY_600_DOOR_LINING, GALLERY_600_DOOR_CROWN - hw, behind - BACK_Z), hunt.stairStone, at(0, SECOND, behind), 4);
     },
   },
 ];

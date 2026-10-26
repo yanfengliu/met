@@ -3,6 +3,9 @@
  * Order (docs/research/history.md section 7, interior.md "Proposed interior build steps"): foundations, the limestone end walls, the gallery floor, the granite
  * platform, the pool, the gate and the temple, the sloping stone back wall, then the glass: the sloped north wall, the hung ceiling and the glazed roof.
  * The McKim, Mead & White blocks own the walls on X 118.0 and Z −41.3 (exterior.md section 2); floors and roofs here run up to those lines.
+ * Walking (work unit 2, M1; interior.md, The pool's edge and The gate's front and the forecourt; interior-images.md 37 to 40): the pool's bottom lies a
+ * step under its square edge, so a visitor who stepped in steps out; the gate's passage is filled to the forecourt's level, walked into from the forecourt,
+ * with a riser and a low steel rail toward the terrace, as there are no steps on the axis.
  */
 import { Matrix4, Quaternion, Vector3 } from 'three';
 
@@ -20,12 +23,15 @@ import {
   DAIS_STEPS,
   DAIS_Y,
   DENDUR_FLOOR_Y,
+  GATE_RAIL,
   GATE_SLABS,
+  GATE_THRESHOLD,
   GATE_WIDTH,
   GATE_Z,
   PLATFORM,
   PLATFORM_Y,
   POOL,
+  POOL_FLOOR_Y,
   POOL_WATER_Y,
   SACKLER_BLOCK,
   SACKLER_FOOTING_Y,
@@ -42,9 +48,8 @@ import { boxAt } from './shapes.js';
 import { addGate, addTempleCrown, addTempleWalls, flagstones } from './temple.js';
 
 const CHAPTER = 'roche-north-1980';
-/** The structural deck under the paving, and the pool's lowered floor. */
+/** The structural deck under the paving; the pool's bottom is plan.ts POOL_FLOOR_Y. */
 const DECK_TOP = DENDUR_FLOOR_Y - 0.1;
-const POOL_FLOOR_Y = POOL_WATER_Y - 0.45;
 const { minX: X0, maxX: X1, minZ: Z0, maxZ: Z1 } = SACKLER_BLOCK;
 
 type Rect = readonly [number, number, number, number];
@@ -134,6 +139,9 @@ function platform(kit: Kit): void {
   panels([DAIS.minX, DAIS.maxX, DAIS.minZ, TEMPLE_BASE.maxZ], 2.25, (x0, x1, z0, z1) => { boxAt(kit, areaMaterials.galleryFloor, [x0 + 0.008, DAIS_Y - 0.06, z0 + 0.008], [x1 - 0.008, DAIS_Y, z1 - 0.008]); });
   const daisFlight = stairFlight({ width: DAIS_STEPS.width, steps: 4, riser: (DAIS_Y - PLATFORM_Y) / 4, tread: (DAIS.maxZ - DAIS_STEPS.minZ) / 4, nosing: 0.015 });
   for (const x of [DAIS.minX + DAIS_STEPS.width / 2, DAIS.maxX - DAIS_STEPS.width / 2]) kit.add(daisFlight.steps, palette.granite, new Matrix4().makeTranslation(x, PLATFORM_Y, DAIS.maxZ));
+  // The gate's passage filled to the forecourt's level: walked into from the forecourt, its front a granite riser to the terrace (no steps on the axis).
+  const t = GATE_THRESHOLD;
+  boxAt(kit, areaMaterials.platformGranite, [t.minX, PLATFORM_Y, t.minZ], [t.maxX, t.topY, t.maxZ]);
   // Side flights up the platform's long sides: six risers each, climbing north from the south walk and south from the north walk.
   const length = SIDE_STEPS.maxZ - SIDE_STEPS.minZ;
   const zMid = (SIDE_STEPS.minZ + SIDE_STEPS.maxZ) / 2;
@@ -166,6 +174,11 @@ function gate(kit: Kit): void {
   flagstones(kit, GATE_SLABS.minX, TEMPLE_AXIS_X - hx, GATE_SLABS.minZ, GATE_SLABS.maxZ, y, 0.15, 51);
   flagstones(kit, TEMPLE_AXIS_X + hx, GATE_SLABS.maxX, GATE_SLABS.minZ, GATE_SLABS.maxZ, y, 0.15, 53);
   addGate(kit, new Matrix4().makeTranslation(TEMPLE_AXIS_X, y, GATE_Z));
+  // The low steel rail on the terrace before the gate's front: three posts and a top rail.
+  const r = GATE_RAIL;
+  const top = PLATFORM_Y + r.height;
+  for (const x of [r.minX, (r.minX + r.maxX) / 2, r.maxX]) boxAt(kit, palette.metalDark, [x - 0.025, PLATFORM_Y, r.z - 0.025], [x + 0.025, top - 0.04, r.z + 0.025]);
+  boxAt(kit, palette.metalDark, [r.minX - 0.025, top - 0.04, r.z - 0.02], [r.maxX + 0.025, top, r.z + 0.02]);
 }
 
 function temple(kit: Kit): void {

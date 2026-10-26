@@ -149,6 +149,35 @@ function buildWall(width: number, height: number, thickness: number, holes: read
   return b.build();
 }
 
+/**
+ * The lining of a hole through a wall, in openWall's frame: the band between the hole's outline and a smaller one's on the same sill, `depth` deep
+ * from the front face toward −Z. Its outer face lies on the reveal of a hole cut to `outer` (the same 12 facets per head as openWall's), its inner
+ * face looks into the opening; the feet on the sill line have no faces.
+ */
+export function holeLining(outer: Hole, inner: Hole, depth: number): BufferGeometry {
+  const sill = outer.y ?? 0;
+  if ((inner.y ?? 0) !== sill) throw new Error(`holeLining: the inner hole's sill (y ${String(inner.y ?? 0)}) is not the outer one's (y ${String(sill)}); give both the same sill.`);
+  const key = `holeLining:${[outer, inner].map((h) => keyOf(h.head ?? 'rect', h.x ?? 0, h.y ?? 0, h.width, h.height, riseOf(h))).join('|')}:${keyOf(depth)}`;
+  return memo(key, () => {
+    const [o0, o1, ...oHead] = holeOutline(outer, 12);
+    const [i0, i1, ...iHead] = holeOutline(inner, 12);
+    if (o0 === undefined || o1 === undefined || i0 === undefined || i1 === undefined) throw new Error('holeLining: a hole outline has fewer than two points.');
+    // Counter-clockwise from the front: along the left foot, up and round the inner outline backward, along the right foot, round the outer one.
+    const outline: V2[] = [o0, i0, ...[...iHead].reverse(), i1, o1, ...oHead];
+    const b = new MeshBuilder();
+    b.planar(outline, [], new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
+    b.planar(outline.map(([u, v]) => [-u, v] as const), [], new Vector3(0, 0, -depth), new Vector3(-1, 0, 0), new Vector3(0, 1, 0));
+    // Each edge's face looks out of the band (right of travel): into the opening on the inner outline, onto the reveal on the outer.
+    for (let k = 0; k < outline.length; k++) {
+      const p = outline[k];
+      const q = outline[(k + 1) % outline.length];
+      if (p === undefined || q === undefined || (p[1] === sill && q[1] === sill)) continue;
+      b.polygon([new Vector3(p[0], p[1], -depth), new Vector3(q[0], q[1], -depth), new Vector3(q[0], q[1], 0), new Vector3(p[0], p[1], 0)]);
+    }
+    return b.build();
+  });
+}
+
 /** A point `t` of the way along a polyline, by arc length. */
 function along(pts: readonly V2[], t: number): V2 {
   const lengths = [0];

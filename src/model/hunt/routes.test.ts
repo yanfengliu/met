@@ -3,9 +3,11 @@
  * its collision world built as the page builds it (`collisionMeshes`, `CollisionWorld` over three-mesh-bvh BVHs), and src/walk/walker.ts stepped at
  * 60 frames a second as the page steps it, running, turned each frame toward the next point of the route (routes.ts). R1 runs from the plaza through
  * the central doors into the Great Hall, R2 up the Grand Staircase to the second floor, R3 from the Great Hall through the Egyptian galleries into the
- * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, each both ways. The walker never leaves the ground (no
+ * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, R5 up the Grand Staircase and through the cross hall's
+ * doorway into gallery 600 (work unit 2, M1), each both ways. The walker never leaves the ground (no
  * drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
- * crosses its landing and walks the second floor on their levels, and R3 and R4 cross the McKim, Mead & White seams on the main floor.
+ * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, and R5 crosses the
+ * doorway's passage and the core's east wall on the second floor's level into gallery 600.
  * Bound: steering turns the walker directly (the e2e walks steer by real keys and drags, tests/e2e/routes.spec.ts); a stall is less than 5 cm of
  * progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts and ends within
  * one frame's two physics steps is not seen.
@@ -17,16 +19,19 @@ import { Timeline } from '../../build/timeline.js';
 import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import { BODY, NO_INPUT, Walker } from '../../walk/walker.js';
+import { INNER_EAST_Z } from '../core/layout.js';
 import { ROMAN_COURT } from '../mmw/wings.js';
 import { DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../roche-north/plan.js';
-import { EXT_NORTH_X, EXT_SOUTH_X, MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
-import { reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4 } from './routes.js';
+import { CROSS_HALL_BACK_Z, EXT_NORTH_X, EXT_SOUTH_X, MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
+import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5 } from './routes.js';
 import type { Route } from './routes.js';
 import { STAIR_LANDING_Y } from './stair.js';
 
 const FPS = 60;
 /** A route point counts as reached within this plan distance, metres. */
 const REACH = 0.3;
+/** The core's east wall's inner face, where gallery 600 begins (src/model/core/layout.ts INNER_EAST_Z). */
+const CORE_INNER_EAST_Z = INNER_EAST_Z;
 
 interface Sample {
   readonly x: number;
@@ -118,7 +123,7 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
     return made;
   };
 
-  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4)])('walks $id end to end on the ground and ends on its floor', (route) => {
+  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4), ROUTE_R5, reversed(ROUTE_R5)])('walks $id end to end on the ground and ends on its floor', (route) => {
     const result = walked(route);
     expect(result.failure).toBeUndefined();
     expect(result.maxRise, `${route.id}: largest step up in a frame, metres`).toBeLessThanOrEqual(BODY.step);
@@ -163,5 +168,13 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
     expect(heightsOff(seam, MAIN), 'feet off the main floor in the seam wall').toEqual([]);
     const [x0, z0, x1, z1] = ROMAN_COURT;
     expect(end.x > x0 && end.x < x1 && end.z > z0 && end.z < z1, `inside the court at ${where(end)}`).toBe(true);
+  });
+
+  it('R5 crosses the cross hall, its doorway and the core’s east wall on the second floor’s level into gallery 600', () => {
+    const { samples, end } = walked(ROUTE_R5);
+    const passage = between(samples, CROSS_HALL_BACK_Z + 1, CORE_INNER_EAST_Z - 1);
+    expect(passage.length, 'samples from the cross hall through the doorway into the gallery').toBeGreaterThan(5);
+    expect(heightsOff(passage, SECOND), 'feet off the second floor in the doorway').toEqual([]);
+    expect(end.z < CORE_INNER_EAST_Z && end.z > GALLERY_600_MID_Z - 2.5, `in gallery 600 at ${where(end)}`).toBe(true);
   });
 });

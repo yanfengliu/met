@@ -93,6 +93,10 @@ export const HUNT_MEDALLION_CENTRE_Y = 18.6; // [H12] D: S7
 export const HUNT_NICHE_COUNT = 4; // [H13] M: one between the columns of each pair
 export const HUNT_EXTENSION_CORNICE_Y = 21.9; // [H14] M ±0.3: the flanking extensions' crowning cornice top, 21.4..21.9 in E43 and E41 (mmw/dims.ts) once the camera's pitch and the cornice's overhang are taken out; level with the end pavilions' parapet
 export const HUNT_EXTENSION_PARAPET_Y = 22.5; // [H14] E: top of the extensions' walls, a low parapet behind the crowning cornice (was MMW_PARAPET_TOP_Y, which only they read; P35, P37, P47 show them standing above the links)
+// The doorway from the Grand Staircase's cross hall into gallery 600, through the Hunt cross hall's back wall and the 1880 core's east wall (interior.md, The Grand Staircase; work unit 2, M1)
+export const GALLERY_600_DOOR_HALF_WIDTH = 1.75; // D: the floor map's door on the axis, X -1.75..+1.76
+export const GALLERY_600_DOOR_CROWN = 5.0; // E low-medium: the round arch's crown over SECOND_FLOOR_Y, 1.4 to 1.5 times its width on the Met's photograph scaled by the 5.59 m Triumph of Marius (interior-images.md, 42)
+export const GALLERY_600_DOOR_LINING = 0.3; // E: the stone lining of the passage, its jambs and arch this thick round the opening, through the core's east wall (granite, core/vaux-shell.ts) and the cavity behind the cross hall (hunt/stair.ts), so neither the brick nor the cavity shows
 
 // --- McKim, Mead & White wings --------------------------------------------------------------
 export const MMW_NORTH_LINK_MIN_X = 49.4; // [W2] M

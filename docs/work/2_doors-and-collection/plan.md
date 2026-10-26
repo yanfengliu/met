@@ -56,7 +56,7 @@ Codex's plan review (`reviews/0_plan.md`) found eleven gaps, all accepted:
 ## Implementation steps
 
 - [x] Plan review (Codex, `reviews/0_plan.md`): eleven findings accepted, the plan amended; sent to M1 and M3a, which had started.
-- [ ] M1 the walk, with the look target (worker `walk2`).
+- [ ] M1 the walk, with the look target (worker `walk2`): built and verified on branch `walk2`, not yet reviewed or merged. The eye on stairs fixed and gated every frame (`src/walk/stairs.test.ts`, `tests/e2e/stairs.spec.ts`, red at `db4cc47`); the walking screen (crosshair, folded bar, a hint for the first seconds) and the walk's numbers (2 and 5 m/s, `LOOK_PER_PIXEL` 0.0013, `CLICK_SLOP` 5 px) with their reasons in the spec; piece tags (`Kit.addTagged`), the hit query (`ModelPicker.hit`) and the look target (`window.__met.walk.target`) of C1 and C2, walking frames under 16.7 ms with it in the Great Hall, the Dendur hall and the Leon Levy court; the pool's bottom at 0.3 m, the gate's passage filled behind a rail, and a stone-lined doorway from the cross hall into gallery 600 walked as R5, each checked against `docs/research/interior.md` first. `src/model/frame.ts` gained `GALLERY_600_DOOR_HALF_WIDTH`, `GALLERY_600_DOOR_CROWN` and `GALLERY_600_DOOR_LINING`; `placement.test.ts` reads R5, the doorway and the gate from the model; `int-european-paintings-600` still frames 600's canvases with the doorway in and is unchanged.
 - [x] M3a the catalogue and the placeholders (worker `collection`, merged `7c370b1`, reviews 1 and 2): 94 real objects in ten spaces, 38 meshes and 40,290 triangles of placeholders; the model at 729 meshes and 1,578,714 triangles.
 - [ ] M2 doors (worker `doors`, after M1).
 - [ ] M3b labels (worker `collection`, after M2 and M3a).

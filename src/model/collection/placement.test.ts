@@ -8,13 +8,13 @@
  * - a standing artwork's floor, under its footprint's middle and corners, is the level its placement names, within 12 mm (no float, no sinking);
  * - a hung one has a wall behind its back, within 4 cm, at its middle and corners;
  * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides);
- * - it is 1 m clear of the walking routes R1–R4 (src/model/hunt/routes.ts) and M1's R5 into gallery 600 (beyond the walker's radius), of the
- *   Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of M1's doorway into gallery 600
- *   and its Dendur gate threshold, and of the Dendur pool;
+ * - it is 1 m clear of the walking routes R1–R5 (src/model/hunt/routes.ts; R5 into gallery 600) beyond the walker's radius, of the Weston door's
+ *   passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into gallery 600 (hunt/stair.ts),
+ *   of the Dendur gate's threshold and rail (roche-north/plan.ts) and of the Dendur pool;
  * - each drawn object finds its own artwork in its material's table (material.ts): its entry is where the object stands, every other 5 cm or more away;
  * - the placeholders take at most 110 meshes and 600,000 triangles of the model's budgets.
  * Bound: lines 0.1 m apart miss a solid thinner than that between them; a footprint is its pieces' boxes, not their curves; routes and door swings are
- * plan shapes on their floor, compared with artworks within 1 m of that floor. M1's R5, doorway and gate are restated here until M1 is merged.
+ * plan shapes on their floor, compared with artworks within 1 m of that floor.
  */
 import { Box3, Layers, Matrix4, Ray, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';
@@ -29,13 +29,14 @@ import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import type { GroundHit } from '../../walk/collision.js';
 import { BODY } from '../../walk/walker.js';
+import { INNER_EAST_Z } from '../core/layout.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
-import { MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
+import { GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING, MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
 import { OPENINGS } from '../hunt/arches.js';
-import { SCREEN_Z } from '../hunt/dims.js';
-import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4 } from '../hunt/routes.js';
+import { CROSS_HALL_BACK_Z, SCREEN_Z } from '../hunt/dims.js';
+import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5 } from '../hunt/routes.js';
 import type { Route } from '../hunt/routes.js';
-import { PLATFORM_Y, POOL } from '../roche-north/plan.js';
+import { GATE_RAIL, GATE_THRESHOLD, PLATFORM_Y, POOL } from '../roche-north/plan.js';
 import { artTableOf, giltMaterial, plinthMaterial, vitrineGlass } from './material.js';
 import { SPACES } from './picks.js';
 import { entryOf, stepArtworks } from './place.js';
@@ -49,8 +50,6 @@ const CLEARANCE = 1;
 /** The placeholders' share of the model's budgets (docs/design/spec.md, Budgets; plan 2, review 0, F9). */
 const MAX_MESHES = 110;
 const MAX_TRIANGLES = 600_000;
-/** M1's route R5 up the Grand Staircase and through the cross hall's new doorway into gallery 600 (walker walk2, 2026-10-25), until it is merged. */
-const ROUTE_R5: Route = { id: 'R5 (M1)', points: [[0, -24.7], [0, -72.5]], startY: MAIN_FLOOR_Y, endY: SECOND_FLOOR_Y };
 const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5];
 
 /** A plan rectangle on a floor level, kept clear by `margin`: a door's swing, a passage through a door. */
@@ -69,10 +68,10 @@ const ZONES: readonly Zone[] = [
   { name: 'Hunt central doors swing', y: MAIN_FLOOR_Y, min: [OPENINGS[0]?.[0] ?? 0, HUNT_DOOR_Z - widest], max: [OPENINGS[2]?.[1] ?? 0, HUNT_DOOR_Z + widest], margin: CLEARANCE },
   { name: 'Weston door swing', y: MAIN_FLOOR_Y, min: [WESTON_DOOR.x - WESTON_DOOR.width, WESTON_DOOR.z - WESTON_DOOR.width / 2], max: [WESTON_DOOR.x + WESTON_DOOR.width, WESTON_DOOR.z + WESTON_DOOR.width / 2], margin: CLEARANCE },
   { name: 'Weston door passage', y: MAIN_FLOOR_Y, min: [WESTON_DOOR.x - 6, WESTON_DOOR.z - WESTON_DOOR.width / 2], max: [WESTON_DOOR.x + 6, WESTON_DOOR.z + WESTON_DOOR.width / 2], margin: CLEARANCE + BODY.radius },
-  // M1's changes (walker walk2, 2026-10-25): the doorway from the cross hall into gallery 600 with its returns, and the Dendur gate's threshold and rail.
-  { name: 'gallery 600 doorway (M1)', y: SECOND_FLOOR_Y, min: [-2.05, -70.0], max: [2.05, -66.79], margin: CLEARANCE },
-  { name: 'Dendur gate (M1)', y: PLATFORM_Y, min: [131.5, -71.0], max: [135.5, -64.0], margin: CLEARANCE },
-  // The Dendur pool's basin and its arms along the terrace, whose edge M1 rebuilds.
+  // The doorway from the cross hall into gallery 600 with its passage's lining, through both walls; the Dendur gate's threshold and the rail before it.
+  { name: 'gallery 600 doorway', y: SECOND_FLOOR_Y, min: [-GALLERY_600_DOOR_HALF_WIDTH - GALLERY_600_DOOR_LINING, INNER_EAST_Z], max: [GALLERY_600_DOOR_HALF_WIDTH + GALLERY_600_DOOR_LINING, CROSS_HALL_BACK_Z], margin: CLEARANCE },
+  { name: 'Dendur gate', y: GATE_THRESHOLD.topY, min: [GATE_RAIL.minX, GATE_THRESHOLD.minZ], max: [GATE_RAIL.maxX, GATE_RAIL.z], margin: CLEARANCE },
+  // The Dendur pool's basin and its arms along the terrace.
   { name: 'Dendur pool', y: PLATFORM_Y - 0.5, min: [POOL.minX, POOL.basinMinZ], max: [POOL.maxX, SACKLER_MAX_Z], margin: CLEARANCE },
   { name: 'Dendur pool, south arm', y: PLATFORM_Y - 0.5, min: [POOL.minX, POOL.armMinZ], max: [POOL.armSouthMaxX, POOL.basinMinZ], margin: CLEARANCE },
   { name: 'Dendur pool, north arm', y: PLATFORM_Y - 0.5, min: [POOL.armNorthMinX, POOL.armMinZ], max: [POOL.maxX, POOL.basinMinZ], margin: CLEARANCE },
