@@ -3,7 +3,7 @@
 Status: active
 Owner: Coordinator (Claude Code desktop session, 2026-10-14)
 Created: 2026-10-25
-Updated: 2026-10-25
+Updated: 2026-10-26
 
 ## Problem and outcome
 
@@ -57,7 +57,7 @@ Codex's plan review (`reviews/0_plan.md`) found eleven gaps, all accepted:
 
 - [x] Plan review (Codex, `reviews/0_plan.md`): eleven findings accepted, the plan amended; sent to M1 and M3a, which had started.
 - [ ] M1 the walk, with the look target (worker `walk2`).
-- [ ] M3a the catalogue and the placeholders (worker `collection`).
+- [x] M3a the catalogue and the placeholders (worker `collection`, merged `7c370b1`, reviews 1 and 2): 94 real objects in ten spaces, 38 meshes and 40,290 triangles of placeholders; the model at 729 meshes and 1,578,714 triangles.
 - [ ] M2 doors (worker `doors`, after M1).
 - [ ] M3b labels (worker `collection`, after M2 and M3a).
 - [ ] Integration, review, deploy, outcome.
