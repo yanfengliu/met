@@ -2,7 +2,9 @@
  * The walk collision world (docs/design/spec.md, Walk mode): every piece of every step complete at the current t (f = 1) whose material is solid
  * (`userData.solid !== false`), in world space, as instances of per-geometry BVHs (./bvh-cache.ts) found through a uniform grid over X and Z.
  * Two queries: push a capsule out of every triangle it overlaps (`resolveCapsule`), and find the first surface below a point (`groundBelow`); a third,
- * every crossing of a vertical line with each piece (`crossings`), checks the walker after a build.
+ * every crossing of a vertical line with each piece (`crossings`), checks the walker after a build, and a fourth, whether a capsule meets anything
+ * (`meets`), checks a door's swing against the walker. A small world of pieces that move (`buildPieces`, the doors' leaves: src/walk/door-world.ts)
+ * scans its pieces rather than a grid, so `move` keeps its matrices, inverses and boxes right at once; the static world is built once per build.
  * A build reads the instance matrices of complete steps, which hold their final matrices (docs/design/spec.md, Timeline position), and never writes
  * the scene, so walking leaves the determinism contract alone. The section cut changes nothing here.
  * Bound: capsule-to-triangle distances are exact (three-mesh-bvh ExtendedTriangle) in world space for any affine piece matrix, because triangles are
@@ -34,14 +36,17 @@ export function completeSteps(t: number, n: number): number {
   return Math.max(0, Math.min(n, Math.floor(t)));
 }
 
-/** The meshes walking collides with at `t`: those of steps complete at `t`, visible, with a solid material. */
-export function collisionMeshes(steps: readonly BuiltStep[], t: number): InstancedMesh[] {
-  return steps.slice(0, completeSteps(t, steps.length)).flatMap((s) => s.meshes.filter((m) => m.visible && m.count > 0 && isSolid(m.material)));
+/**
+ * The meshes walking collides with at `t`: those of steps complete at `t`, visible, with a solid material, but those in `leaveOut` (the closed leaves of
+ * the doors that open, which collide where the door layer turns them: src/walk/door-world.ts).
+ */
+export function collisionMeshes(steps: readonly BuiltStep[], t: number, leaveOut?: ReadonlySet<InstancedMesh>): InstancedMesh[] {
+  return steps.slice(0, completeSteps(t, steps.length)).flatMap((s) => s.meshes.filter((m) => m.visible && m.count > 0 && isSolid(m.material) && leaveOut?.has(m) !== true));
 }
 
 /** How many instances the first `complete` steps put in a world `build` from `collisionMeshes`: its instances numbered from this on are later steps'. */
-export function instancesBefore(steps: readonly BuiltStep[], complete: number): number {
-  return collisionMeshes(steps, complete).reduce((sum, mesh) => sum + mesh.count, 0);
+export function instancesBefore(steps: readonly BuiltStep[], complete: number, leaveOut?: ReadonlySet<InstancedMesh>): number {
+  return collisionMeshes(steps, complete, leaveOut).reduce((sum, mesh) => sum + mesh.count, 0);
 }
 
 /** Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and its up-turned normal's Y. */
@@ -108,6 +113,10 @@ export class CollisionWorld {
   private cellItems = new Int32Array(0);
   private stamps = new Uint32Array(0);
   private visit = 0;
+  /** A world of pieces that move (`buildPieces`): its queries scan every piece in it, with no grid, and `out[k]` marks a piece out of the world. */
+  private linear = false;
+  private out = new Uint8Array(0);
+  private local: Box3[] = [];
   private readonly found: number[] = [];
   // Scratch state for the shapecast callbacks, which are created once.
   private readonly localBox = new Box3();
@@ -129,6 +138,21 @@ export class CollisionWorld {
       return false;
     },
   };
+  /** As `capsuleCast`, but stops at the first triangle nearer the capsule's segment than its radius (`meets`). */
+  private readonly meetCast = {
+    intersectsBounds: (box: Box3): boolean => box.intersectsBox(this.localBox),
+    intersectsTriangle: (tri: ExtendedTriangle): boolean => {
+      const segment = this.segment;
+      if (segment === null) return false;
+      const o = this.current * 16;
+      const w = this.worldTri;
+      transformPoint(this.matrices, o, tri.a, w.a);
+      transformPoint(this.matrices, o, tri.b, w.b);
+      transformPoint(this.matrices, o, tri.c, w.c);
+      w.needsUpdate = true;
+      return w.closestPointToSegment(segment, this.onTri, this.onSegment) < this.radius;
+    },
+  };
 
   constructor(private readonly cache: GeometryBvhs) {}
 
@@ -148,6 +172,9 @@ export class CollisionWorld {
     this.bvhs = [];
     this.stamps = new Uint32Array(n);
     this.visit = 0;
+    this.linear = false;
+    this.out = new Uint8Array(n);
+    this.local = [];
     let triangles = 0;
     let k = 0;
     const world = new Box3();
@@ -178,6 +205,71 @@ export class CollisionWorld {
     }
     this.buildGrid(world);
     return { instances: n, triangles, ms: performance.now() - start };
+  }
+
+  /**
+   * Replaces the world with one piece per geometry of `geometries`, each out of the world until `move` places it: a small world of pieces that move
+   * (the doors' leaves, src/walk/door-world.ts). Its queries scan every piece rather than a grid, so it is for a few pieces only.
+   */
+  buildPieces(geometries: readonly BufferGeometry[]): void {
+    const n = geometries.length;
+    this.n = n;
+    this.matrices = new Float64Array(n * 16);
+    this.inverses = new Float64Array(n * 16);
+    this.boxes = new Float64Array(n * 6);
+    this.bvhs = geometries.map((g) => this.cache.get(g));
+    this.local = geometries.map((g) => {
+      if (g.boundingBox === null) g.computeBoundingBox();
+      return (g.boundingBox ?? new Box3()).clone();
+    });
+    this.stamps = new Uint32Array(n);
+    this.visit = 0;
+    this.linear = true;
+    this.out = new Uint8Array(n).fill(1);
+    this.cellStart = new Int32Array(1);
+    this.cellItems = new Int32Array(0);
+  }
+
+  /**
+   * Places piece k of a world from `buildPieces` at the world matrix `matrix`, or takes it out of the world (null): its matrix, its inverse and its
+   * world box follow at once, and the next query meets it there.
+   */
+  move(k: number, matrix: Matrix4 | null): void {
+    if (!this.linear || k < 0 || k >= this.n) throw new Error(`CollisionWorld.move: piece ${String(k)} is no piece of a world from buildPieces (it has ${String(this.linear ? this.n : 0)}); build the moving pieces with buildPieces first.`);
+    this.out[k] = matrix === null ? 1 : 0;
+    if (matrix === null) return;
+    this.matrices.set(matrix.elements, k * 16);
+    this.inverses.set(tmpMatrix.copy(matrix).invert().elements, k * 16);
+    const local = this.local[k];
+    if (local === undefined) return;
+    tmpBox.copy(local).applyMatrix4(matrix);
+    const b = this.boxes;
+    const o = k * 6;
+    b[o] = tmpBox.min.x;
+    b[o + 1] = tmpBox.min.y;
+    b[o + 2] = tmpBox.min.z;
+    b[o + 3] = tmpBox.max.x;
+    b[o + 4] = tmpBox.max.y;
+    b[o + 5] = tmpBox.max.z;
+  }
+
+  /** Whether the capsule round `segment` with `radius` meets any solid triangle, nearer its segment than the radius; it moves nothing. */
+  meets(segment: Line3, radius: number): boolean {
+    this.segment = segment;
+    this.radius = radius;
+    const { start, end } = segment;
+    const box: [number, number, number, number, number, number] = [Math.min(start.x, end.x) - radius, Math.min(start.y, end.y) - radius, Math.min(start.z, end.z) - radius, Math.max(start.x, end.x) + radius, Math.max(start.y, end.y) + radius, Math.max(start.z, end.z) + radius];
+    let met = false;
+    for (const k of this.candidates(...box)) {
+      this.current = k;
+      transformBox(this.inverses, k * 16, ...box, this.localBox);
+      if (this.bvhs[k]?.shapecast(this.meetCast) === true) {
+        met = true;
+        break;
+      }
+    }
+    this.segment = null;
+    return met;
   }
 
   private buildGrid(world: Box3): void {
@@ -220,6 +312,15 @@ export class CollisionWorld {
     const found = this.found;
     found.length = 0;
     if (this.n === 0) return found;
+    if (this.linear) {
+      const { boxes, out } = this;
+      for (let k = 0; k < this.n; k += 1) {
+        const o = k * 6;
+        if (out[k] === 1 || (boxes[o] ?? 0) > maxX || (boxes[o + 3] ?? 0) < minX || (boxes[o + 1] ?? 0) > maxY || (boxes[o + 4] ?? 0) < minY || (boxes[o + 2] ?? 0) > maxZ || (boxes[o + 5] ?? 0) < minZ) continue;
+        found.push(k);
+      }
+      return found;
+    }
     this.visit = (this.visit + 1) >>> 0;
     if (this.visit === 0) {
       this.stamps.fill(0);

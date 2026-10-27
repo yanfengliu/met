@@ -61,7 +61,7 @@ const PETRIE_CORRIDOR_WIDTH = 1.77;
  * The way from the Greek and Roman galleries into the Petrie Court's wing (work unit 2, M4): the map's corridor from Exhibition Gallery 199 to the east end
  * of gallery 549, whose doors open into the court (interior.md, Other skylit volumes). The map's corridor lies 4.2 m east of this block line, where its 549
  * and court run on to; here it opens through this wall on Z −69.0, as wide as on the map, its north side on the south face of the court's limestone wall
- * (roche-south/kravis.ts; 0.22 m south of the map's), so that wall is not cut. It does not need Weston's 1888 door, which M2b makes a door.
+ * (roche-south/kravis.ts; 0.22 m south of the map's), so that wall is not cut. It does not need Weston's 1888 door, which opens (work unit 2, M2b) but which reach.test.ts counts shut.
  */
 export const PETRIE_PASSAGE: Passage = { a: COURT_X0 - COURT_WALL - PETRIE_CORRIDOR_WIDTH, b: COURT_X0 - COURT_WALL, y0: LEVEL_1, y1: LEVEL_1 + DOORWAY_HEIGHT };
 

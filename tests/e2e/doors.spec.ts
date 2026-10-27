@@ -6,23 +6,27 @@
  * step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
  * first frame drawn, as its render drew them, the doors set before the walker is placed and that before the first frame (the page's marks, read beside a
  * probe of the first drawn frame), and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and 390×844;
- * and with the look target on, facing into the Great Hall from the landing while the doorway opens and closes, and in the hall facing out while it
- * opens, the slowest frame of each swing takes under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under
- * 16.7 ms (review 0, F9; review 5, F23 and F24; review 8, F32).
+ * and with the look target on, facing into the Great Hall from the landing while the doorway opens and closes, standing and then walking to and fro
+ * before it through two full open and close cycles (W and S held in turn, the eye moving), and in the hall facing out while it closes and opens, the
+ * slowest frame of each swing, and of the walk, takes under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under
+ * 16.7 ms (review 0, F9; review 5, F23 and F24; review 8, F32). The entrance's leaves are solid (Doors: Walking), so the walk into the hall opens the
+ * door by E first, as a visitor does.
  * Bound: pointer lock is not available headless, so for the locked click a probe makes the page see its canvas locked (it answers
  * `document.pointerLockElement` with the canvas and sends `pointerlockchange`) and the click itself is the real mouse's. A frame's work is timed by a
  * probe that wraps `requestAnimationFrame` before the page loads and times each callback, the page's frame among them; GPU time is the page's own
  * benchmark. The first frame drawn is read by a probe that wraps `requestAnimationFrame` and, writing nothing, reads `perf.lastDrawn` after the callback
  * that drew it: the doors as the page read them back from the meshes right after that render. Pixel checks compare coarse luminance grids: they prove
- * the drawing changed where the door is, not that it is right.
+ * the drawing changed where the door is, not that it is right. Walking to and fro, the walker turns round at least twice a cycle, where its speed
+ * passes through nought, so a frame there may move the eye under 0.5 mm. The slowest frame is that of every callback timed, the test's own reads of
+ * `window.__met` among them, so it bounds the page's own frame from above (a probe of the page's callback alone, 2026-10-27: the walked cycles' page
+ * frames took 3.4 ms at the median and 9.1 ms at most, the slowest callback of all).
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import type { Vec3 } from '../../src/build/types.js';
 import { changedCells, facts, lumaGrid, open, press, settle, watchErrors } from './helpers.js';
-import { face, legs, MINUS_Z, still, walk, walking } from './route-walk.js';
-import type { Sample } from './route-walk.js';
+import { along, doorFacts, doorIs, entranceLeaves, face, legs, looksAt, MIDDLE_DOOR, MINUS_Z, record, still, toward, walk, walking } from './route-walk.js';
+import type { DoorFact, Facing, Sample } from './route-walk.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
 
 /**
@@ -30,29 +34,12 @@ import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
  * less 0.07); the middle door spans X −0.746..0.746, its right leaf X 0.004..0.652, which open into the building lies along X 0.582..0.652.
  */
 const DOOR_Z = -1.724;
-const MIDDLE = 'hunt-entrance-middle';
+const MIDDLE = MIDDLE_DOOR;
 /** Where the plaza spawn stands (src/walk/spawns.ts) and the north link's door (src/model/mmw/facade.ts: X 69, its leaves at Z −2.38). */
 const PLAZA: readonly [number, number] = [0, 24.46];
 const LINK_X = 69;
 /** The prompt's band about the crosshair, agreed with M3b's label card (docs/design/spec.md, Doors: Use). */
 const BAND = { half: 160, above: 8, below: 80 } as const;
-
-type Door = NonNullable<Awaited<ReturnType<typeof doorFacts>>>;
-
-async function doorFacts(page: Page, id: string): Promise<{ id: string; state: string; angle: number; locked: boolean; built: boolean } | undefined> {
-  return page.evaluate((door) => window.__met?.doors.find((d) => d.id === door), id);
-}
-
-/** Waits until door `id` is in `state`, at most `ms`. */
-async function doorIs(page: Page, id: string, state: string, ms = 4000): Promise<Door> {
-  await page.waitForFunction(([door, s]) => window.__met?.doors.find((d) => d.id === door)?.state === s, [id, state] as const, { timeout: ms });
-  const found = await doorFacts(page, id);
-  if (found === undefined) throw new Error(`No door ${id} in window.__met.doors.`);
-  return found;
-}
-
-/** The yaw that faces the plan point (x, z) from the eye (src/walk/walker.ts: yaw 0 looks toward −Z, growing to the left). */
-const toward = (eye: Vec3, x: number, z: number): number => Math.atan2(-(x - eye[0]), -(z - eye[2]));
 
 /** Tilts the walker's view to look at height `y` at the plan point (x, z) with a vertical drag: down for down, `LOOK_PER_PIXEL` a pixel. */
 async function tiltToward(page: Page, x: number, y: number, z: number): Promise<void> {
@@ -69,13 +56,6 @@ async function tiltToward(page: Page, x: number, y: number, z: number): Promise<
   await page.mouse.down();
   for (let k = 1; k <= 10; k += 1) await page.mouse.move(cx, cy + (dy * k) / 10);
   await page.mouse.up();
-}
-
-/** Waits until the look target is door `id` and the prompt says `text`. */
-async function looksAt(page: Page, id: string, text: string): Promise<void> {
-  await page.waitForFunction((door) => window.__met?.walk.target?.kind === 'door' && window.__met.walk.target.id === door, id, { timeout: 3000 });
-  await expect(page.getByTestId('door-prompt')).toHaveText(text);
-  await expect(page.getByTestId('crosshair')).toHaveAttribute('data-target', 'door');
 }
 
 /** The prompt keeps to its band under the crosshair, inside the viewport, apart from the crosshair. */
@@ -122,6 +102,104 @@ async function lockedClick(page: Page): Promise<void> {
   await page.mouse.up();
 }
 
+/**
+ * Waits until the middle door is `state` ('opening' or 'closing') and has turned off `from` degrees, at most 1 s. Walking, a swing moves in the walker's
+ * physics steps of 1/120 s (Doors: Walking), so a frame drawn right after E may hold none and show the door begun at its start, at rest as its swing
+ * eases out of it.
+ */
+async function underWay(page: Page, state: 'opening' | 'closing', from: number): Promise<DoorFact> {
+  await page.waitForFunction(([id, s, a]) => {
+    const door = window.__met?.doors.find((d) => d.id === id);
+    return door?.state === s && door.angle !== a;
+  }, [MIDDLE, state, from] as const, { timeout: 1000 });
+  const found = await doorFacts(page, MIDDLE);
+  if (found === undefined) throw new Error(`No door ${MIDDLE} in window.__met.doors.`);
+  return found;
+}
+
+/** How far the walking eye may be from the door it opens or closes, by its look target (src/walk/look.ts `LOOK_REACH`), less what a walk back coasts. */
+const WALK_REACH = 1.7;
+/** How near the closed leaves' front face the walking eye turns back: with what a walk coasts (0.14 m), the body keeps about 0.35 m off them. */
+const WALK_NEAR = 0.85;
+
+/**
+ * Walks to and fro along the line the walker faces, with S and W held in turn, from where its look target, the middle door, lies WALK_REACH away to
+ * WALK_NEAR before the closed leaves' front face; each key is pressed before the other goes up, so one is always held. Once the walker moves, E opens the
+ * door, and at each turn after the door has come to rest where the last E sent it, E sends it on: open, closed, open, closed. Returns the page's clock when
+ * it first tries E and when the door was seen closed at the last, the walk facts of every frame between, the page's drawn frames over that time and the turns
+ * at which the door stood at rest out of sight; the walker then walks on to where it began and lets go. Bound: the line must pass through the closed leaf
+ * and the open leaf it looks at, which the caller chooses. E is pressed only while the look target is the door, so slow frames, which carry the walker
+ * past its turns, delay the cycles and leave the verdict to the frames' times; after 60 turns it fails, saying at how many the door was out of sight.
+ */
+async function doorCycles(page: Page, front: number): Promise<{ from: number; to: number; frames: Sample[]; drawn: number; unseen: number }> {
+  const line = await still(page);
+  const level = Math.hypot(line.look[0], line.look[2]);
+  const axis: Facing = [line.look[0] / level, line.look[2] / level];
+  const start = along(line.eye, axis);
+  const swings = ['open', 'closed', 'open', 'closed'] as const;
+  let next = 0;
+  let unseen = 0;
+  /** E, if the look target is the middle door: the door starts its next swing at once. Counts a turn where it is not (`unseen`). */
+  const use = async (): Promise<void> => {
+    const target = await page.evaluate(() => window.__met?.walk.target ?? null);
+    if (target?.kind !== 'door' || target.id !== MIDDLE) {
+      unseen += 1;
+      return;
+    }
+    await page.keyboard.press('KeyE');
+    await doorIs(page, MIDDLE, swings[next] === 'open' ? 'opening' : 'closing', 1000);
+    next += 1;
+  };
+  /** Waits in the page, at every frame, until it is time to turn: walking back, the door WALK_REACH away or out of sight; forward, WALK_NEAR before the leaves. */
+  const turn = (back: boolean): Promise<boolean> =>
+    page.waitForFunction(
+      ([away, reach, near]) => {
+        const walk = window.__met?.walk;
+        if (walk?.eye == null) return false;
+        return away ? walk.target === null || walk.target.distance >= reach : walk.eye[2] <= near;
+      },
+      [back, WALK_REACH, front + WALK_NEAR] as const,
+      { polling: 'raf', timeout: 3000 },
+    ).then(
+      () => true,
+      () => false,
+    );
+  let held: 'KeyS' | 'KeyW' = 'KeyS';
+  await page.keyboard.down(held);
+  await page.waitForFunction(([ax, az, at]) => {
+    const eye = window.__met?.walk.eye;
+    return eye != null && eye[0] * ax + eye[2] * az < at;
+  }, [axis[0], axis[1], start - 0.05] as const, { polling: 'raf', timeout: 2000 });
+  await record(page);
+  const from = await page.evaluate(() => performance.now());
+  const firstDrawn = await page.evaluate(() => window.__met?.perf.lastDrawn.frame ?? 0);
+  await use();
+  for (let turns = 0; ; turns += 1) {
+    const back: boolean = held === 'KeyS';
+    if (!(await turn(back))) throw new Error(`Walking ${back ? 'back' : 'forward'} through the door cycles (${String(next)} of ${String(swings.length)} begun), the walker came to no turn within 3 s.`);
+    const other: 'KeyS' | 'KeyW' = back ? 'KeyW' : 'KeyS';
+    await page.keyboard.down(other);
+    await page.keyboard.up(held);
+    held = other;
+    const state = (await doorFacts(page, MIDDLE))?.state;
+    if (next === 0 || state === swings[next - 1]) {
+      if (next === swings.length) break;
+      await use();
+    }
+    if (turns > 60) throw new Error(`Sixty turns walking to and fro, and the door has come through only ${String(next)} of ${String(swings.length)} swings; at ${String(unseen)} turns it stood at rest out of the look target's sight.`);
+  }
+  const to = await page.evaluate(() => performance.now());
+  const drawn = (await page.evaluate(() => window.__met?.perf.lastDrawn.frame ?? 0)) - firstDrawn;
+  const frames = await record(page);
+  await page.waitForFunction(([ax, az, at, sense]) => {
+    const eye = window.__met?.walk.eye;
+    return eye != null && sense * (eye[0] * ax + eye[2] * az - at) >= 0;
+  }, [axis[0], axis[1], start, held === 'KeyW' ? 1 : -1] as const, { polling: 'raf', timeout: 3000 });
+  await page.keyboard.up(held);
+  await still(page);
+  return { from, to, frames, drawn, unseen };
+}
+
 /** Moves the scrubber's thumb by mouse to timeline position `t`, as a person drags it. */
 async function scrubTo(page: Page, t: number, n: number): Promise<void> {
   const box = await page.getByTestId('scrubber').boundingBox();
@@ -150,7 +228,7 @@ test.describe('the doors', () => {
     await expectPromptInBand(page);
     const closed = await lumaGrid(page);
     await page.keyboard.press('KeyE');
-    expect((await doorIs(page, MIDDLE, 'opening', 1000)).angle, 'under way').toBeGreaterThan(0);
+    expect((await underWay(page, 'opening', 0)).angle, 'under way').toBeGreaterThan(0);
     const opened = await doorIs(page, MIDDLE, 'open');
     expect(opened.angle, 'a quarter turn into the building, away from the walker in front').toBe(90);
     const open1 = await lumaGrid(page);
@@ -175,7 +253,7 @@ test.describe('the doors', () => {
     // A click while the pointer is locked closes it.
     const before = await lumaGrid(page);
     await lockedClick(page);
-    expect((await doorIs(page, MIDDLE, 'closing', 1000)).angle).toBeLessThan(90);
+    expect((await underWay(page, 'closing', 90)).angle).toBeLessThan(90);
     expect((await doorIs(page, MIDDLE, 'closed')).angle).toBe(0);
     expect(changedCells(before, await lumaGrid(page)).length, 'cells that changed as the leaf closed').toBeGreaterThan(3);
     // Closed, the right leaf stands across the same ray again: E opens it; taken back before the doors' step and built again, it is closed, its default.
@@ -291,7 +369,9 @@ test.describe('the doors', () => {
     });
   });
 
-  test('facing into the Great Hall, opening and closing, and in it facing out, a swing’s slowest frame takes under 16.7 ms of work (review 0, F9; review 5, F23)', async ({ page }) => {
+  test('facing into the Great Hall, standing and walking through two door cycles, and in it facing out, the slowest frame of a swing takes under 16.7 ms of work (review 0, F9; review 5, F23)', async ({ page }) => {
+    // The walk to the doors, six swings, two cycles walked and the walk into the hall: about 20 s here.
+    test.setTimeout(120_000);
     // Times every requestAnimationFrame callback, the page's frame among them, from before the page's own scripts run.
     await page.addInitScript(() => {
       const raf = window.requestAnimationFrame.bind(window);
@@ -303,13 +383,16 @@ test.describe('the doors', () => {
         log.push([start, performance.now() - start]);
       });
     });
+    /** The work of every frame timed between the page's clock readings `from` and `to`, milliseconds. */
+    const work = (from: number, to: number): Promise<number[]> =>
+      page.evaluate(([a, b]) => (window as unknown as { frameWork: [number, number][] }).frameWork.filter(([t]) => t >= a && t <= b).map(([, ms]) => ms), [from, to] as const);
     /** Presses E and times every frame until the middle doorway stands `state`: the slowest frame's work, from more than 20 frames, under 16.7 ms. */
-    const timedSwing = async (state: string, where: string): Promise<Door> => {
+    const timedSwing = async (state: string, where: string): Promise<DoorFact> => {
       const from = await page.evaluate(() => performance.now());
       await page.keyboard.press('KeyE');
       const door = await doorIs(page, MIDDLE, state);
       const to = await page.evaluate(() => performance.now());
-      const frames = await page.evaluate(([a, b]) => (window as unknown as { frameWork: [number, number][] }).frameWork.filter(([t]) => t >= a && t <= b).map(([, ms]) => ms), [from, to] as const);
+      const frames = await work(from, to);
       const slowest = Math.max(...frames);
       console.log(`a swing ${where}: ${String(frames.length)} frames, slowest ${slowest.toFixed(2)} ms of work`);
       expect(frames.length, `${where}: frames timed over the swing`).toBeGreaterThan(20);
@@ -331,10 +414,31 @@ test.describe('the doors', () => {
     await face(page, toward(at.eye, 0.62, DOOR_Z - 0.3));
     await looksAt(page, MIDDLE, 'E Close');
     expect((await timedSwing('closed', 'closing, facing into the Great Hall')).angle).toBe(0);
-    // Through the doorway (its leaves are not yet solid) into the entrance bay, then turned back to the doors: in the hall, facing out.
+    // Walking: to and fro on this line of sight, which meets the right leaf closed and open, through two full cycles of the door. Every frame from the
+    // first E to the last close walks (W or S held, the eye moving), finds the look target and renders the hall through the doorway.
+    const cycles = await doorCycles(page, entranceLeaves().front);
+    const walkWork = await work(cycles.from, cycles.to);
+    const slowestWalking = Math.max(...walkWork);
+    const steps = cycles.frames.slice(1).map((s, i) => Math.hypot(...s.eye.map((c, k) => c - (cycles.frames[i]?.eye[k] ?? Number.NaN))));
+    const moving = steps.filter((d) => d > 5e-4).length;
+    const metres = steps.reduce((sum, d) => sum + d, 0);
+    console.log(`two door cycles walked, facing into the Great Hall: ${String(cycles.drawn)} frames drawn in ${((cycles.to - cycles.from) / 1000).toFixed(2)} s, the eye moving in ${String(moving)} of ${String(steps.length)}, ${metres.toFixed(2)} m walked, the door out of sight at rest at ${String(cycles.unseen)} turns; ${String(walkWork.length)} callbacks timed, slowest ${slowestWalking.toFixed(2)} ms of work`);
+    expect(slowestWalking, 'the slowest walking frame through two door cycles').toBeLessThan(16.7);
+    expect(steps.length, 'walking frames recorded through the cycles').toBeGreaterThan(120);
+    // Where the walk turns round its speed passes through nought, so a frame or so a turn moves the eye less than 0.5 mm (Bound, in the header).
+    expect(moving / steps.length, 'the share of those frames in which the eye moved more than 0.5 mm').toBeGreaterThan(0.95);
+    expect(metres, 'metres walked through the cycles').toBeGreaterThan(3);
+    // Opened by E (its leaves are solid), through the doorway into the entrance bay; there, turned back to the doors, in the hall facing out: closed by
+    // its open leaf, then opened out toward the plaza, each swing timed.
+    await looksAt(page, MIDDLE, 'E Open');
+    await page.keyboard.press('KeyE');
+    await doorIs(page, MIDDLE, 'open');
     const ahead = await face(page, 0);
     const inside = await walk(page, 'into the hall', legs([[ahead.eye[0], ahead.eye[2]], [ahead.eye[0], DOOR_Z - 1.4]], MINUS_Z), []);
     expect(inside.eye[2], 'inside, behind the doors').toBeLessThan(DOOR_Z - 0.6);
+    await face(page, toward(inside.eye, 0.62, DOOR_Z - 0.3));
+    await looksAt(page, MIDDLE, 'E Close');
+    expect((await timedSwing('closed', 'closing, in the Great Hall facing out')).angle).toBe(0);
     await face(page, toward(inside.eye, 0.35, DOOR_Z));
     await looksAt(page, MIDDLE, 'E Open');
     expect((await timedSwing('open', 'in the Great Hall, facing out')).angle, 'away from the walker inside: out toward the plaza').toBe(-90);

@@ -5,10 +5,10 @@
  * pieces (`collisionMeshes`) in a `CollisionWorld` over three-mesh-bvh; the fill (src/walk/reach.ts) moves the real walker from place to place, and the
  * path to each place that meets a target is walked again from the spawn (`replay`), so a target counts only when that path walks end to end.
  * Bound:
- * - Doors: the Hunt central arch's three doors (src/model/doors.ts) count as open, their leaves' meshes left out of the world; at 691b8f7 those leaves are
- *   passable copies anyway, and M2b makes them solid and openable. Every other door counts as closed, its closed leaves in the world whether their
- *   material is solid or not: the locked doors (the links', the Bank's), and Weston's 1888 door into the Petrie Court, which the core builds as a solid
- *   closed piece with no tag until M2b makes it a door. So the Petrie Court must be reached without Weston's door, by the corridor from gallery 199.
+ * - Doors: the Hunt central arch's three doors (src/model/doors.ts) count as open, their leaves' meshes left out of the world, as a visitor opens them by
+ *   E. Every other door counts as closed, its closed leaves in the world whether their material is solid or not: the locked doors (the links', the
+ *   Bank's), and Weston's 1888 door into the Petrie Court, which opens (work unit 2, M2b) but is counted shut. So the Petrie Court must be reached without
+ *   Weston's door, by the corridor from gallery 199.
  * - Grid: one place per 0.5 m cell and 0.3 m band of height; moves of one cell toward each of four neighbours' centres, at a run, each on from the
  *   walker's exact state at the place before (never set down again), never off the ground and never a jump. A passage the walker passes only on some
  *   other line can be missed; a place the fill reaches, the walker reaches, as the replay shows.

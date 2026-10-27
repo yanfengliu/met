@@ -5,6 +5,7 @@
  * marble floor with red-slate borders (interior.md). Everything else comes from the palette.
  */
 import { Color, DoubleSide, MeshStandardMaterial } from 'three';
+import type { Material } from 'three';
 
 import { palette } from '../palette.js';
 
@@ -13,6 +14,19 @@ function standard(name: string, colour: string, roughness: number, metalness = 0
 }
 
 const screenIron = standard('core.screenIron', '#1e1c1a', 0.45, 0.8);
+
+/** A copy of a palette material under its own name, looking the same. */
+function named<T extends Material>(source: T, name: string): T {
+  const material = source.clone();
+  material.name = name;
+  return material;
+}
+
+/** `material`, casting no shadow (src/build/batch.ts `castsShadow`). */
+function shadowless<T extends Material>(material: T): T {
+  material.userData['castShadow'] = false;
+  return material;
+}
 
 export const core = Object.freeze({
   /** The Vaux front's grey-white granite bands, voussoirs and trim ([C7] about #B9B4AA). */
@@ -33,6 +47,14 @@ export const core = Object.freeze({
   castIron: standard('core.castIron', '#34393b', 0.5, 0.7),
   /** Light aluminium of the gallery skylights and laylights (exterior.md [R2]: glass in aluminium frames; the 2018 orthophoto shows light frames). */
   aluminium: standard('core.aluminium', '#c3c7ca', 0.45, 0.6),
+  /**
+   * The wood of the 1888 door's leaves (weston-facade.ts), which open: the palette's wood, casting no shadow, so a swing's frames redraw no shadow map, as
+   * with the Fifth Avenue entrance's leaves (docs/design/spec.md, Doors: No shadow from the leaves). Their shadow would fall only where there
+   * is shade already: under the page's one sun (src/viewer/sun.ts, 76° off the facade's normal, from the east) the porch and the doorway's east reveal
+   * shade all behind the leaves. Closed or a quarter turn open, no point of the floor and reveals behind the frame, of gallery 529's floor within 3.7 m
+   * of the door or of its west wall is sunlit even without them (a probe through the finished model's casters, 2026-10-27).
+   */
+  westonDoorWood: shadowless(named(palette.wood, 'core.westonDoorWood')),
 });
 
 /** Glass that must read from both sides (skylight and laylight panes face one way). */

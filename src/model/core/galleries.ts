@@ -47,9 +47,36 @@ export function galleryWalls(kit: Kit, block: BlockId): void {
   }
 }
 
-/** Main-floor walls of a wing (blocks B and C), from the floor to the second-floor slab (plaster). */
-export function mainFloorWalls(kit: Kit, block: BlockId): void {
-  for (const run of MAIN_FLOOR_RUNS) {
+/** A doorway through wing B's south front (weston-facade.ts WESTON_DOOR): the middle of its opening along Z and its width. */
+export interface FrontDoorway {
+  readonly z: number;
+  readonly width: number;
+}
+
+/**
+ * `runs` with any wall that the map stands in `doorway`'s opening from the front moved onto the line of the nearer reveal, its face continuing the
+ * reveal, and the walls that end on it following it. The 1888 door has one: the wall between galleries 528 and 529 (map Z −104.7), moved 0.45 m
+ * west. The decoded floor map (interior.md, Plan source) has the door in the middle of gallery 529, its opening on the old front's line from
+ * Z −102.73 to −99.21, but the model's pavilion stands at the facade's middle, 2.68 m west of that, so on the map's line this wall stood 0.45 m
+ * inside the doorway and in the swing of the door's west leaf, which opens into the building (src/model/door-fit.test.ts).
+ */
+function clearOf(runs: readonly Run[], doorway: FrontDoorway): Run[] {
+  const half = PARTITION / 2;
+  const z0 = doorway.z - doorway.width / 2;
+  const z1 = doorway.z + doorway.width / 2;
+  const moved = runs.flatMap(([axis, fixed, from, to]) => (axis === 0 && from <= INTERIOR.b[0] && fixed + half > z0 && fixed - half < z1 ? [{ fixed, from, to, line: fixed < doorway.z ? z0 - half : z1 + half }] : []));
+  return runs.map((run): Run => {
+    const [axis, fixed, from, to] = run;
+    const wall = moved.find((m) => (axis === 0 ? m.fixed === fixed && m.from === from : fixed >= m.from && fixed <= m.to && (from === m.fixed || to === m.fixed)));
+    if (wall === undefined) return run;
+    if (axis === 0) return [0, wall.line, from, to];
+    return [1, fixed, from === wall.fixed ? wall.line : from, to === wall.fixed ? wall.line : to];
+  });
+}
+
+/** Main-floor walls of a wing (blocks B and C), from the floor to the second-floor slab (plaster), keeping out of `doorway`'s opening (`clearOf`). */
+export function mainFloorWalls(kit: Kit, block: BlockId, doorway?: FrontDoorway): void {
+  for (const run of doorway === undefined ? MAIN_FLOOR_RUNS : clearOf(MAIN_FLOOR_RUNS, doorway)) {
     for (const r of runRects(run, block)) addBox(kit, palette.plaster, r[0], L1, r[1], r[2], L2 - SLAB, r[3], Math.round(r[1]));
   }
 }

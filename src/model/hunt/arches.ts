@@ -11,6 +11,7 @@ import { doorTag } from '../doors.js';
 import { palette } from '../palette.js';
 import { PLINTH_WIDTH } from '../lib/column.js';
 import { archivolt, barrelVault, columnParts, doorUnit, MeshBuilder, moulding, surround, windowUnit } from '../lib/index.js';
+import type { DoorParts } from '../lib/window.js';
 import {
   ARCH_CROWN_Y,
   ARCH_INNER_SPAN,
@@ -71,6 +72,10 @@ export const ENTRANCE_DOOR_WIDTH = 2 * (SCREEN_COLUMN_X - PLINTH_HALF) - 2 * DOO
  * 119 of its 219 px (54%), a single fixed pane above; of the model's 4.79 m opening that leaves the leaves 2.60 m with the frame's sill.
  */
 const ENTRANCE_TRANSOM = 2.1;
+/** The entrance's door unit (src/model/lib/window.ts `doorUnit`): each opening's pair of glazed leaves in its bronze frame, under its transom light. */
+export function entranceDoor(): DoorParts {
+  return doorUnit({ width: ENTRANCE_DOOR_WIDTH, height: SCREEN_HEAD_Y - MAIN, leaves: 2, glazed: true, lights: 1, transom: ENTRANCE_TRANSOM, frame: 0.09, bar: 0.09, depth: DOOR_DEPTH });
+}
 /** Windows in the side arches stand on a solid base; the central arch has doors to the floor. */
 const WINDOW_SILL_Y = MAIN + 1.1;
 const SCREEN_D = 0.5;
@@ -235,17 +240,17 @@ export const archSteps: readonly StepDef[] = [
           if (doors) {
             // The entrance's doors (src/model/doors.ts): in a bronze frame, a pair of glazed leaves, one tall pane each in a bronze frame, which open, under
             // a transom bar at 54% of the opening and a fixed transom light (S8, Haklai 2012, at full size), behind the columns (ENTRANCE_DOOR_Z) with
-            // bronze filling the opening either side. Until the walk's collision follows the leaves (M2b) their bronze and glass are passable copies of
-            // the palette's, as the fixed glazing before them was; the leaves' bronze casts no shadow, so their swing needs no shadow pass
-            // (hunt.doorLeafBronze).
+            // bronze filling the opening either side. The leaves are solid, held by the walk's collision where the door layer turns them
+            // (src/walk/door-world.ts); the frame, the bronze beside it and the transom light are passable copies of the palette's, as the fixed glazing
+            // before them was. The leaves' bronze casts no shadow, so their swing needs no shadow pass (hunt.doorLeafBronze).
             const cx = x + (a + b) / 2;
             const m = at(cx, bottom, ENTRANCE_DOOR_Z);
-            const door = doorUnit({ width: ENTRANCE_DOOR_WIDTH, height: SCREEN_HEAD_Y - bottom, leaves: 2, glazed: true, lights: 1, transom: ENTRANCE_TRANSOM, frame: 0.09, bar: 0.09, depth: DOOR_DEPTH });
+            const door = entranceDoor();
             const tag = doorTag(ENTRANCE_DOORS[i] ?? '');
             kit.add(door.frame, hunt.doorBronze, m);
             if (door.glass !== undefined) kit.add(door.glass, hunt.doorGlass, m);
             kit.addTagged(door.leaf, hunt.doorLeafBronze, m, tag);
-            if (door.leafGlass !== undefined) kit.addTagged(door.leafGlass, hunt.doorGlass, m, tag);
+            if (door.leafGlass !== undefined) kit.addTagged(door.leafGlass, hunt.doorLeafGlass, m, tag);
             for (const [inner, outer] of [[cx - ENTRANCE_DOOR_WIDTH / 2, x + a], [cx + ENTRANCE_DOOR_WIDTH / 2, x + b]] as const) {
               box(kit, hunt.doorBronze, [Math.min(inner, outer), bottom, ENTRANCE_DOOR_Z - DOOR_DEPTH], [Math.max(inner, outer), SCREEN_HEAD_Y, ENTRANCE_DOOR_Z]);
             }

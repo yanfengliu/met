@@ -3,11 +3,11 @@
  * or the one leaf of src/model/lib/window.ts `doorUnit`, which a build places closed (`DoorParts.leaf`, and `leafGlass` for a glazed door) through
  * `kit.addTagged` with the door's tag (`doorTag`); the frame and the fanlight are no part of the door. The page's door layer (src/viewer/doors.ts) turns an
  * unlocked door's leaves about their hinges; a locked door stays shut whatever is asked of it.
- * Doors that open: the three doorways of the Hunt central arch, the Fifth Avenue entrance (src/model/hunt/arches.ts). Their leaves are passable, as the
- * fixed glazing there was, until the walk's collision follows the leaves (work unit 2, M2b). Locked, and solid: the McKim, Mead & White links' doors
- * (src/model/mmw/facade.ts) over a drop of 2.9 m behind them, and the Branch Bank's door in the Engelhard Court (src/model/roche-north/bank.ts) over one
- * of 0.65 m (work unit 2 audit). Weston's 1888 door into the Petrie Court stays a solid, closed piece with no tag until M2b makes it a door with its
- * collision. Gallery doorways are open portals and have no leaves.
+ * Doors that open, their leaves solid where the door layer turns them (src/walk/door-world.ts): the three doorways of the Hunt central arch, the Fifth
+ * Avenue entrance (src/model/hunt/arches.ts), and Weston's 1888 door from the Petrie Court into wing B (src/model/core/weston-facade.ts), whose leaves
+ * open into the building only. Locked, and solid: the McKim, Mead & White links' doors (src/model/mmw/facade.ts) over a drop of 2.9 m behind them, and
+ * the Branch Bank's door in the Engelhard Court (src/model/roche-north/bank.ts) over one of 0.65 m (work unit 2 audit). Gallery doorways are open
+ * portals and have no leaves.
  */
 import type { PieceTag } from '../build/types.js';
 
@@ -28,6 +28,7 @@ export const DOORS: readonly DoorInfo[] = Object.freeze(
     { id: 'mmw-north-link', name: "the north link's door on the plaza", locked: true },
     { id: 'mmw-south-link', name: "the south link's door, the 81st Street entrance", locked: true },
     { id: 'bank', name: 'the Branch Bank door in the Engelhard Court', locked: true },
+    { id: 'weston', name: "Weston's 1888 entrance, from the Petrie Court into wing B", locked: false },
   ].map((door) => Object.freeze(door)),
 );
 

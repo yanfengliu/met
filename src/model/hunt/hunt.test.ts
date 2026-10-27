@@ -230,7 +230,7 @@ function holes(x0: number, x1: number, z0: number, z1: number, level: number): s
 }
 
 describe('the walk routes through the wing', () => {
-  it("opens the central doors: their bronze and glass are passable and look like the palette's; the palette and the other glazing stay solid", () => {
+  it("opens the central doors: their leaves solid, their frames, the bronze beside them and their transom lights passable, all looking like the palette's; the palette and the other glazing stay solid", () => {
     const step = huntSteps.find((s) => s.id === 'hunt-windows');
     if (step === undefined) throw new Error('The Hunt chapter has no step hunt-windows.');
     const pieces = collectStep(step).pieces;
@@ -241,7 +241,8 @@ describe('the walk routes through the wing', () => {
     });
     expect(doors, "the central arch's door pieces: three doors, each a bronze frame, its transom light, the bronze of its leaves and their glass, and bronze either side").toHaveLength(18);
     expect(doors.filter((p) => p.tag !== null).map((p) => p.tag?.id), 'the leaves, metal and glass, tagged as their doorway').toEqual(['hunt-entrance-south', 'hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-middle', 'hunt-entrance-north', 'hunt-entrance-north']);
-    expect(doors.filter((p) => p.material.userData['solid'] !== false).map((p) => p.material.name), 'door pieces a walker cannot pass').toEqual([]);
+    // The leaves are solid wherever the door layer turns them (src/walk/door-world.ts, work unit 2, M2b); what is fixed round them stays open to a walker.
+    expect(doors.filter((p) => (p.tag !== null) === (p.material.userData['solid'] === false)).map((p) => `${p.material.name}${p.tag === null ? '' : ' (a leaf)'}`), 'leaves a walker passes, or fixed door pieces it cannot').toEqual([]);
     expect(new Set(doors.map((p) => look(p.material))), "the doors' looks: the palette's bronze and dark glass").toEqual(new Set([look(palette.bronze), look(palette.glassDark)]));
     const others = pieces.filter((p) => !doors.includes(p) && p.material.userData['solid'] === false);
     expect(others.map((p) => p.material.name), 'passable pieces of hunt-windows other than the doors').toEqual([]);

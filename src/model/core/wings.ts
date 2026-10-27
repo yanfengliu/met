@@ -6,7 +6,7 @@
 import type { StepDef } from '../../build/types.js';
 import { B_SOUTH_X, L1 } from './constants.js';
 import { galleryWalls, laylightFrames, lightWellWalls, mainFloorWalls, roofWithSkylights } from './galleries.js';
-import { westonOpenings, westonTrim, westonWalls } from './weston-facade.js';
+import { WESTON_DOOR, westonOpenings, westonTrim, westonWalls } from './weston-facade.js';
 import { ELEVATIONS, elevationTrim, elevationWalls, elevationWindows, wingFloors, wingFoundations } from './wings-walls.js';
 
 const CHAPTER = 'weston-tuckerman-1894';
@@ -113,7 +113,7 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     stagger: 'z',
     build: (kit) => {
       for (const block of ['b', 'c'] as const) {
-        mainFloorWalls(kit, block);
+        mainFloorWalls(kit, block, WESTON_DOOR);
         galleryWalls(kit, block);
         lightWellWalls(kit, block);
         laylightFrames(kit, block);

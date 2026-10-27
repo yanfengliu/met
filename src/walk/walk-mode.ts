@@ -7,8 +7,9 @@
  * drag with the mouse or a finger, which turns the view the way the pointer moves, as the locked mouse does. Leaving puts the orbit camera at the
  * walker's eye, its target 5 m ahead. The status line's hint shows how to look, move and leave until the visitor first walks or looks, at most
  * `HINT_SECONDS`, and again when the pointer is freed. Every walking frame, and afresh whenever something reads it, the look target (./look.ts) is
- * found along the eye's ray; `onLookTarget` is the one hook that hears it change, for doors and labels alike. The walk mode reads the scene and
- * never writes it.
+ * found along the eye's ray; `onLookTarget` is the one hook that hears it change, for doors and labels alike. The doors that open collide where the
+ * door layer stands them, their swings moved on in the walker's own physics steps (./door-world.ts), and after every check of the walker's place a door
+ * whose leaves a build left in the walker is put clear of it. The walk mode reads the scene and never writes it.
  */
 import { Vector3 } from 'three';
 
@@ -18,6 +19,8 @@ import type { CameraRig } from '../viewer/camera-rig.js';
 import type { GeometryBvhs } from './bvh-cache.js';
 import { CollisionWorld, collisionMeshes, completeSteps, instancesBefore } from './collision.js';
 import type { CollisionStats } from './collision.js';
+import { DoorWorld } from './door-world.js';
+import type { MovingDoors } from './door-world.js';
 import { lookTarget } from './look.js';
 import type { HitFn, LookTarget } from './look.js';
 import { DEFAULT_SPAWN, SPAWNS, nearestSpawn, spawnById, spawnYaw } from './spawns.js';
@@ -51,6 +54,8 @@ export interface WalkHost {
   readonly bvhs: GeometryBvhs;
   /** The page's hit query (src/viewer/pick.ts `ModelPicker.hit`), for the look target; without it the eye looks at nothing. */
   readonly hit?: HitFn;
+  /** The page's doors (src/viewer/doors.ts `DoorLayer`): their leaves collide where they stand, the swings moved on in the walker's steps; without them, none moves. */
+  readonly doors?: MovingDoors;
 }
 
 /** Walk facts for `window.__met.walk` (src/viewer/facts.ts). */
@@ -91,6 +96,7 @@ export function walkInput(held: ReadonlySet<string>): WalkInput {
 
 export class WalkMode {
   private readonly world: CollisionWorld;
+  private readonly doorWorld: DoorWorld;
   private readonly walker: Walker;
   private on = false;
   private prepare = false;
@@ -126,7 +132,8 @@ export class WalkMode {
     private readonly warn: (message: string) => void,
   ) {
     this.world = new CollisionWorld(host.bvhs);
-    this.walker = new Walker(this.world, host.floorY);
+    this.doorWorld = new DoorWorld(this.world, host.doors ?? null, host.bvhs);
+    this.walker = new Walker(this.doorWorld, host.floorY);
     this.bindPointer(host.canvas);
   }
 
@@ -296,6 +303,7 @@ export class WalkMode {
 
   private build(t: number): void {
     if (completeSteps(t, this.host.steps.length) !== this.builtFor || this.stats === null) this.rebuild(t);
+    this.doorWorld.refresh();
     const spawn = this.pending;
     if (spawn !== null) {
       this.placeAt(spawn);
@@ -312,21 +320,24 @@ export class WalkMode {
   }
 
   private rebuild(t: number): void {
-    this.stats = this.world.build(collisionMeshes(this.host.steps, t));
+    this.stats = this.world.build(collisionMeshes(this.host.steps, t, this.host.doors?.leafMeshes));
     this.builtFor = completeSteps(t, this.host.steps.length);
+    this.doorWorld.refresh();
   }
 
   /**
    * Checks the walker against the world just built (src/walk/walker.ts, `settle`): pieces of the steps completed after the first `known` can embed it, and
-   * anything can bury it. With no surface over it to stand on, it goes to the nearest spawn.
+   * anything can bury it. With no surface over it to stand on, it goes to the nearest spawn. Then a door whose leaves stand in it is put clear of it,
+   * and where no pose of the door is, the walker is pushed out of the leaf (./door-world.ts `release`).
    */
   private settle(known: number): void {
-    const from = this.builtFor > known ? instancesBefore(this.host.steps, known) : this.world.instances;
+    const from = this.builtFor > known ? instancesBefore(this.host.steps, known, this.host.doors?.leafMeshes) : this.world.instances;
     if (this.walker.settle(from) === 'lost') {
       const { x, y, z } = this.walker.feet;
       this.placeAt(nearestSpawn(x, y, z));
       this.walker.settle(0);
     }
+    if (this.doorWorld.release(this.walker.feet)) this.walker.standClear();
     this.settledFor = this.builtFor;
   }
 

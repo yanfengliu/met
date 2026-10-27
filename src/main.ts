@@ -110,7 +110,8 @@ function boot(): void {
   rig.pick = (ray) => picker.distance(ray);
   picker.register(doors.meshes, (mesh, instance) => doors.tagOf(mesh, instance));
   // The walking eye's look target runs the hit query (src/walk/look.ts); an orbit-view pointer can run the same query on its own ray.
-  const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query) }, (message) => { console.warn(message); });
+  // The doors that open are solid where the door layer stands them, and swing in the walker's physics steps while walking (src/walk/door-world.ts).
+  const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query), doors }, (message) => { console.warn(message); });
   // The artworks' cards (docs/design/spec.md, Collection: Labels): the look target's artwork while walking, the one a click meets in the orbit view.
   const cards = new Map<string, ArtCardContent>(CATALOGUE.map((entry) => [String(entry.id), cardContent(entry)]));
   // A click's card keeps to what the camera draws of its artwork, every piece of it (src/viewer/art-label.ts): each mesh's step finds the pieces.
@@ -379,7 +380,8 @@ function boot(): void {
       needsRender = true;
     }
     // The doors follow the timeline and swing (Doors): each swap and every frame of a swing draws again, and redraws the shadows when what moved casts one.
-    const doorChange = doors.sync(player.t, query.shot ? 0 : seconds, query.shot);
+    // While walking they swing in the walker's physics steps instead, against the walker (Doors: Walking).
+    const doorChange = doors.sync(player.t, query.shot || walk.active ? 0 : seconds, query.shot);
     if (doorChange !== 'none') {
       if (doorChange === 'shadows') viewer.markShadowsDirty();
       needsRender = true;
@@ -391,6 +393,11 @@ function boot(): void {
       const up = new Vector3(0, 1, 0).applyQuaternion(rig.camera.quaternion);
       const move = orbitKeyMove(rig.camera.position, rig.controls.target, up, orbitKeys(ui.held), seconds);
       if (move.lengthSq() > 0 && rig.translate(move)) rig.onUserMove?.();
+    }
+    const swung = doors.takeChange();
+    if (swung !== 'none') {
+      if (swung === 'shadows') viewer.markShadowsDirty();
+      needsRender = true;
     }
     followGoal = null;
     if (follow && player.moving && !walk.active) {

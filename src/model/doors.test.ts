@@ -1,9 +1,10 @@
 /**
  * The model's doors on the real sequence (src/model/doors.ts; docs/design/spec.md, Doors), headless: every door of the list is tagged, in one step,
  * and every door tag names one of them; the door layer (src/viewer/doors.ts) builds over the real timeline, with stand-ins for the doors that open and
- * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's counted (review 0, F9); with the layer attached and the doors
- * used between random positions, the timeline's state stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each
- * locked door from 2.5 m in front over the collision world at t = N, stops against its leaf, where without the leaf it walks on through.
+ * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's counted (review 0, F9); no leaf of a door that opens casts a
+ * shadow, so no swing asks for a shadow pass (review 5, F23); with the layer attached and the doors used between random positions, the timeline's state
+ * stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door from 2.5 m in front over the collision
+ * world at t = N, stops against its leaf, where without the leaf it walks on through. Weston's door against the walker: src/model/core/weston-door.test.ts.
  * Bound: the walker walks at the middle of each door, facing it square on, at 60 frames a second; positions are the feet's.
  */
 import { Box3, Matrix4, Vector3 } from 'three';
@@ -18,6 +19,7 @@ import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../walk/collision.js';
 import type { GroundHit } from '../walk/collision.js';
 import { BODY, Walker } from '../walk/walker.js';
+import { WESTON_DOOR } from './core/weston-facade.js';
 import { DOORS, doorTag } from './doors.js';
 import { doorLeavesOf } from './lib/window.js';
 
@@ -57,7 +59,7 @@ describe('the model’s doors', () => {
     expect([...meshesOf.keys()].sort(), 'the door ids tagged in the sequence').toEqual([...ids].sort());
     expect([...stepsOf].filter(([, s]) => s.size !== 1).map(([id]) => id), 'doors with pieces in more than one step').toEqual([]);
     expect(DOORS.filter((d) => d.locked).map((d) => d.id)).toEqual(['mmw-north-link', 'mmw-south-link', 'bank']);
-    expect(() => doorTag('weston')).toThrow(/doorTag: "weston" names no door of src\/model\/doors.ts; use one of hunt-entrance-south/);
+    expect(() => doorTag('petrie-court')).toThrow(/doorTag: "petrie-court" names no door of src\/model\/doors.ts; use one of hunt-entrance-south, .*, weston\./);
   });
 
   it('builds the door layer over the real timeline: stand-ins for the doors that open, none for the locked, within 20 meshes and draws', () => {
@@ -71,25 +73,29 @@ describe('the model’s doors', () => {
         drawnBy.set(id, (drawnBy.get(id) ?? 0) + 1);
       }
     }
-    // Each Hunt doorway: two leaves, each of bronze and of glass.
-    expect([...drawnBy].sort()).toEqual([['hunt-entrance-middle', 4], ['hunt-entrance-north', 4], ['hunt-entrance-south', 4]]);
+    // Each Hunt doorway: two leaves, each of bronze and of glass; Weston's: two wooden leaves.
+    expect([...drawnBy].sort()).toEqual([['hunt-entrance-middle', 4], ['hunt-entrance-north', 4], ['hunt-entrance-south', 4], ['weston', 2]]);
     const timelineMeshes = new Set([...meshesOf.values()].flat()).size;
     expect(timelineMeshes + layer.meshes.length, `door meshes (${String(timelineMeshes)}) and the layer's draws (${String(layer.meshes.length)})`).toBeLessThanOrEqual(DOOR_DRAWS);
     for (const id of ['mmw-north-link', 'mmw-south-link', 'bank']) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.layers.mask, `${id} is never hidden`).toBe(1);
   });
 
-  it('asks no shadow pass for the entrance doors’ swings: their leaves cast no shadow, the stand-ins neither (review 5, F23)', () => {
+  it('asks no shadow pass for the swings of the doors that open, the entrance’s and Weston’s: their leaves cast no shadow, the stand-ins neither (review 5, F23)', () => {
     layer.sync(timeline.n, 0, true);
-    const entrance = DOORS.filter((d) => d.id.startsWith('hunt-entrance-')).map((d) => d.id);
-    for (const id of entrance) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.castShadow, `${id}'s closed leaves`).toBe(false);
+    const opening = DOORS.filter((d) => !d.locked).map((d) => d.id);
+    expect(opening).toEqual(['hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-north', 'weston']);
+    for (const id of opening) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.castShadow, `${id}'s closed leaves`).toBe(false);
     expect(layer.meshes.map((m) => m.castShadow), 'the stand-ins').toEqual(layer.meshes.map(() => false));
-    expect(layer.use('hunt-entrance-middle', new Vector3(0, 5.2, 3))).toBe(true);
-    const frames: string[] = [];
-    for (let k = 0; k < 50 && layer.facts().some((d) => d.state === 'opening'); k += 1) frames.push(layer.sync(timeline.n, 1 / 60));
-    expect(new Set(frames), 'every frame of the swing: the frame, not the shadows').toEqual(new Set(['moved']));
-    expect(frames.length).toBeGreaterThan(30);
-    layer.use('hunt-entrance-middle', null);
-    layer.sync(timeline.n, 0, true);
+    // Each opened from in front: the entrance from its landing, Weston's door from the Petrie Court.
+    for (const [id, from] of [['hunt-entrance-middle', new Vector3(0, 5.2, 3)], ['weston', new Vector3(WESTON_DOOR.x - 2, 5.7, WESTON_DOOR.z)]] as const) {
+      expect(layer.use(id, from), `${id} opens`).toBe(true);
+      const frames: string[] = [];
+      for (let k = 0; k < 50 && layer.facts().some((d) => d.state === 'opening'); k += 1) frames.push(layer.sync(timeline.n, 1 / 60));
+      expect(new Set(frames), `every frame of ${id}'s swing: the frame, not the shadows`).toEqual(new Set(['moved']));
+      expect(frames.length).toBeGreaterThan(30);
+      layer.use(id, null);
+      layer.sync(timeline.n, 0, true);
+    }
   });
 
   it('leaves the real timeline’s state byte for byte as a timeline’s without the layer, with the doors used between random positions (review 0, F1)', () => {

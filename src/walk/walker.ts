@@ -23,11 +23,13 @@ import { Line3, MathUtils, Vector3 } from 'three';
 
 import type { GroundHit, LineCrossings } from './collision.js';
 
-/** What the walker collides with: ./collision.ts `CollisionWorld`, or any stand-in with the same queries. */
+/** What the walker collides with: ./collision.ts `CollisionWorld`, ./door-world.ts `DoorWorld`, or any stand-in with the same queries. */
 export interface WalkWorld {
   resolveCapsule(segment: Line3, radius: number, horizontal: boolean, out: Vector3): Vector3;
   groundBelow(x: number, y: number, z: number, length: number, hit: GroundHit): boolean;
   crossings(x: number, z: number, bottom: number, top: number): readonly LineCrossings[];
+  /** Moves what moves in the world (the doors' swings) on by one fixed step of `seconds`, before the body at `feet` moves in it. */
+  advance?(seconds: number, feet: Vector3): void;
 }
 
 /** What `settle` did: left the walker where it stood, moved it onto a surface over its feet, or found none (the caller places it elsewhere). */
@@ -257,9 +259,17 @@ export class Walker {
     return out.set(-Math.sin(this.yaw) * c, Math.sin(this.pitch), -Math.cos(this.yaw) * c);
   }
 
+  /** Pushes the body level out of what it stands in, as `place` does: after a door was put where it stands (./door-world.ts `release`). */
+  standClear(): void {
+    for (let k = 0; k < 4; k += 1) if (this.walls(false) < 1e-4) break;
+    this.before.copy(this.feet);
+  }
+
   private fixedStep(input: WalkInput): void {
     const dt = MOTION.fixedStep;
     const { feet, velocity } = this;
+    // What moves in the world moves first, in the same steps as the body, so a door's swing meets the body alike at any frame rate.
+    this.world.advance?.(dt, feet);
     this.before.copy(feet);
     this.easeBefore = this.ease;
     // What the keys ask for, in the plane, relative to where the body faces.

@@ -1,6 +1,6 @@
 /**
  * The public routes of plan docs/work/1_first-person-walk (M2, M2b), walked by the walk mode's own walker, headless: the whole sequence's Timeline at t = N,
- * its collision world built as the page builds it (`collisionMeshes`, `CollisionWorld` over three-mesh-bvh BVHs), and src/walk/walker.ts stepped at
+ * its collision world built as the page builds it with the doors open (`doors=open`; src/walk/door-world.ts `walkWorld`, over three-mesh-bvh BVHs), and src/walk/walker.ts stepped at
  * 60 frames a second as the page steps it, running, turned each frame toward the next point of the route (routes.ts). R1 runs from the plaza through
  * the central doors into the Great Hall, R2 up the Grand Staircase to the second floor, R3 from the Great Hall through the Egyptian galleries into the
  * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, R5 up the Grand Staircase and through the cross hall's
@@ -17,8 +17,12 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { SEQUENCE } from '../../build/sequence.js';
 import { Timeline } from '../../build/timeline.js';
+import { DoorLayer } from '../../viewer/doors.js';
 import { GeometryBvhs } from '../../walk/bvh-cache.js';
-import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
+import { walkWorld } from '../../walk/door-world.js';
+import type { DoorWorld } from '../../walk/door-world.js';
+import { DOORS } from '../doors.js';
+import { doorLeavesOf } from '../lib/window.js';
 import { BODY, NO_INPUT, Walker } from '../../walk/walker.js';
 import { INNER_EAST_Z } from '../core/layout.js';
 import { MORGAN, PARTY_WALL } from '../mmw/dims.js';
@@ -51,15 +55,18 @@ interface Drive {
   readonly maxDrop: number;
 }
 
-let world: CollisionWorld;
+let world: DoorWorld;
 /** The workspace ground under everything (docs/design/spec.md, Camera framing: 0.5 m below the lower of grade and the model's lowest point). */
 let floorY: number;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
   timeline.evaluate(timeline.n);
-  world = new CollisionWorld(new GeometryBvhs());
-  world.build(collisionMeshes(timeline.steps, timeline.n));
+  // The doors stand open (doors=open): R1 passes the central doorway as a visitor does once the door is opened (src/walk/door-world.test.ts walks
+  // into the closed door, opens it and closes it behind).
+  const doors = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'open');
+  doors.sync(timeline.n, 0, true);
+  world = walkWorld(timeline.steps, timeline.n, doors, new GeometryBvhs());
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
 });
 

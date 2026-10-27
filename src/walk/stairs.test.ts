@@ -1,6 +1,6 @@
 /**
  * The eye on the real stairs (docs/design/spec.md, Walk mode: Looking): the walk mode's walker climbs and descends the front steps and the Grand Staircase
- * of the finished model, its collision world built as the page builds it, walking and running, at 30, 60 and 144 frames a second, and its eye is read
+ * of the finished model, its collision world built as the page builds it with the doors open (`doors=open`), walking and running, at 30, 60 and 144 frames a second, and its eye is read
  * after every frame, as the page reads it. On a flight's own stretch the eye never drops while climbing and never rises while descending; on the whole
  * walk no frame moves it by more than the climb covers in that frame (`SLOPE` × speed × frame time) plus half the tallest riser, and it stays within
  * `LAG` of the feet's height plus 1.6 m.
@@ -18,8 +18,12 @@ import { Timeline } from '../build/timeline.js';
 import { MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEP_RISER, STEPS_BOTTOM_Z } from '../model/frame.js';
 import { CROSS_HALL_FRONT_Z, STAIR_FOOT_Z, WALL_BACK_Z } from '../model/hunt/dims.js';
 import { PAVING_GAP, walkWestY } from '../model/site/ground.js';
+import { DOORS } from '../model/doors.js';
+import { doorLeavesOf } from '../model/lib/window.js';
+import { DoorLayer } from '../viewer/doors.js';
 import { GeometryBvhs } from './bvh-cache.js';
-import { CollisionWorld, collisionMeshes } from './collision.js';
+import { walkWorld } from './door-world.js';
+import type { DoorWorld } from './door-world.js';
 import { spawnById } from './spawns.js';
 import { BODY, MOTION, Walker } from './walker.js';
 
@@ -32,14 +36,16 @@ const LAG = 0.3;
 /** Float noise allowed on a monotonic stretch, metres. */
 const NOISE = 1e-4;
 
-let world: CollisionWorld;
+let world: DoorWorld;
 let floorY: number;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
   timeline.evaluate(timeline.n);
-  world = new CollisionWorld(new GeometryBvhs());
-  world.build(collisionMeshes(timeline.steps, timeline.n));
+  // The doors stand open (doors=open), so the walk passes the central doorway as a visitor does once the door is opened.
+  const doors = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'open');
+  doors.sync(timeline.n, 0, true);
+  world = walkWorld(timeline.steps, timeline.n, doors, new GeometryBvhs());
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
 });
 

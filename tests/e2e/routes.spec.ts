@@ -3,7 +3,10 @@
  * enters it (the F key, or the view menu's "Walk from the Great Hall"); then only held keys (W, A, S, D, Shift) and mouse drags move the walker, and its
  * eye is read from the read-only `window.__met.walk` on every frame or two. The routes are src/model/hunt/routes.ts's plan lines, whose segments run
  * along an axis or at 45° to one: facing along an axis, W, S, A or D walks a straight segment and two of them a diagonal one; drags turn the walker.
- * R1: from the plaza spawn up the front steps, through the central doors (level behind them), round the information desk at X 4.3 into the nave,
+ * R1: from the plaza spawn up the front steps into the central arch's middle door, closed and solid (docs/design/spec.md, Doors), which holds the walker
+ * still a body's radius before its leaves' front face (src/model/hunt/arches.ts `entranceDoor` at `ENTRANCE_DOOR_Z`) while W stays held; turned onto a
+ * leaf, the prompt says "E Open" and E swings the door into the building; then through it (level behind it) into the entrance bay, turned back onto an
+ * open leaf, "E Close" and E shuts it behind, the walker clear of what the leaves sweep; then round the information desk at X 4.3 into the nave,
  * ending on the Great Hall floor. R2: from the Great Hall spawn to the desk, round it, up the Grand Staircase over its landing to the second floor and
  * a few metres into the cross hall, then turned round and back down to the hall floor. R3: from the Great Hall spawn north through the Egyptian
  * galleries and the seam into the Temple of Dendur hall, along its east and north walkways to beside the platform. R4: from the Great Hall spawn south
@@ -35,7 +38,7 @@ import { ROMAN_COURT } from '../../src/model/mmw/wings.js';
 import { COURT, DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../../src/model/roche-north/plan.js';
 import { BODY } from '../../src/walk/walker.js';
 import { expectWalkingBudget, open, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
-import { airborne, between, face, fmt, legs, MINUS_X, MINUS_Z, off, PLUS_X, PLUS_Z, walk, walkFromGreatHall, walking } from './route-walk.js';
+import { airborne, between, doorFacts, doorIs, entranceLeaves, face, fmt, into, legs, looksAt, MIDDLE_DOOR, MINUS_X, MINUS_Z, off, PLUS_X, PLUS_Z, toward, walk, walkFromGreatHall, walking } from './route-walk.js';
 import type { Sample, XZ } from './route-walk.js';
 
 /** The passages R3 and R4 take: the seam walls on X +49.4 and −49.7, the map's door from gallery 130 into the Dendur hall, and the court's opening. */
@@ -55,20 +58,46 @@ test.describe('walk routes through real input', () => {
     errors.expectClean();
   });
 
-  test('R1: from the plaza up the front steps, through the central doors and round the desk onto the Great Hall floor', async ({ page }) => {
+  test('R1: from the plaza up the front steps into the closed central door, opened by E, through it, shut behind by E, and round the desk onto the Great Hall floor', async ({ page }) => {
     const started = Date.now();
     const f = await open(page, '');
     await throttle(page);
     expect(f.t, 'the finished building').toBe(f.n);
+    expect(f.doors.find((d) => d.id === MIDDLE_DOOR), 'the middle door at load').toMatchObject({ state: 'closed', angle: 0, built: true });
     await page.keyboard.press('KeyF');
     const start = await walking(page);
     expect(await page.evaluate(() => window.__met?.walk.spawn), 'walk mode starts on the plaza').toBe('plaza');
     const samples: Sample[] = [start];
-    const end = await walk(page, 'R1', legs(ROUTE_R1.points, MINUS_Z), samples, [
-      { name: 'r1-doorway-outside', when: (eye) => eye[2] <= 2.6 },
-      { name: 'r1-doorway-inside', when: (eye) => eye[2] <= WALL_BACK_Z + 0.5 },
-    ]);
-    const report = `R1 in ${((Date.now() - started) / 1000).toFixed(1)} s, ending with the eye at ${fmt(end.eye)}`;
+    const door = entranceLeaves();
+    // Up the front steps at a run to 2 m before the doors, then on into the closed middle door with Shift and W held: its leaves hold the walker still.
+    await walk(page, 'R1 to the doors', legs([...ROUTE_R1.points.slice(0, 1), [0, door.front + 2]], MINUS_Z), samples, [{ name: 'r1-doorway-outside', when: (eye) => eye[2] <= 2.6 }]);
+    const stopped = await into(page, ['Shift', 'KeyW'], MINUS_Z, -(door.front + BODY.radius + 0.1), samples, 10_000 * throttleRate());
+    const stop = door.front + BODY.radius;
+    expect(Math.abs(stopped.eye[2] - stop), `held at ${fmt(stopped.eye)} by the closed leaves, their front face at Z ${door.front.toFixed(3)}, a body's radius before it Z ${stop.toFixed(3)}`).toBeLessThan(0.01);
+    // Pushed on the pair's 8 mm gap, the body slides a few centimetres along the leaves before it rests (4.8 cm here), as along any wall it pushes on.
+    expect(Math.abs(stopped.eye[0]), `held before the middle of the pair at ${fmt(stopped.eye)}`).toBeLessThan(0.1);
+    expect(await doorFacts(page, MIDDLE_DOOR), 'the door that held it').toMatchObject({ state: 'closed', angle: 0 });
+    await page.screenshot({ path: test.info().outputPath('r1-door-held.png') });
+    // Turned a little to the right, the eye meets the right leaf, off the pair's 8 mm gap, where it would meet none: "E Open", and E opens the door.
+    await face(page, toward(stopped.eye, 0.2, door.front));
+    await looksAt(page, MIDDLE_DOOR, 'E Open');
+    await page.keyboard.press('KeyE');
+    expect((await doorIs(page, MIDDLE_DOOR, 'open')).angle, 'a quarter turn into the building, away from the walker').toBe(90);
+    // Through the doorway into the entrance bay, out of the leaves' swing; turned back, the eye on the open right leaf against its jamb: E shuts the door.
+    await face(page, 0);
+    const inside = await walk(page, 'R1 through the doorway', legs([[0, stopped.eye[2]], [0, WALL_BACK_Z - 0.4]], MINUS_Z), samples);
+    await page.screenshot({ path: test.info().outputPath('r1-doorway-inside.png') });
+    const clear = door.hinges.map(([x, z]) => Math.hypot(inside.eye[0] - x, inside.eye[2] - z) - BODY.radius - door.reach);
+    expect(Math.min(...clear), `metres the body at ${fmt(inside.eye)} keeps clear of all the leaves sweep (${door.reach.toFixed(3)} m about each hinge)`).toBeGreaterThan(0);
+    await face(page, toward(inside.eye, 0.62, door.back - 0.3));
+    await looksAt(page, MIDDLE_DOOR, 'E Close');
+    await page.keyboard.press('KeyE');
+    expect(await doorIs(page, MIDDLE_DOOR, 'closed'), 'shut behind the walker').toMatchObject({ state: 'closed', angle: 0 });
+    await page.screenshot({ path: test.info().outputPath('r1-door-shut.png') });
+    // Turned into the hall again, on along R1: down the nave, round the desk, to the nave's west side.
+    await face(page, 0);
+    const end = await walk(page, 'R1', legs(ROUTE_R1.points, MINUS_Z), samples);
+    const report = `R1 in ${((Date.now() - started) / 1000).toFixed(1)} s, held by the closed door at ${fmt(stopped.eye)}, ending with the eye at ${fmt(end.eye)}`;
     console.log(report);
     expect(Math.abs(end.eye[1] - (MAIN_FLOOR_Y + EYE)), `${report}: eye height off the main floor's`).toBeLessThan(0.03);
     expect(end.onGround, report).toBe(true);
