@@ -7,9 +7,17 @@
  * all come in, their numbers running on by one, and each was drawn from the walker's eye; the checks then run on the rendered camera: on a flight's
  * stretch it never drops while climbing and never rises while descending, and no frame moves it more than the climb covers in that frame's time plus
  * half the tallest riser. src/walk/stairs.test.ts checks the same, and the eye's lag behind the feet, at 30, 60 and 144 frames a second.
+ * Where a walk ends the walker rests, and the last rendered camera is checked there. Three ends are flat floors at levels the model fixes (the main
+ * floor behind the central doors, the Great Hall's at the foot of the stair, the second floor), compared with that level plus BODY.eye. The plaza end
+ * is not flat: it falls 1% toward the curb (CROSS_FALL, src/model/site/ground.ts) and the walker travels a variable distance past the stop before the
+ * keys go up and it rests, so the spawn's height is no bound there (2 cm is 2 m of walk; seen once in four runs: 2.12 cm at frame 2339, 2.1 m past the
+ * spawn). There the eye must stand BODY.eye, within 1 cm, over the first surface straight down from it, found apart from the page by a cast through
+ * the finished model built in this process (./surface.ts: triangle by triangle, both faces, no page state).
  * Bound: walking backward with S stands in for turning round; the frame rate is the page's own (60 a second headless here), so other rates are the unit
  * test's; frame times come from requestAnimationFrame timestamps, one frame late when the loop runs before the page's, and are capped, as the page
- * caps them, at 0.1 s.
+ * caps them, at 0.1 s. The plaza end is checked against the surface under the eye, not against the plaza's own level: the stop 0.5 m past the spawn
+ * (4.96 m past the foot of the steps) is what keeps the walker off the steps, and a walker over the curb would pass; the cast holds for a page at
+ * t = N with no section cut and no floor view, the state these walks open and ./surface.ts rebuilds.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -19,6 +27,7 @@ import { MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEP_RISER, STEPS_BOTTOM_Z } from '../../
 import { CROSS_HALL_FRONT_Z, STAIR_FOOT_Z, WALL_BACK_Z } from '../../src/model/hunt/dims.js';
 import { BODY, MOTION } from '../../src/walk/walker.js';
 import { open, throttle, throttleRate, watchErrors } from './helpers.js';
+import { firstSurface } from './surface.js';
 
 /** As in src/walk/stairs.test.ts: the steepest flight's slope and the tallest riser. */
 const SLOPE = 0.44;
@@ -156,7 +165,10 @@ test.describe('the eye on the real stairs, every frame, through real keys', () =
       const top = await walk(page, `${gait} up the front steps`, [...shift, 'KeyW'], inside, -1, 1, stretch, run);
       expect(Math.abs(top.camera[1] - (MAIN_FLOOR_Y + BODY.eye)), `${gait} up: the rendered eye on the main floor at ${fmt(top)}`).toBeLessThan(0.01);
       const foot = await walk(page, `${gait} down the front steps`, [...shift, 'KeyS'], outside, 1, -1, stretch, run);
-      expect(Math.abs(foot.camera[1] - plaza.camera[1]), `${gait} down: the rendered eye back at the plaza's level at ${fmt(foot)}`).toBeLessThan(0.02);
+      // The plaza falls toward the curb and the walker rests a variable distance onto it, so the level at the spawn bounds nothing: the surface under the eye does.
+      const down = firstSurface(foot.camera, [0, -1, 0]);
+      expect(down, `${gait} down: a surface straight down from the rendered eye at ${fmt(foot)}`).not.toBeNull();
+      expect(Math.abs((down ?? Number.NaN) - BODY.eye), `${gait} down: the rendered eye ${(down ?? Number.NaN).toFixed(3)} m over the surface under it, not ${String(BODY.eye)} m, at ${fmt(foot)}`).toBeLessThan(0.01);
     }
   });
 
