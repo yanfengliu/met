@@ -89,7 +89,7 @@ Fleet canon R6 splits a task expected to exceed about 200k context tokens into m
 - [x] Plan review (Codex, `reviews/0_plan.md`): eleven findings accepted, the plan amended; sent to M1 and M3a, which had started.
 - [x] M1 the walk, with the look target (worker `walk2`, merged `c2b6f44`, reviews 3 and 4): the eye on stairs, the walking screen and its numbers, contracts C1 and C2, no trap at the Dendur pool or gate, and route R5 into gallery 600; the model at 736 meshes and 1,579,120 triangles.
 - [x] M3a the catalogue and the placeholders (worker `collection`, merged `7c370b1`, reviews 1 and 2): 94 real objects in ten spaces, 38 meshes and 40,290 triangles of placeholders; the model at 729 meshes and 1,578,714 triangles.
-- [ ] M2a doors that open and close (worker `doors`, from `a9f6f5a`, merging main once M1 landed).
+- [x] M2a doors that open and close (worker `doors`, merged `6198d1a`, reviews 5, 8 and 9): the Hunt central entrance's three doors open and close by E or a click with a prompt, behind the columns as the real ones stand; the link and Bank doors say Locked and stay solid; review 9's F34 and F35, two gaps in the doors' fit test, go to M2b; the model at 744 meshes and 1,579,480 triangles.
 - [ ] M2b doors that are solid (worker `doors2`, after M2a).
 - [ ] M3b labels (worker `labels`, from `a9f6f5a`, beside M2a).
 - [ ] Integration, review, deploy, outcome.
