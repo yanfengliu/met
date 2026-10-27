@@ -4,168 +4,47 @@
  *   doorway until Tiepolo's Triumph of Marius, on gallery 600's far wall, is the look target within 6 m: the card shows its title, maker, date, medium,
  *   gallery, size, the CC0 credit and a plain link to its page, at the bottom left above the folded bar (full width at 390×844), clear of every control,
  *   of the crosshair and of the door prompt's band under it, and above the whole bar when it is unfolded; a drag that looks down at the floor hides it
- *   and one that looks back up shows it again. At 1280×720 a walking frame with the card showing keeps the 60 frames a second budget, and the link,
- *   clicked, opens the object's page in a new tab, its request stopped in the test's browser so nothing leaves the machine.
+ *   and one that looks back up shows it again. At every frame drawn, the card shows exactly when the crosshair's one look target is an artwork, so it
+ *   never shows beside the door prompt, which shows only for a door (review 6, F28: the exception that lets the unfolded narrow card reach the
+ *   prompt's band). At 1280×720 a walking frame with the card showing keeps the 60 frames a second budget, and the link, clicked, opens the object's
+ *   page in a new tab, its request stopped in the test's browser so nothing leaves the machine.
  * - Orbit view, at gallery 600's preset: a drag that starts on the painting shows no card; a click on it shows the card, moving neither the camera nor
  *   the preset in view, as does a press that travels under CLICK_SLOP; a click on a wall hides it; Esc hides it; the card sits above the bar, clear of
- *   the floor picker and every control.
+ *   the floor picker and every control. A clicked card goes when walk mode begins and does not come back when it ends.
  * The painting's place comes from the collection's placements (src/model/collection/spaces-b.ts), the pixel a click goes to from the published camera,
- * and both are checked apart from the page: the first surface along that pixel's ray, cast through the finished model built in the test process
- * (./surface.ts), lies on the painting for the artwork click and outside every artwork's bounds for the wall click.
+ * and both are checked apart from the page (./labels-helpers.ts). ./labels-view.spec.ts drives the card through the follow camera, presets and the cut.
  * Bound: pointer lock is not available headless, so the locked look and Esc freeing it are not driven (the walking pointer is free throughout); the
- * page's own requests are recorded for the whole test and none may go to metmuseum.org; frame times are this machine's.
+ * page's own requests are recorded for the whole test and none may go to metmuseum.org; frame times are this machine's; the frame-by-frame check reads
+ * the page's DOM from a requestAnimationFrame loop beside the page's own, which runs after it in each frame and writes nothing.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { Box3, PerspectiveCamera, Vector3 } from 'three';
 
-import { entryOf, stepArtworks } from '../../src/model/collection/place.js';
-import { SPACES_A } from '../../src/model/collection/spaces-a.js';
-import { SPACES_B, europeanPaintingsSpace } from '../../src/model/collection/spaces-b.js';
-import { ART_CREDIT, cardContent } from '../../src/ui/art-card.js';
+import { entryOf } from '../../src/model/collection/place.js';
 import { cameraGap, choosePreset, expectWalkingBudget, facts, open, openMenu, press, settle, settledCamera, walkingBudget, watchErrors } from './helpers.js';
-import type { Camera } from './helpers.js';
+import { BAND, ORBIT_CONTROLS, PRESET, TRIUMPH, VIEWPORTS, WALK_CONTROLS, artworkBounds, boxes, drag, expectLaidOut, expectTriumphCard, onCanvas, overlaps, recordRequests, surfaceAt, triumphPixel } from './labels-helpers.js';
+import type { Box } from './labels-helpers.js';
 import { face, still, walking } from './route-walk.js';
-import { firstSurface } from './surface.js';
 
-const VIEWPORTS = [
-  { width: 1280, height: 720 },
-  { width: 390, height: 844 },
-] as const;
-const TRIUMPH = 437788;
-const PRESET = 'int-european-paintings-600';
-/** The door prompt's place under the crosshair, which the folded walking screen keeps clear (src/ui/styles.ts): from the centre down 80 px, 320 px wide. */
-const BAND = { halfWidth: 160, above: 8, below: 80 } as const;
-
-interface Box {
-  readonly id: string;
-  readonly x: number;
-  readonly y: number;
-  readonly w: number;
-  readonly h: number;
-  readonly clipped: boolean;
+/** Starts recording, at every frame the page draws, whether the card shows and the crosshair's look target kind (`data-target`). */
+async function watchCard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const w = window as unknown as { cardFrames?: [boolean, string | null][] };
+    if (w.cardFrames !== undefined) return;
+    const frames: [boolean, string | null][] = [];
+    w.cardFrames = frames;
+    const tick = (): void => {
+      const card = document.querySelector<HTMLElement>('[data-testid="art-card"]');
+      frames.push([card !== null && !card.hidden, document.querySelector('[data-testid="crosshair"]')?.getAttribute('data-target') ?? null]);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 }
 
-/** Boxes of every visible element with a data-testid among `ids`, by layout, and whether each clips its content. */
-async function boxes(page: Page, ids: readonly string[]): Promise<Box[]> {
-  return page.evaluate((list) => list.flatMap((id) => Array.from(document.querySelectorAll<HTMLElement>(`[data-testid="${id}"]`)).flatMap((e) => {
-    if (e.getClientRects().length === 0 || getComputedStyle(e).visibility === 'hidden') return [];
-    const r = e.getBoundingClientRect();
-    return [{ id, x: r.x, y: r.y, w: r.width, h: r.height, clipped: e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1 }];
-  })), ids);
-}
-
-const overlaps = (a: Box, b: Box): boolean => a.x < b.x + b.w - 0.5 && b.x < a.x + a.w - 0.5 && a.y < b.y + b.h - 0.5 && b.y < a.y + a.h - 0.5;
-
-/** The card's box among `list`, inside the viewport, unclipped (crosshair aside) and apart from every other box. */
-function expectLaidOut(list: readonly Box[], viewport: { width: number; height: number }, what: string): Box {
-  const card = list.find((b) => b.id === 'art-card');
-  if (card === undefined) throw new Error(`${what}: the card is not shown.`);
-  for (const b of list) {
-    expect(b.x >= -0.5 && b.y >= -0.5 && b.x + b.w <= viewport.width + 0.5 && b.y + b.h <= viewport.height + 0.5, `${what}: ${b.id} inside the viewport`).toBe(true);
-    if (b.id !== 'crosshair') expect(b.clipped, `${what}: ${b.id} clips its content`).toBe(false);
-  }
-  const pairs = list.flatMap((a, i) => list.slice(i + 1).filter((b) => overlaps(a, b)).map((b) => `${a.id} / ${b.id}`));
-  expect(pairs, `${what}: overlapping`).toEqual([]);
-  return card;
-}
-
-/** The orbit view's controls, by data-testid, that the card must keep clear of, with the card. */
-const ORBIT_CONTROLS = ['step-label', 'step-detail', 'scrubber', 'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end', 'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'walk-toggle', 'chapter-menu-button', 'view-menu-button', 'floor-all', 'floor-ground', 'floor-main', 'floor-second', 'floor-roof-garden', 'art-card'];
-const WALK_CONTROLS = ['chapter-menu-button', 'view-menu-button', 'bar-toggle', 'walk-toggle', 'crosshair', 'walk-status', 'art-card'];
-
-/** A projection of the published camera over the canvas as the page's covers it (src/viewer/camera-rig.ts `resize`; tests/e2e/zoom.spec.ts). */
-async function projection(page: Page, c: Camera): Promise<{ readonly cam: PerspectiveCamera; readonly box: { x: number; y: number; width: number; height: number } }> {
-  const box = await page.getByTestId('canvas').boundingBox();
-  if (box === null) throw new Error('The canvas has no box.');
-  const cam = new PerspectiveCamera(c.fov, c.aspect, c.near, c.far);
-  const visible = box.width / c.aspect;
-  if (visible < box.height - 0.5) cam.setViewOffset(box.width, visible, 0, 0, box.width, box.height);
-  cam.updateProjectionMatrix();
-  cam.position.set(...c.position);
-  cam.lookAt(new Vector3(...c.target));
-  cam.updateMatrixWorld();
-  return { cam, box };
-}
-
-/** The whole pixel a world point projects to, as the browser delivers a pointer. */
-async function pixelOf(page: Page, c: Camera, p: Vector3): Promise<{ x: number; y: number }> {
-  const { cam, box } = await projection(page, c);
-  const ndc = p.clone().project(cam);
-  return { x: Math.round(box.x + ((ndc.x + 1) / 2) * box.width), y: Math.round(box.y + ((1 - ndc.y) / 2) * box.height) };
-}
-
-/** Where the ray under pixel (x, y) first meets the finished model, cast in the test process (./surface.ts), or null over open sky. */
-async function surfaceAt(page: Page, c: Camera, x: number, y: number): Promise<Vector3 | null> {
-  const { cam, box } = await projection(page, c);
-  const d = new Vector3(((x - box.x) / box.width) * 2 - 1, -((y - box.y) / box.height) * 2 + 1, 0.5).unproject(cam).sub(cam.position).normalize();
-  const t = firstSurface(c.position, [d.x, d.y, d.z]);
-  return t === null ? null : new Vector3(...c.position).addScaledVector(d, t);
-}
-
-/** Every artwork's pieces' world bounds, by object ID: the unit boxes their forms fill (src/model/collection/kinds.ts), at their final matrices. */
-function artworkBounds(): Map<number, Box3> {
-  const out = new Map<number, Box3>();
-  for (const def of [...SPACES_A, ...SPACES_B]) {
-    const { pieces } = stepArtworks(def);
-    def.placements.forEach((at, i) => {
-      const box = new Box3();
-      for (const piece of pieces[i] ?? []) box.union(new Box3(new Vector3(-0.5, 0, -0.5), new Vector3(0.5, 1, 0.5)).applyMatrix4(piece.matrix));
-      out.set(at.id, box);
-    });
-  }
-  return out;
-}
-
-/** The Triumph's canvas: its object piece's world box and the middle of its face. */
-function triumph(): { readonly box: Box3; readonly middle: Vector3 } {
-  const at = europeanPaintingsSpace.placements.findIndex((p) => p.id === TRIUMPH);
-  const object = stepArtworks(europeanPaintingsSpace).pieces[at]?.[0];
-  if (object === undefined) throw new Error(`No object piece for ${String(TRIUMPH)} in gallery 600's step.`);
-  const box = new Box3(new Vector3(-0.5, 0, -0.5), new Vector3(0.5, 1, 0.5)).applyMatrix4(object.matrix);
-  return { box, middle: new Vector3(0, 0.5, 0.5).applyMatrix4(object.matrix) };
-}
-
-/** The element at (x, y) is the canvas: no control or card lies over the pixel a click goes to. */
-async function onCanvas(page: Page, x: number, y: number): Promise<boolean> {
-  return page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.tagName === 'CANVAS', [x, y] as const);
-}
-
-/** The card's fields as the page shows them. */
-async function cardText(page: Page): Promise<Record<string, string>> {
-  const out: Record<string, string> = {};
-  for (const id of ['art-title', 'art-maker', 'art-date', 'art-medium', 'art-gallery', 'art-size', 'art-credit', 'art-link']) out[id] = (await page.getByTestId(id).textContent()) ?? '';
-  return out;
-}
-
-/** The card shows the Triumph of Marius, every field as its catalogue entry gives it, and its link is a plain anchor to its page in a new tab. */
-async function expectTriumphCard(page: Page): Promise<void> {
-  const entry = entryOf(TRIUMPH);
-  const content = cardContent(entry);
-  await expect(page.getByTestId('art-card')).toBeVisible();
-  expect(await cardText(page)).toEqual({ 'art-title': entry.title, 'art-maker': entry.maker, 'art-date': entry.date, 'art-medium': entry.medium, 'art-gallery': `Gallery ${entry.gallery}`, 'art-size': content.size, 'art-credit': ART_CREDIT, 'art-link': 'View on metmuseum.org' });
-  const link = page.getByTestId('art-link');
-  await expect(link).toHaveAttribute('href', `https://www.metmuseum.org/art/collection/search/${String(TRIUMPH)}`);
-  await expect(link).toHaveAttribute('target', '_blank');
-  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-  // Nothing asks the browser to fetch it before it is clicked.
-  expect(await page.evaluate(() => document.querySelectorAll('link[rel~="prefetch"], link[rel~="preload"], link[rel~="preconnect"], link[rel~="dns-prefetch"], link[rel~="prerender"], script[type="speculationrules"]').length)).toBe(0);
-}
-
-/** Every request the page makes from now on, to check none goes to metmuseum.org. */
-function recordRequests(page: Page): string[] {
-  const urls: string[] = [];
-  page.on('request', (request) => urls.push(request.url()));
-  return urls;
-}
-
-/** Drags across the canvas with the primary button from (x, y) by (dx, dy) in 20-pixel moves: a look in walk mode, an orbit in the orbit view. */
-async function drag(page: Page, x: number, y: number, dx: number, dy: number): Promise<void> {
-  const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 20));
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  for (let k = 1; k <= steps; k += 1) await page.mouse.move(x + (dx * k) / steps, y + (dy * k) / steps);
-  await page.mouse.up();
+/** The frames recorded since the last call, as [card shown, look target kind]. */
+async function cardFrames(page: Page): Promise<[boolean, string | null][]> {
+  return page.evaluate(() => (window as unknown as { cardFrames: [boolean, string | null][] }).cardFrames.splice(0));
 }
 
 for (const viewport of VIEWPORTS) {
@@ -181,6 +60,7 @@ for (const viewport of VIEWPORTS) {
       await press(page, 'walk-spawn-second-floor');
       await page.waitForFunction(() => window.__met?.walk.spawn === 'second-floor');
       await walking(page);
+      await watchCard(page);
       // Turned to face the cross hall and gallery 600 beyond it (yaw 0 faces −Z), 16 m from the painting: no card yet.
       await face(page, 0);
       expect((await facts(page)).label, 'no artwork within 6 m at the top of the stair').toBeNull();
@@ -228,6 +108,11 @@ for (const viewport of VIEWPORTS) {
       await drag(page, x, y + 360, 0, -360);
       await page.waitForFunction((id) => window.__met?.label?.id === id, String(TRIUMPH), { polling: 'raf', timeout: 5000 });
       await expect(page.getByTestId('art-title')).toHaveText(entryOf(TRIUMPH).title);
+      // At every frame since the turn at the top of the stair, the card showed exactly when the one look target was an artwork.
+      const frames = await cardFrames(page);
+      const apart = frames.flatMap(([shown, target], i) => (shown === (target === 'artwork') ? [] : [`frame ${String(i)}: card ${shown ? 'shown' : 'hidden'}, target ${String(target)}`]));
+      expect(apart, 'frames where the card did not follow the look target').toEqual([]);
+      expect(frames.some(([shown]) => shown) && frames.some(([shown]) => !shown), 'frames with the card and without it').toBe(true);
 
       if (viewport.width === 1280) {
         // A walking frame with the card showing, in the gallery: W held for 120 frames toward the painting, which stays the look target.
@@ -257,11 +142,7 @@ for (const viewport of VIEWPORTS) {
       const requests = recordRequests(page);
       await open(page, `autoplay=0&view=${PRESET}`);
       const start = await settledCamera(page);
-      const { box: painting, middle } = triumph();
-      const p = await pixelOf(page, start, middle);
-      expect(await onCanvas(page, p.x, p.y), 'nothing of the page covers the painting’s pixel').toBe(true);
-      const met = await surfaceAt(page, start, p.x, p.y);
-      expect(met !== null && painting.clone().expandByScalar(0.01).containsPoint(met), `the first surface under (${String(p.x)}, ${String(p.y)}) is the painting: met at ${met === null ? 'nothing' : met.toArray().map((v) => v.toFixed(2)).join(', ')}`).toBe(true);
+      const p = await triumphPixel(page, start);
 
       // A drag that starts on the painting orbits the view and shows no card.
       await drag(page, p.x, p.y, 40, 0);
@@ -323,6 +204,29 @@ for (const viewport of VIEWPORTS) {
       expect((await facts(page)).label, 'after Esc').toBeNull();
       await expect(page.getByTestId('art-card')).toBeHidden();
       expect(requests.filter((url) => /metmuseum\.org/i.test(url)), 'requests of the page to metmuseum.org').toEqual([]);
+      errors.expectClean();
+    });
+
+    test('a clicked card goes when walk mode begins and does not come back when it ends', async ({ page }) => {
+      const errors = watchErrors(page);
+      await open(page, `autoplay=0&view=${PRESET}`);
+      const p = await triumphPixel(page, await settledCamera(page));
+      await page.mouse.click(p.x, p.y);
+      await settle(page);
+      expect((await facts(page)).label?.id, 'the clicked card').toBe(String(TRIUMPH));
+      // Into walk mode by the Walk toggle: the walker stands on the plaza, looking at no artwork, and no card shows.
+      await press(page, 'walk-toggle');
+      await page.waitForFunction(() => window.__met?.walk.mode === 'walk' && !window.__met.walk.preparing && window.__met.walk.eye !== null);
+      await settle(page);
+      expect((await facts(page)).walk.target, 'the look target on the plaza').toBeNull();
+      expect((await facts(page)).label, 'walking, the clicked card is gone').toBeNull();
+      await expect(page.getByTestId('art-card')).toBeHidden();
+      // Out again by the toggle: the card clicked before walking does not come back.
+      await press(page, 'walk-toggle');
+      await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
+      await settle(page);
+      expect((await facts(page)).label, 'back in the orbit view').toBeNull();
+      await expect(page.getByTestId('art-card')).toBeHidden();
       errors.expectClean();
     });
   });

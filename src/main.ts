@@ -19,7 +19,7 @@ import type { UiState, WalkStatus } from './ui/ui.js';
 import { GeometryBvhs } from './walk/bvh-cache.js';
 import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
-import { ARTWORK_QUERY, ArtLabel } from './viewer/art-label.js';
+import { ARTWORK_QUERY, ArtLabel, artworkInstances } from './viewer/art-label.js';
 import { bindClick } from './viewer/click.js';
 import { publishFacts, snapshot } from './viewer/facts.js';
 import { FloorMode } from './viewer/floor-mode.js';
@@ -103,7 +103,14 @@ function boot(): void {
   const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query) }, (message) => { console.warn(message); });
   // The artworks' cards (docs/design/spec.md, Collection: Labels): the look target's artwork while walking, the one a click meets in the orbit view.
   const cards = new Map<string, ArtCardContent>(CATALOGUE.map((entry) => [String(entry.id), cardContent(entry)]));
-  const artLabel = new ArtLabel();
+  // A click's card keeps to what the camera draws of its artwork, every piece of it (src/viewer/art-label.ts): each mesh's step finds the pieces.
+  const stepOfMesh = new Map(timeline.steps.flatMap((s) => s.meshes.map((m) => [m, s] as const)));
+  const artLabel = new ArtLabel((hit, id) => {
+    const step = stepOfMesh.get(hit.mesh);
+    return step === undefined ? [{ mesh: hit.mesh, instance: hit.instance }] : artworkInstances(step, id);
+  });
+  /** What the camera draws, for the card's check: the section cut (a floor view's included) and the camera's layers. */
+  const drawnView = { cut: viewer.cut, layers: rig.camera.layers };
   /** The card the last frame showed, for the chrome and `window.__met.label`. */
   let shownArt: ArtCardContent | null = null;
   // Walking, walk mode's one look-target hook tells the card each new target, and null on entering and leaving (src/walk/walk-mode.ts `onLookTarget`).
@@ -113,7 +120,7 @@ function boot(): void {
     artLabel.click(picker.hit(new Ray(rig.camera.position.clone(), pointerRay(canvas, rig.camera, x, y)), ARTWORK_QUERY));
   }, () => !walk.active);
   window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') artLabel.escape();
+    if (event.key === 'Escape') artLabel.dismiss();
   });
   const presetPose = (id: string): CameraPose | null => {
     const preset = presetById(id);
@@ -238,6 +245,8 @@ function boot(): void {
         // A preset is an orbit-view camera: in walk mode it leaves walk mode first, or the walker would take the camera back on the next frame
         // while the preset stayed marked as in view, to be fitted again over the camera on the next resize.
         if (walk.active) walk.exit();
+        // A preset is a new view: the card of an artwork clicked in the last one goes with it (docs/design/spec.md, Collection: Labels).
+        artLabel.dismiss();
         rig.setPose(pose);
         view = id;
         atPreset = true;
@@ -359,7 +368,7 @@ function boot(): void {
       }
     }
     if (rig.update()) needsRender = true;
-    artLabel.frame(walk.active);
+    artLabel.frame(walk.active, drawnView);
     shownArt = artLabel.id === null ? null : (cards.get(artLabel.id) ?? null);
     ui.sync(state());
     // Into or out of walk mode: the inset changes with it, measured after the bar has folded or unfolded.
