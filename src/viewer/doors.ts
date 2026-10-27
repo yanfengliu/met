@@ -137,7 +137,8 @@ export class DoorLayer {
     // Every leaf to draw, grouped by its geometry and material: one stand-in mesh each.
     const groups = new Map<BufferGeometry, Map<Material, { door: Door; base: Matrix4; part: SwingingPart }[]>>();
     for (const step of steps) {
-      if (step.tags.every((t) => t === null)) continue;
+      // Only a step holding a door's pieces: an artwork's tags need nothing of the layer.
+      if (!step.tags.some((list) => list?.some((tag) => tag?.kind === 'door') === true)) continue;
       const matrices = slotMatrices(step, resting(step.index));
       step.tags.forEach((tags, m) => {
         const mesh = step.meshes[m];

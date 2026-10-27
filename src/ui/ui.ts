@@ -30,6 +30,8 @@ export interface UiInfo {
 export interface UiActions extends BarActions, ViewActions {
   goToChapter(first: number): void;
   jump(): void;
+  /** E while walking: opens or closes the door the walking eye looks at (docs/design/spec.md, Doors). */
+  act(): void;
   /** Chooses a floor picker entry by id. */
   chooseFloor(id: string): void;
   floorUp(): void;
@@ -45,6 +47,8 @@ export type UiState = BarState & ViewState & {
   readonly walkHint: boolean;
   /** The kind of tagged piece the walking eye looks at within reach (src/walk/look.ts), or null. */
   readonly walkTarget: string | null;
+  /** What the prompt under the crosshair says for the door the walking eye looks at ("E Open", "E Close" or "Locked"; src/viewer/doors.ts), or null. */
+  readonly walkPrompt: string | null;
   /** The floor picker's entry in view. */
   readonly floor: string;
 };
@@ -89,6 +93,10 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   const crosshair = el('div', { className: 'met-crosshair', testid: 'crosshair', attrs: { 'aria-hidden': 'true' } });
   crosshair.hidden = true;
   ui.append(crosshair, menus, status, floors.element, bar.element);
+  // The door prompt, centred under the crosshair in the band M3b's label card keeps out of (docs/design/spec.md, Doors: Use).
+  const prompt = el('div', { className: 'met-door-prompt', testid: 'door-prompt', attrs: { role: 'status', 'aria-live': 'polite' } });
+  prompt.hidden = true;
+  crosshair.after(prompt);
   root.appendChild(ui);
   closeOnOutside([chapters.disclosure, view.disclosure]);
   const held = bindKeys(actions, walking);
@@ -113,6 +121,9 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     if (crosshair.hidden !== !aiming) crosshair.hidden = !aiming;
     if (state.walkTarget === null) crosshair.removeAttribute('data-target');
     else setAttr(crosshair, 'data-target', state.walkTarget);
+    const words = aiming ? (state.walkPrompt ?? '') : '';
+    setText(prompt, words);
+    if (prompt.hidden !== (words === '')) prompt.hidden = words === '';
   };
   sync(initial);
   return { sync, bar: bar.element, held };

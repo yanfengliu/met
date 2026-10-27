@@ -239,7 +239,7 @@ describe('the walk routes through the wing', () => {
       const b = worldBox(p);
       return b.min.x >= -half && b.max.x <= half && b.min.y >= MAIN - 1e-6 && b.max.y <= SCREEN_HEAD_Y + 1e-6 && Math.abs(b.getCenter(new Vector3()).z - SCREEN_Z) < 0.3;
     });
-    expect(doors, "the central arch's door pieces: three doors, each a bronze frame, the bronze of its leaves and their glass").toHaveLength(9);
+    expect(doors, "the central arch's door pieces: three doors, each a bronze frame, its transom light, the bronze of its leaves and their glass").toHaveLength(12);
     expect(doors.filter((p) => p.tag !== null).map((p) => p.tag?.id), 'the leaves, metal and glass, tagged as their doorway').toEqual(['hunt-entrance-south', 'hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-middle', 'hunt-entrance-north', 'hunt-entrance-north']);
     expect(doors.filter((p) => p.material.userData['solid'] !== false).map((p) => p.material.name), 'door pieces a walker cannot pass').toEqual([]);
     expect(new Set(doors.map((p) => look(p.material))), "the doors' looks: the palette's bronze and dark glass").toEqual(new Set([look(palette.bronze), look(palette.glassDark)]));

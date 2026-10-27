@@ -6,6 +6,7 @@
 import type { PlayerMode, Speed } from '../build/player.js';
 import type { CameraFocus, Vec3 } from '../build/types.js';
 import type { WalkFacts } from '../walk/walk-mode.js';
+import type { DoorFacts } from './doors.js';
 
 /** A detached copy of plain data `value`, frozen all the way down: no part of it is shared with the original. */
 export function snapshot<T>(value: T): T {
@@ -64,6 +65,8 @@ export interface MetFacts {
   readonly camera: { readonly position: Vec3; readonly target: Vec3; readonly near: number; readonly far: number; readonly fov: number; readonly aspect: number };
   /** Walk mode (src/walk/walk-mode.ts, `WalkFacts`): the mode, the eye and look direction, the ground contact, the collision build and the spawn ids. */
   readonly walk: WalkFacts;
+  /** Every door the timeline holds, in step order (src/viewer/doors.ts, `DoorFacts`): its id, state, angle in degrees, locked flag and whether it is built. */
+  readonly doors: readonly DoorFacts[];
   readonly perf: {
     /**
      * Milliseconds of the timeline build: every step's `build` and its meshes (performance marks met:build-start, met:build-end).

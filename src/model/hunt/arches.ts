@@ -52,6 +52,11 @@ export const OPENINGS: readonly (readonly [number, number])[] = [
 ];
 /** The doors of the central arch's three openings, from −X (src/model/doors.ts). */
 const ENTRANCE_DOORS: readonly string[] = ['hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-north'];
+/**
+ * The entrance doors' transom light, metres from its bar to the head: S8 (Haklai 2012, at full size) shows each opening's leaves up to a transom bar at
+ * 119 of its 219 px (54%), a single fixed pane above; of the model's 4.79 m opening that leaves the leaves 2.60 m with the frame's sill.
+ */
+const ENTRANCE_TRANSOM = 2.1;
 /** Windows in the side arches stand on a solid base; the central arch has doors to the floor. */
 const WINDOW_SILL_Y = MAIN + 1.1;
 const SCREEN_D = 0.5;
@@ -202,11 +207,13 @@ export const archSteps: readonly StepDef[] = [
           const bottom = doors ? MAIN : WINDOW_SILL_Y;
           const m = at(x + (a + b) / 2, bottom, SCREEN_Z + 0.07);
           if (doors) {
-            // The entrance's doors (src/model/doors.ts): a bronze frame and a pair of glazed leaves, three panes each, which open; until the walk's
-            // collision follows the leaves (M2b) their bronze and glass are passable copies of the palette's, as the fixed glazing was before.
-            const door = doorUnit({ width, height: SCREEN_HEAD_Y - bottom, leaves: 2, glazed: true, lights: 3, fanlight: false, frame: 0.09, bar: 0.05, depth: 0.14 });
+            // The entrance's doors (src/model/doors.ts): in a bronze frame, a pair of glazed leaves, one tall pane each in a bronze frame, which open, under
+            // a transom bar at 54% of the opening and a fixed transom light (S8, Haklai 2012, at full size). Until the walk's collision follows the
+            // leaves (M2b) their bronze and glass are passable copies of the palette's, as the fixed glazing before them was.
+            const door = doorUnit({ width, height: SCREEN_HEAD_Y - bottom, leaves: 2, glazed: true, lights: 1, transom: ENTRANCE_TRANSOM, frame: 0.09, bar: 0.09, depth: 0.14 });
             const tag = doorTag(ENTRANCE_DOORS[i] ?? '');
             kit.add(door.frame, hunt.doorBronze, m);
+            if (door.glass !== undefined) kit.add(door.glass, hunt.doorGlass, m);
             kit.addTagged(door.leaf, hunt.doorBronze, m, tag);
             if (door.leafGlass !== undefined) kit.addTagged(door.leafGlass, hunt.doorGlass, m, tag);
             return;

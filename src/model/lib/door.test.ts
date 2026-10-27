@@ -31,6 +31,7 @@ const UNITS: readonly (readonly [string, DoorParams])[] = [
   ['panelled pair, arched', { width: 2.6, height: 5, shape: 'arch' }],
   ['panelled pair, transom', { width: 2, height: 3.4, leaves: 2, panels: 4 }],
   ['glazed pair, no fanlight', { width: 1.8, height: 4.5, leaves: 2, glazed: true, lights: 3, fanlight: false, frame: 0.09, bar: 0.05, depth: 0.14 }],
+  ['glazed pair under a tall transom light, as the Fifth Avenue entrance', { width: 1.8, height: 4.79, leaves: 2, glazed: true, lights: 1, transom: 2.1, frame: 0.09, bar: 0.09, depth: 0.14 }],
   ['one panelled leaf', { width: 1.1, height: 2.4, leaves: 1, fanlight: false }],
 ];
 
@@ -111,5 +112,17 @@ describe('door unit leaves', () => {
     expect(() => doorUnit({ width: 2, height: 3, opens: 200 })).toThrow(/doorUnit: opens 200 turns a leaf past its wall; give at most 180 degrees/);
     expect(() => doorUnit({ width: 0.5, height: 3, leaves: 2, thickness: 0.12, frame: 0.05 })).toThrow(/doorUnit: each leaf is 0\.200 m wide, too narrow to hang on a 0\.12 m pivot/);
     expect(() => doorUnit({ width: 2, height: 3, swing: 'sideways' as never })).toThrow(/doorUnit: swing is "sideways"; use one of 'either', 'back', 'front'/);
+    expect(() => doorUnit({ width: 2, height: 3, transom: 2.8 })).toThrow(/doorUnit: transom 2\.800 leaves the leaves 0\.040 m of a 3 m door; give a lower transom/);
+  });
+
+  it('hangs a rectangular door’s leaves under its transom light, `transom` tall from the bar to the head', () => {
+    const door = doorUnit({ width: 1.8, height: 4.79, leaves: 2, glazed: true, lights: 1, transom: 2.1, frame: 0.09, bar: 0.09, depth: 0.14 });
+    const top = 4.79 - 0.09 - 2.1;
+    for (const leaf of door.leaves) expect(box(leaf.panel).max.y, 'a leaf’s top, 4 mm under the transom bar').toBeCloseTo(top - 0.004, 6);
+    const glass = door.glass;
+    if (glass === undefined) throw new Error('No transom light.');
+    expect(box(glass).min.y, 'the light from over its bar').toBeCloseTo(top + 0.045, 6);
+    expect(box(glass).max.y, 'to the frame’s head').toBeCloseTo(4.79 - 0.09, 6);
+    expect(box(doorUnit({ width: 2, height: 3.4 }).leaf).max.y, 'by default a third of the width').toBeCloseTo(3.4 - 0.08 - 2 / 3 - 0.004, 6);
   });
 });

@@ -212,8 +212,10 @@ export interface DoorParams extends Omit<WindowParams, 'cols' | 'rows'> {
   panels?: number;
   /** Leaf thickness, metres. Default 0.07. */
   thickness?: number;
-  /** Glaze the head: the fanlight of an arched door, or a transom light of `width / 3` over a rectangular one. Default true. */
+  /** Glaze the head: the fanlight of an arched door, or a transom light `transom` tall over a rectangular one. Default true. */
   fanlight?: boolean;
+  /** A rectangular door's transom light: its height from the transom bar to the frame's head, metres. Default width / 3. */
+  transom?: number;
   /** Glazed leaves: each a metal frame of stiles and rails `bar` wide round `lights` panes stacked between bars, in place of raised panels. Default false. */
   glazed?: boolean;
   /** Panes up each glazed leaf. Default 3. */
@@ -322,15 +324,18 @@ export function doorUnit(params: DoorParams): DoorParts {
     lights: integer('doorUnit', 'lights', params.lights ?? 3, 1, 12),
     opens: positive('doorUnit', 'opens', params.opens ?? 90),
     swing: oneOf('doorUnit', 'swing', params.swing ?? 'either', ['either', 'back', 'front'] as const),
+    transom: positive('doorUnit', 'transom', params.transom ?? spec.width / 3),
   };
   require('doorUnit', full.opens <= 180, `opens ${String(full.opens)} turns a leaf past its wall; give at most 180 degrees.`);
+  const head = full.shape === 'rect' ? (full.fanlight ? full.height - full.frame - full.transom : full.height - full.frame) : full.height - full.rise;
+  require('doorUnit', head > 3 * full.frame, `transom ${full.transom.toFixed(3)} leaves the leaves ${(head - full.frame).toFixed(3)} m of a ${String(full.height)} m door; give a lower transom.`);
   return cached('doorUnit', full, () => {
     const segments = byDetail(full.detail, [8, 16, 28]);
     const frame = new MeshBuilder();
     frameInto(frame, full, segments);
     const f = full.frame;
     const w = full.width / 2 - f;
-    const headBottom = full.shape === 'rect' ? (full.fanlight ? full.height - f - full.width / 3 : full.height - f) : full.height - full.rise;
+    const headBottom = head;
     const zc = -full.depth / 2;
     const t = full.thickness;
     const leafWidth = (2 * w) / full.leaves;

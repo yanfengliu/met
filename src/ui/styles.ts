@@ -103,6 +103,13 @@ const CSS = /* css */ `
 .met-crosshair::before { left: 7px; top: 0; width: 2px; height: 16px; }
 .met-crosshair::after { left: 0; top: 7px; width: 16px; height: 2px; }
 .met-crosshair[data-target]::before, .met-crosshair[data-target]::after { background: var(--met-accent); }
+/* The door prompt, centred 16 px under the crosshair: inside the band x = centre ± 160 px, y = centre - 8 px to + 80 px, which the label card keeps out of. */
+.met-door-prompt {
+  position: absolute; left: 50%; top: calc(50% + 16px); transform: translateX(-50%); z-index: 1; box-sizing: border-box; max-width: 300px;
+  padding: 4px 10px; border-radius: 6px; background: var(--met-panel); border: 1px solid var(--met-line);
+  font-size: 13px; font-weight: 600; line-height: 1.35; white-space: nowrap; color: var(--met-text); pointer-events: none;
+}
+.met-door-prompt[hidden] { display: none; }
 /* The floor picker: a column at the left, centred in the view above the bar; open menu panels (z-index 3) cover it on a narrow screen. */
 .met-floors {
   position: absolute; left: 12px; top: calc((100% - var(--met-bar-h)) / 2); transform: translateY(-50%); z-index: 2;
