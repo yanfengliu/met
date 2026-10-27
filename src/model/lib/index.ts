@@ -67,4 +67,4 @@ export { stairFlight, stairLanding, type StairFlight, type StairFlightParams, ty
 export { surround, type HeadKind, type SurroundParams } from './surround.js';
 export { lathe, sweep, type LatheOptions, type SweepOptions } from './sweep.js';
 export { openingOutline, wall, type Opening, type OpeningShape, type Rustication, type WallParams } from './wall.js';
-export { doorUnit, windowUnit, type DoorParams, type DoorParts, type WindowParams, type WindowParts } from './window.js';
+export { doorLeavesOf, doorUnit, windowUnit, type DoorHinge, type DoorLeaf, type DoorParams, type DoorParts, type DoorSwing, type SwingingPart, type WindowParams, type WindowParts } from './window.js';

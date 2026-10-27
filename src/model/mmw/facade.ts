@@ -12,6 +12,7 @@ import type { BufferGeometry } from 'three';
 import type { Kit } from '../../build/types.js';
 import { architraveProfile, corniceProfile, corniceRun, friezeProfile, moulding, pilaster, stackProfiles } from '../lib/index.js';
 import type { Profile } from '../lib/index.js';
+import { doorTag } from '../doors.js';
 import { palette } from '../palette.js';
 import {
   ARCH_CROWN_Y,
@@ -77,14 +78,13 @@ export function buildFrontWalls(kit: Kit, front: Front): void {
   kit.add(UNIT_BOX, palette.limestone, boxMatrix(Math.min(x0, x1), seam.foot, Math.min(z0, z1), Math.max(x0, x1), END_TIER.wallTop, Math.max(z0, z1)), seam.where === 'before' ? 0 : placedBays(front).length);
 }
 
-/** Windows and doors: the bronze arched windows, the grilled base windows and the links' doors; each unit's metal is one merged geometry. */
+/** Windows and doors: the bronze arched windows, the grilled base windows and the links' doors; each window's metal is one merged geometry, and a door's leaves are its own piece. */
 export function buildFrontWindows(kit: Kit, front: Front): void {
   const arch = archWindow();
   const archMetal = merged('front-arch-window-metal', [[arch.frame], [arch.bars]]);
   const base = baseWindowUnit();
   const baseMetal = merged('front-base-window-metal', [[base.frame], [base.bars]]);
   const door = linkDoor();
-  const doorBronze = merged('front-door-bronze', [[door.frame], [door.leaf]]);
   for (const { run: r, bay, centre, index } of placedBays(front)) {
     if (bay.kind === 'pier') continue;
     if (bay.kind !== 'end') {
@@ -93,8 +93,10 @@ export function buildFrontWindows(kit: Kit, front: Front): void {
       kit.add(arch.glass, palette.glassDark, m, index);
     }
     if (bay.kind === 'door') {
+      // The link's door is locked (src/model/doors.ts): its leaves stay shut over the drop behind them, and solid.
       const m = onFacade(r.line, centre, -0.4, -BASE_REVEAL);
-      kit.add(doorBronze, palette.bronze, m, index);
+      kit.add(door.frame, palette.bronze, m, index);
+      kit.addTagged(door.leaf, palette.bronze, m, doorTag(`mmw-${front.name}-link`), index);
       if (door.glass !== undefined) kit.add(door.glass, palette.glassDark, m, index);
     } else {
       const m = onFacade(r.line, centre, BASE_WINDOW_SILL_Y, -BASE_REVEAL);

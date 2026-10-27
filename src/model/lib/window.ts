@@ -4,6 +4,8 @@
  * Units metres. Origin at the bottom centre of the opening, on the frame's front plane: the frame spans z from −depth to 0 and sits inside the opening outline
  * (pass the same width, height and shape as the wall opening, and place it at the reveal depth you want, e.g. z = −0.15).
  * Glass is one pane facing +Z in the middle of the frame depth; render it double-sided. Arched heads get a transom at the springing and radiating bars in the fanlight.
+ * A door also returns each leaf apart, closed, in the same frame, with its hinge (a point and a unit axis) and its swing (which way, and how far), for a
+ * door layer that turns the leaves (docs/design/spec.md, Doors; src/viewer/doors.ts); `doorLeavesOf` finds them from the closed leaves' geometry.
  */
 import * as THREE from 'three';
 
@@ -206,23 +208,108 @@ export function windowUnit(params: WindowParams): WindowParts {
 export interface DoorParams extends Omit<WindowParams, 'cols' | 'rows'> {
   /** One or two leaves. Default 2. */
   leaves?: number;
-  /** Raised panels per leaf, stacked. Default 3. */
+  /** Raised panels per leaf, stacked (panelled leaves). Default 3. */
   panels?: number;
   /** Leaf thickness, metres. Default 0.07. */
   thickness?: number;
   /** Glaze the head: the fanlight of an arched door, or a transom light of `width / 3` over a rectangular one. Default true. */
   fanlight?: boolean;
+  /** Glazed leaves: each a metal frame of stiles and rails `bar` wide round `lights` panes stacked between bars, in place of raised panels. Default false. */
+  glazed?: boolean;
+  /** Panes up each glazed leaf. Default 3. */
+  lights?: number;
+  /** How far each leaf opens about its hinge, degrees. Default 90. */
+  opens?: number;
+  /** Which way the leaves open: either way (a double-acting door, opened away from whoever opens it), or only toward the back (−Z) or the front (+Z). Default 'either'. */
+  swing?: DoorSwing['direction'];
+}
+
+/** A leaf's hinge in the door unit's frame: a point on its axis and the unit axis, turned so that a positive (right-handed) turn about it swings the leaf toward the unit's back (−Z). */
+export interface DoorHinge {
+  readonly point: readonly [number, number, number];
+  readonly axis: readonly [number, number, number];
+}
+
+/** How a leaf opens: which way, and by how much at most, radians. */
+export interface DoorSwing {
+  readonly direction: 'either' | 'back' | 'front';
+  readonly angle: number;
+}
+
+/** One leaf apart, closed, in the unit's frame: its panels or its glazing's metal, a glazed leaf's glass, its hinge and its swing. */
+export interface DoorLeaf {
+  readonly panel: THREE.BufferGeometry;
+  readonly glass?: THREE.BufferGeometry;
+  readonly hinge: DoorHinge;
+  readonly swing: DoorSwing;
 }
 
 export interface DoorParts {
   readonly frame: THREE.BufferGeometry;
-  /** Door leaves with their raised panels (wood or bronze). */
+  /** Every leaf closed, as one geometry: the panels (wood or bronze), or a glazed door's metal. The piece a build places, and tags as the door (src/model/doors.ts). */
   readonly leaf: THREE.BufferGeometry;
+  /** A glazed door's panes, every leaf closed, as one geometry; absent for panelled leaves. */
+  readonly leafGlass?: THREE.BufferGeometry;
   /** Fanlight or transom-light glass (its transom bar is part of `frame`); absent when `fanlight` is false on a rectangular door. */
   readonly glass?: THREE.BufferGeometry;
+  /** Each leaf apart, from −X: `leaf` and `leafGlass` are these leaves' panels and panes appended, so a leaf turned by 0 about its hinge is exactly its part of them. */
+  readonly leaves: readonly DoorLeaf[];
 }
 
-/** A door filling an opening: frame (with fanlight bars), panelled leaves and fanlight glass. */
+/** One leaf's geometry and how it turns: a part of a door's `leaf` or `leafGlass` (`doorLeavesOf`). */
+export interface SwingingPart {
+  readonly geometry: THREE.BufferGeometry;
+  readonly hinge: DoorHinge;
+  readonly swing: DoorSwing;
+}
+
+/** Each door's `leaf` and `leafGlass` geometry, to its leaves' parts of it (`doorLeavesOf`). */
+const leafParts = new WeakMap<THREE.BufferGeometry, readonly SwingingPart[]>();
+
+/**
+ * The leaves that make up `geometry` when it is a door's `leaf` or `leafGlass` (doorUnit), each with its own geometry, hinge and swing, from −X; undefined
+ * for any other geometry. A door layer turns each about its hinge in place of the closed piece (src/viewer/doors.ts).
+ */
+export function doorLeavesOf(geometry: THREE.BufferGeometry): readonly SwingingPart[] | undefined {
+  return leafParts.get(geometry);
+}
+
+/**
+ * One raised-panel leaf over [x0, x1] × [y0, y1], `t` thick about z = zc, with `panels` raised panels on both faces, spaced over a bay `bay` wide and
+ * `rise` tall (the leaf's share of the opening, gaps included).
+ */
+function panelledLeafInto(b: MeshBuilder, x0: number, x1: number, y0: number, y1: number, zc: number, t: number, panels: number, bay: number, rise: number): void {
+  b.box([x0, y0, zc - t / 2], [x1, y1, zc + t / 2]);
+  const margin = Math.min(bay, rise) * 0.12;
+  const ph = (rise - margin * (panels + 1)) / panels;
+  for (let p = 0; p < panels && ph > 0; p++) {
+    const py = y0 + margin + p * (ph + margin);
+    for (const side of [1, -1]) {
+      const z0 = zc + (side * t) / 2;
+      const z1 = z0 + side * 0.018;
+      b.box([x0 + margin, py, Math.min(z0, z1)], [x1 - margin, py + ph, Math.max(z0, z1)], [side > 0 ? '-z' : '+z']);
+    }
+  }
+}
+
+/** One glazed leaf over [x0, x1] × [y0, y1]: stiles and rails `s` wide and `t` thick about z = zc, `lights − 1` bars between the panes, and its glass. */
+function glazedLeafInto(metal: MeshBuilder, glass: MeshBuilder, x0: number, x1: number, y0: number, y1: number, zc: number, t: number, s: number, lights: number): void {
+  metal.box([x0, y0, zc - t / 2], [x0 + s, y1, zc + t / 2]);
+  metal.box([x1 - s, y0, zc - t / 2], [x1, y1, zc + t / 2]);
+  metal.box([x0 + s, y0, zc - t / 2], [x1 - s, y0 + s, zc + t / 2]);
+  metal.box([x0 + s, y1 - s, zc - t / 2], [x1 - s, y1, zc + t / 2]);
+  for (let j = 1; j < lights; j++) {
+    const y = y0 + s + ((y1 - y0 - 2 * s) * j) / lights;
+    metal.box([x0 + s, y - s / 2, zc - t * 0.4], [x1 - s, y + s / 2, zc + t * 0.4]);
+  }
+  glassInto(glass, [[x0 + s, y0 + s], [x1 - s, y0 + s], [x1 - s, y1 - s], [x0 + s, y1 - s]], zc);
+}
+
+/**
+ * A door filling an opening: frame (with fanlight bars), leaves (raised panels, or glazed: metal and glass) and fanlight glass, and each leaf apart with its
+ * hinge. Leaves hang from the jambs (two from both, one from the −X jamb) on pivots in their mid-plane, half a leaf's thickness in from the jamb, so a leaf
+ * opened a quarter turn lies flush with its jamb's face.
+ */
 export function doorUnit(params: DoorParams): DoorParts {
   const spec = windowSpec('doorUnit', { ...params, cols: 1, rows: 1 }, { cols: 1, rows: 1 });
   const full = {
@@ -231,7 +318,12 @@ export function doorUnit(params: DoorParams): DoorParts {
     panels: integer('doorUnit', 'panels', params.panels ?? 3, 1, 8),
     thickness: positive('doorUnit', 'thickness', params.thickness ?? 0.07),
     fanlight: params.fanlight ?? true,
+    glazed: params.glazed ?? false,
+    lights: integer('doorUnit', 'lights', params.lights ?? 3, 1, 12),
+    opens: positive('doorUnit', 'opens', params.opens ?? 90),
+    swing: oneOf('doorUnit', 'swing', params.swing ?? 'either', ['either', 'back', 'front'] as const),
   };
+  require('doorUnit', full.opens <= 180, `opens ${String(full.opens)} turns a leaf past its wall; give at most 180 degrees.`);
   return cached('doorUnit', full, () => {
     const segments = byDetail(full.detail, [8, 16, 28]);
     const frame = new MeshBuilder();
@@ -240,22 +332,30 @@ export function doorUnit(params: DoorParams): DoorParts {
     const w = full.width / 2 - f;
     const headBottom = full.shape === 'rect' ? (full.fanlight ? full.height - f - full.width / 3 : full.height - f) : full.height - full.rise;
     const zc = -full.depth / 2;
-    const leaf = new MeshBuilder();
+    const t = full.thickness;
     const leafWidth = (2 * w) / full.leaves;
+    require('doorUnit', leafWidth > 2 * t, `each leaf is ${leafWidth.toFixed(3)} m wide, too narrow to hang on a ${String(t)} m pivot; widen the door or use one leaf.`);
+    const swing: DoorSwing = Object.freeze({ direction: full.swing, angle: (full.opens * Math.PI) / 180 });
+    const leaves: DoorLeaf[] = [];
+    const all = new MeshBuilder();
+    const allGlass = new MeshBuilder();
     for (let k = 0; k < full.leaves; k++) {
       const x0 = -w + k * leafWidth + 0.004;
       const x1 = x0 + leafWidth - 0.008;
-      leaf.box([x0, f, zc - full.thickness / 2], [x1, headBottom - 0.004, zc + full.thickness / 2]);
-      const margin = Math.min(leafWidth, headBottom - f) * 0.12;
-      const ph = (headBottom - f - margin * (full.panels + 1)) / full.panels;
-      for (let p = 0; p < full.panels && ph > 0; p++) {
-        const y0 = f + margin + p * (ph + margin);
-        for (const side of [1, -1]) {
-          const z0 = zc + (side * full.thickness) / 2;
-          const z1 = z0 + side * 0.018;
-          leaf.box([x0 + margin, y0, Math.min(z0, z1)], [x1 - margin, y0 + ph, Math.max(z0, z1)], [side > 0 ? '-z' : '+z']);
-        }
+      const panel = new MeshBuilder();
+      const pane = new MeshBuilder();
+      if (full.glazed) glazedLeafInto(panel, pane, x0, x1, f, headBottom - 0.004, zc, t, full.bar, full.lights);
+      else panelledLeafInto(panel, x0, x1, f, headBottom - 0.004, zc, t, full.panels, leafWidth, headBottom - f);
+      // The −X leaf turns about +Y and the +X leaf about −Y, so a positive turn swings either toward the unit's back.
+      const left = k === 0;
+      const hinge: DoorHinge = Object.freeze({ point: Object.freeze([left ? -w + t / 2 : w - t / 2, 0, zc] as const), axis: Object.freeze([0, left ? 1 : -1, 0] as const) });
+      const leaf: { panel: THREE.BufferGeometry; glass?: THREE.BufferGeometry; hinge: DoorHinge; swing: DoorSwing } = { panel: panel.build(), hinge, swing };
+      all.append(leaf.panel);
+      if (full.glazed) {
+        leaf.glass = pane.build();
+        allGlass.append(leaf.glass);
       }
+      leaves.push(Object.freeze(leaf));
     }
     let glass: THREE.BufferGeometry | undefined;
     if (full.fanlight || full.shape !== 'rect') {
@@ -266,7 +366,16 @@ export function doorUnit(params: DoorParams): DoorParts {
       glassInto(g, pane, zc);
       glass = g.build();
     }
-    const parts: { frame: THREE.BufferGeometry; leaf: THREE.BufferGeometry; glass?: THREE.BufferGeometry } = { frame: frame.build(), leaf: leaf.build() };
+    const parts: { frame: THREE.BufferGeometry; leaf: THREE.BufferGeometry; leafGlass?: THREE.BufferGeometry; glass?: THREE.BufferGeometry; leaves: readonly DoorLeaf[] } = {
+      frame: frame.build(),
+      leaf: all.build(),
+      leaves: Object.freeze(leaves),
+    };
+    leafParts.set(parts.leaf, Object.freeze(leaves.map((l) => Object.freeze({ geometry: l.panel, hinge: l.hinge, swing: l.swing }))));
+    if (full.glazed) {
+      parts.leafGlass = allGlass.build();
+      leafParts.set(parts.leafGlass, Object.freeze(leaves.flatMap((l) => (l.glass === undefined ? [] : [Object.freeze({ geometry: l.glass, hinge: l.hinge, swing: l.swing })]))));
+    }
     if (glass !== undefined) parts.glass = glass;
     return Object.freeze(parts);
   });

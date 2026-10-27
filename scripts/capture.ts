@@ -2,7 +2,8 @@
  * Capture tooling (docs/design/spec.md, Verification), run by Node's own TypeScript support:
  *   npm run shots                         the standard set: every preset at the finished state, the aerial preset at t = 0 and at each chapter boundary,
  *                                         the section cut, each floor of the floor picker (framed on its own, and from aerial-ne and top), the walker's
- *                                         view at each walk spawn, and the page UI at 1280x720 and 390x844 (also walking), into .shots/shots/
+ *                                         view at each walk spawn, the doors (the entrance closed and open, Weston's door, a cut through the open
+ *                                         entrance), and the page UI at 1280x720 and 390x844 (also walking), into .shots/shots/
  *   npm run shots -- [--solo <chapter>] [--presets id,id]
  *                                         the same set for one chapter (into .shots/shots-<chapter>/) and/or only the named presets;
  *                                         --solo must be one of the page's chapter ids (window.__met.chapters), or the run fails before writing anything
@@ -31,6 +32,11 @@ const UI_VIEWPORTS = [
   { name: 'mobile-390x844', width: 390, height: 844 },
 ] as const;
 const READY_TIMEOUT_MS = 90_000;
+/**
+ * Cameras on the doors (`cam=` values, world metres): the entrance's three doorways from the landing a little north of the axis, at a walker's eye; the
+ * Petrie Court's side of Weston's door; and the entrance from above and in front, for a cut at 6.5 m through its leaves.
+ */
+const DOOR_CAMS = { entrance: '2.2,5.6,8,0,6.2,-1.2', weston: '-57,5.8,-100.5,-49.4,6.4,-103.65', cut: '5,15,9,0,5.2,-2.5' } as const;
 
 /** What the page publishes on `window.__met` that this script reads. */
 interface Facts {
@@ -213,6 +219,9 @@ async function shots(origin: string, args: Map<string, string>): Promise<void> {
       ...['aerial-ne', 'top'].map((view) => ({ name: `floor-${floor.id}-${view}`, query: `shot=1&noui=1&t=${String(n)}&floor=${floor.id}&view=${view}`, viewport: MODEL_VIEWPORT })),
     ]),
     ...f.walk.spawns.map((id) => ({ name: `walk-${id}`, query: `shot=1&noui=1&t=${String(n)}&walk=1&spawn=${id}`, viewport: MODEL_VIEWPORT })),
+    ...(['closed', 'open'] as const).map((state) => ({ name: `doors-entrance-${state}`, query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.entrance}&doors=${state}`, viewport: MODEL_VIEWPORT })),
+    { name: 'doors-weston', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.weston}`, viewport: MODEL_VIEWPORT },
+    { name: 'doors-cut-open', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.cut}&cut=6.5&doors=open`, viewport: MODEL_VIEWPORT },
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-${v.name}`, query: `shot=1&t=${String(n)}`, viewport: v })),
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-mid-${v.name}`, query: `shot=1&t=${String(Math.floor(n / 2) + 0.5)}`, viewport: v })),
     // The walking screen: the crosshair, the status line's hint and the folded bar.

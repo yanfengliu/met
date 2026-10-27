@@ -7,8 +7,9 @@
 import * as THREE from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
+import { doorTag } from '../doors.js';
 import { palette } from '../palette.js';
-import { archivolt, barrelVault, columnParts, MeshBuilder, moulding, surround, windowUnit } from '../lib/index.js';
+import { archivolt, barrelVault, columnParts, doorUnit, MeshBuilder, moulding, surround, windowUnit } from '../lib/index.js';
 import {
   ARCH_CROWN_Y,
   ARCH_INNER_SPAN,
@@ -49,6 +50,8 @@ export const OPENINGS: readonly (readonly [number, number])[] = [
   [-SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2, SCREEN_COLUMN_X - SCREEN_COLUMN_D / 2],
   [SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2, HALF - SCREEN_PILASTER],
 ];
+/** The doors of the central arch's three openings, from −X (src/model/doors.ts). */
+const ENTRANCE_DOORS: readonly string[] = ['hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-north'];
 /** Windows in the side arches stand on a solid base; the central arch has doors to the floor. */
 const WINDOW_SILL_Y = MAIN + 1.1;
 const SCREEN_D = 0.5;
@@ -194,15 +197,24 @@ export const archSteps: readonly StepDef[] = [
         kit.add(lunette.frame, palette.metalDark, at(x, TRANSOM_TOP_Y - 0.25, SCREEN_Z - 0.05));
         kit.add(lunette.glass, palette.glassDark, at(x, TRANSOM_TOP_Y - 0.25, SCREEN_Z - 0.05));
         kit.add(grille, palette.metalDark, at(x, g.y, SCREEN_Z + 0.1));
-        for (const [a, b] of OPENINGS) {
+        OPENINGS.forEach(([a, b], i) => {
           const width = b - a;
           const bottom = doors ? MAIN : WINDOW_SILL_Y;
-          const unit = glazed({ width, height: SCREEN_HEAD_Y - bottom, cols: 2, rows: doors ? 3 : 4, frame: 0.09, bar: 0.05, depth: 0.14 });
           const m = at(x + (a + b) / 2, bottom, SCREEN_Z + 0.07);
-          // The doors stand open to a walker in the walk mode (passable copies of the same bronze and glass); the windows stay solid.
-          kit.add(unit.metal, doors ? hunt.doorBronze : palette.bronze, m);
-          kit.add(unit.glass, doors ? hunt.doorGlass : palette.glassDark, m);
-        }
+          if (doors) {
+            // The entrance's doors (src/model/doors.ts): a bronze frame and a pair of glazed leaves, three panes each, which open; until the walk's
+            // collision follows the leaves (M2b) their bronze and glass are passable copies of the palette's, as the fixed glazing was before.
+            const door = doorUnit({ width, height: SCREEN_HEAD_Y - bottom, leaves: 2, glazed: true, lights: 3, fanlight: false, frame: 0.09, bar: 0.05, depth: 0.14 });
+            const tag = doorTag(ENTRANCE_DOORS[i] ?? '');
+            kit.add(door.frame, hunt.doorBronze, m);
+            kit.addTagged(door.leaf, hunt.doorBronze, m, tag);
+            if (door.leafGlass !== undefined) kit.addTagged(door.leafGlass, hunt.doorGlass, m, tag);
+            return;
+          }
+          const unit = glazed({ width, height: SCREEN_HEAD_Y - bottom, cols: 2, rows: 4, frame: 0.09, bar: 0.05, depth: 0.14 });
+          kit.add(unit.metal, palette.bronze, m);
+          kit.add(unit.glass, palette.glassDark, m);
+        });
       }
       // The wings: two tall pedimented windows over two ground-floor windows each (S7 at the pavilion's ends).
       const tall = glazed({ width: EXT_WINDOW.width, height: EXT_WINDOW.height, cols: 2, rows: 4, frame: 0.09, bar: 0.04 });

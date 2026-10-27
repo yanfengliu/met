@@ -28,6 +28,20 @@ describe('parseQuery', () => {
   });
 });
 
+describe('doors=', () => {
+  it('sets the doors open or closed at load, and ignores any other value with a warning that names it and what is accepted', () => {
+    expect(parseQuery('?doors=open')).toMatchObject({ doors: 'open', warnings: [] });
+    expect(parseQuery('?doors=closed&shot=1')).toMatchObject({ doors: 'closed', shot: true, warnings: [] });
+    expect(parseQuery('?doors=Open')).toMatchObject({ doors: 'open', warnings: [] });
+    expect(parseQuery('')).toMatchObject({ doors: null, warnings: [] });
+    for (const value of ['ajar', '', '1']) {
+      const q = parseQuery(`?doors=${value}`);
+      expect(q.doors).toBeNull();
+      expect(q.warnings).toEqual([`Query parameter doors="${value}" is not a door state; use doors=open or doors=closed. It is ignored.`]);
+    }
+  });
+});
+
 describe('startPosition and autoplay', () => {
   const ids = ['a', 'b', 'c'];
 
