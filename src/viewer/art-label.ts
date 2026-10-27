@@ -43,7 +43,7 @@ export class ArtLabel {
     return (this.walking ? this.looked : this.clicked)?.id ?? null;
   }
 
-  /** The walking eye's look target, whenever walk mode gives a new one (null in the orbit view, while it prepares and when it looks at no artwork). */
+  /** The walking eye's look target whenever walk mode gives a new one, or null (no tagged piece in reach, or walk mode preparing or off): a door shows no card. */
   look(target: LookTarget | null): void {
     this.looked = target === null ? null : artworkOf({ kind: target.kind, id: target.id }, target.hit.mesh, target.hit.instance);
   }

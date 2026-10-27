@@ -5,23 +5,22 @@
 import { Ray, Vector3 } from 'three';
 
 import { Player } from './build/player.js';
-import { CATALOGUE } from './model/collection/catalogue.js';
-import { cardContent } from './ui/art-card.js';
-import type { ArtCardContent } from './ui/art-card.js';
-import { ARTWORK_QUERY, ArtLabel } from './viewer/art-label.js';
-import { bindClick } from './viewer/click.js';
-import { pointerRay } from './viewer/zoom.js';
 import type { Speed } from './build/player.js';
 import { chapterRanges, selectSteps } from './build/select.js';
 import { SEQUENCE } from './build/sequence.js';
 import { Timeline } from './build/timeline.js';
 import type { BuiltStep } from './build/timeline.js';
+import { CATALOGUE } from './model/collection/catalogue.js';
+import { cardContent } from './ui/art-card.js';
+import type { ArtCardContent } from './ui/art-card.js';
 import { installStyles } from './ui/styles.js';
 import { createUi } from './ui/ui.js';
 import type { UiState, WalkStatus } from './ui/ui.js';
 import { GeometryBvhs } from './walk/bvh-cache.js';
 import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
+import { ARTWORK_QUERY, ArtLabel } from './viewer/art-label.js';
+import { bindClick } from './viewer/click.js';
 import { publishFacts, snapshot } from './viewer/facts.js';
 import { FloorMode } from './viewer/floor-mode.js';
 import { FloorView } from './viewer/floor-view.js';
@@ -34,6 +33,7 @@ import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
 import { RendererError } from './viewer/renderer-error.js';
 import { cappedBySection } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
+import { pointerRay } from './viewer/zoom.js';
 
 const READY_FRAMES = 5;
 /** Longest wall-time step one frame may advance the player, so a stalled tab does not jump the build. */

@@ -30,6 +30,16 @@ export const ART_CREDIT = 'Object data: The Met Open Access, CC0';
 /** What the card says while the pointer is locked to the walking view, where the link cannot be clicked. */
 export const LOCKED_HINT = 'Esc frees the pointer to open the link.';
 
+/**
+ * A record's text as the card shows it: plain text on one line. Some titles carry markup and line breaks as the API gives them ("Jousting Armor
+ * (<i>Rennzeug</i>) \nand Matching Half-Shaffron"): a line-break tag becomes a space, any other tag-shaped run (`<` and a letter or `/`, up to `>`)
+ * goes, keeping the text inside it, and every run of white space becomes one space. The card sets text, never markup, so nothing in a record is ever
+ * parsed as HTML.
+ */
+export function plainText(text: string): string {
+  return text.replace(/<br\b[^<>]*>/gi, ' ').replace(/<\/?[a-z][a-z0-9]*\b[^<>]*>/gi, '').replace(/\s+/g, ' ').trim();
+}
+
 /** Centimetres from metres, to the millimetre the catalogue keeps: 1.64 → "164", 0.245 → "24.5". */
 function centimetres(metres: number): string {
   return String(Math.round(metres * 1000) / 10);
@@ -48,14 +58,15 @@ export function sizeText(entry: Pick<CatalogueEntry, 'size' | 'sizeFrom'>): stri
   return `${values} cm, ${guessed.join(' and ')} estimated`;
 }
 
-/** The card of one catalogue entry. */
+/** The card of one catalogue entry, its record's text as plain text (`plainText`). */
 export function cardContent(entry: CatalogueEntry): ArtCardContent {
+  const maker = plainText(entry.maker);
   return Object.freeze({
     id: String(entry.id),
-    title: entry.title,
-    maker: entry.maker === '' ? null : entry.maker,
-    date: entry.date,
-    medium: entry.medium,
+    title: plainText(entry.title),
+    maker: maker === '' ? null : maker,
+    date: plainText(entry.date),
+    medium: plainText(entry.medium),
     gallery: `Gallery ${entry.gallery}`,
     size: sizeText(entry),
     url: entry.url,
