@@ -73,6 +73,14 @@ Fleet canon R6 splits a task expected to exceed about 200k context tokens into m
 - Expensive gates across the parallel worktrees and the coordinator's checks run one at a time, per R5, through the lock `tmp/gate.sh` (ignored).
 - Open for the owner: walk mode moves by keys only, so on a phone it shows the view but cannot walk or use a door. Touch controls were not asked for, so none are planned.
 
+### Amendment after M3b's handoff (2026-10-27): M4, every space reachable
+
+While building its door check (F30), M3b's worker found the Engelhard Court unreachable on foot. A wall ran across its east walk, and a flood fill of the floor from the Great Hall never reached it, so eight of the collection's placeholders stood where no walker could go. That breaks this plan's "no dead end".
+- **M4, reach** (worker `reach`, from `691b8f7`, beside M2b): a reachability gate over the walk's own collision, from the Great Hall spawn to every space holding artworks and every preset and route end, red at `691b8f7`.
+- It opens the passages the real building has, from the floor map, cited in `docs/research/`.
+- Route R6 walks into the Engelhard Court.
+- Spaces without artworks, presets or routes stay outside the gate.
+
 ## Acceptance criteria
 
 - [ ] The eye never drops while climbing: checked every frame on the front steps and the Grand Staircase, both ways, walking and running, red before the fix.
@@ -91,7 +99,8 @@ Fleet canon R6 splits a task expected to exceed about 200k context tokens into m
 - [x] M3a the catalogue and the placeholders (worker `collection`, merged `7c370b1`, reviews 1 and 2): 94 real objects in ten spaces, 38 meshes and 40,290 triangles of placeholders; the model at 729 meshes and 1,578,714 triangles.
 - [x] M2a doors that open and close (worker `doors`, merged `6198d1a`, reviews 5, 8 and 9): the Hunt central entrance's three doors open and close by E or a click with a prompt, behind the columns as the real ones stand; the link and Bank doors say Locked and stay solid; review 9's F34 and F35, two gaps in the doors' fit test, go to M2b; the model at 744 meshes and 1,579,480 triangles.
 - [ ] M2b doors that are solid (worker `doors2`, after M2a).
-- [ ] M3b labels (worker `labels`, from `a9f6f5a`, beside M2a).
+- [x] M3b labels (worker `labels`, merged `4e16588`, reviews 6, 7, 10, 11 and 13): a card for each placeholder looked at within 6 m or clicked in the orbit view; the orbit click gate as a state machine with a randomized check; F39 (a crash on mixed mouse and touch inside OrbitControls, older than M3b) filed as a follow-up.
+- [ ] M4 every space reachable (worker `reach`, from `691b8f7`, review 12).
 - [ ] Integration, review, deploy, outcome.
 
 ## Outcome
