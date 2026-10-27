@@ -5,6 +5,8 @@
  * Each page is loaded at the finished building, where every collection step stands, and again in a collection space's view, and every request it makes
  * is recorded from navigation until it is shot-ready and a second later; each must be the page's own origin (or a data: or blob: URL), and none under
  * /research/. Bound: requests made only after that window, or only through input, are not seen.
+ * Through input, with an artwork's card shown and its link to metmuseum.org followed, ./labels.spec.ts checks that the page itself asks nothing of
+ * metmuseum.org.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';

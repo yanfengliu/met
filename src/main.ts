@@ -2,9 +2,15 @@
  * Boot (docs/design/spec.md, Modules): query, sequence, timeline, viewer, player, walk mode, UI, frame loop and the read-only `window.__met`.
  * Frames render on demand: when t, the camera, the cut or the size changed, and for the first 5 frames, after which `window.__shotReady` is set.
  */
-import { Vector3 } from 'three';
+import { Ray, Vector3 } from 'three';
 
 import { Player } from './build/player.js';
+import { CATALOGUE } from './model/collection/catalogue.js';
+import { cardContent } from './ui/art-card.js';
+import type { ArtCardContent } from './ui/art-card.js';
+import { ARTWORK_QUERY, ArtLabel } from './viewer/art-label.js';
+import { bindClick } from './viewer/click.js';
+import { pointerRay } from './viewer/zoom.js';
 import type { Speed } from './build/player.js';
 import { chapterRanges, selectSteps } from './build/select.js';
 import { SEQUENCE } from './build/sequence.js';
@@ -95,6 +101,18 @@ function boot(): void {
   rig.pick = (ray) => picker.distance(ray);
   // The walking eye's look target runs the hit query (src/walk/look.ts); an orbit-view pointer can run the same query on its own ray.
   const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query) }, (message) => { console.warn(message); });
+  // The artworks' cards (docs/design/spec.md, Collection: Labels): the look target's artwork while walking, the one a click meets in the orbit view.
+  const cards = new Map<string, ArtCardContent>(CATALOGUE.map((entry) => [String(entry.id), cardContent(entry)]));
+  const artLabel = new ArtLabel();
+  /** The card the last frame showed, for the chrome and `window.__met.label`. */
+  let shownArt: ArtCardContent | null = null;
+  bindClick(viewer.renderer.domElement, (x, y) => {
+    const canvas = viewer.renderer.domElement;
+    artLabel.click(picker.hit(new Ray(rig.camera.position.clone(), pointerRay(canvas, rig.camera, x, y)), ARTWORK_QUERY));
+  }, () => !walk.active);
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') artLabel.escape();
+  });
   const presetPose = (id: string): CameraPose | null => {
     const preset = presetById(id);
     return preset === undefined ? null : resolvePreset(preset, timeline.bounds, rig.camera.aspect);
@@ -145,6 +163,7 @@ function boot(): void {
     walkHint: walk.hint,
     walkTarget: walk.lastTarget?.kind ?? null,
     floor: floors.id,
+    artCard: shownArt,
   });
   const act = (action: () => void) => (): void => {
     action();
@@ -336,6 +355,9 @@ function boot(): void {
       }
     }
     if (rig.update()) needsRender = true;
+    artLabel.look(walk.lastTarget);
+    artLabel.frame(walk.active);
+    shownArt = artLabel.id === null ? null : (cards.get(artLabel.id) ?? null);
     ui.sync(state());
     // Into or out of walk mode: the inset changes with it, measured after the bar has folded or unfolded.
     if (walk.active !== insetWalking) {
@@ -389,6 +411,7 @@ function boot(): void {
       return snapshot({ position: vec(c.position), target: vec(rig.controls.target), near: c.near, far: c.far, fov: c.fov, aspect: c.aspect });
     },
     get walk() { return snapshot(walk.facts()); },
+    get label() { return shownArt === null ? null : snapshot({ id: shownArt.id, title: shownArt.title }); },
     perf: Object.freeze({
       buildMs,
       get readyMs() { return readyMs; },

@@ -64,6 +64,11 @@ export interface MetFacts {
   readonly camera: { readonly position: Vec3; readonly target: Vec3; readonly near: number; readonly far: number; readonly fov: number; readonly aspect: number };
   /** Walk mode (src/walk/walk-mode.ts, `WalkFacts`): the mode, the eye and look direction, the ground contact, the collision build and the spawn ids. */
   readonly walk: WalkFacts;
+  /**
+   * The artwork whose card the last frame showed (docs/design/spec.md, Collection: Labels): its Met object ID, as its pieces' tag gives it, and its
+   * title; null when no card shows.
+   */
+  readonly label: { readonly id: string; readonly title: string } | null;
   readonly perf: {
     /**
      * Milliseconds of the timeline build: every step's `build` and its meshes (performance marks met:build-start, met:build-end).
