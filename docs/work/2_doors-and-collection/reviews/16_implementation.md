@@ -20,6 +20,16 @@ Seven existing test bodies and 26 additional probes passed in memory, covering b
 
 Browser/e2e tests were not rerun. Repository unchanged.
 
+## Findings and disposition
+
+| ID | Finding | Disposition and reason | Repair or follow-up |
+|---|---|---|---|
+| F43 | Verified: a closing door turns back on its own side; at exactly 0° opening picks the side away from the walker; E and the locked click share the rule | Closed | None |
+
+## Verification
+
+Above. Main was fast-forwarded to `43887b2`.
+
 ## Round outcome
 
 No findings: F43 is verified. The old rule reproduces the 66.4° stall, and 26 probes covered both sides, rapid toggles, blocked swings, scrubs and load defaults. M2b is merged.
