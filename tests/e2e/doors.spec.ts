@@ -4,16 +4,17 @@
  * the walker, in canvas pixels and in `window.__met.doors`; looking at an open leaf it says "E Close", and a click while the pointer is locked closes it;
  * the timeline's scrubber, moved into the doors' step and back, shows the closed leaf and then the door open again at once, and taken back before the
  * step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
- * first frame drawn, the doors set before the walker is placed and that before the first frame (the page's marks, read beside a probe of the first
- * drawn frame), and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and 390×844; and with the look
- * target on, facing into the Great Hall from the landing while the doorway opens and closes, and in the hall facing out while it opens, the slowest
- * frame of each swing takes under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under 16.7 ms (review 0, F9;
- * review 5, F23 and F24).
+ * first frame drawn, as its render drew them, the doors set before the walker is placed and that before the first frame (the page's marks, read beside a
+ * probe of the first drawn frame), and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and 390×844;
+ * and with the look target on, facing into the Great Hall from the landing while the doorway opens and closes, and in the hall facing out while it
+ * opens, the slowest frame of each swing takes under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under
+ * 16.7 ms (review 0, F9; review 5, F23 and F24; review 8, F32).
  * Bound: pointer lock is not available headless, so for the locked click a probe makes the page see its canvas locked (it answers
  * `document.pointerLockElement` with the canvas and sends `pointerlockchange`) and the click itself is the real mouse's. A frame's work is timed by a
  * probe that wraps `requestAnimationFrame` before the page loads and times each callback, the page's frame among them; GPU time is the page's own
- * benchmark. The first frame drawn is read by a probe that wraps `requestAnimationFrame` and reads `window.__met` after each callback, writing nothing. Pixel checks compare coarse luminance grids: they prove the drawing changed where the door is, not
- * that it is right.
+ * benchmark. The first frame drawn is read by a probe that wraps `requestAnimationFrame` and, writing nothing, reads `perf.lastDrawn` after the callback
+ * that drew it: the doors as the page read them back from the meshes right after that render. Pixel checks compare coarse luminance grids: they prove
+ * the drawing changed where the door is, not that it is right.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -24,8 +25,11 @@ import { face, legs, MINUS_Z, still, walk, walking } from './route-walk.js';
 import type { Sample } from './route-walk.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
 
-/** The entrance's doors' leaves stand in the plane Z −1.2 (src/model/hunt/arches.ts); the middle doorway spans X −0.9..0.9, its right leaf X 0.004..0.806. */
-const DOOR_Z = -1.2;
+/**
+ * The entrance's doors' leaves stand in the plane Z −1.724, behind the screen's columns (src/model/hunt/arches.ts `ENTRANCE_DOOR_Z`, their front face,
+ * less 0.07); the middle door spans X −0.746..0.746, its right leaf X 0.004..0.652, which open into the building lies along X 0.582..0.652.
+ */
+const DOOR_Z = -1.724;
 const MIDDLE = 'hunt-entrance-middle';
 /** Where the plaza spawn stands (src/walk/spawns.ts) and the north link's door (src/model/mmw/facade.ts: X 69, its leaves at Z −2.38). */
 const PLAZA: readonly [number, number] = [0, 24.46];
@@ -156,7 +160,7 @@ test.describe('the doors', () => {
     await expect(page.getByTestId('door-prompt')).toBeHidden();
     // The right leaf now stands against its jamb, back from the doorway: looked at there, it closes.
     const eye = (await still(page)).eye;
-    await face(page, toward(eye, 0.74, DOOR_Z - 0.3));
+    await face(page, toward(eye, 0.62, DOOR_Z - 0.3));
     await looksAt(page, MIDDLE, 'E Close');
     // Scrubbed into the doors' step, the timeline's closed leaf stands there and the door keeps its state; scrubbed back to the end, it stands open at once.
     await press(page, 'bar-toggle');
@@ -210,23 +214,31 @@ test.describe('the doors', () => {
   });
 
   test('doors=open and doors=closed under shot=1 stand at their angle from the first frame, before the walker is placed, and the capture stays still', async ({ page }) => {
-    // A read-only probe from before the page's scripts run: the door facts as they stand once the page has drawn its first frame (review 5, F24).
+    // A read-only probe from before the page's scripts run: once the page has drawn its first frame, the doors as that frame's render drew them, which
+    // the page copies right after each render (`perf.lastDrawn.doors`, read back from the stand-ins' matrices and the closed leaves' layers), so a change
+    // made later in the same callback is not taken for what was drawn (review 5, F24; review 8, F32).
     await page.addInitScript(() => {
       const raf = window.requestAnimationFrame.bind(window);
-      const w = window as unknown as { firstDrawn?: { at: number; doors: unknown } };
+      const w = window as unknown as { firstDrawn?: { at: number; frame: number; doors: unknown } };
       window.requestAnimationFrame = (callback) => raf((now) => {
         callback(now);
-        if (w.firstDrawn === undefined && (window.__met?.perf.framesRendered ?? 0) >= 1) w.firstDrawn = { at: performance.now(), doors: JSON.parse(JSON.stringify(window.__met?.doors ?? null)) as unknown };
+        if (w.firstDrawn !== undefined) return;
+        const drawn = window.__met?.perf.lastDrawn;
+        if (drawn !== undefined && drawn.frame >= 1) w.firstDrawn = { at: performance.now(), frame: drawn.frame, doors: JSON.parse(JSON.stringify(drawn.doors)) as unknown };
       });
     });
-    /** The first drawn frame's door facts and its time, and the page's own marks of the door set-up and the walk placement, in their order. */
-    const firstFrame = (): Promise<{ at: number; doors: { id: string; state: string; angle: number }[]; marks: string[]; doorsSet: number | null; walkPlaced: number | null }> =>
+    type Drawn = { id: string; angle: number | null }[];
+    /** Angles to 0.01°, as float32 matrices give them back. */
+    const angles = (doors: Drawn): (number | null)[] => doors.map((d) => (d.angle === null ? null : Math.round(d.angle * 100) / 100 + 0));
+    /** The first drawn frame's number, time and doors as drawn, and the page's own marks of the door set-up and the walk placement, in their order. */
+    const firstFrame = (): Promise<{ at: number; frame: number; doors: Drawn; marks: string[]; doorsSet: number | null; walkPlaced: number | null }> =>
       page.evaluate(() => {
-        const w = window as unknown as { firstDrawn?: { at: number; doors: { id: string; state: string; angle: number }[] } };
+        const w = window as unknown as { firstDrawn?: { at: number; frame: number; doors: { id: string; angle: number | null }[] } };
         const mark = (name: string): number | null => performance.getEntriesByName(name)[0]?.startTime ?? null;
-        const first = w.firstDrawn ?? { at: Number.NaN, doors: [] };
+        const first = w.firstDrawn ?? { at: Number.NaN, frame: 0, doors: [] };
         return { ...first, marks: performance.getEntriesByType('mark').map((e) => e.name).filter((n) => n === 'met:doors-set' || n === 'met:walk-placed'), doorsSet: mark('met:doors-set'), walkPlaced: mark('met:walk-placed') };
       });
+    const lastDrawn = (): Promise<Drawn> => page.evaluate(() => (window.__met?.perf.lastDrawn.doors ?? []).map((d) => ({ id: d.id, angle: d.angle })));
     const cam = 'cam=1.5,5.2,9,0,6.4,-1.2';
     const grids: number[][] = [];
     for (const state of ['closed', 'open'] as const) {
@@ -234,8 +246,13 @@ test.describe('the doors', () => {
       const hunt = f.doors.filter((d) => d.id.startsWith('hunt-entrance-'));
       expect(hunt.map((d) => [d.state, d.angle]), `doors=${state}`).toEqual(hunt.map(() => (state === 'open' ? ['open', 90] : ['closed', 0])));
       expect(f.doors.filter((d) => d.locked).map((d) => [d.state, d.angle]), 'locked doors stay shut').toEqual(f.doors.filter((d) => d.locked).map(() => ['closed', 0]));
+      // As drawn at ready: the entrance's stand-ins at the angle asked, the locked doors' closed leaves (null).
+      const drawnAtReady = await lastDrawn();
+      expect(drawnAtReady.map((d) => d.id), 'every door drawn, in step order').toEqual(f.doors.map((d) => d.id));
+      expect(angles(drawnAtReady), `doors=${state}: as drawn at ready`).toEqual(f.doors.map((d) => (d.locked ? null : state === 'open' ? 90 : 0)));
       const first = await firstFrame();
-      expect(first.doors.map((d) => [d.id, d.state, d.angle]), `doors=${state}: the first drawn frame already as at ready`).toEqual(f.doors.map((d) => [d.id, d.state, d.angle]));
+      expect(first.frame, 'the probe read the first frame drawn').toBe(1);
+      expect(angles(first.doors), `doors=${state}: the first frame drew the doors as at ready`).toEqual(angles(drawnAtReady));
       expect(first.doorsSet ?? Number.POSITIVE_INFINITY, 'the doors set before the first frame').toBeLessThan(first.at);
       const ready = await lumaGrid(page);
       for (let k = 0; k < 15; k += 1) await settle(page);
@@ -251,7 +268,8 @@ test.describe('the doors', () => {
     expect(walked.marks, 'the page marks the door set-up, then the walk placement').toEqual(['met:doors-set', 'met:walk-placed']);
     expect(walked.doorsSet ?? Number.POSITIVE_INFINITY, 'the doors set before the walker is placed').toBeLessThanOrEqual(walked.walkPlaced ?? Number.NEGATIVE_INFINITY);
     expect(walked.walkPlaced ?? Number.POSITIVE_INFINITY, 'and the walker placed before the first frame').toBeLessThan(walked.at);
-    expect(walked.doors.filter((d) => d.id.startsWith('hunt-entrance-')).map((d) => [d.state, d.angle]), 'the first drawn frame’s doors, open').toEqual([['open', 90], ['open', 90], ['open', 90]]);
+    expect(walked.frame, 'the probe read the first frame drawn').toBe(1);
+    expect(angles(walked.doors.filter((d) => d.id.startsWith('hunt-entrance-'))), 'the first frame drew the entrance’s doors open').toEqual([90, 90, 90]);
     // Any other value warns and leaves the doors closed.
     const bad = await open(page, 'shot=1&doors=ajar');
     expect(bad.warnings).toContain('Query parameter doors="ajar" is not a door state; use doors=open or doors=closed. It is ignored.');
@@ -310,7 +328,7 @@ test.describe('the doors', () => {
     const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
     console.log(`render with GPU sync and a shadow pass, facing into the hall through the open doorway: ${gpu.toFixed(2)} ms`);
     expect(gpu).toBeLessThan(16.7);
-    await face(page, toward(at.eye, 0.74, DOOR_Z - 0.3));
+    await face(page, toward(at.eye, 0.62, DOOR_Z - 0.3));
     await looksAt(page, MIDDLE, 'E Close');
     expect((await timedSwing('closed', 'closing, facing into the Great Hall')).angle).toBe(0);
     // Through the doorway (its leaves are not yet solid) into the entrance bay, then turned back to the doors: in the hall, facing out.

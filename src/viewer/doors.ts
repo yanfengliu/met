@@ -57,6 +57,13 @@ export interface DoorFacts {
   readonly built: boolean;
 }
 
+/** One door as the meshes draw it (`DoorLayer.drawn`, `window.__met.perf.lastDrawn.doors`). */
+export interface DoorDrawn {
+  readonly id: string;
+  /** Degrees its stand-ins draw its leaves open, read back from their instance matrices; null while the timeline's closed leaves are drawn instead. */
+  readonly angle: number | null;
+}
+
 interface StandIn {
   readonly mesh: InstancedMesh;
   /** Every leaf this mesh can draw, in a fixed order; the drawn ones are packed from slot 0 (`drawn`). */
@@ -110,6 +117,8 @@ const scratch = new Matrix4();
 const turn = new Matrix4();
 const local = new Vector3();
 const turned = new Vector3();
+const X_AXIS = new Vector3(1, 0, 0);
+const column = new Vector3();
 
 /** The turn of a leaf by `angle` radians about the hinge through `pivot` along the unit `axis`, in the leaf's unit frame: T(pivot) R T(−pivot). */
 export function hingeTurn(pivot: Vector3, axis: Vector3, angle: number, out = new Matrix4()): Matrix4 {
@@ -263,6 +272,25 @@ export class DoorLayer {
   /** Every door of the timeline: its id, state, angle in degrees, locked flag and whether it is built. */
   facts(): DoorFacts[] {
     return this.doors.map((door) => ({ id: door.def.id, state: stateOf(door), angle: (door.angle * 180) / Math.PI, locked: door.def.locked, built: door.built }));
+  }
+
+  /**
+   * Every door as the meshes draw it now, read from them rather than from the doors' state: the angle its first leaf's stand-in matrix holds about the
+   * leaf's hinge axis, or null while the timeline's closed leaves are on a drawn layer. Read right after a render, it is what that render drew.
+   */
+  drawn(): DoorDrawn[] {
+    return this.doors.map((door) => {
+      const leaf = door.leaves[0];
+      if (leaf === undefined || door.sources.some((mesh) => mesh.layers.mask !== 0)) return { id: door.def.id, angle: null };
+      const { mesh, drawn } = leaf.standIn;
+      const slot = drawn.indexOf(leaf);
+      if (!mesh.visible || slot < 0 || slot >= mesh.count) return { id: door.def.id, angle: Number.NaN };
+      // The leaf's turn is the base's inverse times the drawn matrix; its angle about the axis, from where it takes the leaf's X axis.
+      turn.copy(leaf.base).invert().multiply(scratch.fromArray(mesh.instanceMatrix.array, slot * 16));
+      column.setFromMatrixColumn(turn, 0);
+      const sin = leaf.axis.dot(turned.copy(X_AXIS).cross(column));
+      return { id: door.def.id, angle: (Math.atan2(sin, column.x) * 180) / Math.PI };
+    });
   }
 
   /** The door of `tag`, made on its first piece; a door with no definition or with pieces in two steps fails. */

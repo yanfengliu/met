@@ -5,7 +5,8 @@
  * (review 0, F1); the stand-ins share the closed leaves' materials, so the section cut clips them alike, are met by the zoom's pick and the hit query
  * where they stand and not where the closed leaves stood, are capped where the cut passes through them, open or part open, and hold bounds over every
  * pose (F3); the lifecycle: unusable while its step is incomplete, the timeline's closed leaf taking over at once while the door keeps its state,
- * reset when the step is taken away, the default taken when the step completes, into the building with no walker, never past a lock (F4).
+ * reset when the step is taken away, the default taken when the step completes, into the building with no walker, never past a lock (F4); and each door
+ * reported as its meshes draw it, read back from the stand-ins' matrices rather than from its state (review 8, F32).
  * Bound: no WebGL; the cap pass's choice and the picks are checked on the meshes, not on pixels (tests/e2e/doors.spec.ts looks at pixels).
  */
 import { BoxGeometry, Box3, Layers, Matrix4, MeshStandardMaterial, Quaternion, Ray, Vector3 } from 'three';
@@ -177,6 +178,27 @@ describe('the door layer', () => {
     expect(facts(layer, 'front')?.angle).toBe(90);
     // Nothing moves without a swing under way.
     expect(at(timeline, layer, BUILT, 1)).toBe('none');
+  });
+
+  it('reports each door as its meshes draw it, read back from the stand-ins’ matrices, not from its state (review 8, F32)', () => {
+    const { timeline, layer } = fixture();
+    const angleOf = (id: string): number | null | undefined => layer.drawn().find((d) => d.id === id)?.angle;
+    at(timeline, layer, DOORS_STEP + 0.5);
+    expect(layer.drawn().map((d) => d.angle), 'while the step is incomplete, the timeline’s closed leaves').toEqual([null, null, null]);
+    at(timeline, layer, BUILT);
+    expect(angleOf('front'), 'built and closed: its stand-ins at 0°').toBeCloseTo(0, 4);
+    expect(angleOf('shut'), 'locked: its own closed leaves').toBeNull();
+    layer.use('front', new Vector3(0, 1.6, 4));
+    expect(facts(layer, 'front')?.state, 'asked to open').toBe('opening');
+    expect(angleOf('front'), 'but not yet drawn turned').toBeCloseTo(0, 4);
+    at(timeline, layer, BUILT, SWING_SECONDS / 2);
+    expect(angleOf('front'), 'mid-swing, the angle the stand-ins’ matrices hold').toBeCloseTo(facts(layer, 'front')?.angle ?? Number.NaN, 3);
+    at(timeline, layer, BUILT, SWING_SECONDS);
+    expect(angleOf('front')).toBeCloseTo(90, 3);
+    // Matrices written past the layer are what is drawn, and what is reported: the front door's slots put back at its closed matrix (the identity) by hand.
+    for (const mesh of layer.meshes) for (let i = 0; i < mesh.count; i += 1) if (layer.tagOf(mesh, i)?.id === 'front') mesh.instanceMatrix.array.set(new Matrix4().elements, i * 16);
+    expect(angleOf('front'), 'its stand-ins’ slots put back closed').toBeCloseTo(0, 4);
+    expect(facts(layer, 'front')?.angle, 'while the door’s state still says open').toBe(90);
   });
 
   it('is the timeline’s closed leaf while its step is incomplete, keeps its state until the step is taken away, and takes its default on completion', () => {

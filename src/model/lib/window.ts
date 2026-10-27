@@ -281,7 +281,7 @@ export function doorLeavesOf(geometry: THREE.BufferGeometry): readonly SwingingP
   return leafParts.get(geometry);
 }
 
-/** The gap a leaf keeps from its frame, its transom bar, its sill and the other leaf of its pair, metres. */
+/** The gap a leaf keeps from its frame, its transom bar and its sill, metres; the two leaves of a pair, each this far from the middle, meet twice it apart. */
 const LEAF_GAP = 0.004;
 
 /**
@@ -317,7 +317,7 @@ function glazedLeafInto(metal: MeshBuilder, glass: MeshBuilder, x0: number, x1: 
 
 /**
  * A door filling an opening: frame (with fanlight bars), leaves (raised panels, or glazed: metal and glass) and fanlight glass, and each leaf apart with its
- * hinge. Leaves hang from the jambs (two from both, one from the −X jamb), 4 mm clear of the frame, the sill, the transom bar's underside and each other.
+ * hinge. Leaves hang from the jambs (two from both, one from the −X jamb), 4 mm clear of the frame, the sill and the transom bar's underside; a pair's leaves meet 8 mm apart.
  * Each turns about its hinge-side edge at the face it opens round, so swung either way it meets no fixed part of the unit, and a quarter turn open it
  * stands 4 mm off its jamb.
  */

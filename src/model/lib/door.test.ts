@@ -139,13 +139,18 @@ describe('door unit leaves', () => {
     expect(() => doorUnit({ width: 2, height: 3, transom: 2.8 })).toThrow(/doorUnit: transom 2\.800 leaves the leaves 0\.040 m of a 3 m door; give a lower transom/);
   });
 
-  it('hangs a rectangular door’s leaves under its transom light, `transom` tall from the bar to the head, 4 mm under the bar and over the sill', () => {
+  it('hangs a rectangular door’s leaves under its transom light, `transom` tall from the bar to the head, 4 mm under the bar, over the sill and off the jambs, a pair 8 mm apart (review 8, F33)', () => {
     const door = doorUnit({ width: 1.8, height: 4.79, leaves: 2, glazed: true, lights: 1, transom: 2.1, frame: 0.09, bar: 0.09, depth: 0.14 });
     const bar = 4.79 - 0.09 - 2.1;
     for (const leaf of door.leaves) {
       expect(box(leaf.panel).max.y, 'a leaf’s top, 4 mm under the transom bar’s underside').toBeCloseTo(bar - 0.045 - 0.004, 6);
       expect(box(leaf.panel).min.y, 'its foot, 4 mm over the frame’s sill').toBeCloseTo(0.09 + 0.004, 6);
     }
+    const [left, right] = door.leaves.map((leaf) => box(leaf.panel));
+    if (left === undefined || right === undefined) throw new Error('Not a pair of leaves.');
+    expect(left.min.x, 'the −X leaf, 4 mm off its jamb').toBeCloseTo(-0.9 + 0.09 + 0.004, 6);
+    expect(right.max.x, 'the +X leaf, 4 mm off its jamb').toBeCloseTo(0.9 - 0.09 - 0.004, 6);
+    expect(right.min.x - left.max.x, 'the pair 8 mm apart, 4 mm either side of the middle').toBeCloseTo(0.008, 6);
     const glass = door.glass;
     if (glass === undefined) throw new Error('No transom light.');
     expect(box(glass).min.y, 'the light from over its bar').toBeCloseTo(bar + 0.045, 6);

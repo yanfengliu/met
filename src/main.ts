@@ -19,6 +19,7 @@ import { GeometryBvhs } from './walk/bvh-cache.js';
 import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
 import { DoorLayer } from './viewer/doors.js';
+import type { DoorDrawn } from './viewer/doors.js';
 import { publishFacts, snapshot } from './viewer/facts.js';
 import { FloorMode } from './viewer/floor-mode.js';
 import { FloorView } from './viewer/floor-view.js';
@@ -330,8 +331,9 @@ function boot(): void {
   resized.observe(ui.bar);
 
   let frames = 0;
-  /** The camera position the last drawn frame was rendered from (`perf.lastDrawn`). */
+  /** The camera position the last drawn frame was rendered from, and its doors as the meshes drew them (`perf.lastDrawn`). */
   const drawnFrom = new Vector3();
+  let drawnDoors: readonly DoorDrawn[] = [];
   let readyMs: number | null = null;
   let last = performance.now();
   /** The pose the follow camera headed for in the last frame, or null when it is not under way. */
@@ -380,6 +382,7 @@ function boot(): void {
       viewer.render();
       frames += 1;
       drawnFrom.copy(rig.camera.position);
+      drawnDoors = doors.drawn();
       needsRender = false;
     }
     walk.noteFrame(performance.now() - work);
@@ -429,7 +432,7 @@ function boot(): void {
       buildMs,
       get readyMs() { return readyMs; },
       get framesRendered() { return frames; },
-      get lastDrawn() { return snapshot({ frame: frames, camera: vec(drawnFrom) }); },
+      get lastDrawn() { return snapshot({ frame: frames, camera: vec(drawnFrom), doors: drawnDoors }); },
     }),
     benchmark: (count: number) => viewer.benchmark(count),
   });

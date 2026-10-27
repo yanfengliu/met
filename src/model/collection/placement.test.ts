@@ -32,8 +32,8 @@ import { BODY } from '../../walk/walker.js';
 import { INNER_EAST_Z } from '../core/layout.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
 import { GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING, MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
-import { OPENINGS } from '../hunt/arches.js';
-import { CROSS_HALL_BACK_Z, SCREEN_Z } from '../hunt/dims.js';
+import { ENTRANCE_DOOR_Z, OPENINGS } from '../hunt/arches.js';
+import { CROSS_HALL_BACK_Z } from '../hunt/dims.js';
 import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5 } from '../hunt/routes.js';
 import type { Route } from '../hunt/routes.js';
 import { GATE_RAIL, GATE_THRESHOLD, PLATFORM_Y, POOL } from '../roche-north/plan.js';
@@ -61,7 +61,8 @@ interface Zone {
   readonly margin: number;
 }
 
-const HUNT_DOOR_Z = SCREEN_Z + 0.07;
+/** The central arch's doors' plane: their front face (src/model/hunt/arches.ts), behind the screen's columns. */
+const HUNT_DOOR_Z = ENTRANCE_DOOR_Z;
 const widest = Math.max(...OPENINGS.map(([a, b]) => b - a));
 const ZONES: readonly Zone[] = [
   // The central arch's doors swing either way, each leaf at most an opening wide.

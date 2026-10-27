@@ -24,7 +24,7 @@ import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAI
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
 import { palette } from '../palette.js';
-import { LUNETTE_GRILLE } from './arches.js';
+import { ENTRANCE_DOOR_Z, LUNETTE_GRILLE } from './arches.js';
 import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
@@ -237,9 +237,9 @@ describe('the walk routes through the wing', () => {
     const half = ARCH_INNER_SPAN / 2;
     const doors = pieces.filter((p) => {
       const b = worldBox(p);
-      return b.min.x >= -half && b.max.x <= half && b.min.y >= MAIN - 1e-6 && b.max.y <= SCREEN_HEAD_Y + 1e-6 && Math.abs(b.getCenter(new Vector3()).z - SCREEN_Z) < 0.3;
+      return b.min.x >= -half && b.max.x <= half && b.min.y >= MAIN - 1e-6 && b.max.y <= SCREEN_HEAD_Y + 1e-6 && Math.abs(b.getCenter(new Vector3()).z - ENTRANCE_DOOR_Z) < 0.3;
     });
-    expect(doors, "the central arch's door pieces: three doors, each a bronze frame, its transom light, the bronze of its leaves and their glass").toHaveLength(12);
+    expect(doors, "the central arch's door pieces: three doors, each a bronze frame, its transom light, the bronze of its leaves and their glass, and bronze either side").toHaveLength(18);
     expect(doors.filter((p) => p.tag !== null).map((p) => p.tag?.id), 'the leaves, metal and glass, tagged as their doorway').toEqual(['hunt-entrance-south', 'hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-middle', 'hunt-entrance-north', 'hunt-entrance-north']);
     expect(doors.filter((p) => p.material.userData['solid'] !== false).map((p) => p.material.name), 'door pieces a walker cannot pass').toEqual([]);
     expect(new Set(doors.map((p) => look(p.material))), "the doors' looks: the palette's bronze and dark glass").toEqual(new Set([look(palette.bronze), look(palette.glassDark)]));
