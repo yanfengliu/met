@@ -8,7 +8,8 @@
  * a few metres into the cross hall, then turned round and back down to the hall floor. R3: from the Great Hall spawn north through the Egyptian
  * galleries and the seam into the Temple of Dendur hall, along its east and north walkways to beside the platform. R4: from the Great Hall spawn south
  * past the desk, through the seam and the Greek galleries into the Leon Levy and Shelby White Court. R5 (work unit 2, M1): from the Great Hall spawn, as
- * R2, up the Grand Staircase, across the cross hall and through its doorway into gallery 600. The walking itself is ./route-walk.ts.
+ * R2, up the Grand Staircase, across the cross hall and through its doorway into gallery 600, then turned round and back out to the cross hall. At the
+ * ends of R3 and R4, unthrottled, the walking frame budget is measured walking on and then running back. The walking itself is ./route-walk.ts.
  * Bound: a held key is let go once the eye passes the turn it walks to, early by the walker's coasting distance (src/walk/walker.ts, MOTION); at a
  * corner the walker then comes to rest and, if it coasted on more than 0.25 m (the keys can go up late when the machine is loaded), walks back onto the
  * corner at a walk. It rests 0.8 to 1.5 m past the end of a diagonal last leg (R1's), whose sideways motion builds up late. A leg that makes no
@@ -169,8 +170,13 @@ test.describe('walk routes through real input', () => {
     expect(end.onGround, report).toBe(true);
     expect(end.eye[0] > SACKLER_BLOCK.minX && end.eye[2] < SACKLER_BLOCK.maxZ, `${report}: inside the Sackler Wing`).toBe(true);
     expect(end.eye[0] - PLATFORM.maxX < 4 && end.eye[2] < PLATFORM.maxZ, `${report}: beside the platform`).toBe(true);
-    // The frame budget walking on along the walkway with the look target on, in the glazed hall round the temple (unthrottled only: it is this machine's).
-    if (throttleRate() === 1) expectWalkingBudget(await walkingBudget(page), 'in the Temple of Dendur hall');
+    // The frame budget with the look target on, in the glazed hall round the temple, walking on along the walkway and then running back along it, the
+    // way R3 came (unthrottled only: it is this machine's).
+    if (throttleRate() === 1) {
+      expectWalkingBudget(await walkingBudget(page), 'in the Temple of Dendur hall');
+      await face(page, Math.PI);
+      expectWalkingBudget(await walkingBudget(page, true), 'in the Temple of Dendur hall, at a run');
+    }
   });
 
   test('R4: from the Great Hall past the desk through the Greek galleries into the Leon Levy and Shelby White Court', async ({ page }) => {
@@ -194,7 +200,12 @@ test.describe('walk routes through real input', () => {
     expect(end.eye[0] > x0 && end.eye[0] < x1 && end.eye[2] > z0 && end.eye[2] < z1, `${report}: inside the court`).toBe(true);
     expect(Math.abs(end.eye[1] - (ROUTE_R4.endY + EYE)), `${report}: on the court's floor`).toBeLessThan(0.03);
     expect(end.onGround, report).toBe(true);
-    // The frame budget walking on into the court with the look target on (unthrottled only: it is this machine's).
-    if (throttleRate() === 1) expectWalkingBudget(await walkingBudget(page), 'in the Leon Levy and Shelby White Court');
+    // The frame budget with the look target on, walking on into the court and then running back east the way R4 came, clear of the court's basin
+    // (unthrottled only: it is this machine's).
+    if (throttleRate() === 1) {
+      expectWalkingBudget(await walkingBudget(page), 'in the Leon Levy and Shelby White Court');
+      await face(page, -Math.PI / 2);
+      expectWalkingBudget(await walkingBudget(page, true), 'in the Leon Levy and Shelby White Court, at a run');
+    }
   });
 });

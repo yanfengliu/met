@@ -78,6 +78,8 @@ export interface MetFacts {
     /** Milliseconds from navigation start to `__shotReady` (mark met:ready), or null before: module loading, the timeline build, renderer start and the first frames. */
     readonly readyMs: number | null;
     readonly framesRendered: number;
+    /** The last frame drawn: its number (`framesRendered` once it was drawn) and the camera position it was rendered from, copied right after the render. */
+    readonly lastDrawn: { readonly frame: number; readonly camera: Vec3 };
   };
   /** Renders `frames` frames with a shadow update and GPU sync each; returns mean milliseconds per frame. Leaves the model as it was. */
   benchmark(frames: number): number;

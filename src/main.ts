@@ -323,6 +323,8 @@ function boot(): void {
   resized.observe(ui.bar);
 
   let frames = 0;
+  /** The camera position the last drawn frame was rendered from (`perf.lastDrawn`). */
+  const drawnFrom = new Vector3();
   let readyMs: number | null = null;
   let last = performance.now();
   /** The pose the follow camera headed for in the last frame, or null when it is not under way. */
@@ -367,6 +369,7 @@ function boot(): void {
     if (needsRender || frames < READY_FRAMES) {
       viewer.render();
       frames += 1;
+      drawnFrom.copy(rig.camera.position);
       needsRender = false;
     }
     walk.noteFrame(performance.now() - work);
@@ -416,6 +419,7 @@ function boot(): void {
       buildMs,
       get readyMs() { return readyMs; },
       get framesRendered() { return frames; },
+      get lastDrawn() { return snapshot({ frame: frames, camera: vec(drawnFrom) }); },
     }),
     benchmark: (count: number) => viewer.benchmark(count),
   });
