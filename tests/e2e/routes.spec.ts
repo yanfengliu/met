@@ -175,7 +175,7 @@ test.describe('walk routes through real input', () => {
     if (throttleRate() === 1) {
       expectWalkingBudget(await walkingBudget(page), 'in the Temple of Dendur hall');
       await face(page, Math.PI);
-      expectWalkingBudget(await walkingBudget(page, true), 'running in the Temple of Dendur hall');
+      expectWalkingBudget(await walkingBudget(page, true), 'in the Temple of Dendur hall, at a run');
     }
   });
 
@@ -205,7 +205,7 @@ test.describe('walk routes through real input', () => {
     if (throttleRate() === 1) {
       expectWalkingBudget(await walkingBudget(page), 'in the Leon Levy and Shelby White Court');
       await face(page, -Math.PI / 2);
-      expectWalkingBudget(await walkingBudget(page, true), 'running in the Leon Levy and Shelby White Court');
+      expectWalkingBudget(await walkingBudget(page, true), 'in the Leon Levy and Shelby White Court, at a run');
     }
   });
 });

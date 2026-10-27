@@ -1,10 +1,12 @@
 /**
  * The walking eye's look target (src/walk/look.ts) through the page's hit query (src/viewer/pick.ts) on fixture steps built by the real timeline:
  * a door within 2 m and an artwork within 6 m are targets, just past their reach they are not; an artwork in a vitrine is found through its glass, never
- * through a wall or past a door, glazed or not, out of reach; an untagged piece is never a target; the eye's height and direction come in as the walker gives them.
- * Bound: boxes on a straight ray from an eye 1.6 m up; the walk mode's own use (every frame, and afresh when read) is in src/walk/walk-mode.ts.
+ * through a wall or past a door, glazed or not, out of reach; an untagged piece is never a target; the eye's height and direction come in as the walker gives them;
+ * a viewer-side stand-in registered with the picker (`ModelPicker.register`) takes the place of an original hidden by the camera's layers, blocking
+ * where it stands, closed or swung.
+ * Bound: boxes on straight rays from an eye 1.6 m up; the walk mode's own use (every frame, and afresh when read) is in src/walk/walk-mode.ts.
  */
-import { BoxGeometry, Layers, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, InstancedMesh, Layers, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import type { Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
@@ -84,5 +86,49 @@ describe('the look target', () => {
     expect(lookTarget(hit, eye, new Vector3(0, 0, 1))).toBeNull();
     expect(lookTarget(hit, new Vector3(0, 1.6, -10), ahead)).toBeNull();
     expect(lookTarget(hit, eye, new Vector3(0, -1, -1).normalize()), 'looking down at the floor in front').toBeNull();
+  });
+});
+
+describe('the look target with a viewer-side stand-in (ModelPicker.register)', () => {
+  it('drops an original hidden by the camera’s layers; a closed glass stand-in out of reach blocks, and a swung one blocks only where it stands', () => {
+    // A painting 4 m ahead, another on the left wall, and the timeline’s glass door 3 m ahead.
+    const slab = (x: number, z: number, w: number, d: number): Matrix4 => new Matrix4().compose(new Vector3(x, 1.5, z), new Quaternion(), new Vector3(w, 3, d));
+    const step: StepDef = {
+      id: 'room',
+      chapter: CHAPTERS[0].id,
+      title: 'room',
+      motion: { kind: 'rise' },
+      build(kit: Kit) {
+        kit.addTagged(cube, bronze, slab(0, -4.05, 3, 0.1), art);
+        kit.addTagged(cube, bronze, slab(-3.05, -3, 0.1, 4), { kind: 'artwork', id: 'left' });
+        kit.addTagged(cube, glass, slab(0, -3.05, 3, 0.1), door);
+      },
+    };
+    const timeline = new Timeline([step]);
+    timeline.evaluate(1);
+    const meshes = timeline.steps.flatMap((s) => s.meshes);
+    const picker = new ModelPicker(meshes, new GeometryBvhs(), -5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
+    const left = new Vector3(-3, 0, -4).normalize();
+    const look = (direction: Vector3): string | null => lookTarget((ray, query) => picker.hit(ray, query), eye, direction)?.id ?? null;
+    expect(look(ahead), 'the timeline’s glass door 3 m off, out of reach, hides the painting').toBeNull();
+    expect(look(left)).toBe('left');
+    // The original goes onto a layer the camera does not draw; a stand-in of it joins the picker in its place, closed.
+    const original = meshes.find((m) => timeline.tagOf(m, 0)?.kind === 'door');
+    if (original === undefined) throw new Error('The timeline built no door mesh.');
+    original.layers.set(1);
+    expect(look(ahead), 'the original hidden, no stand-in: the painting').toBe(art.id);
+    const leaf = new InstancedMesh(cube, glass, 1);
+    leaf.setMatrixAt(0, slab(0, -3.05, 3, 0.1));
+    leaf.computeBoundingSphere();
+    picker.register([leaf], () => door);
+    expect(look(ahead), 'the closed stand-in 3 m off hides the painting').toBeNull();
+    expect(look(left), 'but not the left wall’s').toBe('left');
+    // Swung open toward the eye about its hinge at X −1.5, it stands along the left of the way through.
+    leaf.setMatrixAt(0, slab(-1.55, -1.5, 0.1, 3));
+    leaf.computeBoundingSphere();
+    expect(look(ahead), 'swung open: the painting ahead').toBe(art.id);
+    expect(look(left), 'and the swung leaf, 2.5 m off on that ray, hides the left wall’s').toBeNull();
+    picker.unregister([leaf]);
+    expect(look(left), 'unregistered: the left wall’s painting again').toBe('left');
   });
 });
