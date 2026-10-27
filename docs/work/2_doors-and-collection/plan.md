@@ -43,12 +43,43 @@ Codex's plan review (`reviews/0_plan.md`) found eleven gaps, all accepted:
 - Budgets: placeholders at most 110 meshes and 600k triangles; doors at most 20 meshes or draws, viewer-side draws counted; walking with the look target and door cycles measured in populated interiors.
 - Order: M3b after both M2 and M3a. After integration, every affected route and passage is walked both ways.
 
+### Amendments after M1 (2026-10-26)
+
+Fleet canon R6 splits a task expected to exceed about 200k context tokens into milestones, each merged once green. M1's worker went past that budget with a smaller scope than M2's, so M2 becomes two milestones, and M3b runs beside the first. A fresh whole-effort check, run per R8, then corrected the split.
+- **C2 finished under M1** (worker `walk2`, M1's review repair). Both consumers wire C2 once and never edit `pick.ts`, `look.ts` or `walk-mode.ts`'s target code:
+  - a rejected tagged piece stops the look ray (review 3, F18);
+  - viewer-side stand-ins register with the picker, with tags of their own;
+  - one walk-mode hook reports each change of the look target.
+- **M2a, doors that open and close** (worker `doors`, from M1's head):
+  - the three Hunt central doors work, by the prompt, E and the locked click;
+  - their leaves are hinged and swung by the door layer, with stand-ins registered with the picker and the cap pass;
+  - they keep the lifecycle, `doors=`, the shot contract and `window.__met.doors`;
+  - they stay out of the walk collision, as their glazed units are at `6ce8ab6`.
+
+  The link doors and the Bank door are tagged and say "Locked", but stay solid: drops of 2.9 m and 0.65 m lie behind them. The Weston door stays as it is until M2b. M2a owns `src/ui/keyboard.ts`, where E in walk mode must come before the held-movement return.
+- **M2b, doors that are solid** (worker `doors2`, after M2a):
+  - the collision moving with each leaf, swept both ways;
+  - a closing leaf stopping before the walker, and a door shut on a walker opening;
+  - the Weston door working;
+  - R1 opening the entrance door with E;
+  - the slowest frame of a door cycle within the budget.
+- **M3b, labels** (worker `labels`, from M1's head, beside M2a). Review 0's F8 put M3b after M2 because the two share the walk's input, the screen and `window.__met`. Ownership resolves that:
+  - M2a owns the action input, `keyboard.ts`, the door prompt, the door layer and `window.__met.doors`.
+  - M3b owns the label card, the orbit click, `window.__met.label` and the artwork tags.
+  - Shared files (`src/main.ts`, `src/viewer/facts.ts`, `src/ui/ui.ts`, `src/ui/styles.ts`, the spec, AGENTS.md's Gates) take only additive edits.
+  - The coordinator merges the two in order, after merging main into the second.
+  - The look target is single, so a door prompt and a label never show at once.
+  - M3b may share M2a's review round.
+- Expensive gates across the parallel worktrees and the coordinator's checks run one at a time, per R5, through the lock `tmp/gate.sh` (ignored).
+- Open for the owner: walk mode moves by keys only, so on a phone it shows the view but cannot walk or use a door. Touch controls were not asked for, so none are planned.
+
 ## Acceptance criteria
 
 - [ ] The eye never drops while climbing: checked every frame on the front steps and the Grand Staircase, both ways, walking and running, red before the fix.
 - [ ] Walk mode shows a crosshair and hides what it does not need; the drag, click, speed and sensitivity choices are in the spec; checked at 1280×720 and 390×844.
 - [ ] No trap and no dead end: the pool cannot trap a walker, the dais is crossed where the real building allows it, and a route from the top of the Grand Staircase into gallery 600 is walked by e2e through real keys.
-- [ ] The Hunt central entrance's doors and the Weston door open and close with E or a click while looked at within 2 m, with a prompt; the link and Bank doors say Locked; collision follows each leaf; `doors=` and the shot contract hold; the assertions of `src/build/timeline.test.ts` hold unchanged (its recording Kit may gain `addTagged`); R1 opens a door with E in e2e; a walking frame stays under 16.7 ms.
+- [ ] M2a: the Hunt central entrance's three doors open and close with E or a click while looked at within 2 m, with a prompt; the link and Bank doors say Locked and stay solid; `doors=` and the shot contract hold; the assertions of `src/build/timeline.test.ts` hold unchanged (its recording Kit may gain `addTagged`), and its snapshots hold with the door layer attached and doors operated; the slowest frame of a swing stays under 16.7 ms.
+- [ ] M2b: collision follows each leaf, swept both ways, a closing leaf stops before the walker and a door shut on one opens; the Weston door works as the Hunt doors do; R1 opens a door with E in e2e; the slowest walking frame of a door cycle stays under 16.7 ms.
 - [ ] `src/model/collection/catalogue.ts` comes from `scripts/met-catalogue.ts` and The Met's API, checked offline; placeholders of real objects stand in at least eight of the spaces above, at real size, by kind, coloured from their samples, built in their spaces' chapters; meshes stay under 900 and triangles under 3M; the 4 s build budget holds; e2e sees no request to any metmuseum.org host.
 - [ ] Looking at an artwork within 6 m, or clicking one in the orbit view, shows its label; checked through real input.
 - [ ] Each milestone: `npm run verify` green (and both audits if a dependency changes), the standard shot set inspected against the last merged one, an independent review, merged to main, deployed and checked live. AGENTS.md's non-goals and `docs/research/` record the owner's decision and the data's source and licence.
@@ -56,10 +87,11 @@ Codex's plan review (`reviews/0_plan.md`) found eleven gaps, all accepted:
 ## Implementation steps
 
 - [x] Plan review (Codex, `reviews/0_plan.md`): eleven findings accepted, the plan amended; sent to M1 and M3a, which had started.
-- [ ] M1 the walk, with the look target (worker `walk2`): built and verified on branch `walk2`, not yet reviewed or merged. The eye on stairs fixed and gated every frame (`src/walk/stairs.test.ts`, `tests/e2e/stairs.spec.ts`, red at `db4cc47`); the walking screen (crosshair, folded bar, a hint for the first seconds) and the walk's numbers (2 and 5 m/s, `LOOK_PER_PIXEL` 0.0013, `CLICK_SLOP` 5 px) with their reasons in the spec; piece tags (`Kit.addTagged`), the hit query (`ModelPicker.hit`) and the look target (`window.__met.walk.target`) of C1 and C2, walking frames under 16.7 ms with it in the Great Hall, the Dendur hall and the Leon Levy court; the pool's bottom at 0.3 m, the gate's passage filled behind a rail, and a stone-lined doorway from the cross hall into gallery 600 walked as R5, each checked against `docs/research/interior.md` first. `src/model/frame.ts` gained `GALLERY_600_DOOR_HALF_WIDTH`, `GALLERY_600_DOOR_CROWN` and `GALLERY_600_DOOR_LINING`; `placement.test.ts` reads R5, the doorway and the gate from the model; `int-european-paintings-600` still frames 600's canvases with the doorway in and is unchanged.
+- [x] M1 the walk, with the look target (worker `walk2`, merged `c2b6f44`, reviews 3 and 4): the eye on stairs, the walking screen and its numbers, contracts C1 and C2, no trap at the Dendur pool or gate, and route R5 into gallery 600; the model at 736 meshes and 1,579,120 triangles.
 - [x] M3a the catalogue and the placeholders (worker `collection`, merged `7c370b1`, reviews 1 and 2): 94 real objects in ten spaces, 38 meshes and 40,290 triangles of placeholders; the model at 729 meshes and 1,578,714 triangles.
-- [ ] M2 doors (worker `doors`, after M1).
-- [ ] M3b labels (worker `collection`, after M2 and M3a).
+- [ ] M2a doors that open and close (worker `doors`, from `a9f6f5a`, merging main once M1 landed).
+- [ ] M2b doors that are solid (worker `doors2`, after M2a).
+- [ ] M3b labels (worker `labels`, from `a9f6f5a`, beside M2a).
 - [ ] Integration, review, deploy, outcome.
 
 ## Outcome
