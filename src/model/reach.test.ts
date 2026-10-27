@@ -52,7 +52,7 @@ import { SPACES_A } from './collection/spaces-a.js';
 import { SPACES_B } from './collection/spaces-b.js';
 import { doorById } from './doors.js';
 import { CURB_WEST_Z, STEPS_HALF_WIDTH } from './frame.js';
-import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6 } from './hunt/routes.js';
+import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7 } from './hunt/routes.js';
 import { insideOutline } from './site/footprint.js';
 
 const CELL = 0.5;
@@ -141,7 +141,7 @@ function placeTargets(): Target[] {
     return [{ group: 'preset', name: p.id, x: px, z: pz, radius: 1, level: py - EYE, met: (x, y, z) => Math.hypot(x - px, y + EYE - py, z - pz) <= 1 }];
   });
   const spawns = SPAWNS.map((s) => standing('spawn', s.id, s.feet[0], s.feet[2], s.feet[1]));
-  const routes = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6].flatMap((r) => {
+  const routes = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7].flatMap((r) => {
     const first = r.points[0] ?? [0, 0];
     const last = r.points[r.points.length - 1] ?? first;
     return [standing('route', `${r.id} start`, first[0], first[1], r.startY), standing('route', `${r.id} end`, last[0], last[1], r.endY)];

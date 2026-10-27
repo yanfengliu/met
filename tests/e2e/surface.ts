@@ -13,15 +13,20 @@ import { Timeline } from '../../src/build/timeline.js';
 
 type Triple = readonly [number, number, number];
 
-let model: { readonly meshes: readonly InstancedMesh[]; readonly groundY: number } | null = null;
+let model: { readonly timeline: Timeline; readonly meshes: readonly InstancedMesh[]; readonly groundY: number } | null = null;
 
-function finished(): { readonly meshes: readonly InstancedMesh[]; readonly groundY: number } {
+function finished(): { readonly timeline: Timeline; readonly meshes: readonly InstancedMesh[]; readonly groundY: number } {
   if (model !== null) return model;
   const timeline = new Timeline(SEQUENCE);
   timeline.evaluate(timeline.n);
   const meshes = timeline.steps.flatMap((s) => s.meshes).filter((m) => m.visible && m.count > 0);
-  model = { meshes, groundY: Math.min(0, timeline.bounds.min.y) - 0.5 };
+  model = { timeline, meshes, groundY: Math.min(0, timeline.bounds.min.y) - 0.5 };
   return model;
+}
+
+/** The whole sequence's timeline at t = N, built once in the test's own process, for what a test reads of the finished model apart from the page. */
+export function finishedTimeline(): Timeline {
+  return finished().timeline;
 }
 
 /** The workspace ground's height under the finished model, by the same rule (the camera floor stands CAMERA_FLOOR over it). */

@@ -12,9 +12,12 @@
  * 160) into the Leon Levy and Shelby White Court, east of its basin. R5 (work unit 2, M1): from where R2 starts, up the Grand Staircase, across the
  * cross hall and through its doorway on the axis into gallery 600 (interior.md, The Grand Staircase), to the gallery's middle. R6 (work unit 2, M4): from
  * the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Charles Engelhard Court (interior.md,
- * The Charles Engelhard Court).
+ * The Charles Engelhard Court). R7 (work unit 2, integration): from the Great Hall spawn as R4 goes into gallery 153, then through its south wall's door,
+ * Exhibition Gallery 199 and the corridor from it through the party wall into gallery 549, and through the court wall's opening into the Petrie Court, to
+ * Weston's 1888 door (interior.md, Other skylit volumes).
  */
-import { ENGELHARD_PASSAGE } from '../mmw/party-walls.js';
+import { WESTON_DOOR } from '../core/weston-facade.js';
+import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import { PAVING_GAP, walkWestY } from '../site/ground.js';
 import { HALL_X, MAIN, NAVE_MID_Z, SECOND } from './dims.js';
 
@@ -99,6 +102,30 @@ const ENGELHARD_PASSAGE_X = (ENGELHARD_PASSAGE.a + ENGELHARD_PASSAGE.b) / 2;
 export const ROUTE_R6: Route = {
   id: 'R6',
   points: [HALL_SPAWN, [38.5, NAVE_MID_Z], [38.5, -6.335], [50.18, -6.335], [50.18, -24.75], [54.41, -24.75], [54.41, -90], [ENGELHARD_PASSAGE_X, -90], [ENGELHARD_PASSAGE_X, -100], [72, -100], [72, -110]],
+  startY: MAIN,
+  endY: MAIN,
+};
+
+/** Where R7 leaves R4 to go south: the middle of the door X −68.2..−66.45 in gallery 153's south wall on Z −22.1 (src/model/mmw/plan-data.ts MAP_WALLS). */
+const GALLERY_153_DOOR_X = -67.325;
+/** Where R7 turns in Exhibition Gallery 199 toward the corridor: 2.2 m short of the party wall on Z −69.0 (src/model/mmw/party-walls.ts). */
+const GALLERY_199_TURN_Z = -66;
+/** The middle of the corridor through the party wall into gallery 549 (src/model/mmw/party-walls.ts PETRIE_PASSAGE). */
+const PETRIE_PASSAGE_X = (PETRIE_PASSAGE.a + PETRIE_PASSAGE.b) / 2;
+/** The middle of the court wall's opening from gallery 549 into the Petrie Court nearest the corridor, 3.6 m wide (src/model/roche-south/kravis.ts COURT_SOUTH). */
+export const COURT_OPENING_Z = -97.6;
+/** Where R7 ends: on Weston's door's axis 3.5 m out from its frame in the court, in front of the porch's columns (src/model/core/weston-door.test.ts). */
+export const WESTON_APPROACH: readonly [number, number] = [WESTON_DOOR.x - 3.5, WESTON_DOOR.z];
+
+/**
+ * R7 (work unit 2, integration), into the Petrie Court: R4's way south past the desk and down gallery 153 to its south wall's door; south through it and
+ * Exhibition Gallery 199 to 2.2 m short of the Kravis Wing's party wall; along it to the corridor and west through it, down gallery 549 to the court
+ * wall's opening; north through it into the court, clear of its artworks' row, which leaves Z −109..−98 free (src/model/collection/spaces-b.ts); and
+ * west to Weston's door's axis. The door itself is walked through by the e2e walk (tests/e2e/routes.spec.ts) and src/model/core/weston-door.test.ts.
+ */
+export const ROUTE_R7: Route = {
+  id: 'R7',
+  points: [...ROUTE_R4.points.slice(0, 5), [GALLERY_153_DOOR_X, NAVE_MID_Z], [GALLERY_153_DOOR_X, GALLERY_199_TURN_Z], [PETRIE_PASSAGE_X, GALLERY_199_TURN_Z], [PETRIE_PASSAGE_X, COURT_OPENING_Z], [WESTON_APPROACH[0], COURT_OPENING_Z], WESTON_APPROACH],
   startY: MAIN,
   endY: MAIN,
 };

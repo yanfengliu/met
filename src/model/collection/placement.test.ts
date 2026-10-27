@@ -8,7 +8,7 @@
  * - a standing artwork's floor, under its footprint's middle and corners, is the level its placement names, within 12 mm (no float, no sinking);
  * - a hung one has a wall behind its back, within 4 cm, at its middle and corners;
  * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides);
- * - it is 1 m clear of the walking routes R1–R6 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court) beyond the walker's
+ * - it is 1 m clear of the walking routes R1–R7 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court, R7 into the Petrie Court) beyond the walker's
  *   radius, of the Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into
  *   gallery 600 (hunt/stair.ts), of the Dendur gate's threshold and rail (roche-north/plan.ts), of the Dendur pool, and of the passages into the
  *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts) and 6 m either side of their wall, beyond the walker's radius;
@@ -35,7 +35,7 @@ import { WESTON_DOOR } from '../core/weston-facade.js';
 import { GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING, MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
 import { ENTRANCE_DOOR_Z, OPENINGS } from '../hunt/arches.js';
 import { CROSS_HALL_BACK_Z } from '../hunt/dims.js';
-import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6 } from '../hunt/routes.js';
+import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7 } from '../hunt/routes.js';
 import { MORGAN, PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import type { Route } from '../hunt/routes.js';
@@ -53,7 +53,7 @@ const CLEARANCE = 1;
 /** The placeholders' share of the model's budgets (docs/design/spec.md, Budgets; plan 2, review 0, F9). */
 const MAX_MESHES = 110;
 const MAX_TRIANGLES = 600_000;
-const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6];
+const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7];
 
 /** A plan rectangle on a floor level, kept clear by `margin`: a door's swing, a passage through a door. */
 interface Zone {
