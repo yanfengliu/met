@@ -78,6 +78,20 @@ describe('the model’s doors', () => {
     for (const id of ['mmw-north-link', 'mmw-south-link', 'bank']) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.layers.mask, `${id} is never hidden`).toBe(1);
   });
 
+  it('asks no shadow pass for the entrance doors’ swings: their leaves cast no shadow, the stand-ins neither (review 5, F23)', () => {
+    layer.sync(timeline.n, 0, true);
+    const entrance = DOORS.filter((d) => d.id.startsWith('hunt-entrance-')).map((d) => d.id);
+    for (const id of entrance) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.castShadow, `${id}'s closed leaves`).toBe(false);
+    expect(layer.meshes.map((m) => m.castShadow), 'the stand-ins').toEqual(layer.meshes.map(() => false));
+    expect(layer.use('hunt-entrance-middle', new Vector3(0, 5.2, 3))).toBe(true);
+    const frames: string[] = [];
+    for (let k = 0; k < 50 && layer.facts().some((d) => d.state === 'opening'); k += 1) frames.push(layer.sync(timeline.n, 1 / 60));
+    expect(new Set(frames), 'every frame of the swing: the frame, not the shadows').toEqual(new Set(['moved']));
+    expect(frames.length).toBeGreaterThan(30);
+    layer.use('hunt-entrance-middle', null);
+    layer.sync(timeline.n, 0, true);
+  });
+
   it('leaves the real timeline’s state byte for byte as a timeline’s without the layer, with the doors used between random positions (review 0, F1)', () => {
     const own = new Timeline(SEQUENCE);
     const doors = new DoorLayer(own.steps, (i) => own.restingPieces(i), DOORS, doorLeavesOf, 'open');

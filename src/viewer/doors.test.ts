@@ -20,7 +20,7 @@ import { doorLeavesOf, doorUnit } from '../model/lib/window.js';
 import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CapPass } from './cap-pass.js';
 import { DoorLayer, SWING_SECONDS, ease, hingeTurn } from './doors.js';
-import type { DoorDef } from './doors.js';
+import type { DoorChange, DoorDef } from './doors.js';
 import { ModelPicker } from './pick.js';
 import { SectionCut, cappedBySection } from './section-cut.js';
 
@@ -98,7 +98,7 @@ function drawn(layer: DoorLayer, id: string): { mesh: InstancedMesh; matrix: Mat
 }
 
 /** Brings the layer to `t` after `seconds`, as the page's frame does after evaluating the timeline. */
-function at(timeline: Timeline, layer: DoorLayer, t: number, seconds = 0, instant = false): boolean {
+function at(timeline: Timeline, layer: DoorLayer, t: number, seconds = 0, instant = false): DoorChange {
   timeline.evaluate(t);
   return layer.sync(t, seconds, instant);
 }
@@ -124,27 +124,30 @@ describe('the door layer', () => {
     expect(facts(layer, 'front')).toEqual({ id: 'front', state: 'open', angle: 90, locked: false, built: true });
     const leaves = drawn(layer, 'front');
     expect(leaves).toHaveLength(4);
+    // Each leaf turns about its hinge-side edge on its back face, 4 mm in from its jamb: the left at X −W + 0.004, the right at W − 0.004.
+    const EDGE = W - 0.004;
+    const REACH = W - 0.008;
     for (const { mesh, box: b } of leaves) {
-      expect(b.max.z, 'behind the leaves’ closed place').toBeLessThan(ZC + T / 2);
+      expect(b.max.z, 'behind the leaves’ closed place').toBeLessThanOrEqual(ZC - T / 2 + 1e-6);
       if (mesh.material === glass) {
-        // A pane, a stile in from the leaf's edges, in the leaf's mid-plane: across the opening at the pivot, a thickness's half from the jamb.
-        expect(b.min.z).toBeCloseTo(ZC + T / 2 + 0.004 - W + GLAZED.bar, 6);
-        expect(Math.min(Math.abs(b.min.x + W - T / 2), Math.abs(b.max.x - W + T / 2)), 'at the pivot').toBeLessThan(1e-6);
+        // A pane, a stile in from the leaf's edges, in the leaf's mid-plane: across the opening half a thickness in from the hinge edge.
+        expect(b.min.z).toBeCloseTo(ZC - T / 2 - REACH + GLAZED.bar, 6);
+        expect(Math.min(Math.abs(b.min.x + EDGE - T / 2), Math.abs(b.max.x - EDGE + T / 2)), 'half a thickness in from its hinge edge').toBeLessThan(1e-6);
         continue;
       }
-      expect(b.min.z, 'a leaf’s width back').toBeCloseTo(ZC + T / 2 + 0.004 - W, 6);
-      const nearJamb = Math.min(Math.abs(b.min.x + W), Math.abs(b.max.x - W));
-      expect(nearJamb, 'against a jamb').toBeLessThan(1e-6);
+      expect(b.min.z, 'a leaf’s width back').toBeCloseTo(ZC - T / 2 - REACH, 6);
+      const nearJamb = Math.min(Math.abs(b.min.x + EDGE), Math.abs(b.max.x - EDGE));
+      expect(nearJamb, 'its hinge edge where it hung, 4 mm off the jamb').toBeLessThan(1e-6);
       expect(b.max.x - b.min.x, 'edge on, a thickness wide').toBeLessThanOrEqual(T + 1e-6);
     }
-    // The matrix itself, worked out apart: the left leaf turns about +Y through (−W + T/2, 0, ZC), the right about −Y through (W − T/2, 0, ZC).
-    const turnAbout = (x: number, sign: number): Matrix4 => new Matrix4().makeTranslation(x, 0, ZC).multiply(new Matrix4().makeRotationY(sign * QUARTER)).multiply(new Matrix4().makeTranslation(-x, 0, -ZC));
-    const expected = [turnAbout(-W + T / 2, 1), turnAbout(W - T / 2, -1)];
-    for (const { matrix } of leaves) expect(expected.some((m) => m.elements.every((e, k) => Math.abs(e - (matrix.elements[k] ?? Number.NaN)) < 1e-6)), 'a leaf’s matrix is its jamb’s quarter turn, in float32').toBe(true);
+    // The matrix itself, worked out apart: the left leaf turns about +Y through (−W + 0.004, 0, ZC − T/2), the right about −Y through (W − 0.004, 0, ZC − T/2).
+    const turnAbout = (x: number, sign: number): Matrix4 => new Matrix4().makeTranslation(x, 0, ZC - T / 2).multiply(new Matrix4().makeRotationY(sign * QUARTER)).multiply(new Matrix4().makeTranslation(-x, 0, -(ZC - T / 2)));
+    const expected = [turnAbout(-EDGE, 1), turnAbout(EDGE, -1)];
+    for (const { matrix } of leaves) expect(expected.some((m) => m.elements.every((e, k) => Math.abs(e - (matrix.elements[k] ?? Number.NaN)) < 1e-6)), 'a leaf’s matrix is its hinge edge’s quarter turn, in float32').toBe(true);
     // The side door, turned to face −X, opens the same way in its own frame.
     expect(layer.use('side', new Vector3(6, 1.6, 0)), 'from in front of it, at −X').toBe(true);
     at(timeline, layer, BUILT, SWING_SECONDS);
-    for (const { box: b } of drawn(layer, 'side')) expect(b.min.x, 'into its back, +X of its front').toBeGreaterThan(10 - ZC - T / 2 - 1e-6);
+    expect(Math.min(...drawn(layer, 'side').map(({ box: b }) => b.min.x)), 'into its back, +X of its front, from its back face’s line').toBeCloseTo(10 - ZC + T / 2, 5);
   });
 
   it('opens away from the walker, eased over SWING_SECONDS, and closes or turns back from where it stands', () => {
@@ -173,7 +176,7 @@ describe('the door layer', () => {
     at(timeline, layer, BUILT, SWING_SECONDS);
     expect(facts(layer, 'front')?.angle).toBe(90);
     // Nothing moves without a swing under way.
-    expect(at(timeline, layer, BUILT, 1)).toBe(false);
+    expect(at(timeline, layer, BUILT, 1)).toBe('none');
   });
 
   it('is the timeline’s closed leaf while its step is incomplete, keeps its state until the step is taken away, and takes its default on completion', () => {
@@ -189,7 +192,7 @@ describe('the door layer', () => {
     layer.use('front', new Vector3(0, 1.6, 3));
     at(timeline, layer, BUILT, SWING_SECONDS / 2);
     // Scrubbed back into the step mid-swing: the closed leaf takes over at once; the door keeps the state its swing was heading for.
-    expect(at(timeline, layer, 1.6)).toBe(true);
+    expect(at(timeline, layer, 1.6), 'the fixture’s bronze casts: the shadows too').toBe('shadows');
     expect(front.map((m) => m.layers.mask)).toEqual([1, 1]);
     expect(drawn(layer, 'front')).toEqual([]);
     expect(facts(layer, 'front')).toEqual({ id: 'front', state: 'open', angle: 90, locked: false, built: false });
@@ -198,7 +201,7 @@ describe('the door layer', () => {
     at(timeline, layer, BUILT + 0.5);
     expect(front.map((m) => m.layers.mask)).toEqual([0, 0]);
     expect(facts(layer, 'front')).toMatchObject({ state: 'open', angle: 90, built: true });
-    expect(at(timeline, layer, BUILT + 0.5, 0.1), 'and still').toBe(false);
+    expect(at(timeline, layer, BUILT + 0.5, 0.1), 'and still').toBe('none');
     // Taken away (f = 0) and built again: its default, closed.
     at(timeline, layer, 0.4);
     expect(facts(layer, 'front')).toMatchObject({ state: 'closed', angle: 0, built: false });
@@ -217,7 +220,7 @@ describe('the door layer', () => {
     const shot = fixture('open');
     at(shot.timeline, shot.layer, shot.timeline.n, 0, true);
     expect(shot.layer.facts().map((d) => [d.id, d.state, d.angle])).toEqual([['front', 'open', 90], ['side', 'open', 90], ['shut', 'closed', 0]]);
-    expect(at(shot.timeline, shot.layer, shot.timeline.n, 0, true), 'standing, nothing left to change').toBe(false);
+    expect(at(shot.timeline, shot.layer, shot.timeline.n, 0, true), 'standing, nothing left to change').toBe('none');
     // Locked: no prompt but Locked, no use, no stand-in, its piece never hidden, whatever the query.
     expect(shot.layer.prompt('shut')).toBe('Locked');
     expect(shot.layer.use('shut', new Vector3(-10, 1.6, 3))).toBe(false);
@@ -264,7 +267,7 @@ describe('the door layer', () => {
         for (const part of leaves ?? []) {
           if (part.geometry !== mesh.geometry && doorLeavesOf(glazed.leafGlass ?? glazed.leaf)?.every((p) => p.geometry !== mesh.geometry)) continue;
           for (let a = -QUARTER; a <= QUARTER + 1e-9; a += QUARTER / 6) {
-            const m = base.clone().multiply(hingeTurn(new Vector3(...part.hinge.point), new Vector3(...part.hinge.axis), a));
+            const m = base.clone().multiply(hingeTurn(new Vector3(...(a < 0 ? part.hinge.front : part.hinge.back)), new Vector3(...part.hinge.axis), a));
             for (const c of corners) expect(sphere.distanceToPoint(c.clone().applyMatrix4(m)), `a corner at ${a.toFixed(2)} rad`).toBeLessThanOrEqual(1e-9);
           }
         }
@@ -288,16 +291,17 @@ describe('the door layer', () => {
     at(timeline, layer, BUILT, SWING_SECONDS);
     expect(picker.distance(through), 'through the opening the leaves left').toBeCloseTo(3 + 3 - 0.1, 6);
     expect(picker.hit(through, doorQuery)).toBeNull();
-    // A ray across the opening, behind the frame, meets the left leaf where it now stands: its pane, across the ray at the pivot, between two bars;
-    // a little lower, its bar, a thickness's half nearer.
+    // A ray across the opening, behind the frame, meets the left leaf where it now stands: its pane, across the ray half a thickness in from its hinge
+    // edge (4 mm off the jamb), between two bars; a little lower, its bar, 0.4 of a thickness nearer.
     const across = new Ray(new Vector3(0, 1.5, ZC - 0.4), new Vector3(-1, 0, 0));
     const hit = picker.hit(across, doorQuery);
     expect(hit?.tag).toEqual(tag('front'));
-    expect(hit?.distance, 'at the pane, in the leaf’s mid-plane at the pivot').toBeCloseTo(W - T / 2, 6);
-    expect(picker.distance(across), 'and the zoom stops there').toBeCloseTo(W - T / 2, 6);
-    const bar = GLAZED.frame + GLAZED.bar + (GLAZED.height - 0.004 - GLAZED.frame - GLAZED.frame - 2 * GLAZED.bar) / 3;
+    expect(hit?.distance, 'at the pane, in the leaf’s mid-plane').toBeCloseTo(W - 0.004 - T / 2, 6);
+    expect(picker.distance(across), 'and the zoom stops there').toBeCloseTo(W - 0.004 - T / 2, 6);
+    const [foot, head] = [GLAZED.frame + 0.004, GLAZED.height - GLAZED.frame - 0.004];
+    const bar = foot + GLAZED.bar + (head - foot - 2 * GLAZED.bar) / 3;
     const onBar = new Ray(new Vector3(0, bar, ZC - 0.4), new Vector3(-1, 0, 0));
-    expect(picker.hit(onBar, doorQuery)?.distance, 'its bar, 0.4 of a thickness each side of the pane').toBeCloseTo(W - T / 2 - 0.4 * T, 6);
+    expect(picker.hit(onBar, doorQuery)?.distance, 'its bar, 0.4 of a thickness each side of the pane').toBeCloseTo(W - 0.004 - T / 2 - 0.4 * T, 6);
     // The cap pass: with the cut through the doors, it draws the leaves the plane passes through, open and part open, and never the hidden closed ones.
     const capped = meshes.filter((m) => cappedBySection(m.material as Material));
     const pass = new CapPass(capped, new MeshStandardMaterial());

@@ -1,25 +1,30 @@
 /**
  * The door unit's leaves apart (src/model/lib/window.ts `doorUnit`, docs/design/spec.md, Doors): each leaf's geometry, hinge and swing; the closed
- * leaves (`leaf`, `leafGlass`) are exactly the leaves appended; `doorLeavesOf` finds them; a leaf turned about its hinge pivots on its jamb, opens toward
- * the unit's back for a positive turn, and lies flush with its jamb a quarter turn open.
- * Bound: panelled and glazed units of one and two leaves, rectangular and arched; positions compare to 1e-6 m.
+ * leaves (`leaf`, `leafGlass`) are exactly the leaves appended; `doorLeavesOf` finds them; a leaf turns about its hinge-side edge at the face it opens
+ * round, toward the back for a positive turn, and stands 4 mm off its jamb a quarter turn open; and through its whole swing, either way, no leaf meets a
+ * fixed part of its unit (its frame with the transom bar, its fanlight glass): review 5, F22, where the leaves passed 41 mm into the transom bar.
+ * Bound: panelled and glazed units of one and two leaves, rectangular and arched, the model's door units among them; the swing is sampled every 2.5° by
+ * exact triangle-triangle tests (three-mesh-bvh `intersectsGeometry`), so a graze shorter than a step between samples is not seen; positions to 1e-6 m.
  */
 import { Box3, Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
+import { MeshBVH } from 'three-mesh-bvh';
 import { describe, expect, it } from 'vitest';
 
 import { hingeTurn } from '../../viewer/doors.js';
 import { doorLeavesOf, doorUnit } from './window.js';
-import type { DoorParams } from './window.js';
+import type { DoorHinge, DoorParams } from './window.js';
 
 const positions = (g: BufferGeometry): number[] => Array.from(g.getAttribute('position').array);
 const box = (g: BufferGeometry): Box3 => {
   if (g.boundingBox === null) g.computeBoundingBox();
   return (g.boundingBox ?? new Box3()).clone();
 };
+/** A leaf's turn by `angle` about its hinge, as the door layer draws it: about the back face's pivot opening toward the back, the front's toward the front. */
+const turn = (hinge: DoorHinge, angle: number): Matrix4 => hingeTurn(new Vector3(...(angle < 0 ? hinge.front : hinge.back)), new Vector3(...hinge.axis), angle);
 /** Every vertex of `g` turned by `angle` about its hinge. */
-function turnedBox(g: BufferGeometry, point: readonly number[], axis: readonly number[], angle: number): Box3 {
-  const m = hingeTurn(new Vector3(...point), new Vector3(...axis), angle);
+function turnedBox(g: BufferGeometry, hinge: DoorHinge, angle: number): Box3 {
+  const m = turn(hinge, angle);
   const out = new Box3();
   const p = g.getAttribute('position');
   const v = new Vector3();
@@ -27,11 +32,13 @@ function turnedBox(g: BufferGeometry, point: readonly number[], axis: readonly n
   return out;
 }
 
+/** The fixtures, and the model's units: Weston's (as the first), the links', the Bank's and the Fifth Avenue entrance's. */
 const UNITS: readonly (readonly [string, DoorParams])[] = [
-  ['panelled pair, arched', { width: 2.6, height: 5, shape: 'arch' }],
-  ['panelled pair, transom', { width: 2, height: 3.4, leaves: 2, panels: 4 }],
+  ['panelled pair, arched (Weston)', { width: 2.6, height: 5, shape: 'arch' }],
+  ['panelled pair, transom (the links)', { width: 2, height: 3.4, leaves: 2, panels: 4 }],
+  ['panelled pair, arched (the Bank)', { width: 1.9, height: 5.5, shape: 'arch', leaves: 2, panels: 3 }],
   ['glazed pair, no fanlight', { width: 1.8, height: 4.5, leaves: 2, glazed: true, lights: 3, fanlight: false, frame: 0.09, bar: 0.05, depth: 0.14 }],
-  ['glazed pair under a tall transom light, as the Fifth Avenue entrance', { width: 1.8, height: 4.79, leaves: 2, glazed: true, lights: 1, transom: 2.1, frame: 0.09, bar: 0.09, depth: 0.14 }],
+  ['glazed pair under a tall transom light (the Fifth Avenue entrance)', { width: 1.8, height: 4.79, leaves: 2, glazed: true, lights: 1, transom: 2.1, frame: 0.09, bar: 0.09, depth: 0.14 }],
   ['one panelled leaf', { width: 1.1, height: 2.4, leaves: 1, fanlight: false }],
 ];
 
@@ -57,47 +64,64 @@ describe('door unit leaves', () => {
     expect(doorUnit(params)).toBe(door);
   });
 
-  it.each(UNITS)('%s: each leaf hangs from its jamb, opens toward the back for a positive turn and lies flush with the jamb a quarter turn open', (_name, params) => {
+  it.each(UNITS)('%s: each leaf turns about its hinge-side edge, toward the back for a positive turn, and stands 4 mm off its jamb a quarter turn open', (_name, params) => {
     const door = doorUnit(params);
     const n = params.leaves ?? 2;
     const w = params.width / 2 - (params.frame ?? 0.08);
     const t = params.thickness ?? 0.07;
     const zc = -(params.depth ?? 0.12) / 2;
-    const leafWidth = (2 * w) / n;
+    const reach = (2 * w) / n - 0.008;
     door.leaves.forEach((leaf, k) => {
       const left = k === 0;
-      const { point, axis } = leaf.hinge;
-      expect(point[0], `leaf ${String(k)}'s pivot, half a thickness in from its jamb`).toBeCloseTo(left ? -w + t / 2 : w - t / 2, 9);
-      expect(point[2], 'in the leaf’s mid-plane').toBeCloseTo(zc, 9);
+      const edge = left ? -w + 0.004 : w - 0.004;
+      const { back, front, axis } = leaf.hinge;
+      expect(back, `leaf ${String(k)} opening back turns about its hinge-side edge at its back face`).toEqual([expect.closeTo(edge, 9), 0, expect.closeTo(zc - t / 2, 9)]);
+      expect(front, 'and opening forward, at its front face').toEqual([expect.closeTo(edge, 9), 0, expect.closeTo(zc + t / 2, 9)]);
       expect(axis).toEqual([0, left ? 1 : -1, 0]);
       expect(leaf.swing).toEqual({ direction: params.swing ?? 'either', angle: Math.PI / 2 });
-      // Closed, the leaf spans its share of the opening less 4 mm at each edge.
+      // Closed, the leaf spans its share of the opening less 4 mm at each edge, from its hinge edge.
       const closed = box(leaf.panel);
-      expect(closed.max.x - closed.min.x).toBeCloseTo(leafWidth - 0.008, 6);
-      // A quarter turn toward the back: the free edge a leaf-width back from the pivot's line, the hinge edge 4 mm back of it.
-      const back = turnedBox(leaf.panel, point, axis, Math.PI / 2);
-      expect(back.max.z, 'a positive turn swings the leaf toward the back (−Z)').toBeCloseTo(zc + t / 2 - 0.004, 6);
-      expect(back.min.z).toBeCloseTo(zc + t / 2 + 0.004 - leafWidth, 6);
-      // Across the opening it lies against its jamb: from the jamb's face (raised panels 18 mm past it, inside the frame's reveal) to a thickness in.
-      const inner = left ? back.min.x : -back.max.x;
-      const outer = left ? back.max.x : -back.min.x;
-      expect(inner, 'no further toward the jamb than its raised panels').toBeGreaterThanOrEqual(-w - 0.018 - 1e-6);
-      expect(outer, 'a thickness (and its panels) in from the jamb').toBeLessThanOrEqual(-w + t + 0.018 + 1e-6);
+      expect(closed.max.x - closed.min.x).toBeCloseTo(reach, 6);
+      expect(left ? closed.min.x : closed.max.x).toBeCloseTo(edge, 6);
+      // A quarter turn toward the back: the hinge edge in the back face's line, the free edge a leaf back of it, a thickness in from the hinge edge.
+      const toBack = turnedBox(leaf.panel, leaf.hinge, Math.PI / 2);
+      expect(toBack.max.z, 'a positive turn swings the leaf toward the back (−Z)').toBeCloseTo(zc - t / 2, 6);
+      expect(toBack.min.z).toBeCloseTo(zc - t / 2 - reach, 6);
+      const inner = left ? toBack.min.x - edge : edge - toBack.max.x;
+      const outer = left ? toBack.max.x - edge : edge - toBack.min.x;
+      expect(inner, 'no nearer the jamb than its hinge edge, but for its raised panels behind the frame').toBeGreaterThanOrEqual(-0.018 - 1e-6);
+      expect(outer, 'a thickness (and its panels) in from it').toBeLessThanOrEqual(t + 0.018 + 1e-6);
       // A negative turn mirrors it toward the front.
-      const front = turnedBox(leaf.panel, point, axis, -Math.PI / 2);
-      expect(front.min.z, 'a negative turn swings the leaf toward the front (+Z)').toBeCloseTo(zc - t / 2 + 0.004, 6);
-      expect(front.max.z).toBeCloseTo(zc - t / 2 - 0.004 + leafWidth, 6);
+      const toFront = turnedBox(leaf.panel, leaf.hinge, -Math.PI / 2);
+      expect(toFront.min.z, 'a negative turn swings the leaf toward the front (+Z)').toBeCloseTo(zc + t / 2, 6);
+      expect(toFront.max.z).toBeCloseTo(zc + t / 2 + reach, 6);
     });
+  });
+
+  it.each(UNITS)('%s: no leaf meets a fixed part of its unit anywhere in its swing, closed, part open or open, either way (review 5, F22)', (_name, params) => {
+    const door = doorUnit(params);
+    const fixed = [['frame', door.frame], ['fanlight glass', door.glass]] as const;
+    const bvhs = fixed.flatMap(([name, g]) => (g === undefined ? [] : [[name, new MeshBVH(g)] as const]));
+    const hits: string[] = [];
+    door.leaves.forEach((leaf, k) => {
+      for (const [role, part] of [['panel', leaf.panel], ['glass', leaf.glass]] as const) {
+        if (part === undefined) continue;
+        for (let degrees = -90; degrees <= 90; degrees += 2.5) {
+          const m = turn(leaf.hinge, (degrees * Math.PI) / 180);
+          for (const [name, bvh] of bvhs) if (bvh.intersectsGeometry(part, m)) hits.push(`leaf ${String(k)}'s ${role} meets the ${name} at ${degrees.toFixed(1)}°`);
+        }
+      }
+    });
+    expect(hits.slice(0, 6), `${String(hits.length)} poses where a leaf meets a fixed part`).toEqual([]);
   });
 
   it('turns a leaf about its hinge without moving the hinge line, by the hinge matrix the door layer uses', () => {
     const door = doorUnit({ width: 2.6, height: 5, shape: 'arch' });
     const leaf = door.leaves[1];
     if (leaf === undefined) throw new Error('No second leaf.');
-    const pivot = new Vector3(...leaf.hinge.point);
-    const axis = new Vector3(...leaf.hinge.axis);
     for (const angle of [0.3, 1, Math.PI / 2, -1.2]) {
-      const m = hingeTurn(pivot, axis, angle);
+      const pivot = new Vector3(...(angle < 0 ? leaf.hinge.front : leaf.hinge.back));
+      const m = turn(leaf.hinge, angle);
       for (const y of [0, 1.7, 3.9]) {
         const on = new Vector3(pivot.x, y, pivot.z);
         expect(on.clone().applyMatrix4(m).distanceTo(on), `a point on the hinge line at y ${String(y)} stays put`).toBeLessThan(1e-9);
@@ -105,7 +129,7 @@ describe('door unit leaves', () => {
       const off = new Vector3(pivot.x - 1, 2, pivot.z).applyMatrix4(m);
       expect(off.distanceTo(new Vector3(pivot.x, 2, pivot.z)), 'points keep their distance from the hinge').toBeCloseTo(1, 9);
     }
-    expect(hingeTurn(pivot, axis, 0).equals(new Matrix4()), 'a turn of 0 is no turn').toBe(true);
+    expect(turn(leaf.hinge, 0).equals(new Matrix4()), 'a turn of 0 is no turn').toBe(true);
   });
 
   it('rejects a swing past the wall and leaves too narrow to hang, naming the part and the fix', () => {
@@ -115,14 +139,17 @@ describe('door unit leaves', () => {
     expect(() => doorUnit({ width: 2, height: 3, transom: 2.8 })).toThrow(/doorUnit: transom 2\.800 leaves the leaves 0\.040 m of a 3 m door; give a lower transom/);
   });
 
-  it('hangs a rectangular door’s leaves under its transom light, `transom` tall from the bar to the head', () => {
+  it('hangs a rectangular door’s leaves under its transom light, `transom` tall from the bar to the head, 4 mm under the bar and over the sill', () => {
     const door = doorUnit({ width: 1.8, height: 4.79, leaves: 2, glazed: true, lights: 1, transom: 2.1, frame: 0.09, bar: 0.09, depth: 0.14 });
-    const top = 4.79 - 0.09 - 2.1;
-    for (const leaf of door.leaves) expect(box(leaf.panel).max.y, 'a leaf’s top, 4 mm under the transom bar').toBeCloseTo(top - 0.004, 6);
+    const bar = 4.79 - 0.09 - 2.1;
+    for (const leaf of door.leaves) {
+      expect(box(leaf.panel).max.y, 'a leaf’s top, 4 mm under the transom bar’s underside').toBeCloseTo(bar - 0.045 - 0.004, 6);
+      expect(box(leaf.panel).min.y, 'its foot, 4 mm over the frame’s sill').toBeCloseTo(0.09 + 0.004, 6);
+    }
     const glass = door.glass;
     if (glass === undefined) throw new Error('No transom light.');
-    expect(box(glass).min.y, 'the light from over its bar').toBeCloseTo(top + 0.045, 6);
+    expect(box(glass).min.y, 'the light from over its bar').toBeCloseTo(bar + 0.045, 6);
     expect(box(glass).max.y, 'to the frame’s head').toBeCloseTo(4.79 - 0.09, 6);
-    expect(box(doorUnit({ width: 2, height: 3.4 }).leaf).max.y, 'by default a third of the width').toBeCloseTo(3.4 - 0.08 - 2 / 3 - 0.004, 6);
+    expect(box(doorUnit({ width: 2, height: 3.4 }).leaf).max.y, 'by default a third of the width').toBeCloseTo(3.4 - 0.08 - 2 / 3 - 0.04 - 0.004, 6);
   });
 });

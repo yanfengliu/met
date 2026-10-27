@@ -9,7 +9,8 @@
  * state resets. A locked door is never hidden and never opens, whatever is asked (`doors=` included).
  * The stand-ins share the timeline's geometry and materials (so the section cut clips them as it clips the closed leaves), hold bounds over every pose
  * of their leaves, and are for the page to register with the hit query, the zoom's pick (`tagOf`) and the cap pass. A swing takes SWING_SECONDS for a
- * full opening, eased, away from the walker; a door turned back mid-swing goes back from where it stands.
+ * full opening, eased, away from the walker; a door turned back mid-swing goes back from where it stands. Each sync says what the page draws again:
+ * the frame, and the shadows too only when a door that changed has a mesh that casts one.
  * It never writes what the timeline owns (instance matrices, colours, counts, visibility of the timeline's meshes), only those meshes' layer masks and its
  * own stand-ins, so the scene the timeline gives at t is a pure function of t (src/viewer/doors.test.ts checks it against fresh timelines).
  * Bound: a door's pieces belong to one step; a door piece that is not a door unit's closed leaves fails at construction, naming the door and the step.
@@ -39,6 +40,9 @@ export type DoorPrompt = 'E Open' | 'E Close' | 'Locked';
 
 export type DoorState = 'closed' | 'opening' | 'open' | 'closing';
 
+/** What a sync changed for the page to draw again (`DoorLayer.sync`): nothing, the frame, or the frame and the shadows. */
+export type DoorChange = 'none' | 'moved' | 'shadows';
+
 /** One door for `window.__met.doors` (src/viewer/facts.ts). */
 export interface DoorFacts {
   readonly id: string;
@@ -64,8 +68,9 @@ interface Leaf {
   readonly door: Door;
   /** The closed piece's final world matrix: the door unit's. */
   readonly base: Matrix4;
-  /** The hinge in the unit's frame. */
-  readonly pivot: Vector3;
+  /** The hinge in the unit's frame: the points it turns about opening toward the back and toward the front, and the axis. */
+  readonly back: Vector3;
+  readonly front: Vector3;
   readonly axis: Vector3;
   readonly standIn: StandIn;
 }
@@ -85,6 +90,8 @@ interface Door {
   /** Whether its step is complete (f = 1), and whether it has its default state still to take (at first, and after the step was taken away). */
   built: boolean;
   fresh: boolean;
+  /** Whether any of its meshes, the timeline's or its stand-ins, casts a shadow, so its changes redraw the shadows. */
+  casts: boolean;
   /** Signed radians open now (+ toward the back), and the swing under way: from, to, seconds into it and its length. */
   angle: number;
   from: number;
@@ -173,7 +180,7 @@ export class DoorLayer {
       for (const [material, list] of byMaterial) {
         const standIn: StandIn = { mesh: new InstancedMesh(geometry, material, list.length), leaves: [], drawn: [] };
         for (const { door, base, part } of list) {
-          const leaf: Leaf = { door, base, pivot: new Vector3(...part.hinge.point), axis: new Vector3(...part.hinge.axis).normalize(), standIn };
+          const leaf: Leaf = { door, base, back: new Vector3(...part.hinge.back), front: new Vector3(...part.hinge.front), axis: new Vector3(...part.hinge.axis).normalize(), standIn };
           standIn.leaves.push(leaf);
           door.leaves.push(leaf);
         }
@@ -184,6 +191,7 @@ export class DoorLayer {
       }
     }
     this.meshes = meshes;
+    for (const door of this.doors) door.casts = door.sources.some((m) => m.castShadow) || door.leaves.some((l) => l.standIn.mesh.castShadow);
   }
 
   /** The tag of the leaf drawn in slot `instance` of stand-in `mesh`, or null for a mesh not the layer's or an empty slot. */
@@ -193,11 +201,14 @@ export class DoorLayer {
 
   /**
    * Brings every door in line with the timeline at `t` and advances the swings under way by `seconds` (all at once when `instant`, as in capture mode).
-   * Returns whether anything the layer draws or hides changed, so the page renders again and redraws the shadows.
+   * Returns what the page must draw again: nothing, the frame (`moved`), or the frame and the shadows (`shadows`), when a door that changed has a mesh
+   * that casts a shadow.
    */
-  sync(t: number, seconds: number, instant = false): boolean {
-    let changed = false;
+  sync(t: number, seconds: number, instant = false): DoorChange {
+    let moved = false;
+    let shadows = false;
     for (const door of this.doors) {
+      let changed = false;
       const f = t - door.step;
       // Taken away: back to its default state when the step completes again.
       if (f <= 0 && !door.fresh) {
@@ -223,9 +234,11 @@ export class DoorLayer {
         door.angle = p >= 1 ? door.to : door.from + (door.to - door.from) * ease(p);
         changed = true;
       }
+      moved ||= changed;
+      shadows ||= changed && door.casts;
     }
-    if (changed) this.draw();
-    return changed;
+    if (moved) this.draw();
+    return shadows ? 'shadows' : moved ? 'moved' : 'none';
   }
 
   /**
@@ -261,7 +274,7 @@ export class DoorLayer {
     }
     const def = known.get(tag.id);
     if (def === undefined) throw new Error(`Door "${tag.id}" in step "${step.def.id}" is no door the layer knows; add it to src/model/doors.ts (known: ${[...known.keys()].join(', ')}).`);
-    const door: Door = { def, tag, step: step.index, stepId: step.def.id, sources: [], masks: [], leaves: [], open: 0, direction: 'either', built: false, fresh: true, angle: 0, from: 0, to: 0, elapsed: 0, duration: 0 };
+    const door: Door = { def, tag, step: step.index, stepId: step.def.id, sources: [], masks: [], leaves: [], open: 0, direction: 'either', built: false, fresh: true, casts: false, angle: 0, from: 0, to: 0, elapsed: 0, duration: 0 };
     this.doors.push(door);
     this.byId.set(tag.id, door);
     return door;
@@ -277,15 +290,17 @@ export class DoorLayer {
     mesh.matrixAutoUpdate = false;
     mesh.count = 0;
     mesh.visible = false;
-    // Bounds over every pose: a point turned about an axis through the pivot stays as far from the pivot as it was.
+    // Bounds over every pose: a point turned about an axis through a pivot stays as far from that pivot as it was, whichever way the leaf opens.
     const geometry = mesh.geometry;
     if (geometry.boundingBox === null) geometry.computeBoundingBox();
     const box = geometry.boundingBox ?? new Box3();
     const corners = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => new Vector3((k & 1) !== 0 ? box.max.x : box.min.x, (k & 2) !== 0 ? box.max.y : box.min.y, (k & 4) !== 0 ? box.max.z : box.min.z));
     const all = new Box3();
     for (const leaf of standIn.leaves) {
-      const reach = Math.max(...corners.map((c) => c.distanceTo(leaf.pivot)));
-      all.union(new Sphere(leaf.pivot.clone(), reach).applyMatrix4(leaf.base).getBoundingBox(new Box3()));
+      for (const pivot of [leaf.back, leaf.front]) {
+        const reach = Math.max(...corners.map((c) => c.distanceTo(pivot)));
+        all.union(new Sphere(pivot.clone(), reach).applyMatrix4(leaf.base).getBoundingBox(new Box3()));
+      }
     }
     mesh.boundingBox = all;
     mesh.boundingSphere = all.getBoundingSphere(new Sphere());
@@ -324,7 +339,8 @@ export class DoorLayer {
     const leaf = door.leaves[0];
     if (from === null || leaf === undefined) return 1;
     local.copy(from).applyMatrix4(scratch.copy(leaf.base).invert());
-    return local.z < leaf.pivot.z ? -1 : 1;
+    // The leaf's mid-plane lies between its two faces' pivots.
+    return local.z < (leaf.back.z + leaf.front.z) / 2 ? -1 : 1;
   }
 
   /** Writes the stand-ins: every built unlocked door's leaves at the base matrix times their turn, packed from slot 0. */
@@ -334,7 +350,8 @@ export class DoorLayer {
       drawn.length = 0;
       for (const leaf of standIn.leaves) {
         if (!leaf.door.built) continue;
-        scratch.copy(leaf.base).multiply(hingeTurn(leaf.pivot, leaf.axis, leaf.door.angle, turn));
+        // Opening toward the back it turns about its back face's edge, toward the front about its front face's.
+        scratch.copy(leaf.base).multiply(hingeTurn(leaf.door.angle < 0 ? leaf.front : leaf.back, leaf.axis, leaf.door.angle, turn));
         mesh.instanceMatrix.array.set(scratch.elements, drawn.length * 16);
         drawn.push(leaf);
       }

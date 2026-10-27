@@ -3,14 +3,17 @@
  * of the entrance's middle doorway within 2 m, the prompt under the crosshair says "E Open"; E swings the doorway's leaves into the building, away from
  * the walker, in canvas pixels and in `window.__met.doors`; looking at an open leaf it says "E Close", and a click while the pointer is locked closes it;
  * the timeline's scrubber, moved into the doors' step and back, shows the closed leaf and then the door open again at once, and taken back before the
- * step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle from the
- * first frame, before the walker is placed, and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and
- * 390×844; and in the Great Hall, looking out at the doors with the look target on, the slowest frame of a swing takes under 16.7 ms of work and a
- * GPU-synced render of the half-open door under 16.7 ms (review 0, F9).
+ * step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
+ * first frame drawn, the doors set before the walker is placed and that before the first frame (the page's marks, read beside a probe of the first
+ * drawn frame), and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and 390×844; and with the look
+ * target on, facing into the Great Hall from the landing while the doorway opens and closes, and in the hall facing out while it opens, the slowest
+ * frame of each swing takes under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under 16.7 ms (review 0, F9;
+ * review 5, F23 and F24).
  * Bound: pointer lock is not available headless, so for the locked click a probe makes the page see its canvas locked (it answers
  * `document.pointerLockElement` with the canvas and sends `pointerlockchange`) and the click itself is the real mouse's. A frame's work is timed by a
  * probe that wraps `requestAnimationFrame` before the page loads and times each callback, the page's frame among them; GPU time is the page's own
- * benchmark. Pixel checks compare coarse luminance grids: they prove the drawing changed where the door is, not that it is right.
+ * benchmark. The first frame drawn is read by a probe that wraps `requestAnimationFrame` and reads `window.__met` after each callback, writing nothing. Pixel checks compare coarse luminance grids: they prove the drawing changed where the door is, not
+ * that it is right.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -207,6 +210,23 @@ test.describe('the doors', () => {
   });
 
   test('doors=open and doors=closed under shot=1 stand at their angle from the first frame, before the walker is placed, and the capture stays still', async ({ page }) => {
+    // A read-only probe from before the page's scripts run: the door facts as they stand once the page has drawn its first frame (review 5, F24).
+    await page.addInitScript(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      const w = window as unknown as { firstDrawn?: { at: number; doors: unknown } };
+      window.requestAnimationFrame = (callback) => raf((now) => {
+        callback(now);
+        if (w.firstDrawn === undefined && (window.__met?.perf.framesRendered ?? 0) >= 1) w.firstDrawn = { at: performance.now(), doors: JSON.parse(JSON.stringify(window.__met?.doors ?? null)) as unknown };
+      });
+    });
+    /** The first drawn frame's door facts and its time, and the page's own marks of the door set-up and the walk placement, in their order. */
+    const firstFrame = (): Promise<{ at: number; doors: { id: string; state: string; angle: number }[]; marks: string[]; doorsSet: number | null; walkPlaced: number | null }> =>
+      page.evaluate(() => {
+        const w = window as unknown as { firstDrawn?: { at: number; doors: { id: string; state: string; angle: number }[] } };
+        const mark = (name: string): number | null => performance.getEntriesByName(name)[0]?.startTime ?? null;
+        const first = w.firstDrawn ?? { at: Number.NaN, doors: [] };
+        return { ...first, marks: performance.getEntriesByType('mark').map((e) => e.name).filter((n) => n === 'met:doors-set' || n === 'met:walk-placed'), doorsSet: mark('met:doors-set'), walkPlaced: mark('met:walk-placed') };
+      });
     const cam = 'cam=1.5,5.2,9,0,6.4,-1.2';
     const grids: number[][] = [];
     for (const state of ['closed', 'open'] as const) {
@@ -214,16 +234,24 @@ test.describe('the doors', () => {
       const hunt = f.doors.filter((d) => d.id.startsWith('hunt-entrance-'));
       expect(hunt.map((d) => [d.state, d.angle]), `doors=${state}`).toEqual(hunt.map(() => (state === 'open' ? ['open', 90] : ['closed', 0])));
       expect(f.doors.filter((d) => d.locked).map((d) => [d.state, d.angle]), 'locked doors stay shut').toEqual(f.doors.filter((d) => d.locked).map(() => ['closed', 0]));
+      const first = await firstFrame();
+      expect(first.doors.map((d) => [d.id, d.state, d.angle]), `doors=${state}: the first drawn frame already as at ready`).toEqual(f.doors.map((d) => [d.id, d.state, d.angle]));
+      expect(first.doorsSet ?? Number.POSITIVE_INFINITY, 'the doors set before the first frame').toBeLessThan(first.at);
       const ready = await lumaGrid(page);
       for (let k = 0; k < 15; k += 1) await settle(page);
       expect(changedCells(ready, await lumaGrid(page)), `doors=${state}: still after ready`).toEqual([]);
       grids.push(ready);
     }
     expect(changedCells(grids[0] ?? [], grids[1] ?? []).length, 'open and closed differ on the canvas').toBeGreaterThan(3);
-    // Walking under shot=1: the doors are open at the first frame, as the walker stands placed.
+    // Walking under shot=1: the doors are set, then the walker is placed, then the first frame is drawn with the doors open.
     const w = await open(page, 'shot=1&walk=1&spawn=plaza&doors=open');
     expect(w.walk.eye, 'the walker placed by the first ready frame').not.toBeNull();
     expect(w.doors.filter((d) => d.id.startsWith('hunt-entrance-')).every((d) => d.state === 'open')).toBe(true);
+    const walked = await firstFrame();
+    expect(walked.marks, 'the page marks the door set-up, then the walk placement').toEqual(['met:doors-set', 'met:walk-placed']);
+    expect(walked.doorsSet ?? Number.POSITIVE_INFINITY, 'the doors set before the walker is placed').toBeLessThanOrEqual(walked.walkPlaced ?? Number.NEGATIVE_INFINITY);
+    expect(walked.walkPlaced ?? Number.POSITIVE_INFINITY, 'and the walker placed before the first frame').toBeLessThan(walked.at);
+    expect(walked.doors.filter((d) => d.id.startsWith('hunt-entrance-')).map((d) => [d.state, d.angle]), 'the first drawn frame’s doors, open').toEqual([['open', 90], ['open', 90], ['open', 90]]);
     // Any other value warns and leaves the doors closed.
     const bad = await open(page, 'shot=1&doors=ajar');
     expect(bad.warnings).toContain('Query parameter doors="ajar" is not a door state; use doors=open or doors=closed. It is ignored.');
@@ -245,7 +273,7 @@ test.describe('the doors', () => {
     });
   });
 
-  test('in the Great Hall, looking out at the doors with the look target on, a swing’s slowest frame takes under 16.7 ms of work (review 0, F9)', async ({ page }) => {
+  test('facing into the Great Hall, opening and closing, and in it facing out, a swing’s slowest frame takes under 16.7 ms of work (review 0, F9; review 5, F23)', async ({ page }) => {
     // Times every requestAnimationFrame callback, the page's frame among them, from before the page's own scripts run.
     await page.addInitScript(() => {
       const raf = window.requestAnimationFrame.bind(window);
@@ -257,29 +285,41 @@ test.describe('the doors', () => {
         log.push([start, performance.now() - start]);
       });
     });
+    /** Presses E and times every frame until the middle doorway stands `state`: the slowest frame's work, from more than 20 frames, under 16.7 ms. */
+    const timedSwing = async (state: string, where: string): Promise<Door> => {
+      const from = await page.evaluate(() => performance.now());
+      await page.keyboard.press('KeyE');
+      const door = await doorIs(page, MIDDLE, state);
+      const to = await page.evaluate(() => performance.now());
+      const frames = await page.evaluate(([a, b]) => (window as unknown as { frameWork: [number, number][] }).frameWork.filter(([t]) => t >= a && t <= b).map(([, ms]) => ms), [from, to] as const);
+      const slowest = Math.max(...frames);
+      console.log(`a swing ${where}: ${String(frames.length)} frames, slowest ${slowest.toFixed(2)} ms of work`);
+      expect(frames.length, `${where}: frames timed over the swing`).toBeGreaterThan(20);
+      expect(slowest, `${where}: the slowest frame of the swing`).toBeLessThan(16.7);
+      return door;
+    };
     const errors = watchErrors(page);
     await open(page, '');
-    // Through the doorway (its leaves are not yet solid) into the entrance bay, then turned back to the doors.
-    await press(page, 'walk-toggle');
-    await walking(page);
-    const inside = await walk(page, 'into the hall', legs([PLAZA, [0, DOOR_Z - 1.4]], MINUS_Z), []);
+    // On the landing, facing into the Great Hall through the doorway, its hall in view: open, then close by the open leaf, each swing timed.
+    const at = await toTheEntrance(page);
+    await face(page, toward(at.eye, 0.35, DOOR_Z));
+    await looksAt(page, MIDDLE, 'E Open');
+    expect((await timedSwing('open', 'opening, facing into the Great Hall')).angle, 'into the building, away from the walker').toBe(90);
+    // A GPU-synced render facing into the hall through the open doorway, its leaves drawn open by the layer, with a shadow pass on every frame: more than
+    // a swing asks, since the entrance's leaves cast no shadow and a swing's frames redraw none (Doors: The layer).
+    const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
+    console.log(`render with GPU sync and a shadow pass, facing into the hall through the open doorway: ${gpu.toFixed(2)} ms`);
+    expect(gpu).toBeLessThan(16.7);
+    await face(page, toward(at.eye, 0.74, DOOR_Z - 0.3));
+    await looksAt(page, MIDDLE, 'E Close');
+    expect((await timedSwing('closed', 'closing, facing into the Great Hall')).angle).toBe(0);
+    // Through the doorway (its leaves are not yet solid) into the entrance bay, then turned back to the doors: in the hall, facing out.
+    const ahead = await face(page, 0);
+    const inside = await walk(page, 'into the hall', legs([[ahead.eye[0], ahead.eye[2]], [ahead.eye[0], DOOR_Z - 1.4]], MINUS_Z), []);
     expect(inside.eye[2], 'inside, behind the doors').toBeLessThan(DOOR_Z - 0.6);
     await face(page, toward(inside.eye, 0.35, DOOR_Z));
     await looksAt(page, MIDDLE, 'E Open');
-    const from = await page.evaluate(() => performance.now());
-    await page.keyboard.press('KeyE');
-    const door = await doorIs(page, MIDDLE, 'open');
-    expect(door.angle, 'away from the walker inside: out toward the plaza').toBe(-90);
-    const to = await page.evaluate(() => performance.now());
-    const frames = await page.evaluate(([a, b]) => (window as unknown as { frameWork: [number, number][] }).frameWork.filter(([t]) => t >= a && t <= b).map(([, ms]) => ms), [from, to] as const);
-    const slowest = Math.max(...frames);
-    console.log(`a swing in the Great Hall: ${String(frames.length)} frames, slowest ${slowest.toFixed(2)} ms of work`);
-    expect(frames.length, 'frames timed over the swing').toBeGreaterThan(20);
-    expect(slowest, 'the slowest frame of the swing').toBeLessThan(16.7);
-    // A GPU-synced render, shadows redrawn each frame as on every frame of a swing, with the doorway's leaves drawn open by the layer.
-    const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
-    console.log(`render with GPU sync and the shadows redrawn, the door open: ${gpu.toFixed(2)} ms`);
-    expect(gpu).toBeLessThan(16.7);
+    expect((await timedSwing('open', 'in the Great Hall, facing out')).angle, 'away from the walker inside: out toward the plaza').toBe(-90);
     errors.expectClean();
   });
 });

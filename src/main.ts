@@ -298,14 +298,16 @@ function boot(): void {
     if (floors.show(floorAtLoad.floor)) cutChanged();
     if (query.cam === null && namedView === null) frameFloor();
   }
-  // The doors stand at their state before the walker is placed, at once: so with shot=1 from the first frame (Doors).
+  // The doors stand at their state before the walker is placed, at once: so with shot=1 from the first frame (Doors). Marked for the order's check.
   doors.sync(player.t, 0, true);
+  performance.mark('met:doors-set');
   if (query.walk) {
     const known = query.spawn === null || spawnById(query.spawn) !== undefined;
     if (!known) warnings.push(`Query parameter spawn="${query.spawn}" names no walk spawn; use one of ${SPAWNS.map((sp) => sp.id).join(', ')}. The walk starts at ${DEFAULT_SPAWN}.`);
     enterWalk(known ? query.spawn : null);
     // Capture mode shows the walker's view from its first frame.
     if (query.shot) walk.prepareNow(player.t);
+    if (query.shot) performance.mark('met:walk-placed');
   }
   rig.onUserMove = () => {
     follow = false;
@@ -344,9 +346,10 @@ function boot(): void {
       if (timeline.evaluate(player.t)) viewer.markShadowsDirty();
       needsRender = true;
     }
-    // The doors follow the timeline and swing (Doors): each swap and every frame of a swing draws again, shadows included.
-    if (doors.sync(player.t, query.shot ? 0 : seconds, query.shot)) {
-      viewer.markShadowsDirty();
+    // The doors follow the timeline and swing (Doors): each swap and every frame of a swing draws again, and redraws the shadows when what moved casts one.
+    const doorChange = doors.sync(player.t, query.shot ? 0 : seconds, query.shot);
+    if (doorChange !== 'none') {
+      if (doorChange === 'shadows') viewer.markShadowsDirty();
       needsRender = true;
     }
     if (walk.active) {

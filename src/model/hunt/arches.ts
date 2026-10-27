@@ -209,12 +209,13 @@ export const archSteps: readonly StepDef[] = [
           if (doors) {
             // The entrance's doors (src/model/doors.ts): in a bronze frame, a pair of glazed leaves, one tall pane each in a bronze frame, which open, under
             // a transom bar at 54% of the opening and a fixed transom light (S8, Haklai 2012, at full size). Until the walk's collision follows the
-            // leaves (M2b) their bronze and glass are passable copies of the palette's, as the fixed glazing before them was.
+            // leaves (M2b) their bronze and glass are passable copies of the palette's, as the fixed glazing before them was; the leaves' bronze casts
+            // no shadow, so their swing needs no shadow pass (hunt.doorLeafBronze).
             const door = doorUnit({ width, height: SCREEN_HEAD_Y - bottom, leaves: 2, glazed: true, lights: 1, transom: ENTRANCE_TRANSOM, frame: 0.09, bar: 0.09, depth: 0.14 });
             const tag = doorTag(ENTRANCE_DOORS[i] ?? '');
             kit.add(door.frame, hunt.doorBronze, m);
             if (door.glass !== undefined) kit.add(door.glass, hunt.doorGlass, m);
-            kit.addTagged(door.leaf, hunt.doorBronze, m, tag);
+            kit.addTagged(door.leaf, hunt.doorLeafBronze, m, tag);
             if (door.leafGlass !== undefined) kit.addTagged(door.leafGlass, hunt.doorGlass, m, tag);
             return;
           }

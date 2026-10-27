@@ -21,6 +21,12 @@ function passable<T extends Material>(source: T, name: string): T {
   return material;
 }
 
+/** `material`, casting no shadow (src/build/batch.ts `castsShadow`). */
+function shadowless<T extends Material>(material: T): T {
+  material.userData['castShadow'] = false;
+  return material;
+}
+
 export const hunt = Object.freeze({
   /** Warm-toned Indiana limestone of the Great Hall's walls and piers (suggested base #c8bca4). */
   hallStone: stone('huntHallStone', '#c8bca4', 0.84),
@@ -41,4 +47,10 @@ export const hunt = Object.freeze({
   /** The central doors' bronze frames and bars, and their glass: the palette's bronze and dark glass, passable (see the header). */
   doorBronze: passable(palette.bronze, 'huntDoorBronze'),
   doorGlass: passable(palette.glassDark, 'huntDoorGlass'),
+  /**
+   * The bronze of the central doors' leaves, which open (src/model/doors.ts): passable, and casting no shadow, so a swing's frames redraw no shadows. With
+   * a shadow pass on each, facing into the Great Hall a swing's frame took 1,285 draw calls instead of 655; the shadow given up is faint, at most 19 of
+   * 255 in a channel, just inside the open doorways (docs/design/spec.md, Doors: The layer; work unit 2, review 5, F23).
+   */
+  doorLeafBronze: shadowless(passable(palette.bronze, 'huntDoorLeafBronze')),
 });
