@@ -347,12 +347,20 @@ describe('the door layer', () => {
     }
   });
 
-  it('fails on a door piece that is no door unit’s closed leaves, a door the layer does not know, and a door in two steps, naming each', () => {
+  it('fails on a door piece that is no door unit’s closed leaves, a door the layer does not know, a door in two steps and a piece with no resting matrix, naming each', () => {
     const odd = new Timeline([step('odd', (kit) => { kit.addTagged(cube, stone, new Matrix4(), tag('front')); })]);
     expect(() => new DoorLayer(odd.steps, (i) => odd.restingPieces(i), DEFS, doorLeavesOf)).toThrow(/Door "front": its piece in step "odd" \(mesh odd#0\) is not a door unit's closed leaves/);
     const stranger = new Timeline([step('strange', (kit) => { kit.addTagged(glazed.leaf, bronze, new Matrix4(), tag('back')); })]);
     expect(() => new DoorLayer(stranger.steps, (i) => stranger.restingPieces(i), DEFS, doorLeavesOf)).toThrow(/Door "back" in step "strange" is no door the layer knows; add it to src\/model\/doors.ts/);
     const twice = new Timeline([step('one', (kit) => { kit.addTagged(glazed.leaf, bronze, new Matrix4(), tag('front')); }), step('two', (kit) => { kit.addTagged(glazed.leaf, bronze, SIDE, tag('front')); })]);
     expect(() => new DoorLayer(twice.steps, (i) => twice.restingPieces(i), DEFS, doorLeavesOf)).toThrow(/Door "front" has pieces in steps "one" and "two"/);
+    // A door's piece that the resting pieces leave out, a locked door's included: the layer of 0defda0 skipped a locked one in silence, so the walk's door
+    // world held none of it and a walker passed through the shut door (review 17, F47).
+    const { timeline } = fixture();
+    for (const [id, verb] of [['shut', 'hold it shut at in the walk'], ['front', 'turn it from']] as const) {
+      const left = timeline.steps[DOORS_STEP]?.tags.findIndex((tags) => tags?.some((t) => t?.id === id) === true) ?? -1;
+      const resting = (i: number): ReturnType<Timeline['restingPieces']> => timeline.restingPieces(i).filter((p) => i !== DOORS_STEP || p.mesh !== left);
+      expect(() => new DoorLayer(timeline.steps, resting, DEFS, doorLeavesOf)).toThrow(`Door "${id}": its piece in step "doors" (mesh doors#${String(left)}, instance 0) is none of the step's resting pieces, so the layer has no matrix to ${verb}; pass each step's pieces at rest (Timeline.restingPieces) as \`resting\`.`);
+    }
   });
 });

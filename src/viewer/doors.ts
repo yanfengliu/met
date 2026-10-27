@@ -17,7 +17,8 @@
  * the walker clear of it at once (`set`).
  * It never writes what the timeline owns (instance matrices, colours, counts, visibility of the timeline's meshes), only those meshes' layer masks and its
  * own stand-ins, so the scene the timeline gives at t is a pure function of t (src/viewer/doors.test.ts checks it against fresh timelines).
- * Bound: a door's pieces belong to one step; a door piece that is not a door unit's closed leaves fails at construction, naming the door and the step.
+ * Bound: a door's pieces belong to one step; a door piece that is not a door unit's closed leaves, or that the step's resting pieces leave out, fails at
+ * construction, naming the door, the step and the piece.
  */
 import { Box3, DynamicDrawUsage, Group, InstancedMesh, Matrix4, Sphere, Vector3 } from 'three';
 import type { BufferGeometry, Material } from 'three';
@@ -132,13 +133,15 @@ export class DoorLayer {
             door.masks.push(mesh.layers.mask);
           }
           const matrix = matrices[m]?.[slot];
+          // Left out, a locked door's piece would be no part of the walk's door world, and a walker would pass through it shut (review 17, F47).
+          if (matrix === undefined) throw new Error(`Door "${tag.id}": its piece in step "${step.def.id}" (mesh ${mesh.name}, instance ${String(slot)}) is none of the step's resting pieces, so the layer has no matrix to ${door.def.locked ? 'hold it shut at in the walk' : 'turn it from'}; pass each step's pieces at rest (Timeline.restingPieces) as \`resting\`.`);
           if (door.def.locked) {
-            if (matrix !== undefined) fixed.push({ door, geometry: mesh.geometry, base: new Matrix4().fromArray(matrix) });
+            fixed.push({ door, geometry: mesh.geometry, base: new Matrix4().fromArray(matrix) });
             return;
           }
           const parts = leavesOf(mesh.geometry);
           const material = mesh.material;
-          if (parts === undefined || parts.length === 0 || Array.isArray(material) || matrix === undefined) {
+          if (parts === undefined || parts.length === 0 || Array.isArray(material)) {
             throw new Error(`Door "${tag.id}": its piece in step "${step.def.id}" (mesh ${mesh.name}) is not a door unit's closed leaves, so it cannot be turned; place DoorParts.leaf or leafGlass of src/model/lib/window.ts doorUnit as it is, with one material.`);
           }
           const base = new Matrix4().fromArray(matrix);

@@ -3,8 +3,11 @@
  * and every door tag names one of them; the door layer (src/viewer/doors.ts) builds over the real timeline, with stand-ins for the doors that open and
  * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's counted (review 0, F9); no leaf of a door that opens casts a
  * shadow, so no swing asks for a shadow pass (review 5, F23); with the layer attached and the doors used between random positions, the timeline's state
- * stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door from 2.5 m in front over the collision
- * world at t = N, stops against its leaf, where without the leaf it walks on through. Weston's door against the walker: src/model/core/weston-door.test.ts.
+ * stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door from 2.5 m in front at t = N through the
+ * page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors' pieces held shut in the door world), stops
+ * against its leaves (red with the locked doors' parts left out of the door world: 4.52 m past the north link door's leaves; review 17, F47), as it
+ * does in a static world of every solid piece, where without the leaves it walks on through. Weston's door against the walker:
+ * src/model/core/weston-door.test.ts.
  * Bound: the walker walks at the middle of each door, facing it square on, at 60 frames a second; positions are the feet's.
  */
 import { Box3, Matrix4, Vector3 } from 'three';
@@ -18,7 +21,9 @@ import { DoorLayer } from '../viewer/doors.js';
 import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../walk/collision.js';
 import type { GroundHit } from '../walk/collision.js';
+import { walkWorld } from '../walk/door-world.js';
 import { BODY, Walker } from '../walk/walker.js';
+import type { WalkWorld } from '../walk/walker.js';
 import { WESTON_DOOR } from './core/weston-facade.js';
 import { DOORS, doorTag } from './doors.js';
 import { doorLeavesOf } from './lib/window.js';
@@ -34,6 +39,21 @@ let layer: DoorLayer;
 const meshesOf = new Map<string, InstancedMesh[]>();
 const piecesOf = new Map<string, (readonly [InstancedMesh, number])[]>();
 const stepsOf = new Map<string, Set<string>>();
+
+/**
+ * Where to stand before door `id`, by its first piece at t = N (each slot then holds its final matrix): 2.5 m out in front of the middle of its leaves'
+ * front face, its front (the unit's +Z) laid level, and that face's middle.
+ */
+function before(id: string): { start: Vector3; front: Vector3; face: Vector3 } {
+  const [mesh, slot] = piecesOf.get(id)?.[0] ?? [];
+  if (mesh === undefined || slot === undefined) throw new Error(`Door "${id}" has no piece in the finished model; tag its leaves with doorTag("${id}") (src/model/doors.ts).`);
+  const unit = new Matrix4().fromArray(mesh.instanceMatrix.array, slot * 16);
+  if (mesh.geometry.boundingBox === null) mesh.geometry.computeBoundingBox();
+  const local = mesh.geometry.boundingBox ?? new Box3();
+  const front = new Vector3().setFromMatrixColumn(unit, 2).setY(0).normalize();
+  const face = new Vector3((local.min.x + local.max.x) / 2, (local.min.y + local.max.y) / 2, local.max.z).applyMatrix4(unit);
+  return { start: face.clone().addScaledVector(front, 2.5), front, face };
+}
 
 beforeAll(() => {
   timeline = new Timeline(SEQUENCE);
@@ -116,28 +136,26 @@ describe('the model’s doors', () => {
     }
   });
 
-  it('stops the walker against each locked door’s leaf, which it walks on through without it', () => {
+  it('stops the walker at each locked door through the page’s own collision path, and at its leaves alone in a static world, which it walks through without them (review 17, F47)', () => {
     const solid = collisionMeshes(timeline.steps, timeline.n);
     const floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
+    // The page's path: the static world without any door's leaves, and each locked door's pieces held shut in the door world (src/walk/door-world.ts).
+    const own = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf);
+    own.sync(timeline.n, 0, true);
+    const page = walkWorld(timeline.steps, timeline.n, own, new GeometryBvhs());
+    // The geometry alone: every solid piece in one static world, the leaves among them.
     const whole = new CollisionWorld(new GeometryBvhs());
     whole.build(solid);
     const hit: GroundHit = { y: 0, normalX: 0, normalY: 1, normalZ: 0 };
     for (const door of DOORS.filter((d) => d.locked)) {
       const leaves = meshesOf.get(door.id) ?? [];
-      expect(leaves.length > 0 && leaves.every((m) => solid.includes(m)), `${door.id}'s leaves are in the collision`).toBe(true);
+      expect(leaves.length > 0 && leaves.every((m) => solid.includes(m)), `${door.id}'s leaves are solid`).toBe(true);
+      expect(leaves.every((m) => own.leafMeshes.has(m)), `${door.id}'s leaves are out of the page's static world`).toBe(true);
       const holed = new CollisionWorld(new GeometryBvhs());
       holed.build(solid.filter((m) => !leaves.includes(m)));
-      const [mesh, slot] = piecesOf.get(door.id)?.[0] ?? [];
-      if (mesh === undefined || slot === undefined) throw new Error(`${door.id} has no piece.`);
-      // The unit's matrix (at t = N each slot holds its final matrix), its front (+Z) laid level, and the middle of the leaves' front face.
-      const unit = new Matrix4().fromArray(mesh.instanceMatrix.array, slot * 16);
-      if (mesh.geometry.boundingBox === null) mesh.geometry.computeBoundingBox();
-      const local = mesh.geometry.boundingBox ?? new Box3();
-      const front = new Vector3().setFromMatrixColumn(unit, 2).setY(0).normalize();
-      const face = new Vector3((local.min.x + local.max.x) / 2, (local.min.y + local.max.y) / 2, local.max.z).applyMatrix4(unit);
-      const start = face.clone().addScaledVector(front, 2.5);
+      const { start, front, face } = before(door.id);
       expect(whole.groundBelow(start.x, face.y + 1, start.z, 10, hit), `${door.id}: ground 2.5 m in front`).toBe(true);
-      const walk = (world: CollisionWorld): { along: number; lowest: number } => {
+      const walk = (world: WalkWorld): { along: number; lowest: number } => {
         const walker = new Walker(world, floorY);
         walker.place(start.x, hit.y, start.z, Math.atan2(front.x, front.z));
         let lowest = Number.POSITIVE_INFINITY;
@@ -147,10 +165,12 @@ describe('the model’s doors', () => {
         }
         return { along: walker.feet.clone().sub(face).dot(front), lowest };
       };
-      const stopped = walk(whole);
-      expect(stopped.along, `${door.id}: the walker's axis stops a body's radius in front of the leaves`).toBeGreaterThan(BODY.radius - 0.08);
-      expect(stopped.along).toBeLessThan(BODY.radius + 0.08);
-      expect(stopped.lowest, `${door.id}: and never drops below where it started`).toBeGreaterThan(hit.y - 0.05);
+      for (const [world, name] of [[page, 'the page’s path'], [whole, 'the static world']] as const) {
+        const stopped = walk(world);
+        expect(stopped.along, `${door.id}, ${name}: the walker's axis stops a body's radius in front of the leaves`).toBeGreaterThan(BODY.radius - 0.08);
+        expect(stopped.along, `${door.id}, ${name}`).toBeLessThan(BODY.radius + 0.08);
+        expect(stopped.lowest, `${door.id}, ${name}: and never drops below where it started`).toBeGreaterThan(hit.y - 0.05);
+      }
       const through = walk(holed);
       expect(through.along, `${door.id}: without its leaves the walker walks on through the doorway`).toBeLessThan(-0.5);
     }
