@@ -106,6 +106,8 @@ function boot(): void {
   const artLabel = new ArtLabel();
   /** The card the last frame showed, for the chrome and `window.__met.label`. */
   let shownArt: ArtCardContent | null = null;
+  // Walking, walk mode's one look-target hook tells the card each new target, and null on entering and leaving (src/walk/walk-mode.ts `onLookTarget`).
+  walk.onLookTarget((target) => { artLabel.look(target); });
   bindClick(viewer.renderer.domElement, (x, y) => {
     const canvas = viewer.renderer.domElement;
     artLabel.click(picker.hit(new Ray(rig.camera.position.clone(), pointerRay(canvas, rig.camera, x, y)), ARTWORK_QUERY));
@@ -357,7 +359,6 @@ function boot(): void {
       }
     }
     if (rig.update()) needsRender = true;
-    artLabel.look(walk.lastTarget);
     artLabel.frame(walk.active);
     shownArt = artLabel.id === null ? null : (cards.get(artLabel.id) ?? null);
     ui.sync(state());
