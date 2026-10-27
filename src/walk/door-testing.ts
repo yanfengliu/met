@@ -86,4 +86,3 @@ export function gap(layer: DoorLayer, feet: Vector3): number {
   });
   return least - BODY.radius;
 }
-

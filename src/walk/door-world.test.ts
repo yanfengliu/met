@@ -140,6 +140,26 @@ describe('the doors that open, against the walker', () => {
     for (const a of at) expect(Math.abs(a - first), `held at ${at.map((v) => v.toFixed(2)).join('°, ')}°`).toBeLessThan(0.5);
   });
 
+  it('turns a closing door held by a walker between its leaves back open on the side it stands, either side, so the walker goes free (review 15, F43)', () => {
+    for (const side of [1, -1] as const) {
+      const { layer, walker } = site();
+      // Opened from 2.5 m before its front (+, toward its back) or behind it (−, toward its front), and closed from between its leaves.
+      walker.place(0, 0, side * 2.5, side > 0 ? INTO : OUT);
+      layer.use(ID, walker.eye());
+      hold(walker, layer, 1, NO_INPUT);
+      expect(angle(layer), `open toward its ${side > 0 ? 'back' : 'front'}`).toBeCloseTo(side * 90, 6);
+      walker.place(0, 0, MID - side * 0.48, side > 0 ? OUT : INTO);
+      layer.use(ID, walker.eye());
+      const held = hold(walker, layer, 1.5, NO_INPUT, 60, true);
+      const at = held[held.length - 1] ?? 0;
+      expect(side * at, 'held part way, closing').toBeGreaterThan(10);
+      expect(side * at, 'held part way, closing').toBeLessThan(85);
+      expect(layer.use(ID, walker.eye()), 'E again').toBe(true);
+      hold(walker, layer, 1.5, NO_INPUT, 60, true);
+      expect([angle(layer), layer.facts()[0]?.state, layer.prompt(ID)], `turned back open on the side it stood on, ${side > 0 ? 'its back' : 'its front'}`).toEqual([side * 90, 'open', 'E Close']);
+    }
+  });
+
   it('refuses a swing through the walker in one step, though both its ends are clear of it', () => {
     const { layer, world, walker } = site('open');
     walker.place(0.2, 0, -0.62, INTO);
@@ -180,4 +200,3 @@ describe('the doors that open, against the walker', () => {
     expect(walker.feet.z, 'and backs off it').toBeLessThan(MID - 0.035 - BODY.radius - 0.3);
   });
 });
-

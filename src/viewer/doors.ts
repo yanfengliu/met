@@ -223,13 +223,15 @@ export class DoorLayer {
   }
 
   /**
-   * Opens door `id` away from `from` (the walker's eye, world metres), or closes it when it is open or opening. A door unknown, not yet built or locked
-   * does nothing. Returns whether the door began to move.
+   * Opens door `id` away from `from` (the walker's eye, world metres) from closed, or closes it when it is open or opening. A closing door, held by the
+   * walker or not, turns back open on the side it stands on, away from what it was closing on: chosen from `from`, a door held between its leaves would
+   * turn on through the walker (work unit 2, review 15, F43). A door unknown, not yet built or locked does nothing. Returns whether the door began to move.
    */
   use(id: string, from: Vector3 | null): boolean {
     const door = this.byId.get(id);
     if (door === undefined || !door.built || door.def.locked || door.leaves.length === 0) return false;
-    this.swingTo(door, door.to !== 0 ? 0 : this.side(door, from) * door.open);
+    const open = door.angle !== 0 ? Math.sign(door.angle) * door.open : this.side(door, from) * door.open;
+    this.swingTo(door, door.to !== 0 ? 0 : open);
     return true;
   }
 
