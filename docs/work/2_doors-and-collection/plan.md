@@ -100,7 +100,7 @@ While building its door check (F30), M3b's worker found the Engelhard Court unre
 - [x] M2a doors that open and close (worker `doors`, merged `6198d1a`, reviews 5, 8 and 9): the Hunt central entrance's three doors open and close by E or a click with a prompt, behind the columns as the real ones stand; the link and Bank doors say Locked and stay solid; review 9's F34 and F35, two gaps in the doors' fit test, go to M2b; the model at 744 meshes and 1,579,480 triangles.
 - [ ] M2b doors that are solid (worker `doors2`, after M2a).
 - [x] M3b labels (worker `labels`, merged `4e16588`, reviews 6, 7, 10, 11 and 13): a card for each placeholder looked at within 6 m or clicked in the orbit view; the orbit click gate as a state machine with a randomized check; F39 (a crash on mixed mouse and touch inside OrbitControls, older than M3b) filed as a follow-up.
-- [ ] M4 every space reachable (worker `reach`, from `691b8f7`, review 12).
+- [x] M4 every space reachable (worker `reach`, merged `61b5c80`, reviews 12 and 14): a reachability gate walks the real walker over 0.5 m cells from the Great Hall to every space holding artworks and every preset and route end, and walks each found path again from the spawn. The Engelhard Court and the Petrie Court, each sealed by a McKim, Mead & White party wall, are opened by the floor map's corridors from gallery 374 and from Exhibition Gallery 199. Route R6 walks into the Engelhard Court. The model is at 746 meshes and 1,579,520 triangles.
 - [ ] Integration, review, deploy, outcome.
 
 ## Outcome
