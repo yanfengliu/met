@@ -1,19 +1,22 @@
 /**
  * Where the walk mode's walker can walk from a start (work unit 2, M4; docs/design/spec.md, Walk mode: No trap, no dead end): a flood fill over the walkable
  * floor in which every move is made by the real walker (./walker.ts) against a WalkWorld, the page's collision world or a fixture's.
- * A place is where the walker's feet stood at the end of a move, one per cell of a plan grid and band of height. From each place the fill tries the
- * centres of the four cells beside its own: the walker, put at rest on the place and set running toward the centre, is turned toward it every physics
- * step until it comes within ARRIVED of it or MOVE_STEPS steps pass, and wherever it then stands on the ground is a place. A move that leaves the ground
+ * A place is where a move ended, with the walker's whole state there (`Walker.save`), one place per cell of a plan grid and band of height; the start is
+ * the walker put down as `Walker.place` puts a spawn. From each place the fill tries the centres of the four cells beside its own: the walker, taken up
+ * again exactly as it stood at the place (`Walker.restore`: no probe, no placing, its speed kept), is turned toward the centre every physics step and runs
+ * on until it comes within ARRIVED of it or MOVE_STEPS steps pass, and wherever it then stands on the ground is a place. A move that leaves the ground
  * (off an edge higher than a step, onto a slope too steep to stand on) reaches nothing: the fill walks, it never falls or jumps. A move toward a cell that
- * already holds a place in the same band is not tried. Places are taken up in the order they were reached, or, given `toward`, nearest first by it,
- * so a fill that stops once its targets are met (`stop`) walks less of what lies away from them.
- * Bound: every place is reached by a chain of moves from the start, each a run of the real walker from where the last one ended, so a walker reaches every
- * place the fill reaches; the reverse does not hold, as a walker that comes at a passage on some other line than these moves can pass where they do not.
- * Cells of 0.5 m (the default) keep places on the two sides of a wall apart: the walker's centre stands its radius (0.35 m) off each face, so two such
- * centres lie 0.7 m and the wall's thickness apart, more than a cell's diagonal for any wall 1 cm thick. A run moves 4 cm a physics step, so a move
- * crosses a cell in about 12 steps.
+ * already holds a place in the same band is not tried. Places are taken up in the order they were reached, or, given `toward`, nearest first by it, so
+ * a fill that stops once its targets are met (`stop`) walks less of what lies away from them. The moves from the start to a place are one continuous
+ * walk, the walker never set down again; `replay` walks them again from the start, apart from the fill's saved states, and says where one does not.
+ * Bound: a walker reaches every place the fill reaches, by the walk `replay` repeats; the reverse does not hold, as a walker that comes at a passage on
+ * some other line than these moves can pass where they do not. Cells of 0.5 m (the default) keep places on the two sides of a wall apart: the walker's
+ * centre stands its radius (0.35 m) off each face, so two such centres lie 0.7 m and the wall's thickness apart, more than a cell's diagonal for any
+ * wall 1 cm thick. A run moves 4 cm a physics step, so a move crosses a cell in about 12 steps.
+ * Until work unit 2's review 12 (F40) each move began with `Walker.place` at the place's feet, which probes down from the centre: over a gap the walker
+ * had bridged it set the walker on the floor below (6.86 m down on the real model), and no fall was seen.
  */
-import { MOTION, Walker } from './walker.js';
+import { MOTION, WALKER_STATE_SIZE, Walker } from './walker.js';
 import type { WalkInput, WalkWorld } from './walker.js';
 
 export interface ReachOptions {
@@ -33,8 +36,6 @@ export interface ReachOptions {
 export const MOVE_STEPS = 40;
 /** A move ends this close to the centre it heads for, metres. */
 export const ARRIVED = 0.06;
-/** `Walker.place` drops the feet from 1 m over the height it is given; a place is taken up again from 2 cm over its own feet. */
-const PLACE_DROP = 1 - 0.02;
 const RUN: WalkInput = Object.freeze({ forward: 1, right: 0, run: true });
 const NEIGHBOURS: readonly (readonly [number, number])[] = [
   [1, 0],
@@ -99,12 +100,29 @@ class Queue {
   }
 }
 
-/** The places a fill reached: their feet, in the order reached, and the place each was reached from. */
+/** One move: the walker turned toward (tx, tz) every physics step, at a run, until within ARRIVED of it or MOVE_STEPS steps pass; false if it left the ground. */
+function move(walker: Walker, tx: number, tz: number): boolean {
+  for (let s = 0; s < MOVE_STEPS; s += 1) {
+    const ex = tx - walker.feet.x;
+    const ez = tz - walker.feet.z;
+    if (Math.hypot(ex, ez) < ARRIVED) return true;
+    walker.turn(wrap(Math.atan2(-ex, -ez) - walker.yaw), 0);
+    walker.update(MOTION.fixedStep, RUN);
+    if (!walker.onGround) return false;
+  }
+  return true;
+}
+
+/** The places a fill reached: their feet, in the order reached, the place each was reached from, where its move headed and the walker's state there. */
 export class Reach {
   /** x, y, z of each place's feet, three numbers a place. */
   readonly feet: number[] = [];
   /** The place each place was reached from; −1 for the start. */
   readonly from: number[] = [];
+  /** x, z of the cell centre each place's move headed for, two numbers a place; NaN for the start. */
+  readonly heading: number[] = [];
+  /** Each place's walker state (`Walker.save`), WALKER_STATE_SIZE numbers a place. */
+  private states = new Float64Array(WALKER_STATE_SIZE * 1024);
   private readonly byCell = new Map<number, number[]>();
 
   constructor(readonly cell: number) {}
@@ -152,11 +170,24 @@ export class Reach {
     return out.reverse();
   }
 
-  /** Adds a place; for the fill. */
-  add(x: number, y: number, z: number, from: number): number {
+  /** Puts `walker` exactly in the state it had at place `i`. */
+  takeUp(walker: Walker, i: number): void {
+    walker.restore(this.states, i * WALKER_STATE_SIZE);
+  }
+
+  /** Adds a place where `walker` stands, reached from place `from` by a move toward (tx, tz); for the fill. */
+  add(walker: Walker, from: number, tx: number, tz: number): number {
     const i = this.count;
+    if ((i + 1) * WALKER_STATE_SIZE > this.states.length) {
+      const grown = new Float64Array(this.states.length * 2);
+      grown.set(this.states);
+      this.states = grown;
+    }
+    walker.save(this.states, i * WALKER_STATE_SIZE);
+    const { x, y, z } = walker.feet;
     this.feet.push(x, y, z);
     this.from.push(from);
+    this.heading.push(tx, tz);
     const k = planKey(Math.floor(x / this.cell), Math.floor(z / this.cell));
     const list = this.byCell.get(k);
     if (list === undefined) this.byCell.set(k, [i]);
@@ -178,16 +209,18 @@ export function reach(world: WalkWorld, floorY: number, x: number, y: number, z:
   const seen = new Map<number, number>();
   const queue = new Queue();
   const toward = options.toward;
-  const visit = (fx: number, fy: number, fz: number, from: number): boolean => {
+  /** Keeps where the walker stands as a place, reached from `from` by a move toward (tx, tz), unless its cell and band hold one; true to stop. */
+  const visit = (from: number, tx: number, tz: number): boolean => {
+    const { x: fx, y: fy, z: fz } = walker.feet;
     const k = key(Math.floor(fx / cell), Math.floor(fz / cell), Math.floor(fy / band));
     if (seen.has(k)) return false;
-    const i = out.add(fx, fy, fz, from);
+    const i = out.add(walker, from, tx, tz);
     seen.set(k, i);
     queue.push(i, toward === undefined ? i : toward(fx, fy, fz));
     return options.stop?.(i, fx, fy, fz) === true;
   };
   walker.place(x, y, z, yaw);
-  if (visit(walker.feet.x, walker.feet.y, walker.feet.z, -1)) return out;
+  if (visit(-1, Number.NaN, Number.NaN)) return out;
   while (queue.size > 0) {
     const head = queue.pop();
     const [px, py, pz] = out.at(head);
@@ -206,24 +239,43 @@ export function reach(world: WalkWorld, floorY: number, x: number, y: number, z:
       const tx = (cx + dx + 0.5) * cell;
       const tz = (cz + dz + 0.5) * cell;
       if (!inside(tx, tz) || seen.has(key(cx + dx, cz + dz, iy))) continue;
-      const heading = Math.atan2(-(tx - px), -(tz - pz));
-      walker.place(px, py - PLACE_DROP, pz, heading);
-      walker.velocity.set(-Math.sin(heading) * MOTION.run, 0, -Math.cos(heading) * MOTION.run);
-      let grounded = true;
-      for (let s = 0; s < MOVE_STEPS; s += 1) {
-        const ex = tx - walker.feet.x;
-        const ez = tz - walker.feet.z;
-        if (Math.hypot(ex, ez) < ARRIVED) break;
-        walker.turn(wrap(Math.atan2(-ex, -ez) - walker.yaw), 0);
-        walker.update(MOTION.fixedStep, RUN);
-        if (!walker.onGround) {
-          grounded = false;
-          break;
-        }
-      }
-      const { feet } = walker;
-      if (grounded && inside(feet.x, feet.z) && visit(feet.x, feet.y, feet.z, head)) return out;
+      out.takeUp(walker, head);
+      if (move(walker, tx, tz) && inside(walker.feet.x, walker.feet.z) && visit(head, tx, tz)) return out;
     }
   }
   return out;
+}
+
+/**
+ * Walks the fill's paths from the start to each of `ends` again, apart from its saved states: a fresh walker put down at the start as `reach` put it, each
+ * move made again on from where this walk itself stood (where paths part, each goes on from that same state), toward the cell centre the fill's move
+ * headed for. Returns, for each end, the farthest the walk stood from a place the fill recorded on its path, metres: 0 where the path walks end to end
+ * as the fill found it, and Infinity where the walk left the ground.
+ */
+export function replay(world: WalkWorld, floorY: number, x: number, y: number, z: number, yaw: number, fill: Reach, ends: readonly number[]): number[] {
+  const needed = new Set<number>();
+  for (const end of ends) for (let k = end; k >= 0 && !needed.has(k); k = fill.from[k] ?? -1) needed.add(k);
+  const walker = new Walker(world, floorY);
+  const states = new Map<number, Float64Array>();
+  const off = new Map<number, number>();
+  // A place is reached after the place it was reached from, so in index order every move goes on from a state this walk made.
+  for (const i of [...needed].sort((a, b) => a - b)) {
+    const from = fill.from[i] ?? -1;
+    if (from < 0) {
+      walker.place(x, y, z, yaw);
+    } else {
+      const state = states.get(from);
+      if (state !== undefined) walker.restore(state);
+      if (state === undefined || !move(walker, fill.heading[2 * i] ?? 0, fill.heading[2 * i + 1] ?? 0)) {
+        off.set(i, Number.POSITIVE_INFINITY);
+        continue;
+      }
+    }
+    const [fx, fy, fz] = fill.at(i);
+    off.set(i, Math.max(off.get(from) ?? 0, Math.hypot(walker.feet.x - fx, walker.feet.y - fy, walker.feet.z - fz)));
+    const saved = new Float64Array(WALKER_STATE_SIZE);
+    walker.save(saved);
+    states.set(i, saved);
+  }
+  return ends.map((end) => off.get(end) ?? Number.POSITIVE_INFINITY);
 }

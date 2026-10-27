@@ -94,6 +94,9 @@ export interface WalkInput {
 
 export const NO_INPUT: WalkInput = Object.freeze({ forward: 0, right: 0, run: false });
 
+/** How many numbers `Walker.save` writes: everything that carries a walker from one physics step to the next. */
+export const WALKER_STATE_SIZE = 20;
+
 export class Walker {
   /** The feet: the bottom of the capsule, on its axis. */
   readonly feet = new Vector3();
@@ -187,6 +190,32 @@ export class Walker {
     const head = y + BODY.height;
     for (const p of lines) if (p.heights.some((h) => h > knee && h <= head) || insideBetween(p.heights, y + STANDING, head)) return false;
     return !this.bumpsHead(y);
+  }
+
+  /**
+   * Writes the walker's whole state, WALKER_STATE_SIZE numbers from `offset`: feet, velocity, the feet before the last step, yaw, pitch, the time carried
+   * to the next step, the eye's ease, the jump buffer, whether it stands on the ground and the slope it slides on. `restore` takes it up again exactly there.
+   */
+  save(out: Float64Array, offset = 0): void {
+    const { feet, velocity, before, slide } = this;
+    out.set([feet.x, feet.y, feet.z, velocity.x, velocity.y, velocity.z, before.x, before.y, before.z, this.yaw, this.pitch, this.accumulator], offset);
+    out.set([this.ease, this.easeBefore, this.jumpTimer, this.onGround ? 1 : 0, slide === null ? 0 : 1, slide?.x ?? 0, slide?.y ?? 0, slide?.z ?? 0], offset + 12);
+  }
+
+  /** Puts the walker back exactly in a state `save` wrote: no probe, no placing and no push, as if it had walked on from there without a break. */
+  restore(from: Float64Array, offset = 0): void {
+    const at = (k: number): number => from[offset + k] ?? 0;
+    this.feet.set(at(0), at(1), at(2));
+    this.velocity.set(at(3), at(4), at(5));
+    this.before.set(at(6), at(7), at(8));
+    this.yaw = at(9);
+    this.pitch = at(10);
+    this.accumulator = at(11);
+    this.ease = at(12);
+    this.easeBefore = at(13);
+    this.jumpTimer = at(14);
+    this.onGround = at(15) === 1;
+    this.slide = at(16) === 1 ? { x: at(17), y: at(18), z: at(19) } : null;
   }
 
   /** Turns by `yaw` and `pitch` radians; pitch stays within ±85°. */

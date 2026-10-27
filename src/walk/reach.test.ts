@@ -1,7 +1,10 @@
 /**
  * The flood fill of src/walk/reach.ts on fixtures built from real pieces through the page's own collision path (as src/walk/walker.test.ts builds them):
- * two rooms side by side, 10 m by 8 m, split by a wall on X 0 with a doorway in it, the fill started in the west room.
- * Bound: axis-aligned rooms and doorways; the real model is filled in src/model/reach.test.ts.
+ * two rooms side by side, 10 m by 8 m, split by a wall on X 0 with a doorway in it, the fill started in the west room; and a floor with a groove 0.2 m
+ * wide over a closed floor 2 m lower, the groove centred on a line of cell centres. The walker bridges the groove; at 69cfa11 each move began with
+ * `Walker.place`, which probed down from the centre over the groove and set the walker on the lower floor, and the fill kept places there (work unit 2,
+ * review 12, F40). Every path the fill finds walks again from the start (`replay`).
+ * Bound: axis-aligned rooms, doorways and one groove; the real model is filled in src/model/reach.test.ts.
  */
 import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
@@ -11,9 +14,9 @@ import { Timeline } from '../build/timeline.js';
 import type { Kit, StepDef } from '../build/types.js';
 import { GeometryBvhs } from './bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from './collision.js';
-import { reach } from './reach.js';
+import { reach, replay } from './reach.js';
 import type { Reach, ReachOptions } from './reach.js';
-import { BODY } from './walker.js';
+import { BODY, WALKER_STATE_SIZE, Walker } from './walker.js';
 
 const FLOOR_Y = -3;
 const cube = new BoxGeometry(1, 1, 1);
@@ -49,14 +52,34 @@ function rooms(door: number, east = 0, head = 2.5, fill = false): StepDef {
   };
 }
 
-/** The fill from the west room's middle over the world the page would build from `step`. */
-function fillFrom(step: StepDef, options: ReachOptions = {}): Reach {
+/** The world the page would build from `step`. */
+function worldOf(step: StepDef): CollisionWorld {
   const timeline = new Timeline([step]);
   timeline.evaluate(1);
   const world = new CollisionWorld(new GeometryBvhs());
   world.build(collisionMeshes(timeline.steps, 1));
-  return reach(world, FLOOR_Y, -5, 0, 0, 0, options);
+  return world;
 }
+
+/** The fill from the west room's middle over the world the page would build from `step`. */
+function fillFrom(step: StepDef, options: ReachOptions = {}): Reach {
+  return reach(worldOf(step), FLOOR_Y, -5, 0, 0, 0, options);
+}
+
+/** An upper floor at 0 with a groove 0.2 m wide along Z, centred on X 0.25, a line of cell centres, over a closed floor 2 m lower, walled round. */
+const groove: StepDef = {
+  id: 'groove',
+  chapter: CHAPTERS[0].id,
+  title: 'groove',
+  motion: { kind: 'rise' },
+  build(kit) {
+    block(kit, [-6, -0.2, -3], [0.15, 0, 3]);
+    block(kit, [0.35, -0.2, -3], [6, 0, 3]);
+    block(kit, [-6, -2.2, -3], [6, -2, 3]);
+    for (const z of [-3.3, 3]) block(kit, [-6.3, -2.2, z], [6.3, 3, z + 0.3]);
+    for (const x of [-6.3, 6]) block(kit, [x, -2.2, -3], [x + 0.3, 3, 3]);
+  },
+};
 
 /** How many places lie in the east room, past the wall's east face by more than the walker's radius. */
 const east = (fill: Reach): number => Array.from({ length: fill.count }, (_, i) => fill.at(i)).filter(([x]) => x > 0.15 + BODY.radius).length;
@@ -85,6 +108,46 @@ describe('the reach flood fill', () => {
 
   it('never drops into a room 1 m lower, which a walker could not leave', () => {
     expect(east(fillFrom(rooms(1.2, -1))), 'a 1 m drop').toBe(0);
+  });
+
+  it('walks over a groove it bridges and never onto the closed floor under it', () => {
+    const fill = reach(worldOf(groove), FLOOR_Y, -3, 0, 0, 0);
+    const places = Array.from({ length: fill.count }, (_, i) => fill.at(i));
+    expect(places.filter(([x]) => x > 1).length, 'places past the groove').toBeGreaterThan(100);
+    expect(places.filter(([x]) => x > 0.15 && x < 0.35).length, 'places over the groove, bridged').toBeGreaterThan(0);
+    expect(places.filter(([, y]) => y < -1).map((p) => p.map((c) => c.toFixed(2)).join(', ')), 'places on the closed floor').toEqual([]);
+  });
+
+  it('takes a walker up again from a saved state exactly where it would have walked on, mid-stride and mid-turn', () => {
+    const world = worldOf(rooms(1.2, 0.3));
+    const walk = (walker: Walker, seconds: number): number[] => {
+      const out: number[] = [];
+      for (let k = 0; k < seconds * 120; k += 1) {
+        walker.turn(0.01, 0);
+        walker.update(1 / 120, { forward: 1, right: 0.4, run: true });
+        out.push(...walker.feet.toArray(), ...walker.eye().toArray());
+      }
+      return out;
+    };
+    const first = new Walker(world, FLOOR_Y);
+    first.place(-5, 0, 0, -Math.PI / 2);
+    walk(first, 0.5);
+    const saved = new Float64Array(WALKER_STATE_SIZE);
+    first.save(saved);
+    const again = new Walker(world, FLOOR_Y);
+    again.restore(saved);
+    expect(walk(again, 2), 'feet and eye at every step after the saved one').toEqual(walk(first, 2));
+  });
+
+  it('finds paths that walk again from the start, end to end, and says where a path does not', () => {
+    const world = worldOf(rooms(1.2));
+    const fill = reach(world, FLOOR_Y, -5, 0, 0, 0);
+    const all = Array.from({ length: fill.count }, (_, i) => i);
+    expect(Math.max(...replay(world, FLOOR_Y, -5, 0, 0, 0, fill, all)), 'metres the walk strays from a recorded place').toBe(0);
+    const far = fill.near(9, 3, 1)[0] ?? 0;
+    const moved = fill.path(far)[Math.floor(fill.path(far).length / 2)] ?? 0;
+    fill.feet[3 * moved + 1] = (fill.feet[3 * moved + 1] ?? 0) + 0.5;
+    expect(replay(world, FLOOR_Y, -5, 0, 0, 0, fill, [far])[0], 'a place on its path recorded 0.5 m high').toBeCloseTo(0.5, 6);
   });
 
   it('keeps to where it may go, and stops when asked', () => {
