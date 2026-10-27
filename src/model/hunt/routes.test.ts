@@ -4,10 +4,11 @@
  * 60 frames a second as the page steps it, running, turned each frame toward the next point of the route (routes.ts). R1 runs from the plaza through
  * the central doors into the Great Hall, R2 up the Grand Staircase to the second floor, R3 from the Great Hall through the Egyptian galleries into the
  * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, R5 up the Grand Staircase and through the cross hall's
- * doorway into gallery 600 (work unit 2, M1), each both ways. The walker never leaves the ground (no
+ * doorway into gallery 600 (work unit 2, M1), R6 through the Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court (work unit
+ * 2, M4), each both ways. The walker never leaves the ground (no
  * drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
- * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, and R5 crosses the
- * doorway's passage and the core's east wall on the second floor's level into gallery 600.
+ * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, R5 crosses the
+ * doorway's passage and the core's east wall on the second floor's level into gallery 600, and R6 crosses the passage on the main floor's level.
  * Bound: steering turns the walker directly (the e2e walks steer by real keys and drags, tests/e2e/routes.spec.ts); a stall is less than 5 cm of
  * progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts and ends within
  * one frame's two physics steps is not seen.
@@ -20,10 +21,12 @@ import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import { BODY, NO_INPUT, Walker } from '../../walk/walker.js';
 import { INNER_EAST_Z } from '../core/layout.js';
+import { MORGAN, PARTY_WALL } from '../mmw/dims.js';
+import { ENGELHARD_PASSAGE } from '../mmw/party-walls.js';
 import { ROMAN_COURT } from '../mmw/wings.js';
-import { DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../roche-north/plan.js';
+import { COURT, DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../roche-north/plan.js';
 import { CROSS_HALL_BACK_Z, EXT_NORTH_X, EXT_SOUTH_X, MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
-import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5 } from './routes.js';
+import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6 } from './routes.js';
 import type { Route } from './routes.js';
 import { STAIR_LANDING_Y } from './stair.js';
 
@@ -123,7 +126,7 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
     return made;
   };
 
-  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4), ROUTE_R5, reversed(ROUTE_R5)])('walks $id end to end on the ground and ends on its floor', (route) => {
+  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4), ROUTE_R5, reversed(ROUTE_R5), ROUTE_R6, reversed(ROUTE_R6)])('walks $id end to end on the ground and ends on its floor', (route) => {
     const result = walked(route);
     expect(result.failure).toBeUndefined();
     expect(result.maxRise, `${route.id}: largest step up in a frame, metres`).toBeLessThanOrEqual(BODY.step);
@@ -176,5 +179,14 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
     expect(passage.length, 'samples from the cross hall through the doorway into the gallery').toBeGreaterThan(5);
     expect(heightsOff(passage, SECOND), 'feet off the second floor in the doorway').toEqual([]);
     expect(end.z < CORE_INNER_EAST_Z && end.z > GALLERY_600_MID_Z - 2.5, `in gallery 600 at ${where(end)}`).toBe(true);
+  });
+
+  it('R6 crosses the passage from gallery 374 on the main floor’s level into the Engelhard Court', () => {
+    const { samples, end } = walked(ROUTE_R6);
+    // Through the wall on Z −96.0 and a metre either side of it, between the passage's jambs.
+    const passage = between(samples, MORGAN.z0 - 1, MORGAN.z0 + PARTY_WALL + 1).filter((s) => s.x > ENGELHARD_PASSAGE.a && s.x < ENGELHARD_PASSAGE.b);
+    expect(passage.length, 'samples in the passage').toBeGreaterThan(5);
+    expect(heightsOff(passage, MAIN), 'feet off the main floor in the passage').toEqual([]);
+    expect(end.x > COURT.minX && end.x < COURT.maxX && end.z > COURT.minZ && end.z < COURT.maxZ, `in the court at ${where(end)}`).toBe(true);
   });
 });

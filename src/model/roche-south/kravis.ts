@@ -31,7 +31,8 @@ const Z_IN = Z_WEST + OUTER_WALL;
 
 /** The court: from its limestone south wall to the 1888 front (map gallery 548; the map's edge at X −51.24 is the old front's line). */
 export const COURT_X0 = -61.45;
-const COURT_WALL = 0.8;
+/** The court's limestone south wall's thickness, south from COURT_X0 (the McKim, Mead & White party wall's passage into gallery 549 keeps clear of it). */
+export const COURT_WALL = 0.8;
 /**
  * D: the court's glass roof rests on the 1888 front: both Petrie Court photographs (interior-images.md #33, Benoist 2012, and #35, Haklai 2012) show its
  * north eave on a dark gutter laid on the old front's coping and its south eave level with it on the limestone wall, the ridge in the middle (orthophoto

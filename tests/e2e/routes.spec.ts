@@ -8,7 +8,9 @@
  * a few metres into the cross hall, then turned round and back down to the hall floor. R3: from the Great Hall spawn north through the Egyptian
  * galleries and the seam into the Temple of Dendur hall, along its east and north walkways to beside the platform. R4: from the Great Hall spawn south
  * past the desk, through the seam and the Greek galleries into the Leon Levy and Shelby White Court. R5 (work unit 2, M1): from the Great Hall spawn, as
- * R2, up the Grand Staircase, across the cross hall and through its doorway into gallery 600, then turned round and back out to the cross hall. At the
+ * R2, up the Grand Staircase, across the cross hall and through its doorway into gallery 600, then turned round and back out to the cross hall. R6 (work
+ * unit 2, M4): from the Great Hall spawn north through the Egyptian galleries, then, turned west by drags, along the Arms and Armor galleries and through
+ * the passage from gallery 374 into the Engelhard Court. At the
  * ends of R3 and R4, unthrottled, the walking frame budget is measured walking on and then running back. The walking itself is ./route-walk.ts.
  * Bound: a held key is let go once the eye passes the turn it walks to, early by the walker's coasting distance (src/walk/walker.ts, MOTION); at a
  * corner the walker then comes to rest and, if it coasted on more than 0.25 m (the keys can go up late when the machine is loaded), walks back onto the
@@ -25,10 +27,12 @@ import { expect, test } from '@playwright/test';
 import { MAIN_FLOOR_Y, SECOND_FLOOR_Y } from '../../src/model/frame.js';
 import { INNER_EAST_Z } from '../../src/model/core/layout.js';
 import { CROSS_HALL_BACK_Z, CROSS_HALL_FRONT_Z, EXT_NORTH_X, EXT_SOUTH_X, HALL_WEST_Z, HALL_X, NAVE_MID_Z, SCREEN_Z, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from '../../src/model/hunt/dims.js';
-import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5 } from '../../src/model/hunt/routes.js';
+import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6 } from '../../src/model/hunt/routes.js';
 import { STAIR_LANDING_Y } from '../../src/model/hunt/stair.js';
+import { MORGAN, PARTY_WALL } from '../../src/model/mmw/dims.js';
+import { ENGELHARD_PASSAGE } from '../../src/model/mmw/party-walls.js';
 import { ROMAN_COURT } from '../../src/model/mmw/wings.js';
-import { DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../../src/model/roche-north/plan.js';
+import { COURT, DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../../src/model/roche-north/plan.js';
 import { BODY } from '../../src/walk/walker.js';
 import { expectWalkingBudget, open, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
 import { airborne, between, face, fmt, legs, MINUS_X, MINUS_Z, off, PLUS_X, PLUS_Z, walk, walkFromGreatHall, walking } from './route-walk.js';
@@ -177,6 +181,32 @@ test.describe('walk routes through real input', () => {
       await face(page, Math.PI);
       expectWalkingBudget(await walkingBudget(page, true), 'in the Temple of Dendur hall, at a run');
     }
+  });
+
+  test('R6: from the Great Hall through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court', async ({ page }) => {
+    const started = Date.now();
+    const { start, spawn } = await walkFromGreatHall(page);
+    expect(ROUTE_R6.points[0], 'R6 starts at the Great Hall spawn').toEqual([spawn.feet[0], spawn.feet[2]]);
+    const samples: Sample[] = [start];
+    // Turned north by drags, as R3 is, through the Egyptian galleries to where R6 turns west; turned west there, along the Arms and Armor galleries,
+    // through the passage and into the court, facing the passage as it goes through.
+    await face(page, -Math.PI / 2);
+    await walk(page, 'R6 to the Arms and Armor galleries', legs(ROUTE_R6.points.slice(0, 6), PLUS_X), samples);
+    await face(page, 0);
+    const wall = MORGAN.z0 + PARTY_WALL;
+    const end = await walk(page, 'R6 into the Engelhard Court', legs(ROUTE_R6.points.slice(5), MINUS_Z), samples, [
+      { name: 'r6-passage', when: (eye) => eye[0] > ENGELHARD_PASSAGE.a - 2 && eye[2] <= wall + 2.5 },
+    ]);
+    await page.screenshot({ path: test.info().outputPath('r6-arrival.png') });
+    const report = `R6 in ${((Date.now() - started) / 1000).toFixed(1)} s, ending with the eye at ${fmt(end.eye)}`;
+    console.log(report);
+    expect(airborne(samples), 'eyes where the walker was off the ground').toEqual([]);
+    const passage = between(samples, MORGAN.z0 - 0.5, wall + 0.5).filter((s) => s.eye[0] > ENGELHARD_PASSAGE.a && s.eye[0] < ENGELHARD_PASSAGE.b);
+    expect(passage.length, 'samples in the passage').toBeGreaterThan(0);
+    expect(off(passage, MAIN_FLOOR_Y + EYE, 0.05), 'eyes off the main floor in the passage').toEqual([]);
+    expect(end.eye[0] > COURT.minX && end.eye[0] < COURT.maxX && end.eye[2] > COURT.minZ && end.eye[2] < COURT.maxZ, `${report}: inside the court`).toBe(true);
+    expect(Math.abs(end.eye[1] - (ROUTE_R6.endY + EYE)), `${report}: on the court's floor`).toBeLessThan(0.03);
+    expect(end.onGround, report).toBe(true);
   });
 
   test('R4: from the Great Hall past the desk through the Greek galleries into the Leon Levy and Shelby White Court', async ({ page }) => {

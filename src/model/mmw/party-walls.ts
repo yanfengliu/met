@@ -11,10 +11,11 @@ import { wall } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { END_PARAPET_Y, KRAVIS_LINE_TOP_Y, LEVEL_1, LEVEL_2_NORTH, LINK_TIER, MORGAN_ROOF_Y, PARTY_WALL, SLAB } from './dims.js';
 import { WALL_FOOT_Y } from './facade-parts.js';
+import { COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
 import { addBox, placed } from './shapes.js';
 
 /** A passage through a party wall: from `a` to `b` along its line (world X or Z), between heights `y0` and `y1`. */
-interface Passage {
+export interface Passage {
   readonly a: number;
   readonly b: number;
   readonly y0: number;
@@ -43,10 +44,31 @@ interface Raise {
 /** The Morgan wing's walls stop a parapet above its lower roof. */
 const MORGAN_PARAPET_Y = MORGAN_ROOF_Y + 1.0;
 
+/** E: a doorway's height through a party wall, as the Kravis Wing's main-floor doorways (roche-south/kravis.ts); the map gives none. */
+const DOORWAY_HEIGHT = 4.0;
+
+/**
+ * The way from Arms and Armor into the Engelhard Court (work unit 2, M4): the map's corridor X 72.56..74.86 from gallery 374 to the court's east walk, with
+ * a door at each end, through this wall on Z −96.0 (interior.md, The Charles Engelhard Court). Without it nothing on the main floor reached the American Wing.
+ * Like the Dendur east walk's, the opening stands in the wall from its own campaign.
+ */
+export const ENGELHARD_PASSAGE: Passage = { a: 72.56, b: 74.86, y0: LEVEL_1, y1: LEVEL_1 + DOORWAY_HEIGHT };
+
+/** D: the map's corridor from Exhibition Gallery 199 into gallery 549 is X −63.80..−62.03, 1.77 m wide (interior.md, Other skylit volumes). */
+const PETRIE_CORRIDOR_WIDTH = 1.77;
+
+/**
+ * The way from the Greek and Roman galleries into the Petrie Court's wing (work unit 2, M4): the map's corridor from Exhibition Gallery 199 to the east end
+ * of gallery 549, whose doors open into the court (interior.md, Other skylit volumes). The map's corridor lies 4.2 m east of this block line, where its 549
+ * and court run on to; here it opens through this wall on Z −69.0, as wide as on the map, its north side on the south face of the court's limestone wall
+ * (roche-south/kravis.ts; 0.22 m south of the map's), so that wall is not cut. It does not need Weston's 1888 door, which M2b makes a door.
+ */
+export const PETRIE_PASSAGE: Passage = { a: COURT_X0 - COURT_WALL - PETRIE_CORRIDOR_WIDTH, b: COURT_X0 - COURT_WALL, y0: LEVEL_1, y1: LEVEL_1 + DOORWAY_HEIGHT };
+
 const SACKLER_X118: Party = { x0: 118.0, z0: -96.0, x1: 118.0, z1: -41.3, out: '+x', top: MORGAN_PARAPET_Y };
-const AMERICAN_Z96: Party = { x0: 49.4, z0: -96.0, x1: 118.0, z1: -96.0, out: '-z', top: MORGAN_PARAPET_Y };
+const AMERICAN_Z96: Party = { x0: 49.4, z0: -96.0, x1: 118.0, z1: -96.0, out: '-z', top: MORGAN_PARAPET_Y, passages: [ENGELHARD_PASSAGE] };
 const ROCKEFELLER_X88: Party = { x0: -88.1, z0: -69.0, x1: -88.1, z1: -38.5, out: '-x', top: LINK_TIER.top };
-const KRAVIS_Z69: Party = { x0: -88.1, z0: -69.0, x1: -49.7, z1: -69.0, out: '-z', top: LINK_TIER.top };
+const KRAVIS_Z69: Party = { x0: -88.1, z0: -69.0, x1: -49.7, z1: -69.0, out: '-z', top: LINK_TIER.top, passages: [PETRIE_PASSAGE] };
 
 /**
  * The Temple of Dendur hall runs on past this block line, to Z −35.7 (exterior.md [K3], the roche-north modeller): on the main floor its east walkway lies inside

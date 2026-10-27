@@ -10,8 +10,11 @@
  * Old Kingdom gallery (103), on through 104 and 132 to 128, the lobby and 130, then into the Temple of Dendur hall at its south-east corner and along its
  * east walkway and the north walkway by the glass, to beside the platform. R4: south past the desk, through gallery 150 and the Greek galleries (153,
  * 160) into the Leon Levy and Shelby White Court, east of its basin. R5 (work unit 2, M1): from where R2 starts, up the Grand Staircase, across the
- * cross hall and through its doorway on the axis into gallery 600 (interior.md, The Grand Staircase), to the gallery's middle.
+ * cross hall and through its doorway on the axis into gallery 600 (interior.md, The Grand Staircase), to the gallery's middle. R6 (work unit 2, M4): from
+ * the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Charles Engelhard Court (interior.md,
+ * The Charles Engelhard Court).
  */
+import { ENGELHARD_PASSAGE } from '../mmw/party-walls.js';
 import { PAVING_GAP, walkWestY } from '../site/ground.js';
 import { HALL_X, MAIN, NAVE_MID_Z, SECOND } from './dims.js';
 
@@ -79,6 +82,25 @@ export const ROUTE_R4: Route = {
   startY: MAIN,
   // The court's green marble field lies 4 cm over the main floor (src/model/mmw/greek-court.ts).
   endY: MAIN + 0.04,
+};
+
+/** Where R6 goes through the wall into the Engelhard Court: the middle of the passage (src/model/mmw/party-walls.ts). */
+const ENGELHARD_PASSAGE_X = (ENGELHARD_PASSAGE.a + ENGELHARD_PASSAGE.b) / 2;
+
+/**
+ * R6 (work unit 2, M4), into the Engelhard Court. Its turns, each in the middle of a map door it passes or of the line the walker has clear: R3's way
+ * north to X 38.5 and east to Z −6.335 in gallery 101; north along it over the north seam to the door from gallery 103 into 102 (X 50.18, on Z −10.94);
+ * west down 102 past the end of its north wall (Z −24.75); north to X 54.41, then west along it by the south side of the Grace Rainey Rogers Auditorium,
+ * through galleries 377 and 370 at the Arms and Armor Court's south end and through 370's door into 373 (on Z −86.0); north along 373 and 374 to the
+ * passage into the court; west through it into the court's east walk, south along it to X 72.0, and west between two of its columns (X 70.81 and 76.62)
+ * into the court, 1.5 m off a lamp standard (X 70.5) and clear of French's relief from the Milmore Memorial north of the line
+ * (src/model/collection/spaces-a.ts).
+ */
+export const ROUTE_R6: Route = {
+  id: 'R6',
+  points: [HALL_SPAWN, [38.5, NAVE_MID_Z], [38.5, -6.335], [50.18, -6.335], [50.18, -24.75], [54.41, -24.75], [54.41, -90], [ENGELHARD_PASSAGE_X, -90], [ENGELHARD_PASSAGE_X, -100], [72, -100], [72, -110]],
+  startY: MAIN,
+  endY: MAIN,
 };
 
 /** The same route walked the other way. */

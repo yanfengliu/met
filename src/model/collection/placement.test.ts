@@ -8,9 +8,10 @@
  * - a standing artwork's floor, under its footprint's middle and corners, is the level its placement names, within 12 mm (no float, no sinking);
  * - a hung one has a wall behind its back, within 4 cm, at its middle and corners;
  * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides);
- * - it is 1 m clear of the walking routes R1–R5 (src/model/hunt/routes.ts; R5 into gallery 600) beyond the walker's radius, of the Weston door's
- *   passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into gallery 600 (hunt/stair.ts),
- *   of the Dendur gate's threshold and rail (roche-north/plan.ts) and of the Dendur pool;
+ * - it is 1 m clear of the walking routes R1–R6 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court) beyond the walker's
+ *   radius, of the Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into
+ *   gallery 600 (hunt/stair.ts), of the Dendur gate's threshold and rail (roche-north/plan.ts), of the Dendur pool, and of the passages into the
+ *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts) and 6 m either side of their wall, beyond the walker's radius;
  * - each drawn object finds its own artwork in its material's table (material.ts): its entry is where the object stands, every other 5 cm or more away;
  * - the placeholders take at most 110 meshes and 600,000 triangles of the model's budgets.
  * Bound: lines 0.1 m apart miss a solid thinner than that between them; a footprint is its pieces' boxes, not their curves; routes and door swings are
@@ -34,7 +35,9 @@ import { WESTON_DOOR } from '../core/weston-facade.js';
 import { GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING, MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
 import { ENTRANCE_DOOR_Z, OPENINGS } from '../hunt/arches.js';
 import { CROSS_HALL_BACK_Z } from '../hunt/dims.js';
-import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5 } from '../hunt/routes.js';
+import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6 } from '../hunt/routes.js';
+import { MORGAN, PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
+import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import type { Route } from '../hunt/routes.js';
 import { GATE_RAIL, GATE_THRESHOLD, PLATFORM_Y, POOL } from '../roche-north/plan.js';
 import { artTableOf, giltMaterial, plinthMaterial, vitrineGlass } from './material.js';
@@ -50,7 +53,7 @@ const CLEARANCE = 1;
 /** The placeholders' share of the model's budgets (docs/design/spec.md, Budgets; plan 2, review 0, F9). */
 const MAX_MESHES = 110;
 const MAX_TRIANGLES = 600_000;
-const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5];
+const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6];
 
 /** A plan rectangle on a floor level, kept clear by `margin`: a door's swing, a passage through a door. */
 interface Zone {
@@ -76,6 +79,9 @@ const ZONES: readonly Zone[] = [
   { name: 'Dendur pool', y: PLATFORM_Y - 0.5, min: [POOL.minX, POOL.basinMinZ], max: [POOL.maxX, SACKLER_MAX_Z], margin: CLEARANCE },
   { name: 'Dendur pool, south arm', y: PLATFORM_Y - 0.5, min: [POOL.minX, POOL.armMinZ], max: [POOL.armSouthMaxX, POOL.basinMinZ], margin: CLEARANCE },
   { name: 'Dendur pool, north arm', y: PLATFORM_Y - 0.5, min: [POOL.armNorthMinX, POOL.armMinZ], max: [POOL.maxX, POOL.basinMinZ], margin: CLEARANCE },
+  // The passages through the party walls on Z −96.0 (into the Engelhard Court) and Z −69.0 (into the Petrie Court's wing), 6 m out each side, as Weston's.
+  { name: 'Engelhard Court passage', y: MAIN_FLOOR_Y, min: [ENGELHARD_PASSAGE.a, MORGAN.z0 - 6], max: [ENGELHARD_PASSAGE.b, MORGAN.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
+  { name: 'Petrie Court passage', y: MAIN_FLOOR_Y, min: [PETRIE_PASSAGE.a, SOUTH_LINK.z0 - 6], max: [PETRIE_PASSAGE.b, SOUTH_LINK.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
 ];
 
 /** One piece of an artwork as its step's mesh draws it at t = N. */
