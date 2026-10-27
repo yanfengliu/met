@@ -11,6 +11,8 @@ import { SEQUENCE } from './build/sequence.js';
 import { Timeline } from './build/timeline.js';
 import type { BuiltStep } from './build/timeline.js';
 import { CATALOGUE } from './model/collection/catalogue.js';
+import { DOORS } from './model/doors.js';
+import { doorLeavesOf } from './model/lib/window.js';
 import { cardContent } from './ui/art-card.js';
 import type { ArtCardContent } from './ui/art-card.js';
 import { installStyles } from './ui/styles.js';
@@ -21,6 +23,8 @@ import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
 import { ARTWORK_QUERY, ArtLabel, artworkInstances } from './viewer/art-label.js';
 import { bindClick } from './viewer/click.js';
+import { DoorLayer } from './viewer/doors.js';
+import type { DoorDrawn } from './viewer/doors.js';
 import { publishFacts, snapshot } from './viewer/facts.js';
 import { FloorMode } from './viewer/floor-mode.js';
 import { FloorView } from './viewer/floor-view.js';
@@ -93,12 +97,18 @@ function boot(): void {
   // others it draws the pieces the cut passes through (src/viewer/cap-pass.ts).
   const meshes = timeline.steps.flatMap((s) => s.meshes);
   const capped = meshes.filter((m) => Array.isArray(m.material) || cappedBySection(m.material));
+  // The door layer (src/viewer/doors.ts): once a door's step is complete, stand-ins turned about their hinges draw its leaves in place of the timeline's
+  // closed ones, which it hides by their layer mask; the cap pass and the picker take the stand-ins too.
+  const doors = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, query.doors ?? 'closed');
+  capped.push(...doors.meshes.filter((m) => !Array.isArray(m.material) && cappedBySection(m.material)));
   const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capped });
+  viewer.scene.add(doors.root);
   const rig = viewer.rig;
   // One BVH per geometry serves the zoom's pick, the hit query and the walk's collision (src/walk/bvh-cache.ts).
   const bvhs = new GeometryBvhs();
   const picker = new ModelPicker(meshes, bvhs, viewer.env.groundY, viewer.cut, rig.camera.layers, (mesh, instance) => timeline.tagOf(mesh, instance));
   rig.pick = (ray) => picker.distance(ray);
+  picker.register(doors.meshes, (mesh, instance) => doors.tagOf(mesh, instance));
   // The walking eye's look target runs the hit query (src/walk/look.ts); an orbit-view pointer can run the same query on its own ray.
   const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query) }, (message) => { console.warn(message); });
   // The artworks' cards (docs/design/spec.md, Collection: Labels): the look target's artwork while walking, the one a click meets in the orbit view.
@@ -122,6 +132,9 @@ function boot(): void {
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') artLabel.dismiss();
   });
+  /** The door the walking eye looks at within reach, as the look target last changed (`onLookTarget`), for the prompt under the crosshair. */
+  let doorInView: string | null = null;
+  walk.onLookTarget((target) => { doorInView = target?.kind === 'door' ? target.id : null; });
   const presetPose = (id: string): CameraPose | null => {
     const preset = presetById(id);
     return preset === undefined ? null : resolvePreset(preset, timeline.bounds, rig.camera.aspect);
@@ -171,8 +184,17 @@ function boot(): void {
     walkStatus: walkStatus(),
     walkHint: walk.hint,
     walkTarget: walk.lastTarget?.kind ?? null,
+    walkPrompt: doorInView === null ? null : doors.prompt(doorInView),
     floor: floors.id,
     artCard: shownArt,
+  });
+  /** E, or a click while the pointer is locked: opens or closes the door the walking eye looks at now, away from the walker (Doors). */
+  const useDoor = (): void => {
+    const target = walk.target();
+    if (target?.kind === 'door' && doors.use(target.id, rig.camera.position)) needsRender = true;
+  };
+  viewer.renderer.domElement.addEventListener('pointerdown', (event) => {
+    if (walk.active && walk.pointerLocked && event.button === 0) useDoor();
   });
   const act = (action: () => void) => (): void => {
     action();
@@ -279,6 +301,7 @@ function boot(): void {
       },
       walkFrom: (spawn: string) => { enterWalk(spawn); },
       jump: () => { walk.jump(); },
+      act: () => { useDoor(); },
       toggleBar: () => { barOpen = !barOpen; },
     },
     state(),
@@ -306,12 +329,16 @@ function boot(): void {
     if (floors.show(floorAtLoad.floor)) cutChanged();
     if (query.cam === null && namedView === null) frameFloor();
   }
+  // The doors stand at their state before the walker is placed, at once: so with shot=1 from the first frame (Doors). Marked for the order's check.
+  doors.sync(player.t, 0, true);
+  performance.mark('met:doors-set');
   if (query.walk) {
     const known = query.spawn === null || spawnById(query.spawn) !== undefined;
     if (!known) warnings.push(`Query parameter spawn="${query.spawn}" names no walk spawn; use one of ${SPAWNS.map((sp) => sp.id).join(', ')}. The walk starts at ${DEFAULT_SPAWN}.`);
     enterWalk(known ? query.spawn : null);
     // Capture mode shows the walker's view from its first frame.
     if (query.shot) walk.prepareNow(player.t);
+    if (query.shot) performance.mark('met:walk-placed');
   }
   rig.onUserMove = () => {
     follow = false;
@@ -334,8 +361,9 @@ function boot(): void {
   resized.observe(ui.bar);
 
   let frames = 0;
-  /** The camera position the last drawn frame was rendered from (`perf.lastDrawn`). */
+  /** The camera position the last drawn frame was rendered from, and its doors as the meshes drew them (`perf.lastDrawn`). */
   const drawnFrom = new Vector3();
+  let drawnDoors: readonly DoorDrawn[] = [];
   let readyMs: number | null = null;
   let last = performance.now();
   /** The pose the follow camera headed for in the last frame, or null when it is not under way. */
@@ -348,6 +376,12 @@ function boot(): void {
     if (changed) {
       changed = false;
       if (timeline.evaluate(player.t)) viewer.markShadowsDirty();
+      needsRender = true;
+    }
+    // The doors follow the timeline and swing (Doors): each swap and every frame of a swing draws again, and redraws the shadows when what moved casts one.
+    const doorChange = doors.sync(player.t, query.shot ? 0 : seconds, query.shot);
+    if (doorChange !== 'none') {
+      if (doorChange === 'shadows') viewer.markShadowsDirty();
       needsRender = true;
     }
     if (walk.active) {
@@ -380,6 +414,7 @@ function boot(): void {
       viewer.render();
       frames += 1;
       drawnFrom.copy(rig.camera.position);
+      drawnDoors = doors.drawn();
       needsRender = false;
     }
     walk.noteFrame(performance.now() - work);
@@ -425,11 +460,12 @@ function boot(): void {
     },
     get walk() { return snapshot(walk.facts()); },
     get label() { return shownArt === null ? null : snapshot({ id: shownArt.id, title: shownArt.title }); },
+    get doors() { return snapshot(doors.facts()); },
     perf: Object.freeze({
       buildMs,
       get readyMs() { return readyMs; },
       get framesRendered() { return frames; },
-      get lastDrawn() { return snapshot({ frame: frames, camera: vec(drawnFrom) }); },
+      get lastDrawn() { return snapshot({ frame: frames, camera: vec(drawnFrom), doors: drawnDoors }); },
     }),
     benchmark: (count: number) => viewer.benchmark(count),
   });

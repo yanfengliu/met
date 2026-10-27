@@ -23,7 +23,19 @@ export interface Query {
   readonly spawn: string | null;
   /** `all` or a floor id (src/viewer/floors.ts); resolved by `startFloor`, which warns about one that names no floor. */
   readonly floor: string | null;
+  /** `doors=open` or `doors=closed`: the state every unlocked door takes when its step completes (src/viewer/doors.ts); null when absent or malformed. */
+  readonly doors: 'open' | 'closed' | null;
   readonly warnings: readonly string[];
+}
+
+/** `doors=`: open or closed, else a warning naming the value and what is accepted. */
+function doorState(params: URLSearchParams, warnings: string[]): 'open' | 'closed' | null {
+  const value = params.get('doors');
+  if (value === null) return null;
+  const state = value.trim().toLowerCase();
+  if (state === 'open' || state === 'closed') return state;
+  warnings.push(`Query parameter doors="${value}" is not a door state; use doors=open or doors=closed. It is ignored.`);
+  return null;
 }
 
 function flag(params: URLSearchParams, name: string, warnings: string[]): boolean | null {
@@ -76,6 +88,7 @@ export function parseQuery(search: string): Query {
     walk: flag(params, 'walk', warnings) === true,
     spawn: text('spawn'),
     floor: text('floor'),
+    doors: doorState(params, warnings),
     warnings,
   };
 }

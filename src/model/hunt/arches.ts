@@ -7,8 +7,10 @@
 import * as THREE from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
+import { doorTag } from '../doors.js';
 import { palette } from '../palette.js';
-import { archivolt, barrelVault, columnParts, MeshBuilder, moulding, surround, windowUnit } from '../lib/index.js';
+import { PLINTH_WIDTH } from '../lib/column.js';
+import { archivolt, barrelVault, columnParts, doorUnit, MeshBuilder, moulding, surround, windowUnit } from '../lib/index.js';
 import {
   ARCH_CROWN_Y,
   ARCH_INNER_SPAN,
@@ -49,6 +51,26 @@ export const OPENINGS: readonly (readonly [number, number])[] = [
   [-SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2, SCREEN_COLUMN_X - SCREEN_COLUMN_D / 2],
   [SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2, HALF - SCREEN_PILASTER],
 ];
+/** The doors of the central arch's three openings, from −X (src/model/doors.ts). */
+const ENTRANCE_DOORS: readonly string[] = ['hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-north'];
+/** Half the side of the screen columns' plinths (1.5 D square, src/model/lib/column.ts). */
+const PLINTH_HALF = (PLINTH_WIDTH * SCREEN_COLUMN_D) / 2;
+/** The gap the entrance's doors keep from the columns' plinths, and their depth (frame, bars and the bronze beside them), metres. */
+const DOOR_CLEAR = 0.004;
+const DOOR_DEPTH = 0.14;
+/**
+ * The entrance's doors stand behind the screen's columns, as at the building: S10 shows each opening's bronze frame in a stone reveal behind its column,
+ * and S8 bronze beside the shafts' feet and stone beside their tapering tops. Each door's front face is 4 mm behind the columns' plinths and each door
+ * 4 mm clear of them across, so no leaf meets a plinth however it swings (work unit 2, review 8, F31); bronze fills each opening on either side of its
+ * door, piers behind the columns and the pilasters' backs close the screen down to the doors, and a lintel spans their heads.
+ */
+export const ENTRANCE_DOOR_Z = SCREEN_Z - PLINTH_HALF - DOOR_CLEAR;
+export const ENTRANCE_DOOR_WIDTH = 2 * (SCREEN_COLUMN_X - PLINTH_HALF) - 2 * DOOR_CLEAR;
+/**
+ * The entrance doors' transom light, metres from its bar to the head: S8 (Haklai 2012, at full size) shows each opening's leaves up to a transom bar at
+ * 119 of its 219 px (54%), a single fixed pane above; of the model's 4.79 m opening that leaves the leaves 2.60 m with the frame's sill.
+ */
+const ENTRANCE_TRANSOM = 2.1;
 /** Windows in the side arches stand on a solid base; the central arch has doors to the floor. */
 const WINDOW_SILL_Y = MAIN + 1.1;
 const SCREEN_D = 0.5;
@@ -119,6 +141,19 @@ function screen(kit: Kit, x: number, doors: boolean, order: number): void {
     kit.add(ionic.capital, palette.limestone, m, order);
   }
   if (!doors) for (const [a, b] of OPENINGS) box(kit, palette.limestone, [x + a, MAIN, z0], [x + b, WINDOW_SILL_Y, z1], order);
+  if (doors) {
+    // Down to the doors' back face, behind the screen: the pilasters' backs, a pier behind each column, and a lintel over the doors' heads.
+    const back = ENTRANCE_DOOR_Z - DOOR_DEPTH;
+    for (const s of [-1, 1]) {
+      const xa = x + s * HALF;
+      const xb = x + s * (HALF - SCREEN_PILASTER);
+      box(kit, palette.limestone, [Math.min(xa, xb), MAIN, back], [Math.max(xa, xb), SCREEN_HEAD_Y, z0], order);
+      const pa = x + s * (SCREEN_COLUMN_X - SCREEN_COLUMN_D / 2);
+      const pb = x + s * (SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2);
+      box(kit, palette.limestone, [Math.min(pa, pb), MAIN, back], [Math.max(pa, pb), SCREEN_HEAD_Y, SCREEN_Z - SCREEN_COLUMN_D / 2], order);
+    }
+    box(kit, palette.limestone, [x - HALF, SCREEN_HEAD_Y, back], [x + HALF, SCREEN_HEAD_Y + 0.5, z0 - 0.05], order);
+  }
   // Door entablature (architrave, Greek-key frieze, cornice), the banner panel, the transom.
   box(kit, palette.limestone, [x - HALF, SCREEN_HEAD_Y, z0 - 0.05], [x + HALF, SCREEN_HEAD_Y + 0.5, z1 + 0.05], order);
   box(kit, palette.limestoneDark, [x - HALF, SCREEN_HEAD_Y + 0.5, z0], [x + HALF, SCREEN_ENTABLATURE_TOP_Y - 0.45, z1 + 0.02], order);
@@ -194,15 +229,33 @@ export const archSteps: readonly StepDef[] = [
         kit.add(lunette.frame, palette.metalDark, at(x, TRANSOM_TOP_Y - 0.25, SCREEN_Z - 0.05));
         kit.add(lunette.glass, palette.glassDark, at(x, TRANSOM_TOP_Y - 0.25, SCREEN_Z - 0.05));
         kit.add(grille, palette.metalDark, at(x, g.y, SCREEN_Z + 0.1));
-        for (const [a, b] of OPENINGS) {
+        OPENINGS.forEach(([a, b], i) => {
           const width = b - a;
           const bottom = doors ? MAIN : WINDOW_SILL_Y;
-          const unit = glazed({ width, height: SCREEN_HEAD_Y - bottom, cols: 2, rows: doors ? 3 : 4, frame: 0.09, bar: 0.05, depth: 0.14 });
+          if (doors) {
+            // The entrance's doors (src/model/doors.ts): in a bronze frame, a pair of glazed leaves, one tall pane each in a bronze frame, which open, under
+            // a transom bar at 54% of the opening and a fixed transom light (S8, Haklai 2012, at full size), behind the columns (ENTRANCE_DOOR_Z) with
+            // bronze filling the opening either side. Until the walk's collision follows the leaves (M2b) their bronze and glass are passable copies of
+            // the palette's, as the fixed glazing before them was; the leaves' bronze casts no shadow, so their swing needs no shadow pass
+            // (hunt.doorLeafBronze).
+            const cx = x + (a + b) / 2;
+            const m = at(cx, bottom, ENTRANCE_DOOR_Z);
+            const door = doorUnit({ width: ENTRANCE_DOOR_WIDTH, height: SCREEN_HEAD_Y - bottom, leaves: 2, glazed: true, lights: 1, transom: ENTRANCE_TRANSOM, frame: 0.09, bar: 0.09, depth: DOOR_DEPTH });
+            const tag = doorTag(ENTRANCE_DOORS[i] ?? '');
+            kit.add(door.frame, hunt.doorBronze, m);
+            if (door.glass !== undefined) kit.add(door.glass, hunt.doorGlass, m);
+            kit.addTagged(door.leaf, hunt.doorLeafBronze, m, tag);
+            if (door.leafGlass !== undefined) kit.addTagged(door.leafGlass, hunt.doorGlass, m, tag);
+            for (const [inner, outer] of [[cx - ENTRANCE_DOOR_WIDTH / 2, x + a], [cx + ENTRANCE_DOOR_WIDTH / 2, x + b]] as const) {
+              box(kit, hunt.doorBronze, [Math.min(inner, outer), bottom, ENTRANCE_DOOR_Z - DOOR_DEPTH], [Math.max(inner, outer), SCREEN_HEAD_Y, ENTRANCE_DOOR_Z]);
+            }
+            return;
+          }
           const m = at(x + (a + b) / 2, bottom, SCREEN_Z + 0.07);
-          // The doors stand open to a walker in the walk mode (passable copies of the same bronze and glass); the windows stay solid.
-          kit.add(unit.metal, doors ? hunt.doorBronze : palette.bronze, m);
-          kit.add(unit.glass, doors ? hunt.doorGlass : palette.glassDark, m);
-        }
+          const unit = glazed({ width, height: SCREEN_HEAD_Y - bottom, cols: 2, rows: 4, frame: 0.09, bar: 0.05, depth: 0.14 });
+          kit.add(unit.metal, palette.bronze, m);
+          kit.add(unit.glass, palette.glassDark, m);
+        });
       }
       // The wings: two tall pedimented windows over two ground-floor windows each (S7 at the pavilion's ends).
       const tall = glazed({ width: EXT_WINDOW.width, height: EXT_WINDOW.height, cols: 2, rows: 4, frame: 0.09, bar: 0.04 });

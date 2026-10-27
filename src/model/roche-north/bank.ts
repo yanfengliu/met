@@ -13,6 +13,7 @@ import type { BufferGeometry } from 'three';
 
 import { corniceRun, doorUnit, pilaster, stairFlight, stringCourseProfile, sweep, wall, windowUnit } from '../lib/index.js';
 import type { Kit } from '../../build/types.js';
+import { doorTag } from '../doors.js';
 import { MAIN_FLOOR_Y } from '../frame.js';
 import { palette } from '../palette.js';
 import { areaMaterials } from './materials.js';
@@ -167,7 +168,8 @@ export function addBankFacade(kit: Kit): void {
   kit.add(merge('rn-bank-ground', groundStone), areaMaterials.bankMarble, frame.clone(), 0);
   kit.add(merge('rn-bank-low-metal', () => lowMetal), areaMaterials.whiteSteel, frame.clone(), 0);
   kit.add(merge('rn-bank-low-glass', () => lowGlass), palette.glassDark, frame.clone(), 0);
-  kit.add(DOOR_UNIT().leaf, palette.wood, frame.clone().multiply(at(0, DOOR.sill, -0.35)), 0);
+  // The bank's door is locked (src/model/doors.ts): its leaves stay shut, and solid.
+  kit.addTagged(DOOR_UNIT().leaf, palette.wood, frame.clone().multiply(at(0, DOOR.sill, -0.35)), doorTag('bank'), 0);
   kit.add(merge('rn-bank-upper', upperStone), areaMaterials.bankMarble, frame.clone(), 1);
   kit.add(merge('rn-bank-high-metal', () => highMetal), areaMaterials.whiteSteel, frame.clone(), 1);
   kit.add(merge('rn-bank-high-glass', () => highGlass), palette.glassDark, frame.clone(), 1);

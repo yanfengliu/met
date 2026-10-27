@@ -1,14 +1,15 @@
 /**
  * Window parts in the sequence (docs/design/spec.md, Build-step API, Composite pieces): wherever any role of a part from src/model/lib/window.ts
- * (a window's frame, bars and glass; a door's frame, leaf and glass) reaches the sequence, every other role does too, in the same step, at the same
- * world matrix and with the same arrival key (so they arrive together), added by `kit.add` itself or merged into a geometry that is.
+ * (a window's frame, bars and glass; a door's frame, closed leaves, leaf glass and fanlight glass, and each of its leaves apart, panel and glass) reaches
+ * the sequence, every other role does too, in the same step, at the same world matrix and with the same arrival key (so they arrive together), added by
+ * `kit.add` or `kit.addTagged` itself or merged into a geometry that is. A door's leaves apart reach it through its closed leaves, which append them.
  * Merges are followed through `MeshBuilder.append`, which every merge under src/model uses; parts and merges are recorded by wrapping `windowUnit`,
  * `doorUnit` and `MeshBuilder` before any model module loads. Arrival keys are computed as src/build/timeline.ts computes them, with staggerKeys.
  * Bound: a part none of whose roles reaches the sequence is not in the model and is not checked; a role with no triangles needs no placement;
  * matrices compare to 0.1 mm; a merge made other than through `MeshBuilder.append` is not followed.
  */
-import { Box3, Vector3 } from 'three';
-import type { BufferGeometry, Matrix4 } from 'three';
+import { Box3, BufferGeometry, Vector3 } from 'three';
+import type { Matrix4 } from 'three';
 import { describe, expect, it, vi } from 'vitest';
 
 import type * as BuilderModule from '../model/lib/builder.js';
@@ -126,6 +127,16 @@ const signature = (p: Placement): string => `${p.step} key ${String(p.key)} at $
 
 const triangles = (g: BufferGeometry): number => (g.getIndex()?.count ?? g.getAttribute('position').count) / 3;
 
+/**
+ * Every role of a part, by name: its geometries, and those of its nested parts (a door's `leaves[k].panel` and `leaves[k].glass`, each leaf apart, which
+ * the door's `leaf` and `leafGlass` append), so each leaf is checked like the frame. Hinges and swings are numbers, no role.
+ */
+function rolesOf(value: unknown, name = ''): (readonly [string, BufferGeometry])[] {
+  if (value instanceof BufferGeometry) return [[name, value]];
+  if (typeof value !== 'object' || value === null) return [];
+  return Object.entries(value).flatMap(([key, inner]) => rolesOf(inner, name === '' ? key : `${name}.${key}`));
+}
+
 describe('window parts', () => {
   it('place every role of a window or door wherever another role of it is placed', () => {
     const direct = placements();
@@ -136,7 +147,7 @@ describe('window parts', () => {
     const problems: string[] = [];
     let checked = 0;
     for (const [parts, { name, params }] of record.parts) {
-      const roles = Object.entries(parts as Record<string, BufferGeometry>).filter(([, g]) => triangles(g) > 0);
+      const roles = rolesOf(parts).filter(([, g]) => triangles(g) > 0);
       const placed = roles.map(([role, g]) => [role, reach(g, direct, into)] as const);
       const signed = placed.map(([role, list]) => [role, list.map(signature).sort()] as const);
       const [widestRole, reference] = signed.reduce((best, entry) => (entry[1].length > best[1].length ? entry : best), signed[0] ?? ['', []]);

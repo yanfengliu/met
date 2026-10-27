@@ -6,6 +6,7 @@
 import type { PlayerMode, Speed } from '../build/player.js';
 import type { CameraFocus, Vec3 } from '../build/types.js';
 import type { WalkFacts } from '../walk/walk-mode.js';
+import type { DoorDrawn, DoorFacts } from './doors.js';
 
 /** A detached copy of plain data `value`, frozen all the way down: no part of it is shared with the original. */
 export function snapshot<T>(value: T): T {
@@ -69,6 +70,8 @@ export interface MetFacts {
    * title; null when no card shows.
    */
   readonly label: { readonly id: string; readonly title: string } | null;
+  /** Every door the timeline holds, in step order (src/viewer/doors.ts, `DoorFacts`): its id, state, angle in degrees, locked flag and whether it is built. */
+  readonly doors: readonly DoorFacts[];
   readonly perf: {
     /**
      * Milliseconds of the timeline build: every step's `build` and its meshes (performance marks met:build-start, met:build-end).
@@ -78,8 +81,11 @@ export interface MetFacts {
     /** Milliseconds from navigation start to `__shotReady` (mark met:ready), or null before: module loading, the timeline build, renderer start and the first frames. */
     readonly readyMs: number | null;
     readonly framesRendered: number;
-    /** The last frame drawn: its number (`framesRendered` once it was drawn) and the camera position it was rendered from, copied right after the render. */
-    readonly lastDrawn: { readonly frame: number; readonly camera: Vec3 };
+    /**
+     * The last frame drawn: its number (`framesRendered` once it was drawn), the camera position it was rendered from, and its doors as the meshes drew
+     * them (`DoorDrawn`, read back from the stand-ins' matrices and the closed leaves' layers), each copied right after the render.
+     */
+    readonly lastDrawn: { readonly frame: number; readonly camera: Vec3; readonly doors: readonly DoorDrawn[] };
   };
   /** Renders `frames` frames with a shadow update and GPU sync each; returns mean milliseconds per frame. Leaves the model as it was. */
   benchmark(frames: number): number;
