@@ -1,8 +1,11 @@
 /**
  * The page chrome: timeline bar, chapter menu, view menu, floor picker, the walk mode's crosshair and status line, and keyboard shortcuts, wired to app
  * actions. Plain DOM; `sync` is cheap to call every frame.
+ * The artwork's card (src/ui/art-card.ts) shows the label of the artwork looked at or clicked.
  */
 import type { Chapter } from '../build/types.js';
+import { ArtCard } from './art-card.js';
+import type { ArtCardContent } from './art-card.js';
 import { FloorPicker } from './floor-picker.js';
 import type { FloorEntry } from './floor-picker.js';
 import { bindKeys } from './keyboard.js';
@@ -51,6 +54,8 @@ export type UiState = BarState & ViewState & {
   readonly walkPrompt: string | null;
   /** The floor picker's entry in view. */
   readonly floor: string;
+  /** The artwork's card to show (src/ui/art-card.ts), or null. */
+  readonly artCard: ArtCardContent | null;
 };
 
 export interface Ui {
@@ -93,6 +98,9 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   const crosshair = el('div', { className: 'met-crosshair', testid: 'crosshair', attrs: { 'aria-hidden': 'true' } });
   crosshair.hidden = true;
   ui.append(crosshair, menus, status, floors.element, bar.element);
+  // The artwork's card comes after the floor picker and the bar, whose state its place follows (src/ui/styles.ts).
+  const card = new ArtCard();
+  ui.append(card.element);
   // The door prompt, centred under the crosshair in the band M3b's label card keeps out of (docs/design/spec.md, Doors: Use).
   const prompt = el('div', { className: 'met-door-prompt', testid: 'door-prompt', attrs: { role: 'status', 'aria-live': 'polite' } });
   prompt.hidden = true;
@@ -107,6 +115,12 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   };
   new ResizeObserver(fit).observe(bar.element);
   fit();
+  // The artwork's card stands clear of the floor picker in the orbit view: it follows the picker's width.
+  const fitPicker = (): void => {
+    document.documentElement.style.setProperty('--met-floors-w', `${String(Math.ceil(floors.element.getBoundingClientRect().width))}px`);
+  };
+  new ResizeObserver(fitPicker).observe(floors.element);
+  fitPicker();
 
   const sync = (state: UiState): void => {
     bar.sync(state);
@@ -121,6 +135,7 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     if (crosshair.hidden !== !aiming) crosshair.hidden = !aiming;
     if (state.walkTarget === null) crosshair.removeAttribute('data-target');
     else setAttr(crosshair, 'data-target', state.walkTarget);
+    card.sync(state.artCard, state.walkStatus === 'locked');
     const words = aiming ? (state.walkPrompt ?? '') : '';
     setText(prompt, words);
     if (prompt.hidden !== (words === '')) prompt.hidden = words === '';

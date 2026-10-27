@@ -103,6 +103,8 @@ export function wheelFactor(event: Pick<WheelEvent, 'deltaY' | 'deltaMode' | 'ct
 /**
  * Wheel, two-finger pinch and middle-button drag on `element`, each reported as `zoom(clientX, clientY, factor)` at the point it zooms toward.
  * `active()` false (walk mode) ignores them. The orbit controls' own zoom is off (src/viewer/camera-rig.ts), so these are the only zoom inputs.
+ * A press on `element` is followed on the document to its end, wherever its moves, its release or its cancel land: once its capture is lost they
+ * may land on another element, and a finger left behind made one finger's drag a pinch (review 11, F37).
  */
 export function bindZoomInput(element: HTMLElement, zoom: (clientX: number, clientY: number, factor: number) => void, active: () => boolean): void {
   element.addEventListener(
@@ -116,7 +118,8 @@ export function bindZoomInput(element: HTMLElement, zoom: (clientX: number, clie
     { passive: false },
   );
   const touches = new Map<number, { x: number; y: number }>();
-  let middle: { x: number; y: number; last: number } | null = null;
+  /** A middle-button drag: its pointer, the point it zooms toward, and the height of its last move. */
+  let middle: { id: number; x: number; y: number; last: number } | null = null;
   const spread = (): { d: number; x: number; y: number } | null => {
     if (touches.size !== 2) return null;
     const [a, b] = [...touches.values()];
@@ -128,28 +131,34 @@ export function bindZoomInput(element: HTMLElement, zoom: (clientX: number, clie
     if (event.pointerType === 'touch') touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
     else if (event.button === 1) {
       event.preventDefault();
-      middle = { x: event.clientX, y: event.clientY, last: event.clientY };
+      middle = { id: event.pointerId, x: event.clientX, y: event.clientY, last: event.clientY };
     }
   });
-  element.addEventListener('pointermove', (event) => {
+  const doc = element.ownerDocument;
+  doc.addEventListener('pointermove', (event) => {
     if (event.pointerType === 'touch' && touches.has(event.pointerId)) {
       const before = spread();
       touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
       const after = spread();
       if (before !== null && after !== null && before.d > 1 && after.d > 1 && active()) zoom(after.x, after.y, before.d / after.d);
-    } else if (middle !== null && active()) {
+    } else if (middle?.id === event.pointerId) {
+      // The middle button let go while another stays down (a chord) ends the drag.
+      if ((event.buttons & 4) === 0) {
+        middle = null;
+        return;
+      }
       const dy = event.clientY - middle.last;
       middle.last = event.clientY;
       // Dragging up zooms in, 100 pixels a notch.
-      if (dy !== 0) zoom(middle.x, middle.y, Math.pow(1 - ZOOM.notch, -dy / 100));
+      if (dy !== 0 && active()) zoom(middle.x, middle.y, Math.pow(1 - ZOOM.notch, -dy / 100));
     }
   });
   const end = (event: PointerEvent): void => {
     touches.delete(event.pointerId);
-    if (event.pointerType !== 'touch' && event.button === 1) middle = null;
+    if (middle?.id === event.pointerId) middle = null;
   };
-  element.addEventListener('pointerup', end);
-  element.addEventListener('pointercancel', end);
+  doc.addEventListener('pointerup', end);
+  doc.addEventListener('pointercancel', end);
 }
 
 /** The unit ray under the pointer at (clientX, clientY) on `element`, from the camera, through the camera's own projection (view offset included). */

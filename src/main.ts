@@ -2,7 +2,7 @@
  * Boot (docs/design/spec.md, Modules): query, sequence, timeline, viewer, player, walk mode, UI, frame loop and the read-only `window.__met`.
  * Frames render on demand: when t, the camera, the cut or the size changed, and for the first 5 frames, after which `window.__shotReady` is set.
  */
-import { Vector3 } from 'three';
+import { Ray, Vector3 } from 'three';
 
 import { Player } from './build/player.js';
 import type { Speed } from './build/player.js';
@@ -10,14 +10,19 @@ import { chapterRanges, selectSteps } from './build/select.js';
 import { SEQUENCE } from './build/sequence.js';
 import { Timeline } from './build/timeline.js';
 import type { BuiltStep } from './build/timeline.js';
+import { CATALOGUE } from './model/collection/catalogue.js';
 import { DOORS } from './model/doors.js';
 import { doorLeavesOf } from './model/lib/window.js';
+import { cardContent } from './ui/art-card.js';
+import type { ArtCardContent } from './ui/art-card.js';
 import { installStyles } from './ui/styles.js';
 import { createUi } from './ui/ui.js';
 import type { UiState, WalkStatus } from './ui/ui.js';
 import { GeometryBvhs } from './walk/bvh-cache.js';
 import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
+import { ARTWORK_QUERY, ArtLabel, artworkInstances } from './viewer/art-label.js';
+import { bindClick } from './viewer/click.js';
 import { DoorLayer } from './viewer/doors.js';
 import type { DoorDrawn } from './viewer/doors.js';
 import { publishFacts, snapshot } from './viewer/facts.js';
@@ -32,6 +37,7 @@ import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
 import { RendererError } from './viewer/renderer-error.js';
 import { cappedBySection } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
+import { pointerRay } from './viewer/zoom.js';
 
 const READY_FRAMES = 5;
 /** Longest wall-time step one frame may advance the player, so a stalled tab does not jump the build. */
@@ -105,6 +111,27 @@ function boot(): void {
   picker.register(doors.meshes, (mesh, instance) => doors.tagOf(mesh, instance));
   // The walking eye's look target runs the hit query (src/walk/look.ts); an orbit-view pointer can run the same query on its own ray.
   const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query) }, (message) => { console.warn(message); });
+  // The artworks' cards (docs/design/spec.md, Collection: Labels): the look target's artwork while walking, the one a click meets in the orbit view.
+  const cards = new Map<string, ArtCardContent>(CATALOGUE.map((entry) => [String(entry.id), cardContent(entry)]));
+  // A click's card keeps to what the camera draws of its artwork, every piece of it (src/viewer/art-label.ts): each mesh's step finds the pieces.
+  const stepOfMesh = new Map(timeline.steps.flatMap((s) => s.meshes.map((m) => [m, s] as const)));
+  const artLabel = new ArtLabel((hit, id) => {
+    const step = stepOfMesh.get(hit.mesh);
+    return step === undefined ? [{ mesh: hit.mesh, instance: hit.instance }] : artworkInstances(step, id);
+  });
+  /** What the camera draws, for the card's check: the section cut (a floor view's included) and the camera's layers. */
+  const drawnView = { cut: viewer.cut, layers: rig.camera.layers };
+  /** The card the last frame showed, for the chrome and `window.__met.label`. */
+  let shownArt: ArtCardContent | null = null;
+  // Walking, walk mode's one look-target hook tells the card each new target, and null on entering and leaving (src/walk/walk-mode.ts `onLookTarget`).
+  walk.onLookTarget((target) => { artLabel.look(target); });
+  bindClick(viewer.renderer.domElement, (x, y) => {
+    const canvas = viewer.renderer.domElement;
+    artLabel.click(picker.hit(new Ray(rig.camera.position.clone(), pointerRay(canvas, rig.camera, x, y)), ARTWORK_QUERY));
+  }, () => !walk.active);
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') artLabel.dismiss();
+  });
   /** The door the walking eye looks at within reach, as the look target last changed (`onLookTarget`), for the prompt under the crosshair. */
   let doorInView: string | null = null;
   walk.onLookTarget((target) => { doorInView = target?.kind === 'door' ? target.id : null; });
@@ -159,6 +186,7 @@ function boot(): void {
     walkTarget: walk.lastTarget?.kind ?? null,
     walkPrompt: doorInView === null ? null : doors.prompt(doorInView),
     floor: floors.id,
+    artCard: shownArt,
   });
   /** E, or a click while the pointer is locked: opens or closes the door the walking eye looks at now, away from the walker (Doors). */
   const useDoor = (): void => {
@@ -239,6 +267,8 @@ function boot(): void {
         // A preset is an orbit-view camera: in walk mode it leaves walk mode first, or the walker would take the camera back on the next frame
         // while the preset stayed marked as in view, to be fitted again over the camera on the next resize.
         if (walk.active) walk.exit();
+        // A preset is a new view: the card of an artwork clicked in the last one goes with it (docs/design/spec.md, Collection: Labels).
+        artLabel.dismiss();
         rig.setPose(pose);
         view = id;
         atPreset = true;
@@ -372,6 +402,8 @@ function boot(): void {
       }
     }
     if (rig.update()) needsRender = true;
+    artLabel.frame(walk.active, drawnView);
+    shownArt = artLabel.id === null ? null : (cards.get(artLabel.id) ?? null);
     ui.sync(state());
     // Into or out of walk mode: the inset changes with it, measured after the bar has folded or unfolded.
     if (walk.active !== insetWalking) {
@@ -427,6 +459,7 @@ function boot(): void {
       return snapshot({ position: vec(c.position), target: vec(rig.controls.target), near: c.near, far: c.far, fov: c.fov, aspect: c.aspect });
     },
     get walk() { return snapshot(walk.facts()); },
+    get label() { return shownArt === null ? null : snapshot({ id: shownArt.id, title: shownArt.title }); },
     get doors() { return snapshot(doors.facts()); },
     perf: Object.freeze({
       buildMs,

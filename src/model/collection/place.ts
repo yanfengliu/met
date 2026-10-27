@@ -1,7 +1,8 @@
 /**
  * The collection's placeholders as pieces (docs/design/spec.md, Collection): an artwork's catalogue entry (catalogue.ts) and its placement in a space give
  * its pieces, all at the object's real size: the object in its form (kinds.ts), and its plinth, its vitrine (objects under 0.6 m) or its frame (paintings).
- * Every piece of one artwork is added together, with one `order`, so they arrive together and its object ID is at hand when tags come (plan M3b).
+ * Every piece of one artwork is added together, with one `order`, so they arrive together, and tagged with its object ID (`artworkTag`), so the look
+ * target and an orbit-view click find the artwork whichever of its pieces they meet, vitrine glass included (docs/design/spec.md, Collection: Labels).
  * One step per space (`collectionStep`) builds its artworks with one shared material (material.ts) and a stagger by order.
  * Derived, not measured (docs/research/collection.md, Display): plinth heights and margins, vitrine sizes, frame borders where the record gives no
  * framed size, the hanging height, and each object's roughness and metalness.
@@ -9,7 +10,7 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import type { BufferGeometry, Material } from 'three';
 
-import type { CameraFocus, Kit, StepDef } from '../../build/types.js';
+import type { CameraFocus, Kit, PieceTag, StepDef } from '../../build/types.js';
 import type { ChapterId } from '../../build/chapters.js';
 import { CATALOGUE } from './catalogue.js';
 import { block, bust, canvas, dish, figureGroup, jar, recumbentFigure, slab, standingFigure, unitBox } from './kinds.js';
@@ -143,6 +144,11 @@ export function artworkPieces(entry: CatalogueEntry, at: Placement): ArtPiece[] 
   ];
 }
 
+/** The tag every piece of The Met's object `id` carries (src/build/types.ts `PieceTag`): kind artwork, its object ID as the id. */
+export function artworkTag(id: number): PieceTag {
+  return { kind: 'artwork', id: String(id) };
+}
+
 /** The catalogue entry of an object, or a throw naming it and the fix. */
 export function entryOf(id: number): CatalogueEntry {
   const entry = CATALOGUE.find((e) => e.id === id);
@@ -196,10 +202,12 @@ export function collectionStep(def: CollectionStepDef): StepDef {
       const art = artMaterial(`collection-${def.space}`, surfaces);
       const material: Record<ArtPiece['role'], Material> = { object: art, plinth: def.plinth ?? plinthMaterial, glass: vitrineGlass, gilt: giltMaterial };
       def.placements.forEach(({ id }, order) => {
-        // One artwork, The Met's object `id`: all its pieces together under one order. Labels (plan M3b) tag them here, kit.addTagged(..., { kind: 'artwork', id }).
+        // One artwork, The Met's object `id`: all its pieces together under one order, each tagged with its object ID. Artwork tags never split a mesh
+        // (src/build/batch.ts keeps only doors apart), so the step's meshes are those untagged pieces would make.
         const artwork = pieces[order] ?? [];
         if (artwork.length === 0) throw new Error(`Step "${def.id}": object ${String(id)} has no pieces; check its catalogue entry's display.`);
-        for (const piece of artwork) kit.add(piece.geometry, material[piece.role], piece.matrix, order);
+        const tag = artworkTag(id);
+        for (const piece of artwork) kit.addTagged(piece.geometry, material[piece.role], piece.matrix, tag, order);
       });
     },
   };

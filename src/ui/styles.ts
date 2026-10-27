@@ -139,6 +139,41 @@ const CSS = /* css */ `
   .met-floors { left: 8px; gap: 3px; padding: 3px; }
   .met-floor { min-width: 58px; height: 32px; padding: 0 6px; font-size: 13px; }
 }
+
+/*
+ * The artwork's card (src/ui/art-card.ts): at the bottom left above the timeline bar, whole or folded (the folded strip stands 12 px off the bottom), and
+ * in the orbit view clear of the floor picker (--met-floors-w, src/ui/ui.ts). Walking, where it could reach the middle of the view, it keeps under the
+ * crosshair (16 px) and, folded, under the door prompt's place too: the band from the crosshair down to 80 px under the centre.
+ */
+.met-art-card {
+  position: absolute; left: 12px; bottom: calc(var(--met-bar-h) + 12px); z-index: 2; box-sizing: border-box;
+  width: min(360px, calc(100vw - 24px)); max-height: calc(100% - var(--met-bar-h) - 76px); overflow-y: auto;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--met-line);
+  background: var(--met-panel); backdrop-filter: blur(8px); font-size: 13px; line-height: 1.35;
+}
+.met-art-card[hidden] { display: none; }
+.met-floors:not([hidden]) ~ .met-art-card { left: calc(var(--met-floors-w) + 24px); width: min(360px, calc(100vw - var(--met-floors-w) - 36px)); }
+.met-bar-folded ~ .met-art-card { bottom: calc(var(--met-bar-h) + 24px); }
+.met-art-title { margin: 0 0 3px; font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.met-art-line { margin: 0; overflow-wrap: anywhere; }
+.met-art-dim { color: var(--met-dim); }
+.met-art-foot { margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; font-size: 12px; }
+.met-art-link { color: var(--met-accent); text-underline-offset: 2px; }
+.met-art-link:focus-visible { outline: 2px solid var(--met-accent); outline-offset: 2px; border-radius: 2px; }
+.met-art-credit { color: var(--met-dim); }
+.met-art-hint { margin: 6px 0 0; font-size: 12px; }
+@media (max-width: 1000px) {
+  .met-crosshair:not([hidden]) ~ .met-art-card { max-height: calc(50% - 16px - var(--met-bar-h) - 12px); }
+  .met-crosshair:not([hidden]) ~ .met-bar-folded ~ .met-art-card { max-height: calc(50% - 88px - var(--met-bar-h) - 24px); }
+}
+@media (max-width: 640px) {
+  .met-art-card { left: 8px; width: calc(100vw - 16px); bottom: calc(var(--met-bar-h) + 8px); padding: 8px 10px; font-size: 12px; }
+  .met-floors:not([hidden]) ~ .met-art-card { left: calc(var(--met-floors-w) + 16px); width: calc(100vw - var(--met-floors-w) - 24px); }
+  .met-bar-folded ~ .met-art-card { bottom: calc(var(--met-bar-h) + 16px); }
+  .met-crosshair:not([hidden]) ~ .met-art-card { max-height: calc(50% - 16px - var(--met-bar-h) - 8px); }
+  .met-crosshair:not([hidden]) ~ .met-bar-folded ~ .met-art-card { max-height: calc(50% - 88px - var(--met-bar-h) - 16px); }
+  .met-art-title { font-size: 14px; }
+}
 `;
 
 /** Installs the page styles once; later calls do nothing. Call before measuring any element. */
