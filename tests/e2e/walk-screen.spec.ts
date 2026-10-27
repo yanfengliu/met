@@ -5,6 +5,8 @@
  * line's hint shows until the walker first walks; Timeline brings the whole bar back, whose controls then work and step the build while walking, and
  * folds it again; the Walk toggle leaves, giving the orbit view its whole bar and no crosshair; F enters again with the bar folded. Every control in
  * view is inside the viewport, unclipped and apart from the others and from the crosshair, folded and unfolded.
+ * A click takes effect on the page's next frame (src/main.ts `frame`), so a read of the screen after one waits for the attribute that frame sets: the
+ * Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed`.
  * Bound: pointer lock is not available headless, so Esc and the locked look are not driven here; walk.spec drives the drag and the click.
  */
 import { expect, test } from '@playwright/test';
@@ -93,10 +95,12 @@ for (const viewport of VIEWPORTS) {
       await waitForT(page, f.n);
       expect((await facts(page)).walk.mode, 'still walking').toBe('walk');
       await press(page, 'bar-toggle');
+      await expect(page.getByTestId('bar-toggle')).toHaveAttribute('aria-expanded', 'false');
       expect(await shown(page, FOLDED_AWAY), 'folded again').toEqual([]);
       // The Walk toggle leaves: the orbit view's whole bar, no crosshair, no Timeline button.
       await press(page, 'walk-toggle');
       await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
+      await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'false');
       expect((await shown(page, [...ALWAYS, ...FOLDED_AWAY, 'crosshair', 'walk-status'])).sort(), 'the orbit view').toEqual([...ALWAYS.filter((id) => id !== 'bar-toggle'), ...FOLDED_AWAY].sort());
       // F enters again, folded again.
       await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
