@@ -7,7 +7,8 @@
  * drag with the mouse or a finger, which turns the view the way the pointer moves, as the locked mouse does. Leaving puts the orbit camera at the
  * walker's eye, its target 5 m ahead. The status line's hint shows how to look, move and leave until the visitor first walks or looks, at most
  * `HINT_SECONDS`, and again when the pointer is freed. Every walking frame, and afresh whenever something reads it, the look target (./look.ts) is
- * found along the eye's ray. The walk mode reads the scene and never writes it.
+ * found along the eye's ray; `onLookTarget` is the one hook that hears it change, for doors and labels alike. The walk mode reads the scene and
+ * never writes it.
  */
 import { Vector3 } from 'three';
 
@@ -74,6 +75,9 @@ export interface WalkFacts {
   readonly target: { readonly kind: LookTarget['kind']; readonly id: string; readonly distance: number } | null;
 }
 
+/** Hears the look target, or null, when its kind or id changes (`WalkMode.onLookTarget`). */
+export type LookTargetListener = (target: LookTarget | null) => void;
+
 const keyAxis = (held: ReadonlySet<string>, plus: readonly string[], minus: readonly string[]): number => (plus.some((k) => held.has(k)) ? 1 : 0) - (minus.some((k) => held.has(k)) ? 1 : 0);
 
 /** What the held keys ask the walker for (src/ui/keyboard.ts). */
@@ -106,6 +110,9 @@ export class WalkMode {
   private hintLeft = 0;
   /** The look target the last walking frame found. */
   private seen: LookTarget | null = null;
+  private readonly lookListeners = new Set<LookTargetListener>();
+  /** The kind and id the listeners last heard (`kind:id`), or null. */
+  private heard: string | null = null;
   private readonly eye = new Vector3();
   private readonly look = new Vector3();
   private readonly targetEye = new Vector3();
@@ -145,6 +152,18 @@ export class WalkMode {
     return this.on && !this.prepare ? this.seen : null;
   }
 
+  /**
+   * Calls `listener` with the look target, or null, each time its kind or id changes as walking frames find it, and with null when walk mode is left
+   * or entered again while a target was seen; a fresh read (`target()`) calls nothing, the next frame does. It hears changes from now on (`lastTarget`
+   * is the current one). Returns the call that stops it.
+   */
+  onLookTarget(listener: LookTargetListener): () => void {
+    this.lookListeners.add(listener);
+    return () => {
+      this.lookListeners.delete(listener);
+    };
+  }
+
   /** Enters walk mode at the spawn `id`, or where the walker last stood, or at the default spawn; an unknown id warns and is treated as none. */
   enter(id: string | null = null): void {
     let spawn = id === null ? undefined : spawnById(id);
@@ -158,6 +177,7 @@ export class WalkMode {
     this.prepare = true;
     this.waited = 0;
     this.seen = null;
+    this.tell(null);
     this.host.rig.setWalking(true);
   }
 
@@ -174,6 +194,7 @@ export class WalkMode {
     this.drag = null;
     this.hintLeft = 0;
     this.seen = null;
+    this.tell(null);
     if (document.pointerLockElement === this.host.canvas) document.exitPointerLock();
     const rig = this.host.rig;
     rig.setWalking(false);
@@ -217,6 +238,7 @@ export class WalkMode {
     this.walker.look(this.look);
     this.host.rig.setWalkView(this.eye, this.look, WALK_FOV);
     this.seen = this.find();
+    this.tell(this.seen);
     const changed = !(this.eye.distanceToSquared(this.lastEye) < 1e-10 && this.look.distanceToSquared(this.lastLook) < 1e-12);
     this.lastEye.copy(this.eye);
     this.lastLook.copy(this.look);
@@ -255,6 +277,14 @@ export class WalkMode {
       frameMs: times.length === 0 ? null : (times[Math.floor(times.length / 2)] ?? null),
       target: target === null ? null : { kind: target.kind, id: target.id, distance: target.distance },
     };
+  }
+
+  /** Tells the listeners `target` when its kind or id is not what they last heard. */
+  private tell(target: LookTarget | null): void {
+    const key = target === null ? null : `${target.kind}:${target.id}`;
+    if (key === this.heard) return;
+    this.heard = key;
+    for (const listener of [...this.lookListeners]) listener(target);
   }
 
   /** The look target from the walker's eye along its look direction, as they stand now (`lookTarget`). */

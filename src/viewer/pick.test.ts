@@ -2,8 +2,10 @@
  * What a ray meets (src/viewer/pick.ts). The zoom's `distance` on one instanced box: met where it is drawn, passed through when the camera's layers do not
  * draw its mesh (the landscape a floor view hides), and passed through above the section cut on a material the cut clips. The hit query `hit` on
  * fixture steps built by the real timeline, with tags from `Timeline.tagOf`: the nearest accepted piece with its mesh, instance, distance and tag;
- * a wall in front hides it; glass stops it unless the query passes through transparent pieces, while a tagged glass piece is found; `far` and the
- * accepted distance bound it; only drawn instances count; and a pointer ray from an orbit camera far off finds an artwork in a vitrine under a skylight.
+ * a wall in front hides it; glass stops it unless the query passes through transparent pieces, while a tagged glass piece is found when accepted
+ * and stops the ray when not, as a glazed door out of reach does; `far` and the accepted distance bound it; only drawn instances count; a pointer
+ * ray from an orbit camera far off finds an artwork in a vitrine under a skylight; and a registered stand-in counts in both queries by its own tags
+ * and the camera's layers, its BVH built as it joins, until it is unregistered.
  * Bound: boxes and straight rays, no WebGL.
  */
 import { BoxGeometry, InstancedMesh, Layers, Matrix4, MeshStandardMaterial, Quaternion, Ray, Vector3 } from 'three';
@@ -120,6 +122,15 @@ describe('ModelPicker.hit, the hit query', () => {
     expect(hit?.distance).toBeCloseTo(1.5, 6);
   });
 
+  it('stops at a tagged glass piece it does not accept, as at a wall: a glazed door out of reach or of another kind hides what is behind it', () => {
+    const { picker } = scene([{ near: 3, material: glass, tag: door }, { near: 4, material: bronze, tag: art }]);
+    const inReach = (tag: PieceTag | null, d: number): boolean => tag !== null && d <= (tag.kind === 'door' ? 2 : 6);
+    expect(picker.hit(eye, { throughTransparent: true, accept: inReach }), 'a glass door 3 m off, out of its 2 m reach').toBeNull();
+    expect(picker.hit(eye, { throughTransparent: true, accept: (tag) => tag?.kind === 'artwork' }), 'a glass door to a query for artworks').toBeNull();
+    // Untagged glass in the same place still lets the ray on.
+    expect(scene([{ near: 3, material: glass }, { near: 4, material: bronze, tag: art }]).picker.hit(eye, { throughTransparent: true, accept: inReach })?.tag).toEqual(art);
+  });
+
   it('counts only what the query accepts at its distance and what lies within far', () => {
     const { picker } = scene([{ near: 5, material: bronze, tag: art }]);
     expect(picker.hit(eye, { accept: (tag, d) => tag !== null && d <= 6 })?.distance).toBeCloseTo(5, 6);
@@ -159,5 +170,23 @@ describe('ModelPicker.hit, the hit query', () => {
     const hit = picker.hit(pointer, { throughTransparent: true, accept: (tag) => tag?.kind === 'artwork' });
     expect(hit?.tag).toEqual(art);
     expect(hit?.distance).toBeGreaterThan(100);
+  });
+
+  it('meets a registered stand-in in both queries, by its own tags and the camera’s layers, its BVH built as it joins, until it is unregistered', () => {
+    const bvhs = new GeometryBvhs();
+    const picker = new ModelPicker([], bvhs, -5, { enabled: false, height: 0 }, new Layers());
+    const leaf = new InstancedMesh(new BoxGeometry(1, 1, 1), bronze, 1);
+    leaf.setMatrixAt(0, slab(2));
+    leaf.computeBoundingSphere();
+    expect(picker.distance(eye)).toBeNull();
+    picker.register([leaf], () => door);
+    expect(bvhs.geometries, 'its BVH, built as it joined').toBe(1);
+    expect(picker.distance(eye), 'the zoom meets it').toBeCloseTo(2, 6);
+    expect(picker.hit(eye, tagged)?.tag, 'the hit query finds it by its own tag').toEqual(door);
+    leaf.layers.set(1);
+    expect(picker.hit(eye, tagged), 'on a layer the camera does not draw, it is passed through').toBeNull();
+    leaf.layers.set(0);
+    picker.unregister([leaf]);
+    expect(picker.distance(eye), 'unregistered').toBeNull();
   });
 });
