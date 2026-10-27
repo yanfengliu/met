@@ -67,6 +67,30 @@ export class CameraRig {
     c.addEventListener('change', () => {
       if (this.interacting && this.own === 0) this.onUserMove?.();
     });
+    this.relayCancels(element);
+  }
+
+  /**
+   * OrbitControls hears a pointer's release on the document but its cancel on the canvas only. A press whose capture was lost can be cancelled over
+   * another element, and the controls would hold that pointer down for good: such a cancel is sent on to the canvas, not bubbling, so the controls end
+   * the pointer once and no listener on the document hears it twice (review 11, F37).
+   */
+  private relayCancels(element: HTMLElement): void {
+    const pressed = new Set<number>();
+    element.addEventListener('pointerdown', (event) => {
+      if (this.controls.enabled) pressed.add(event.pointerId);
+    });
+    const doc = element.ownerDocument;
+    doc.addEventListener('pointerup', (event) => { pressed.delete(event.pointerId); }, { capture: true });
+    doc.addEventListener(
+      'pointercancel',
+      (event) => {
+        if (!pressed.delete(event.pointerId) || event.target === element) return;
+        const { pointerId, pointerType, isPrimary, clientX, clientY, screenX, screenY } = event;
+        element.dispatchEvent(new PointerEvent('pointercancel', { pointerId, pointerType, isPrimary, clientX, clientY, screenX, screenY }));
+      },
+      { capture: true },
+    );
   }
 
   /** Runs the controls' update as the rig's own move; returns whether the camera moved. */
