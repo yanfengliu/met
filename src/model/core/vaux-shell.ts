@@ -4,7 +4,9 @@
  * staircases, and the central hall's end walls and iron roof frame (the hall itself is the Medieval Sculpture Hall of 1939, medieval-hall.ts).
  * Side-wall bays follow the hall's pier lines (interior.md: piers 5.65 m apart); doors follow the floor map's openings. The east wall takes, on the axis
  * at the second floor, the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand Staircase;
- * work unit 2, M1), lined in granite with a threshold, so its central main-floor arch is a lower drop arch whose voussoirs stay under it.
+ * work unit 2, M1), lined in granite with a threshold, so its central main-floor arch is a lower drop arch whose voussoirs stay under it. Open with
+ * the owner (exterior.md section 9): in 1880 only the hall's six bays a side had pointed arches, over light rusticated stone, and the end blocks'
+ * bays round-headed openings (exterior-images.md #49 and #65).
  */
 import { Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -68,6 +70,7 @@ export const SIDE_LINES: readonly number[] = [-3, -2, -1].map((k) => HALL_PIER_Z
 /** Bays of the side walls with a main-floor door and a second-floor door (floor map, floor 1 and 2 openings in the X ±14.5 walls). */
 const DOOR_BAYS: Readonly<Record<'south' | 'north', readonly number[]>> = { south: [2, 5, 6, 9], north: [4, 5, 6, 9] };
 
+// Open with the owner (exterior.md section 9): the end blocks' bays had round-headed openings in 1880, not these (exterior-images.md #49 and #65).
 /** The 1880 windows of a side-wall bay, bricked up on the outer face, or opened as doors. */
 function sideBay(door: boolean): BufferGeometry {
   const height = ROOF_Y - WALL_BASE_Y;
@@ -290,7 +293,7 @@ export function vauxSideTrim(kit: Kit): void {
     [A_HALF, FACING.north, 1],
   ] as const) {
     // Open with the owner (exterior.md section 9): in 1880 only the hall's six bays had banded pointed arches; the end blocks' bays had
-    // round-headed windows with plain brick heads (exterior-images.md #65).
+    // round-headed windows with plain brick heads (exterior-images.md #49 and #65).
     for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
       const z = ((SIDE_LINES[i] ?? 0) + (SIDE_LINES[i + 1] ?? 0)) / 2;
       kit.add(ring(0), core.granite, placed(x, spring, z, facing), i);

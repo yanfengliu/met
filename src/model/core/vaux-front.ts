@@ -21,7 +21,7 @@ import { FACING, addBox, cylinder, placed } from './shapes.js';
 export const WALL_BASE_Y = LG - 0.3;
 
 // Open with the owner (exterior.md section 9): seven is an estimate; the Lehman court's photographs show five, the outer two with windows
-// (exterior-images.md #60 and #64), and the 1880 stereograph shows two large arches south of the porch (exterior-images.md #65).
+// (exterior-images.md #60 and #64), and in 1880 two large arches stood either side of the central porch (exterior-images.md #49 and #65).
 /** World X of the seven arches across the front, the entrance on the axis. */
 export const FRONT_ARCH_X = [-3, -2, -1, 0, 1, 2, 3].map((k) => k * VAUX_BAY);
 const GROUND_WIDTH = 1.6;
