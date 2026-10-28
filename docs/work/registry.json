@@ -24,6 +24,10 @@
     {
       "id": 5,
       "theme": "closed-pieces"
+    },
+    {
+      "id": 6,
+      "theme": "closed-solids"
     }
   ]
 }
