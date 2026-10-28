@@ -1,6 +1,6 @@
 # Pieces closed along vertical lines
 
-Status: active
+Status: complete
 Owner: Claude Code desktop session awesome-lovelace-db4c00 (2026-10-27)
 Created: 2026-10-28
 Updated: 2026-10-28
@@ -31,8 +31,8 @@ The three builders name their geometry, and the gate finds their pieces by that 
 - [x] The gate `src/model/closure.test.ts` green, and red with `openWall`'s bottom left out (14 shapes; the walk reads all 113 walked `openWall` pieces open), with `archedPassage`'s feet left out (the gallery 600 passage), with `openWall`'s geometry unnamed (8 steps missing), and with the walk's instance numbering off by a mesh (116 pieces' lines miss their faces).
 - [x] The check's fixtures (`src/model/lib/check.test.ts`) green, and red without its joining of ends or its splitting of edges.
 - [x] On the real sequence, Weston's facade built through a walker in its pavilion's brick lifts it onto the coping (`src/walk/settle.test.ts`), red with `openWall`'s bottom left out; that file's bound corrected.
-- [ ] The cut views (`tests/e2e/floors.spec.ts`), routes, reach, door-fit and the budgets green; the standard shots before (`795956f`) and after compared, and the changed images read at native resolution.
-- [ ] `npm run verify` green with this worktree's `MET_PORT`, an independent review with its findings resolved, merged to main and pushed, and the owner's render gallery rebuilt if a render changed.
+- [x] The cut views (`tests/e2e/floors.spec.ts`), routes, reach, door-fit and the budgets green; the standard shots before (`795956f`) and after compared, and the changed images read at native resolution.
+- [x] `npm run verify` green with this worktree's `MET_PORT`, an independent review with its findings resolved, merged to main and pushed, and the owner's render gallery rebuilt if a render changed.
 
 ## Open finding for the owner: most solids are open along vertical lines
 
@@ -56,8 +56,18 @@ A possible design, not decided: every builder closes its solids, and builders ma
 - [x] Review 2 (`reviews/2_implementation.md`) of those repairs: F8 to F10 resolved; F7's tolerance let crossing doors seal a doorway (F11, major) and the checks ran only on a cache key's first call (F12); both repaired.
 - [x] Review 3 (`reviews/3_implementation.md`) of those repairs: F11 and F12 resolved; F15 to F19 accepted and repaired, F16 by naming its bound.
 - [x] Review 4 (`reviews/4_implementation.md`) of those repairs: F15 to F19 resolved; the doorway test's tolerance and lines let a thin face pass (F20), and four nits; all repaired.
-- [ ] Verify; commit; merge; gallery.
+- [x] Verify; commit; merge; gallery.
 
 ## Outcome
 
-Pending.
+Complete. `openWall` closes every wall it builds with a bottom face, less each door's opening, and `archedPassage` closes its feet. Both now read as closed solids along vertical lines. The walk's settle lifts a walker out of a wall built through it: on the real sequence, Weston's facade lifts a walker standing in its pavilion's brick onto the coping. The section cut shows the medieval hall's walls and the gallery 600 jambs solid from above. `src/model/closure.test.ts` gates the pieces `openWall`, `holeLining` and `archedPassage` build, by the mesh's parity and by the walk's own crossing query. `openAlong` (`src/model/lib/check.ts`) and its fixtures are committed for a wider gate. `openWall` refuses doors less than 1 mm apart, on every call, and its cache keeps a blind niche apart from a door through the wall.
+
+Merged to main at `8e6643c`, a fast-forward from `795956f`, and pushed; the push also published work unit 2's integration walk, which `795956f` had merged. `npm run verify` passed there with this worktree's port: 621 unit tests and 84 e2e. Earlier, with two other sessions running e2e, `doors.spec.ts:379` (the slowest frame of a door's swing under 16.7 ms) failed on unchanged main as often as on this branch: three runs each, all red. On a quiet machine it passed, its slowest frame 5.1 ms. The Pages workflow built and deployed `8e6643c`.
+
+The standard shots before (`795956f`) and after differ in 9 of 64 images. The cut views show the walls solid, and a brick-coloured seam across the medieval hall's east wall is a grey joint; the rest is noise of at most 9 of 255. The owner's render gallery shows main's shots at `8e6643c`.
+
+Reviews 0 to 4 (Codex and Claude) found one major defect, F11, in a repair: doors allowed to touch, whose faces then sealed a doorway. The rest were minor findings and nits; all are repaired, F16 by naming its bound. The repairs of round 4 change only the doorway test and the docs, and were not reviewed again: it was the fifth round of repairs, the canon's cap. Each reviewed target is kept under `refs/work/5/review-0` to `review-4`, since none was committed.
+
+Limitations: the gate covers those three builders only. Windows are not checked against each other or the doors (F16). The walk's reading sees an opening only under its lines, and `openAlong` none narrower than 0.1 mm.
+
+Follow-up, not started: the wider closure in the open finding above, which the coordinator put to the owner as a task of its own (session close-every-opaque-solid).
