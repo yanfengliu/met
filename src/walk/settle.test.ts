@@ -2,9 +2,12 @@
  * The walker when the build moves under it (src/walk/walker.ts `settle`; docs/design/spec.md, Walk mode: When the build moves), on fixtures built from
  * real pieces through the page's own collision path: box steps built by the timeline, evaluated at one t and then another, the collision rebuilt for each
  * as walk mode rebuilds it, and the walker settled against the pieces the second build added (`instancesBefore`), as walk mode settles it.
- * One case runs the real sequence: the Grand Staircase's flights built where a walker stands (review of work unit 1, U1 part two).
- * Bound: fixtures are closed boxes, as the model's walls, slabs, desks and steps are; a piece the line through the walker crosses an odd number of times
- * (an open sheet) has no inside and is not tested here; walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.
+ * Two cases run the real sequence: the Grand Staircase's flights built where a walker stands (review of work unit 1, U1 part two), and Weston's facade
+ * built through a walker in its pavilion's brick (work unit 3, review 2, F14).
+ * Bound: fixtures are closed boxes. Of the model's pieces, those `openWall`, `holeLining` and `archedPassage` build are closed along vertical lines
+ * (src/model/closure.test.ts); other builders' solids are not checked, and many are open along such lines (docs/work/5_closed-pieces/plan.md). A piece
+ * has no inside on a line that crosses it an odd number of times, so the build does not lift a walker out of it there, and that is not tested here.
+ * Walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.
  */
 import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
@@ -13,6 +16,10 @@ import { CHAPTERS } from '../build/chapters.js';
 import { SEQUENCE } from '../build/sequence.js';
 import { Timeline } from '../build/timeline.js';
 import type { Kit, StepDef } from '../build/types.js';
+import { B_SOUTH_X, COPING_TOP_Y } from '../model/core/constants.js';
+import { WALL_BASE_Y } from '../model/core/vaux-front.js';
+import { WESTON_DOOR } from '../model/core/weston-facade.js';
+import { workspaceGroundY } from '../viewer/environment.js';
 import { GeometryBvhs } from './bvh-cache.js';
 import { CollisionWorld, collisionMeshes, instancesBefore } from './collision.js';
 import { SPAWNS, nearestSpawn } from './spawns.js';
@@ -33,8 +40,11 @@ function block(kit: Kit, min: readonly [number, number, number], max: readonly [
 const step = (id: string, build: (kit: Kit) => void): StepDef => ({ id, chapter: CHAPTERS[0].id, title: id, motion: { kind: 'rise' }, build });
 const floor = step('floor', (kit) => { block(kit, [-20, -0.2, -20], [20, 0, 20]); });
 
-/** A walker over the world of `steps` built at `t`; `to` builds it again at another t and settles the walker as walk mode does. */
-function site(steps: readonly StepDef[], t: number): { walker: Walker; to: (t: number) => Settled } {
+/**
+ * A walker over the world of `steps` built at `t`, its workspace ground at FLOOR_Y or where `floorOf` puts it for the timeline; `to` builds the world again
+ * at another t and settles the walker as walk mode does.
+ */
+function site(steps: readonly StepDef[], t: number, floorOf: (timeline: Timeline) => number = () => FLOOR_Y): { walker: Walker; to: (t: number) => Settled } {
   const timeline = new Timeline(steps);
   const world = new CollisionWorld(new GeometryBvhs());
   let complete = 0;
@@ -46,7 +56,7 @@ function site(steps: readonly StepDef[], t: number): { walker: Walker; to: (t: n
     return known;
   };
   build(t);
-  const walker = new Walker(world, FLOOR_Y);
+  const walker = new Walker(world, floorOf(timeline));
   return {
     walker,
     to: (at) => {
@@ -146,6 +156,20 @@ describe('the walker when the build moves under it', () => {
     expect(to(k + 1), `the flights built over feet at ${before.toFixed(3)} m`).toBe('moved');
     rest(walker, 0.5);
     expect(walker.feet.y, 'on a tread of the lower flight, over where the head was').toBeGreaterThan(before + 1.75);
+    expect(walker.onGround).toBe(true);
+  });
+
+  it("on the real sequence: Weston's facade built through a walker in its pavilion's brick lifts it onto the coping (work unit 3, review 2, F14)", () => {
+    const k = SEQUENCE.findIndex((s) => s.id === 'wing-b-south-facade');
+    expect(k, "the step that builds Weston's facade").toBeGreaterThan(0);
+    // The page's workspace ground, under the wall's base, so the walker stands on the site's ground there and the wall is built round it, not over it.
+    const { walker, to } = site(SEQUENCE, k, (timeline) => workspaceGroundY(timeline.bounds));
+    // 0.5 m behind the face and 5 m along it from the door's middle, where no opening runs up through the wall.
+    walker.place(B_SOUTH_X + 0.5, 0, WESTON_DOOR.z + 5, 0);
+    expect(walker.feet.y, "on the site's ground, over the wall's base").toBeGreaterThan(WALL_BASE_Y);
+    expect(to(k + 1), `the wall built through feet at ${walker.feet.y.toFixed(3)} m`).toBe('moved');
+    rest(walker, 0.5);
+    expect(walker.feet.y, "on the coping over the pavilion's parapet").toBeCloseTo(COPING_TOP_Y, 6);
     expect(walker.onGround).toBe(true);
   });
 

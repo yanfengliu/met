@@ -150,6 +150,23 @@ export function invertedFraction(geometry: THREE.BufferGeometry): number {
   return bad / count;
 }
 
+/** The Y of the winding normal of each triangle lying in the plane at height `y`: −1 for a face looking down, 1 for one looking up. */
+export function levelFaces(geometry: THREE.BufferGeometry, y: number, tolerance = 1e-6): number[] {
+  const position = geometry.getAttribute('position');
+  const index = geometry.getIndex();
+  const [a, b, c] = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  const out: number[] = [];
+  for (let t = 0; t < triangles(geometry); t++) {
+    a.fromBufferAttribute(position, index !== null ? index.getX(t * 3) : t * 3);
+    b.fromBufferAttribute(position, index !== null ? index.getX(t * 3 + 1) : t * 3 + 1);
+    c.fromBufferAttribute(position, index !== null ? index.getX(t * 3 + 2) : t * 3 + 2);
+    if ([a, b, c].some((p) => Math.abs(p.y - y) > tolerance)) continue;
+    const n = b.sub(a).cross(c.sub(a));
+    if (n.lengthSq() > 0) out.push(n.normalize().y);
+  }
+  return out;
+}
+
 /** Small seeded PRNG (mulberry32), so ray samples repeat exactly. */
 function prng(seed: number): () => number {
   let a = seed >>> 0;
@@ -231,4 +248,146 @@ export function backfaceFraction(geometry: THREE.BufferGeometry, rays = 400, see
     }
   }
   return hits === 0 ? 0 : back / hits;
+}
+
+/** Ends nearer than this in the plane across the lines are one end, and an end this near an edge's inside splits the edge, metres. */
+const SNAP = 1e-4;
+/** Open boundary shorter than this in all is rounding, not an opening, metres. */
+const MIN_OPEN = 1e-3;
+/** The cell of the grid that finds the ends near an edge, metres. */
+const END_CELL = 0.05;
+
+/** Where lines cross a geometry an odd number of times (`openAlong`): its open boundary's length, and a point on its longest stretch. */
+export interface Opening {
+  /** Metres, seen along the lines. */
+  readonly length: number;
+  /** In the geometry's frame, on the plane through its origin across the lines. */
+  readonly at: THREE.Vector3;
+}
+
+/**
+ * Whether lines parallel to `direction` (in the geometry's frame) cross the geometry an odd number of times anywhere: where they do, it has no inside by
+ * the parity rule the walk's settle reads (docs/design/spec.md, Walk mode: When the build moves) and the section cut shows no cut face. Null when every
+ * such line crosses it an even number of times, as a closed solid; a face along the lines (a wall's end, seen along vertical lines) changes nothing.
+ * Method: the parity changes only across the projection of an edge that an odd number of triangles share (vertices joined by exact position), so it is
+ * even everywhere exactly when those projected edges, each split at the others' ends on it, cover every stretch of the plane an even number of times.
+ * Bound: lines through a projected edge or end are not counted. Ends nearer than SNAP are one, so an opening narrower than that is not seen, nor open
+ * boundary shorter than MIN_OPEN in all.
+ */
+export function openAlong(geometry: THREE.BufferGeometry, direction: THREE.Vector3): Opening | null {
+  const position = geometry.getAttribute('position');
+  const index = geometry.getIndex();
+  const ids = new Map<string, number>();
+  const firsts: number[] = [];
+  const vertex = Int32Array.from({ length: position.count }, (_, v) => {
+    const key = `${String(position.getX(v))},${String(position.getY(v))},${String(position.getZ(v))}`;
+    const known = ids.get(key);
+    if (known !== undefined) return known;
+    ids.set(key, firsts.length);
+    firsts.push(v);
+    return firsts.length - 1;
+  });
+  const n = firsts.length;
+  const odd = new Set<number>();
+  const corner = (c: number): number => vertex[index === null ? c : index.getX(c)] ?? 0;
+  for (let c = 0; c + 2 < (index?.count ?? position.count); c += 3) {
+    for (const [a, b] of [[corner(c), corner(c + 1)], [corner(c + 1), corner(c + 2)], [corner(c + 2), corner(c)]] as const) {
+      if (a === b) continue;
+      const key = Math.min(a, b) * n + Math.max(a, b);
+      if (!odd.delete(key)) odd.add(key);
+    }
+  }
+  if (odd.size === 0) return null;
+  // The plane across the lines: (x, z) when they are the frame's Y, as for a piece stood upright.
+  const d = direction.clone().normalize();
+  const upright = Math.abs(d.y) > 1 - 1e-12;
+  const u = upright ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0).cross(d).normalize();
+  const w = upright ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3().crossVectors(d, u);
+  const ends: [number, number][] = [];
+  const near = new Map<string, number[]>();
+  const cell = (x: number, y: number, size: number): string => `${String(Math.floor(x / size))},${String(Math.floor(y / size))}`;
+  const file = (map: Map<string, number[]>, key: string, k: number): void => {
+    const list = map.get(key);
+    if (list === undefined) map.set(key, [k]);
+    else list.push(k);
+  };
+  const endOf = (id: number): number => {
+    const v = firsts[id] ?? 0;
+    const p = new THREE.Vector3().fromBufferAttribute(position, v);
+    const x = p.dot(u);
+    const y = p.dot(w);
+    const [cx, cy] = [Math.floor(x / SNAP), Math.floor(y / SNAP)];
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        for (const k of near.get(`${String(cx + i)},${String(cy + j)}`) ?? []) {
+          const e = ends[k];
+          if (e !== undefined && Math.hypot(e[0] - x, e[1] - y) < SNAP) return k;
+        }
+      }
+    }
+    file(near, cell(x, y, SNAP), ends.length);
+    ends.push([x, y]);
+    return ends.length - 1;
+  };
+  const edges: [number, number][] = [];
+  for (const key of odd) {
+    const a = endOf(Math.floor(key / n));
+    const b = endOf(key % n);
+    if (a !== b) edges.push([a, b]);
+  }
+  const grid = new Map<string, number[]>();
+  ends.forEach(([x, y], k) => {
+    file(grid, cell(x, y, END_CELL), k);
+  });
+  // Each edge split at the ends on its inside; a stretch between two ends is open while an odd number of edges cover it.
+  const stretches = new Map<number, number>();
+  const cover = (a: number, b: number): void => {
+    const key = Math.min(a, b) * ends.length + Math.max(a, b);
+    stretches.set(key, ((stretches.get(key) ?? 0) + 1) % 2);
+  };
+  for (const [a, b] of edges) {
+    const [ax, ay] = ends[a] ?? [0, 0];
+    const [bx, by] = ends[b] ?? [0, 0];
+    const length = Math.hypot(bx - ax, by - ay);
+    const [tx, ty] = [(bx - ax) / length, (by - ay) / length];
+    const seen = new Set<string>();
+    const on: [number, number][] = [];
+    for (let s = 0; s <= Math.ceil((2 * length) / END_CELL); s++) {
+      const along = Math.min(length, (s * END_CELL) / 2);
+      const [cx, cy] = [Math.floor((ax + tx * along) / END_CELL), Math.floor((ay + ty * along) / END_CELL)];
+      for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+          const key = `${String(cx + i)},${String(cy + j)}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          for (const k of grid.get(key) ?? []) {
+            const [px, py] = ends[k] ?? [0, 0];
+            const t = (px - ax) * tx + (py - ay) * ty;
+            if (k !== a && k !== b && t > SNAP && t < length - SNAP && Math.abs((px - ax) * ty - (py - ay) * tx) < SNAP) on.push([t, k]);
+          }
+        }
+      }
+    }
+    on.sort((p, q) => p[0] - q[0]);
+    let from = a;
+    for (const [, k] of on) {
+      cover(from, k);
+      from = k;
+    }
+    cover(from, b);
+  }
+  let total = 0;
+  let longest = 0;
+  const at = new THREE.Vector3();
+  for (const [key, parity] of stretches) {
+    if (parity === 0) continue;
+    const [ax, ay] = ends[Math.floor(key / ends.length)] ?? [0, 0];
+    const [bx, by] = ends[key % ends.length] ?? [0, 0];
+    const length = Math.hypot(bx - ax, by - ay);
+    total += length;
+    if (length <= longest) continue;
+    longest = length;
+    at.copy(u).multiplyScalar((ax + bx) / 2).addScaledVector(w, (ay + by) / 2);
+  }
+  return total < MIN_OPEN ? null : { length: total, at };
 }
