@@ -1,7 +1,7 @@
 /**
  * The choir screen from Valladolid Cathedral, about 1763, attributed to Rafael Amezúa (Met 56.234.1, object 201926): wrought iron, gilded and
  * painted, on a limestone base, 15.85 m high and 12.80 m wide (interior.md), set up in the Medieval Sculpture Hall in 1956. After the photographs
- * interior-images.md #P8, #29 and #44 (Met,_cancellata.JPG and the Met's MM29152 and ES4661): three tiers of iron balusters between posts, the lowest with an arched gate, each tier
+ * interior-images.md #P8, #29 and #44 (Met,_cancellata.JPG and the Met's MM29152 and ES4661): three tiers of iron balusters, the lowest with an arched gate, each tier
  * capped by a gilded frieze, and a gilded cresting of three medallions and finials, the middle one with a cross.
  */
 import { Matrix4 } from 'three';

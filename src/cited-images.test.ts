@@ -3,21 +3,24 @@
  * viewed and says what it shows (docs/learning/gate-proofs.md, "A cited reference photograph must be recorded as viewed"). Bounds of what a green result proves:
  *
  *   1. Citations. Every text file under `src/model/` is read. A citation is an image index's name, `interior-images.md` or `exterior-images.md`, with or
- *      without `docs/research/` before it, then a space and the entries' IDs, each written `#<ID>` and joined by `, ` or ` and `:
+ *      without `docs/research/` before it, then a space and the entries' IDs, each written `#<ID>` and joined by `, `, ` and ` or ` or `:
  *      `interior-images.md #33`, `interior-images.md #33 and #35`, `docs/research/exterior-images.md #E39, #E40 and #E41`.
  *      An ID is one to three digits, or a capital letter and one to three digits (`#P6`, `#E43`).
  *      - Every mention of either name must be a citation: a mention without an ID after it fails, so a citation cannot fall back into prose.
  *      - A line break is read through when the next line goes on with a `*` or `//` comment marker, so a comment may break between the name and its IDs.
- *      - No joiner may follow the list with a number after it, `#` or not: `,` or `, `, ` and `, ` or `, ` to `, `/`, a dash or `..` (` and 42`, `, 7`,
- *        `,17`, ` or 14`, ` to 17`, `/17`, `–40`, `..40`). Write every ID as `#<ID>` in the list, a range as every ID in it, and set off a measurement
- *        or any other number after the list with a colon (`#16: 3 to 4 m deep`).
- *      - The rest of the citation's clause may hold no `#<ID>` that its list lacks: write the IDs together. The clause runs to a `)`, a `;`, the next
- *        mention, a line that does not go on as a comment, or a sentence's end: a full stop after a word of two or more letters or digits, then a capital.
- *        So initials (`J.-C. Benoist`) and `fig. 110` end nothing, while an abbreviation such as `St. Louis` ends the clause early.
+ *        Runs of spaces and tabs read as one space.
+ *      - Straight after the list, no joiner may be followed by a number, `#` or not: `,` with or without a space, ` and `, ` or `, ` to `, `/`, any dash
+ *        or `..` (` and 42`, `, 7`, `,17`, ` or 14`, ` to 17`, `/17`, `–40`, `−40`, `..40`). Write every ID as `#<ID>` in the list, a range as every ID
+ *        in it, and set off a measurement or any other number after the list with a colon (`#16: 3 to 4 m deep`).
+ *      - The rest of the citation's clause may hold no `#<ID>` that its list lacks: write the IDs together. The clause runs to the `)` that closes the
+ *        parenthesis it stands in, a `;`, the next mention, a line that does not go on as a comment, or a sentence's end: a full stop after two letters
+ *        or a digit, then a capital. A parenthesis opened inside the clause, such as `(Benoist 2012)`, is read through with any `;` in it, so its `)`
+ *        ends nothing. Initials (`J.-C. Benoist`) and `fig. 110` end nothing either, while an abbreviation such as `St. Louis` ends the clause early.
  *        A `#` and one to three digits anywhere in the clause reads as an ID, a three-digit colour among them. The IDs and the clause are read within
  *        400 characters of the mention.
  *      - Blind spots: a photograph cited without its index's name (by author and year, by file name, or as a bare `P8` or `#33`) is not read, nor is any
- *        file outside `src/model/`.
+ *        file outside `src/model/`, nor an ID without its `#` anywhere in the clause but straight after the list (`#33, Benoist 2012, and 17`) or after
+ *        a joiner not named above (`#12 through 17`).
  *
  *   2. Entries. An entry is a line of its index that starts with its ID: `P1.` or `33.` in interior-images.md, `### 9.`, `10.` or `- [E39]` in
  *      exterior-images.md. A `###` entry's text runs to the next heading or entry; any other entry is its own line, as the indexes keep one line per
@@ -51,13 +54,15 @@ const BINARY_PROBE_BYTES = 8000;
 
 /** A mention of either index, its optional path included. */
 const MENTION = /(?:docs\/research\/)?((?:interior|exterior)-images\.md)/g;
-/** The IDs straight after a mention: ` #33`, ` #33 and #35`, ` #E39, #E40 and #E41`. */
-const ID_LIST = /^ #([A-Z]?\d{1,3})\b(?:(?:, | and |, and )#[A-Z]?\d{1,3}\b)*/;
+/** The IDs straight after a mention: ` #33`, ` #33 and #35`, ` #E39, #E40 and #E41`, ` #38 or #14`. */
+const ID_LIST = /^ #([A-Z]?\d{1,3})\b(?:(?:, | and |, and | or |, or )#[A-Z]?\d{1,3}\b)*/;
 const ID = /#([A-Z]?\d{1,3})\b/g;
 /** A joiner straight after the list with a number after it, `#` or not: an ID outside the list, a range, or a measurement that needs a colon. */
-const JOINED_NUMBER = /^(?:,? and |,? or |, ?| to |\s?\/\s?|\s?[–—-]\s?|\.\.)#?[A-Z]?\d+/;
-/** Where a citation's clause ends: a `)`, a `;`, a line that does not go on as a comment, the next mention, or a full stop after a word of two or more letters or digits, then a capital. */
-const CLAUSE_END = /[);\r\n]|(?<=[A-Za-z0-9]{2})\.\s+(?=[A-Z])|(?:interior|exterior)-images\.md/g;
+const JOINED_NUMBER = /^(?:,? and |,? or |, ?| to | ?\/ ?| ?[\p{Pd}−] ?|\.\.)#?[A-Z]?\d+/u;
+/** The rest of the token a joined number starts: word characters, and a decimal point before a digit. */
+const TOKEN_TAIL = /^(?:\w|\.(?=\d))*/;
+/** What may end a citation's clause: a bracket, a `;`, a line that does not go on as a comment, the next mention, or a full stop after two letters or a digit, then a capital. */
+const CLAUSE_MARK = /[();\r\n]|(?<=[A-Za-z]{2}|\d)\.\s+(?=[A-Z])|(?:interior|exterior)-images\.md/g;
 /** A line break inside a comment, with the next line's marker: read through as one space. */
 const COMMENT_BREAK = /\r?\n[ \t]*(?:\*(?!\/)|\/\/)[ \t]*/g;
 /** How far past a mention its IDs and clause are read. */
@@ -137,6 +142,18 @@ function snippet(text: string): string {
   return flat.length > 90 ? `${flat.slice(0, 90)}…` : flat;
 }
 
+/** Where the clause that starts at `from` ends: a parenthesis opened inside it is read through, with any `;` in it; anything else `CLAUSE_MARK` finds ends it. */
+function clauseEnd(rest: string, from: number): number {
+  let depth = 0;
+  CLAUSE_MARK.lastIndex = from;
+  for (let mark = CLAUSE_MARK.exec(rest); mark !== null; mark = CLAUSE_MARK.exec(rest)) {
+    if (mark[0] === '(') depth++;
+    else if (mark[0] === ')' && depth > 0) depth--;
+    else if (!(mark[0] === ';' && depth > 0)) return mark.index;
+  }
+  return rest.length;
+}
+
 /** Every mention of either index in the sources, as a citation or a problem naming its place. */
 function scanCitations(files: readonly SourceFile[]): Scan {
   const citations: Citation[] = [];
@@ -146,7 +163,7 @@ function scanCitations(files: readonly SourceFile[]): Scan {
       const index = mention[1] as IndexName;
       const end = mention.index + mention[0].length;
       const line = lineOf(text, mention.index);
-      const rest = text.slice(end, end + LOOKAHEAD).replace(COMMENT_BREAK, ' ');
+      const rest = text.slice(end, end + LOOKAHEAD).replace(COMMENT_BREAK, ' ').replace(/[ \t]+/g, ' ');
       const list = ID_LIST.exec(rest);
       if (list === null) {
         problems.push(`${path}:${String(line)} names ${index} without an entry ID after it ("${snippet(text.slice(mention.index, end + 60))}"): cite the photograph as \`${index} #<ID>\`, its entry's number or label; if the text cites no photograph, reword it without the index's name.`);
@@ -154,13 +171,13 @@ function scanCitations(files: readonly SourceFile[]): Scan {
       }
       const ids = [...list[0].matchAll(ID)].map((m) => m[1] ?? '');
       const cited = ids.map((id) => `#${id}`).join(', ');
-      const joined = JOINED_NUMBER.exec(rest.slice(list[0].length));
+      const after = rest.slice(list[0].length);
+      const joined = JOINED_NUMBER.exec(after);
       if (joined !== null) {
-        problems.push(`${path}:${String(line)} cites ${index} ${cited}, then writes "${joined[0].trim()}" after its list: write every ID as #<ID> in the list and a range as every ID in it (\`${index} #37, #38, #39 and #40\`), and set off a measurement or other number after the list with a colon (\`${index} #16: 3 to 4 m deep\`).`);
+        const written = `${joined[0]}${TOKEN_TAIL.exec(after.slice(joined[0].length))?.[0] ?? ''}`.trim();
+        problems.push(`${path}:${String(line)} cites ${index} ${cited}, then writes "${written}" after its list: write every ID as #<ID> in the list, joined by \`, \`, \` and \` or \` or \`, a range as every ID in it (\`${index} #37, #38, #39 and #40\`), and set off a measurement or other number after the list with a colon (\`${index} #16: 3 to 4 m deep\`).`);
       }
-      CLAUSE_END.lastIndex = list[0].length;
-      const stop = CLAUSE_END.exec(rest);
-      const clause = rest.slice(list[0].length, stop === null ? rest.length : stop.index);
+      const clause = rest.slice(list[0].length, clauseEnd(rest, list[0].length));
       const stray = [...clause.matchAll(ID)].map((m) => m[1] ?? '').filter((id) => !ids.includes(id)).map((id) => `#${id}`);
       if (stray.length > 0) {
         problems.push(`${path}:${String(line)} cites ${index} ${cited}, and the same clause holds ${stray.join(', ')} apart from them ("${snippet(rest.slice(0, list[0].length + clause.length))}"): write every ID together after the index's name, as in \`${index} #33 and #35\`.`);
@@ -273,6 +290,8 @@ describe('cited reference image detectors', () => {
       source('src/model/h.ts', '/** After interior-images.md #29. Use issue #60 for the fix. */\n'),
       source('src/model/i.ts', '/**\n * The door: interior-images.md #33 at full size. #33 shows the east leaf a quarter turn open into wing B.\n */\n'),
       source('src/model/j.ts', '// The pool, interior-images.md #38, east end.\n// Tuned in review 4, #12 on the tracker.\n'),
+      source('src/model/k.ts', '/** After exterior-images.md #9. Use issue #60 for the fix. */\n'),
+      source('src/model/l.ts', '/** (interior-images.md #38 or #14) */\n'),
     ]);
     expect(problems).toEqual([]);
     expect(citations.map(({ path, line, index, ids }) => [path, line, index, ids.join(' ')])).toEqual([
@@ -290,6 +309,8 @@ describe('cited reference image detectors', () => {
       ['src/model/h.ts', 1, 'interior-images.md', '29'],
       ['src/model/i.ts', 2, 'interior-images.md', '33'],
       ['src/model/j.ts', 1, 'interior-images.md', '38'],
+      ['src/model/k.ts', 1, 'exterior-images.md', '9'],
+      ['src/model/l.ts', 1, 'interior-images.md', '38 14'],
     ]);
   });
 
@@ -300,11 +321,17 @@ describe('cited reference image detectors', () => {
       source('src/model/c.ts', '/**\n * both Petrie Court photographs (interior-images.md #33, Benoist 2012, and #35, Haklai 2012) show it\n */\n'),
       source('src/model/d.ts', '  // see interior-images.md\n  const id = 33;\n'),
       source('src/model/e.ts', '/** The door (interior-images.md #33, J.-C. Benoist 2012, and #14) and the court (interior-images.md #43, Heckscher fig. 110, and #14). */\n'),
+      source('src/model/f.ts', '/** The court (interior-images.md #33 (Benoist 2012) and #17 (Haklai 2012)). */\n'),
+      source('src/model/g.ts', '/** The court, interior-images.md #33 (Benoist 2012) and #17 (Haklai 2012), shows it. */\n'),
+      source('src/model/h.ts', '/** (interior-images.md #16 (the east end; at dusk) and #17) */\n'),
     ]);
     expect(citations.map(({ path, ids }) => [path, ids.join(' ')])).toEqual([
       ['src/model/c.ts', '33'],
       ['src/model/e.ts', '33'],
       ['src/model/e.ts', '43'],
+      ['src/model/f.ts', '33'],
+      ['src/model/g.ts', '33'],
+      ['src/model/h.ts', '16'],
     ]);
     const hint = (index: string): string => `cite the photograph as \`${index} #<ID>\`, its entry's number or label; if the text cites no photograph, reword it without the index's name.`;
     expect(problems).toEqual([
@@ -315,6 +342,9 @@ describe('cited reference image detectors', () => {
       `src/model/d.ts:1 names interior-images.md without an entry ID after it ("interior-images.md const id = 33;"): ${hint('interior-images.md')}`,
       'src/model/e.ts:1 cites interior-images.md #33, and the same clause holds #14 apart from them ("#33, J.-C. Benoist 2012, and #14"): write every ID together after the index\'s name, as in `interior-images.md #33 and #35`.',
       'src/model/e.ts:1 cites interior-images.md #43, and the same clause holds #14 apart from them ("#43, Heckscher fig. 110, and #14"): write every ID together after the index\'s name, as in `interior-images.md #33 and #35`.',
+      'src/model/f.ts:1 cites interior-images.md #33, and the same clause holds #17 apart from them ("#33 (Benoist 2012) and #17 (Haklai 2012)"): write every ID together after the index\'s name, as in `interior-images.md #33 and #35`.',
+      'src/model/g.ts:1 cites interior-images.md #33, and the same clause holds #17 apart from them ("#33 (Benoist 2012) and #17 (Haklai 2012), shows it. */"): write every ID together after the index\'s name, as in `interior-images.md #33 and #35`.',
+      'src/model/h.ts:1 cites interior-images.md #16, and the same clause holds #17 apart from them ("#16 (the east end; at dusk) and #17"): write every ID together after the index\'s name, as in `interior-images.md #33 and #35`.',
     ]);
   });
 
@@ -328,6 +358,8 @@ describe('cited reference image detectors', () => {
       source('src/model/f.ts', '/** (interior-images.md #13, 15–17) (interior-images.md #38 or 14) (interior-images.md #16/17) (interior-images.md #16,17) */\n'),
       source('src/model/g.ts', '/** (See interior-images.md #12 to 17.) Then interior-images.md #12-17 show the temple. */\n'),
       source('src/model/h.ts', '/** The gate (interior-images.md #16, 3 to 4 m deep). */\n'),
+      source('src/model/i.ts', '/** (interior-images.md #16 and  17) (interior-images.md #37\u221240) (interior-images.md #16,\t17) */\n'),
+      source('src/model/j.ts', '/** The gate (interior-images.md #16, 3.35 m deep) and the wall (interior-images.md #33, #5a524c). */\n'),
     ]);
     expect(citations.map(({ path, ids }) => [path, ids.join(' ')])).toEqual([
       ['src/model/a.ts', '36'],
@@ -344,9 +376,14 @@ describe('cited reference image detectors', () => {
       ['src/model/g.ts', '12'],
       ['src/model/g.ts', '12'],
       ['src/model/h.ts', '16'],
+      ['src/model/i.ts', '16'],
+      ['src/model/i.ts', '37'],
+      ['src/model/i.ts', '16'],
+      ['src/model/j.ts', '16'],
+      ['src/model/j.ts', '33'],
     ]);
     const joined = (path: string, index: string, cited: string, written: string): string =>
-      `${path}:1 cites ${index} ${cited}, then writes "${written}" after its list: write every ID as #<ID> in the list and a range as every ID in it (\`${index} #37, #38, #39 and #40\`), and set off a measurement or other number after the list with a colon (\`${index} #16: 3 to 4 m deep\`).`;
+      `${path}:1 cites ${index} ${cited}, then writes "${written}" after its list: write every ID as #<ID> in the list, joined by \`, \`, \` and \` or \` or \`, a range as every ID in it (\`${index} #37, #38, #39 and #40\`), and set off a measurement or other number after the list with a colon (\`${index} #16: 3 to 4 m deep\`).`;
     expect(problems).toEqual([
       joined('src/model/a.ts', 'interior-images.md', '#36', 'and 42'),
       joined('src/model/b.ts', 'exterior-images.md', '#6', ', 7'),
@@ -362,6 +399,11 @@ describe('cited reference image detectors', () => {
       joined('src/model/g.ts', 'interior-images.md', '#12', 'to 17'),
       joined('src/model/g.ts', 'interior-images.md', '#12', '-17'),
       joined('src/model/h.ts', 'interior-images.md', '#16', ', 3'),
+      joined('src/model/i.ts', 'interior-images.md', '#16', 'and 17'),
+      joined('src/model/i.ts', 'interior-images.md', '#37', '\u221240'),
+      joined('src/model/i.ts', 'interior-images.md', '#16', ', 17'),
+      joined('src/model/j.ts', 'interior-images.md', '#16', ', 3.35'),
+      joined('src/model/j.ts', 'interior-images.md', '#33', ', #5a524c'),
     ]);
   });
 
