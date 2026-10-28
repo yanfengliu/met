@@ -105,14 +105,26 @@ export interface OpenWallParams {
   readonly openEnds?: boolean;
 }
 
-/** A wall with holes of any head shape (see the header for the frame). */
+/** A wall with holes of any head shape (see the header for the frame). Its geometry is named 'openWall': src/model/closure.test.ts finds its pieces by it. */
 export function openWall(params: OpenWallParams): BufferGeometry {
   const holes = params.holes ?? [];
-  const key = `openWall:${keyOf(params.width, params.height, params.thickness, params.openEnds ?? false)}:${holes.map((h) => keyOf(h.head ?? 'rect', h.x ?? 0, h.y ?? 0, h.width, h.height, riseOf(h), h.depth ?? -1)).join('|')}`;
+  checkHoles(params.width, params.height, holes);
+  // A hole's depth as buildWall reads it, −1 for one through the wall, so a blind niche and a through hole never share a key however near their depths.
+  const depth = (h: Hole): number => (h.depth !== undefined && h.depth < params.thickness ? h.depth : -1);
+  const key = `openWall:${keyOf(params.width, params.height, params.thickness, params.openEnds ?? false)}:${holes.map((h) => keyOf(h.head ?? 'rect', h.x ?? 0, h.y ?? 0, h.width, h.height, riseOf(h), depth(h))).join('|')}`;
   return memo(key, () => buildWall(params.width, params.height, params.thickness, holes, params.openEnds ?? false));
 }
 
-function buildWall(width: number, height: number, thickness: number, holes: readonly Hole[], openEnds: boolean): BufferGeometry {
+/** The holes on a wall's base but its round windows: its doors and blind niches, from −X. */
+function doorsOf(holes: readonly Hole[]): Hole[] {
+  return holes.filter((h) => (h.y ?? 0) <= 1e-6 && (h.head ?? 'rect') !== 'circle').sort((p, q) => (p.x ?? 0) - (q.x ?? 0));
+}
+
+/**
+ * Refuses a hole that leaves the wall, and doors less than 1 mm apart: where two doors touch or cross, the front and back faces can seal one of them.
+ * Windows are not checked against each other or the doors. Run on every call, not only on the first of a cache key, which rounds to the millimetre.
+ */
+function checkHoles(width: number, height: number, holes: readonly Hole[]): void {
   for (const h of holes) {
     const x = h.x ?? 0;
     const y = h.y ?? 0;
@@ -120,6 +132,23 @@ function buildWall(width: number, height: number, thickness: number, holes: read
       throw new Error(`openWall: a hole at x ${String(x)}, y ${String(y)} (${String(h.width)} × ${String(h.height)}) leaves the wall (${String(width)} × ${String(height)}); keep holes inside it.`);
     }
   }
+  const doors = doorsOf(holes);
+  doors.forEach((q, k) => {
+    const p = doors[k - 1];
+    if (p === undefined) return;
+    const [p0, p1, q0, q1] = [(p.x ?? 0) - p.width / 2, (p.x ?? 0) + p.width / 2, (q.x ?? 0) - q.width / 2, (q.x ?? 0) + q.width / 2];
+    const gap = q0 - p1;
+    if (gap < 1e-3 - 1e-9) {
+      // Millimetres to the nanometre, so a gap refused just under 1 mm never reads as 1 mm.
+      const mm = (metres: number): number => Number((metres * 1000).toFixed(6));
+      const how = mm(Math.abs(gap)) === 0 ? 'touch' : gap < 0 ? `overlap by ${String(mm(Math.min(p1, q1) - Math.max(p0, q0)))} mm` : `stand ${String(mm(gap))} mm apart`;
+      throw new Error(`openWall: the doors at x ${String(p.x ?? 0)} (${String(p.width)} wide) and x ${String(q.x ?? 0)} (${String(q.width)} wide) ${how}; keep doors at least 1 mm apart.`);
+    }
+  });
+}
+
+function buildWall(width: number, height: number, thickness: number, holes: readonly Hole[], openEnds: boolean): BufferGeometry {
+  const doors = doorsOf(holes);
   const b = new MeshBuilder();
   const W = width / 2;
   const outline: V2[] = [
@@ -128,13 +157,26 @@ function buildWall(width: number, height: number, thickness: number, holes: read
     [W, height],
     [-W, height],
   ];
-  const loops = holes.map((h) => ({ outline: holeOutline(h, 12), depth: h.depth !== undefined && h.depth < thickness ? h.depth : thickness, door: (h.y ?? 0) <= 1e-6 && (h.head ?? 'rect') !== 'circle' }));
+  const loops = holes.map((h) => ({ outline: holeOutline(h, 12), depth: h.depth !== undefined && h.depth < thickness ? h.depth : thickness, door: doors.includes(h) }));
   const through = loops.filter((l) => l.depth >= thickness);
   b.planar(outline, loops.map((l) => l.outline), new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
   // Back face, mirrored in u so it faces −Z.
   const mirror = (pts: readonly V2[]): V2[] => pts.map(([u, v]) => [-u, v] as const);
   b.planar(mirror(outline), through.map((l) => mirror(l.outline)), new Vector3(0, 0, -thickness), new Vector3(-1, 0, 0), new Vector3(0, 1, 0));
   b.box([-W, 0, -thickness], [W, height, 0], ['+z', '-z', '-y', ...(openEnds ? ['+x', '-x'] : [])]);
+  // The bottom face looks down, with each door's opening left out (behind a blind one, only its niche), so every vertical line through the wall crosses
+  // it an even number of times and the walk's settle and the section cut read it as a closed solid (docs/design/spec.md, Walk mode: When the build moves).
+  const bottom = (x0: number, x1: number, z0: number): void => {
+    if (x1 > x0) b.polygon([new Vector3(x0, 0, -thickness), new Vector3(x1, 0, -thickness), new Vector3(x1, 0, z0), new Vector3(x0, 0, z0)]);
+  };
+  let from = -W;
+  for (const h of doors) {
+    const x = h.x ?? 0;
+    bottom(from, x - h.width / 2, 0);
+    if (h.depth !== undefined && h.depth < thickness) bottom(x - h.width / 2, x + h.width / 2, -h.depth);
+    from = x + h.width / 2;
+  }
+  bottom(from, W, 0);
   for (const loop of loops) {
     const pts = loop.outline;
     for (let k = 0; k < pts.length; k++) {
@@ -146,13 +188,16 @@ function buildWall(width: number, height: number, thickness: number, holes: read
     }
     if (loop.depth < thickness) b.planar(pts, [], new Vector3(0, 0, -loop.depth), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
   }
-  return b.build();
+  const wall = b.build();
+  wall.name = 'openWall';
+  return wall;
 }
 
 /**
  * The lining of a hole through a wall, in openWall's frame: the band between the hole's outline and a smaller one's on the same sill, `depth` deep
  * from the front face toward −Z. Its outer face lies on the reveal of a hole cut to `outer` (the same 12 facets per head as openWall's), its inner
  * face looks into the opening, and its feet on the sill line look down, so a section cut through a jamb shows a closed solid (src/viewer/cap-pass.ts).
+ * Its geometry is named 'holeLining': src/model/closure.test.ts finds its pieces by it.
  */
 export function holeLining(outer: Hole, inner: Hole, depth: number): BufferGeometry {
   const sill = outer.y ?? 0;
@@ -174,7 +219,9 @@ export function holeLining(outer: Hole, inner: Hole, depth: number): BufferGeome
       if (p === undefined || q === undefined) continue;
       b.polygon([new Vector3(p[0], p[1], -depth), new Vector3(q[0], q[1], -depth), new Vector3(q[0], q[1], 0), new Vector3(p[0], p[1], 0)]);
     }
-    return b.build();
+    const lining = b.build();
+    lining.name = 'holeLining';
+    return lining;
   });
 }
 
