@@ -131,7 +131,7 @@ After merge, the owner's render gallery needs republishing (`docs/policies/local
 
 | ID | Finding | Disposition and reason | Repair or follow-up |
 |---|---|---|---|
-| F25 | The diagonal lattice built round the middle medallion is the hall's round end window seen through the medallion's openwork, not the screen (Codex R1, major; Claude R9) | Accepted. P8 at full size shows the hall's round end window, a grid of glazing bars in a grey circular reveal, the same grey disc and lattice #29 shows behind the medallion | The lattice is gone; #29's entry, `interior.md`, the comment and the devlog say what it is |
+| F25 | The diagonal lattice built round the middle medallion is the hall's round end window seen through the medallion's openwork, not the screen (Codex R1, major; Claude R9) | Accepted. P8 at full size shows a round window in the hall's east wall, glazing bars in a grey circular reveal, like the grey disc and lattice #29 shows behind the medallion, and in #44 the disc sits below the top frieze. #29 most likely looks west, at the other end wall's window (corrected in round 5, F37) | The lattice is gone; #29's entry, `interior.md`, the comment and the devlog say what it is |
 | F26 | The broken pediments touched nothing, sat 13.27 to 13.59 m against the stated 13.31 to 13.69 m, and sloped 31° where #29 shows about 42° (Codex R2; Claude R1 and R2) | Accepted | Rebuilt from the measured ends, 13.29 to 13.69 m at about 42°; a gilt bar joins their inner feet over the stem, and C-scrolls rising from the oval's rim carry their outer ends |
 | F27 | The gate's arch stopped 3 cm under the frieze against its comment, was gilt where #29 and P8 show a dark iron band, and had no back though it stands free (Codex R3; Claude R6) | Accepted | Rise 0.575 m, so its crown meets the frieze; iron; `back: true` |
 | F28 | The docs said the stone base rises to 0.98 m; the code built 0.9 m of stone under an iron sill, where #29 shows a stone coping under the balusters' feet (Codex R4; Claude R5) | Accepted | Limestone to the lowest tier's foot, 0.98 m, across the screen's width, 0.25 m either side of its plane so it stays 2 cm clear of the middle piers' plinths (0.4 m either side met them); no sill |
@@ -150,4 +150,4 @@ After merge, the owner's render gallery needs republishing (`docs/policies/local
 
 ## Round outcome
 
-No blocker. Codex found one major finding, the lattice, which P8 confirms is the hall's window; Claude found six minor findings and five nits. All eleven, F25 to F35, are accepted and repaired in the commit after the merge of `00eeee7`. The repairs change the cresting's geometry, so round 5 reviews them.
+No blocker. Codex found one major finding, the lattice, which P8 and #44 show to be a window of the hall's end wall; Claude found six minor findings and five nits. All eleven, F25 to F35, are accepted and repaired in the commit after the merge of `00eeee7`. The repairs change the cresting's geometry, so round 5 reviews them.

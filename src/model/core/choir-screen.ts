@@ -35,21 +35,24 @@ const MOULDING = 0.22;
 const CORNICE: readonly [number, number] = [0.48, 0.87];
 const BAR_SPACING = 0.16;
 /**
- * The gate's posts stand 1.3 m either side of the axis, and its iron arch springs at 3.7 m and rises to meet the frieze. Open with the owner (2026-10-28):
+ * The gate's posts stand 1.3 m either side of the axis, and its iron arch springs at 3.7 m and rises to meet the frieze, without the gilt scrollwork
+ * the photographs show in its spandrels. Open with the owner (2026-10-28):
  * interior-images.md #P8 and #29 show the gate standing open, the base broken under it in the second, where here the balusters and the base run on
  * across it and the walker cannot pass.
  */
 const GATE = 1.3;
 const GATE_SPRING = 3.7;
+const GATE_BAND = 0.14;
 /**
  * The cresting, measured as TIERS: x from the axis (mirrored), heights above the floor. Dark plinths 0.14 m high carry its groups ([x0, x1]). The middle
  * medallion's gilt ring is 1.05 m across, centred at 12.15 m, under a crown from 13.28 to 13.54 m, a dark urn to 14.13 m, a dark spire to 14.4 m and the
  * cross, whose arms cross at 15.18 m and span 1.3 m. The side medallions are gilt ovals 0.75 by 1.0 m centred at 12.4 m, under broken pediments from
  * 13.31 to 13.69 m rising at about 42°, joined by a gilt bar under sunbursts of seven rays, 0.63 m across at their tips and reaching 14.28 m. Urn
  * finials on pedestals stand between the groups, and at the ends urns on slabs carried by legs, each with a gilt spray of flowers rising to `top`.
- * Simplified: each medallion's tracery is eight spokes, its frame a whole ring where the photographs show C-scrolls, and the urns are stacked drums.
- * Behind the middle medallion the photograph shows a round window of the hall's end wall, its glazing bars and grey reveal, a window that
- * interior-images.md #P8 shows in the hall's end wall too: the screen has no lattice there.
+ * Simplified: each medallion's tracery is eight spokes, its frame a whole ring where the photographs show C-scrolls, and the urns and the tapering
+ * spire are stacked drums.
+ * Behind the middle medallion the photograph shows a round window of the hall's end wall, its glazing bars and grey reveal, a window like the one
+ * interior-images.md #P8 shows in the hall's east wall: the screen has no lattice there.
  */
 const PLINTH = 0.14;
 const PLINTHS: readonly (readonly [number, number])[] = [
@@ -137,8 +140,9 @@ export function choirScreen(kit: Kit): void {
       for (const side of [-1, 1]) kit.add(round, gilt, disc(x, boss, 0.12, 0.06, side * 0.14), 3 + tier * 3);
     }
   });
-  // The gate's arched head in the lowest tier, iron on both faces, its crown meeting the frieze.
-  const arch = voussoirRing({ head: 'segmental', span: 2 * GATE, rise: 0.575, band: 0.14, count: 11, projection: 0.06, parity: 'all', back: true });
+  // The gate's arched head in the lowest tier, iron on both faces, its crown 5 mm into the frieze, past the 0.5 mm its facets lose at the crown.
+  const rise = (TIERS[0]?.[1] ?? 4.41) - GATE_SPRING - GATE_BAND + 0.005;
+  const arch = voussoirRing({ head: 'segmental', span: 2 * GATE, rise, band: GATE_BAND, count: 11, projection: 0.06, parity: 'all', back: true });
   kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 + 0.08), 2);
   kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 - 0.08, Math.PI), 2);
   cresting(kit, TIERS[2]?.[2] ?? 11.15);
@@ -185,7 +189,12 @@ function cresting(kit: Kit, foot: number): void {
   vase(0, crownTop, urnHeight, iron, 14);
   for (const s of [-1, 1]) kit.add(half, gilt, ringAt(s * 0.32, crownTop + 0.3, s * (-Math.PI / 2), 0.6, 0.6), 14);
   const [mouth, spire, cross] = [crownTop + URN_MOUTH * urnHeight, 14.4, 15.18];
-  kit.add(round, iron, placed(0, y(mouth), z0, 0, [0.1, spire - mouth, 0.1]), 14);
+  for (const [b, t, w] of [
+    [mouth, 14.22, 0.2],
+    [14.22, spire, 0.08],
+  ] as const) {
+    kit.add(round, iron, placed(0, y(b), z0, 0, [w, t - b, w]), 14);
+  }
   addBox(kit, gilt, -0.05, y(spire - 0.04), z0 - 0.05, 0.05, y(SCREEN_HEIGHT), z0 + 0.05, 14);
   addBox(kit, gilt, -0.65, y(cross - 0.05), z0 - 0.05, 0.65, y(cross + 0.05), z0 + 0.05, 14);
   kit.add(round, gilt, disc(0, cross, 0.26, 0.1), 14);
