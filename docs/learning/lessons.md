@@ -10,4 +10,4 @@ When the gate lands, prove it red by reintroducing the defect, record that in [g
 
 ## Rules
 
-None is waiting for its gate.
+- A rebuilt ornament's joints, each placed by hand from measured heights, can float apart with every gate green: before review, check that its pieces form one group standing on its support. — **gate:** a unit test that the choir screen step's pieces at t = N form one group within 1 mm by exact mesh distances, touching the hall floor, red with `a064995`'s floating pediments ([evidence](lessons-evidence.md#a-rebuilt-ornaments-joints-can-float-with-every-gate-green))
