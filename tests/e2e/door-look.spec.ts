@@ -2,11 +2,12 @@
  * The door prompt where the eye looks between a pair's leaves (docs/design/spec.md, Doors: Use; work unit 2, review 17, F46), through real input on the
  * finished building. A door's leaves meet 8 mm apart and keep 4 mm off their frame, so the eye's one ray can slip between them; each closed door's
  * doorway, a box over its leaves and those gaps that the picker reads and no camera draws (src/viewer/doorways.ts), makes the door the look target there.
- * - From the plaza, where the Walk toggle puts the walker on the entrance's axis facing the facade, W alone, held at a walk and let go 1.3 m and a walk's
- *   coast before the middle doorway's leaves, brings the walker to rest with the crosshair on the line where the pair meet; with no drag the prompt says
- *   "E Open", and E opens the door.
+ * - From the plaza, where the Walk toggle puts the walker on the entrance's axis facing the facade, W alone, held at a walk, let go 4 m before the middle
+ *   doorway's leaves to learn how late a key goes up (./route-keys.ts) and held again and let go 1.3 m before them, early by a walk's coast and that lag's
+ *   travel, brings the walker to rest with the crosshair on the line where the pair meet; with no drag the prompt says "E Open", and E opens the door.
  * - At the north link door, met on its axis: walked by D out along the plaza to its line, 27 m off, turned there by drags toward its leaves' meeting line,
- *   run at by W and Shift to about 1.3 m before the leaves and turned again onto that line, the eye's ray crossing the leaves' whole depth within 3 mm of
+ *   run at by W and Shift to about 1.3 m before the leaves, let go early by a run's coast and the travel of the lag the walk out learnt, and turned again
+ *   onto that line, the eye's ray crossing the leaves' whole depth within 3 mm of
  *   it, the prompt says "Locked", and E leaves the door shut.
  * Red at 0defda0, whose look target was the centre ray's alone: through the gap it met nothing, so neither prompt showed (the waits for them time out).
  * A ray more than about 4° off a door's axis meets a leaf's edge inside the gap, which is why the link door is run at from far out along its line.
@@ -22,7 +23,8 @@ import { Timeline } from '../../src/build/timeline.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
 import { MOTION } from '../../src/walk/walker.js';
 import { open, press, watchErrors } from './helpers.js';
-import { COAST, doorFacts, doorIs, entranceLeaves, legs, looksAt, MIDDLE_DOOR, MINUS_Z, still, walk, walking, wrap, yawOf } from './route-walk.js';
+import { Keys, learnLag, startKeyLog, travel, watch } from './route-keys.js';
+import { COAST, doorFacts, doorIs, entranceLeaves, fmt, legs, looksAt, MIDDLE_DOOR, MINUS_Z, still, walk, walking, wrap, yawOf } from './route-walk.js';
 import type { Sample } from './route-walk.js';
 
 /** Where the plaza spawn stands (src/walk/spawns.ts) and the north link's door (src/model/mmw/facade.ts: on X 69, its leaves at Z −2.38). */
@@ -110,15 +112,24 @@ async function within(page: Page, leaves: Leaves, d: number): Promise<void> {
 
 test.describe('the door prompt between a pair’s leaves', () => {
   test('from the plaza spawn, W alone up to the entrance’s middle door: E Open with no turn, and E opens it', async ({ page }) => {
+    // About 15 s here (14.7 to 15.0 s in three full runs, 2026-10-27); four times that for a loaded machine.
+    test.setTimeout(60_000);
     const errors = watchErrors(page);
     await open(page, '');
     await press(page, 'walk-toggle');
     const start = await walking(page);
     expect([start.eye[0], start.look[0]], 'the plaza spawn stands on the entrance axis, facing along it').toEqual([expect.closeTo(0, 9), expect.closeTo(0, 9)]);
     const front = entranceLeaves().front;
-    await page.keyboard.down('KeyW');
-    await page.waitForFunction((z) => (window.__met?.walk.eye?.[2] ?? Number.POSITIVE_INFINITY) <= z, front + 1.3 + WALK_COAST, { polling: 'raf', timeout: 30_000 });
-    await page.keyboard.up('KeyW');
+    await startKeyLog(page);
+    const keys = new Keys(page);
+    for (const before of [4, 1.3]) {
+      await keys.hold(['KeyW']);
+      const seen = await watch(page, MINUS_Z, -(front + before + travel(page, MOTION.walk, WALK_COAST)), 1);
+      await keys.hold([]);
+      if (seen.kind !== 'line') throw new Error(`W held from the plaza spawn, the walker stuck at ${fmt(seen.eye)}, short of ${String(before)} m before the leaves.`);
+      await learnLag(page, seen.t);
+      await still(page);
+    }
     const at = await still(page);
     expect(at.eye[2] - front, 'at rest about 1.3 m before the leaves').toBeGreaterThan(1);
     expect(at.eye[2] - front).toBeLessThan(1.6);
@@ -130,6 +141,8 @@ test.describe('the door prompt between a pair’s leaves', () => {
   });
 
   test('at the north link door, met on its axis with the crosshair on its leaves’ meeting line: Locked, and E leaves it shut', async ({ page }) => {
+    // About 22 s here (21.8 to 22.4 s in three full runs, 2026-10-27), most of it the walk out along the plaza; four times that for a loaded machine.
+    test.setTimeout(90_000);
     const errors = watchErrors(page);
     await open(page, '');
     await press(page, 'walk-toggle');
@@ -141,7 +154,7 @@ test.describe('the door prompt between a pair’s leaves', () => {
     await aimAt(page, line);
     await page.keyboard.down('Shift');
     await page.keyboard.down('KeyW');
-    await within(page, leaves, 1.3 + COAST);
+    await within(page, leaves, 1.3 + travel(page, MOTION.run, COAST));
     await page.keyboard.up('KeyW');
     await page.keyboard.up('Shift');
     const at = await aimAt(page, line);

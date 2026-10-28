@@ -3,7 +3,8 @@
  * Shift) and mouse drags move the walker, its eye read from the read-only `window.__met.walk` at every frame. The routes are src/model/hunt/routes.ts's
  * plan lines, whose segments run along an axis or at 45° to one: facing along an axis, W, S, A or D walks a straight segment and two of them a diagonal
  * one; drags turn the walker. The doors on the way (docs/design/spec.md, Doors) are read from the read-only `window.__met.doors` and used by E, as a
- * visitor uses them. See routes.spec.ts for the bounds.
+ * visitor uses them. A leg lets go where the walker, going on for the release lag a key takes to reach the page under load, ends at its end (./route-keys.ts),
+ * and at a corner it walks onto the corner until it rests within 0.25 m of it, or fails. See routes.spec.ts for the bounds.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -16,6 +17,10 @@ import { ENTRANCE_DOOR_Z, entranceDoor } from '../../src/model/hunt/arches.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { BODY, MOTION } from '../../src/walk/walker.js';
 import { open, openMenu, press, throttle, throttleRate } from './helpers.js';
+import { Keys, lag, learnLag, startKeyLog, travel, watch } from './route-keys.js';
+import type { Stop } from './route-keys.js';
+
+export type { Stop } from './route-keys.js';
 
 const EYE = BODY.eye;
 export type XZ = readonly [number, number];
@@ -121,16 +126,19 @@ export interface Corner {
   readonly back: Move;
 }
 
-/** One leg: the movement keys held, with Shift at a run, how far past its end the eye is along the axis it ends on (done at 0 or more), and its corner. */
+/**
+ * One leg: the movement keys held, with Shift at a run; the level axis it ends on and its end's place along it; what the motion along that axis does once
+ * the keys change, its coast (0 when it goes on) and its speed, so a walk lets go `coast` and the speed times the release lag before `at`; its corner.
+ */
 export interface Leg {
   readonly label: string;
   readonly keys: readonly Move[];
   /** Whether Shift is held with the keys: a run, or else a walk. */
   readonly run: boolean;
-  readonly past: (eye: Vec3) => number;
-  /** The level direction `past` measures along, and the position along it where the leg is done (`past` is 0). */
   readonly axis: Facing;
-  readonly edge: number;
+  readonly at: number;
+  readonly coast: number;
+  readonly speed: number;
   readonly length: number;
   readonly corner: Corner | undefined;
 }
@@ -140,8 +148,9 @@ export const scale = (v: Facing, k: number): Facing => [v[0] * k, v[1] * k];
 /**
  * The legs that walk `points` facing `facing` (along an axis): each segment must run along the facing, across it or at 45° to them, so W, S, A or D, alone
  * or two together, walk it. A leg ends on the axis of the key the next leg lets go, early by that motion's coasting distance; one whose keys all stop, as
- * the last one's do, ends along its own direction a coast early; one whose keys all go on ends as the eye passes its end. `pace` walks them at a run
- * (Shift held) or at a walk, which coasts 0.14 m to a run's 0.35 m, for corners near an unguarded edge.
+ * the last one's do, ends along its own direction a coast early; one whose keys all go on ends as the eye passes its end; and each lets go earlier again
+ * by its speed times the release lag (./route-keys.ts). `pace` walks them at a run (Shift held) or at a walk, which coasts 0.14 m to a run's 0.35 m and
+ * goes on 2.5 times less far over a lag, for corners near an unguarded edge.
  */
 export function legs(points: readonly XZ[], facing: Facing, pace: 'run' | 'walk' = 'run'): Leg[] {
   const straight = pace === 'run' ? COAST : MOTION.walk * MOTION.groundTau;
@@ -168,9 +177,11 @@ export function legs(points: readonly XZ[], facing: Facing, pace: 'run' | 'walk'
     const length = Math.hypot(s.d[0], s.d[1]);
     let axis: Facing = [s.d[0] / length, s.d[1] / length];
     let coast = dropped.length === 0 ? 0 : straight;
+    let speed = pace === 'run' ? MOTION.run : MOTION.walk;
     if (s.keys.length === 2 && dropped.length === 1) {
       axis = dropped[0] === 'KeyW' || dropped[0] === 'KeyS' ? scale(facing, Math.sign(s.ahead)) : scale(right, Math.sign(s.across));
       coast = pace === 'run' ? SIDE_COAST : straight / Math.SQRT2;
+      speed /= Math.SQRT2;
     }
     const end: Vec3 = [s.q[0], 0, s.q[1]];
     // A corner where one motion stops along an axis of the facing (every stop but a diagonal's last): the keys along that axis and back.
@@ -179,110 +190,90 @@ export function legs(points: readonly XZ[], facing: Facing, pace: 'run' | 'walk'
     const sense = along([axis[0], 0, axis[1]], onFacing ? facing : right) > 0;
     const keysOn: readonly [Move, Move] = onFacing ? ['KeyW', 'KeyS'] : ['KeyD', 'KeyA'];
     const corner: Corner | undefined = dropped.length > 0 && (onFacing || onRight) ? { axis, end, on: sense ? keysOn[0] : keysOn[1], back: sense ? keysOn[1] : keysOn[0] } : undefined;
-    const edge = along(end, axis) - coast;
-    return { label: s.label, keys: s.keys, run: pace === 'run', past: (eye: Vec3) => along(eye, axis) - edge, axis, edge, length, corner };
+    return { label: s.label, keys: s.keys, run: pace === 'run', axis, at: along(end, axis), coast, speed, length, corner };
   });
 }
 
-/** A frame to write when the eye first meets `when`: the walker stops, the frame is taken, and the walk goes on. */
-export interface Stop {
-  readonly name: string;
-  readonly when: (eye: Vec3) => boolean;
-}
+/** How near its corner a walk brings the walker to rest before the next leg, metres along the corner's axis; the walks onto it it may take; and the run-up a walk onto it starts from, to come up to speed (95% in 0.29 m). */
+const CORNER = 0.25;
+const SETTLE_WALKS = 8;
+const RUN_UP = 0.3;
 
 /**
- * Waits in the page, checking at every frame, until the eye's position along the level `axis` passes `edge` going up (`sense` 1) or down (-1), or
- * `ms` pass; returns whether it did. The keys can then change a round trip after the frame that passed it, not a round trip of polling later.
+ * Walks the legs at their pace with real key presses, adding every sample to `samples`; stops for the frames asked for, the first time the eye stands in
+ * each stop's box. Each leg's line is watched in the page at every frame; a leg that comes no 5 cm nearer its line for 1.5 s fails with where it stands.
+ * At a corner the walker comes to rest and, if it rests more than CORNER off it, walks onto it at a walk, letting go its coast and lag before it; nearer
+ * than a stop at a walk can make, it first walks back the way the leg came. It fails, naming every rest, if SETTLE_WALKS walks do not bring it there.
  */
-export async function reached(page: Page, axis: Facing, edge: number, sense: 1 | -1, ms: number): Promise<boolean> {
-  return page.waitForFunction(
-    ([ax, az, at, s]) => {
-      const eye = window.__met?.walk.eye;
-      return eye != null && s * (eye[0] * ax + eye[2] * az - at) >= 0;
-    },
-    [axis[0], axis[1], edge, sense] as const,
-    { polling: 'raf', timeout: ms },
-  ).then(
-    () => true,
-    () => false,
-  );
-}
-
-/** Walks the legs at their pace with real key presses, adding every sample to `samples`; stops for the frames asked for. */
 export async function walk(page: Page, route: string, list: readonly Leg[], samples: Sample[], stops: readonly Stop[] = []): Promise<Sample> {
+  await startKeyLog(page);
   const pending = [...stops];
-  const held = new Set<string>();
+  const keys = new Keys(page);
   /** The keys a leg holds: its movement keys, with Shift at a run. */
   const keysOf = (leg: Leg | undefined): string[] => (leg === undefined ? [] : leg.run ? ['Shift', ...leg.keys] : [...leg.keys]);
-  /** Holds exactly `keys`: lets go of the others first, then presses the new ones. */
-  const hold = async (keys: readonly string[]): Promise<void> => {
-    for (const key of [...held]) {
-      if (keys.includes(key)) continue;
-      await page.keyboard.up(key);
-      held.delete(key);
-    }
-    for (const key of keys) {
-      if (held.has(key)) continue;
-      await page.keyboard.down(key);
-      held.add(key);
-    }
-  };
+  /** Where along its axis a leg lets go: its end, early by what the walker covers once the keys change. */
+  const lineOf = (leg: Leg): number => leg.at - travel(page, leg.speed, leg.coast);
   // Frames from before this walk (turns, earlier walks) are not its own.
   let last = (await record(page)).at(-1) ?? (await sample(page));
-  /** At a corner: lets the walker come to rest, then walks it back (or on) at a walk along the corner's axis until the eye is within 0.25 m of it. */
-  const settle = async (c: Corner): Promise<void> => {
-    await hold([]);
-    for (let k = 0; k < 4; k++) {
+  const take = async (): Promise<void> => {
+    const frames = await record(page);
+    samples.push(...frames);
+    last = frames.at(-1) ?? last;
+  };
+  const settle = async (c: Corner, label: string): Promise<void> => {
+    await keys.hold([]);
+    const rests: string[] = [];
+    for (let k = 0; ; k += 1) {
       last = await still(page);
-      const error = along(last.eye, c.axis) - along(c.end, c.axis);
-      if (Math.abs(error) <= 0.25) return;
-      await hold([error > 0 ? c.back : c.on]);
-      // Let go once the eye comes within 0.2 m of the corner (or crosses it), at most 3 s.
       const at = along(c.end, c.axis);
-      await reached(page, c.axis, error > 0 ? at + 0.2 : at - 0.2, error > 0 ? -1 : 1, 3000);
-      await hold([]);
-      const frames = await record(page);
-      samples.push(...frames);
-      last = frames.at(-1) ?? last;
+      const error = along(last.eye, c.axis) - at;
+      rests.push(error.toFixed(2));
+      if (Math.abs(error) <= CORNER) return;
+      if (k === SETTLE_WALKS) {
+        throw new Error(`${route}: after the leg ${label} the walker came to rest no nearer than ${String(CORNER)} m to its corner ${fmt(c.end)} along [${c.axis.join(', ')}] in ${String(SETTLE_WALKS)} walks onto it: it rested ${rests.join(', ')} m past it, the release lag taken ${lag(page).toFixed(3)} s.`);
+      }
+      // The leg came along +axis, so the way back is walkable: from past the corner, or too near it to stop on it, walk back that way first.
+      const go = travel(page, MOTION.walk, MOTION.walk * MOTION.groundTau);
+      const near = Math.abs(error) < go + RUN_UP;
+      const dir: 1 | -1 = near || error > 0 ? -1 : 1;
+      await keys.hold([dir === 1 ? c.on : c.back]);
+      const seen = await watch(page, c.axis, near ? at - go - RUN_UP : at - dir * go, dir);
+      await keys.hold([]);
+      if (seen.kind === 'line') await learnLag(page, seen.t);
+      await take();
+      if (seen.kind === 'stuck' && !near) throw new Error(`${route}: after the leg ${label}, walking onto its corner ${fmt(c.end)}, the walker stuck at ${fmt(seen.eye)}, ${error.toFixed(2)} m past it at the start.`);
     }
   };
   for (const [i, leg] of list.entries()) {
-    let now = leg.past(last.eye);
-    if (now >= 0) {
-      if (leg.corner !== undefined) await settle(leg.corner);
+    if (along(last.eye, leg.axis) >= lineOf(leg)) {
+      if (leg.corner !== undefined) await settle(leg.corner, leg.label);
       continue;
     }
-    let best = now;
-    let improved = Date.now();
-    await hold(keysOf(leg));
-    while (now < 0) {
-      // The leg's end is watched in the page; once the eye passes it, the keys change at once to what comes next: none at a corner, else the next leg's.
-      if (await reached(page, leg.axis, leg.edge, 1, 300)) await hold(leg.corner !== undefined ? [] : keysOf(list[i + 1]));
-      const frames = await record(page);
-      samples.push(...frames);
-      last = frames.at(-1) ?? last;
-      now = leg.past(last.eye);
-      if (now > best + 0.05) {
-        best = now;
-        improved = Date.now();
+    await keys.hold(keysOf(leg));
+    for (;;) {
+      // The leg's line is watched in the page; once the eye passes it, the keys change at once to what comes next: none at a corner, else the next leg's.
+      const seen = await watch(page, leg.axis, lineOf(leg), 1, pending);
+      if (seen.kind === 'line') {
+        await keys.hold(leg.corner !== undefined ? [] : keysOf(list[i + 1]));
+        await learnLag(page, seen.t);
+        await take();
+        break;
       }
-      const stop = pending.find((s) => frames.some((f) => s.when(f.eye)));
-      if (now < 0 && stop !== undefined) {
-        pending.splice(pending.indexOf(stop), 1);
-        await hold([]);
-        last = await still(page);
-        await page.screenshot({ path: test.info().outputPath(`${stop.name}.png`) });
-        await hold(keysOf(leg));
-        improved = Date.now();
+      if (seen.kind === 'stuck') {
+        await keys.hold([]);
+        await take();
+        throw new Error(`${route}: stuck on the leg ${leg.label}, the eye at ${fmt(seen.eye)} (on the ground: ${String(last.onGround)}), ${(lineOf(leg) - along(seen.eye, leg.axis)).toFixed(2)} m short.`);
       }
-      if (now < 0 && Date.now() - improved > 1500) {
-        await hold([]);
-        throw new Error(`${route}: stuck on the leg ${leg.label}, the eye at ${fmt(last.eye)} (on the ground: ${String(last.onGround)}), ${(-now).toFixed(2)} m short.`);
-      }
+      const [stop] = pending.splice(seen.stop, 1);
+      await keys.hold([]);
+      await take();
+      last = await still(page);
+      await page.screenshot({ path: test.info().outputPath(`${stop?.name ?? 'stop'}.png`) });
+      await keys.hold(keysOf(leg));
     }
-    if (leg.corner !== undefined) await settle(leg.corner);
+    if (leg.corner !== undefined) await settle(leg.corner, leg.label);
   }
-  await hold([]);
+  await keys.hold([]);
   return still(page);
 }
 
@@ -401,9 +392,17 @@ export async function doorIs(page: Page, id: string, state: string, ms = 4000 * 
   return found;
 }
 
-/** Waits until the look target is door `id` and the prompt under the crosshair says `text`. */
+/** Waits until the look target is door `id` and the prompt under the crosshair says `text`; fails with the eye, the look and the target it found instead. */
 export async function looksAt(page: Page, id: string, text: string): Promise<void> {
-  await page.waitForFunction((door) => window.__met?.walk.target?.kind === 'door' && window.__met.walk.target.id === door, id, { timeout: 3000 * throttleRate() });
+  const ms = 3000 * throttleRate();
+  const seen = await page.waitForFunction((door) => window.__met?.walk.target?.kind === 'door' && window.__met.walk.target.id === door, id, { timeout: ms }).then(
+    () => true,
+    () => false,
+  );
+  if (!seen) {
+    const walk = await page.evaluate(() => ({ eye: window.__met?.walk.eye ?? null, look: window.__met?.walk.look ?? null, target: window.__met?.walk.target ?? null }));
+    throw new Error(`Door ${id} was not the look target within ${String(ms)} ms: the eye at ${walk.eye === null ? 'none' : fmt(walk.eye)} looking along ${walk.look === null ? 'none' : fmt(walk.look)} found ${JSON.stringify(walk.target)} (a door's reach is 2 m, src/walk/look.ts).`);
+  }
   await expect(page.getByTestId('door-prompt')).toHaveText(text);
   await expect(page.getByTestId('crosshair')).toHaveAttribute('data-target', 'door');
 }
