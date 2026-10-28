@@ -4,9 +4,8 @@
  * as walk mode rebuilds it, and the walker settled against the pieces the second build added (`instancesBefore`), as walk mode settles it.
  * Two cases run the real sequence: the Grand Staircase's flights built where a walker stands (review of work unit 1, U1 part two), and Weston's facade
  * built through a walker in its pavilion's brick (work unit 3, review 2, F14).
- * Bound: fixtures are closed boxes. Of the model's pieces, those `openWall`, `holeLining` and `archedPassage` build are closed along vertical lines
- * (src/model/closure.test.ts); other builders' solids are not checked, and many are open along such lines (docs/work/5_closed-pieces/plan.md). A piece
- * has no inside on a line that crosses it an odd number of times, so the build does not lift a walker out of it there, and that is not tested here.
+ * Bound: fixtures are closed boxes. Every piece of the model is closed along vertical lines or a declared sheet (src/model/closure.test.ts); a sheet has
+ * no inside, so the build does not lift a walker out of one, which src/walk/crossings.test.ts checks.
  * Walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.
  */
 import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';

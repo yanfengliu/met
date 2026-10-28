@@ -169,8 +169,7 @@ export function medallionDisc(radius: number, thickness: number, segments: numbe
  * The lining of a round-arched passage: two jambs and an arch `band` thick round an opening `2 * half` wide whose arch springs at `spring`, `depth`
  * long. Origin on the floor at the opening's middle; the passage runs from z = 0 toward −Z; its feet on the floor look down, so a section cut through
  * a jamb shows a closed solid (src/viewer/cap-pass.ts). The arch is 12 flat facets, as the core's round heads (core/arches.ts holeOutline and
- * holeLining), so it meets the core's lining of the same section flush. Its geometry is named 'archedPassage': src/model/closure.test.ts finds its
- * pieces by it.
+ * holeLining), so it meets the core's lining of the same section flush.
  */
 export function archedPassage(half: number, band: number, spring: number, depth: number): THREE.BufferGeometry {
   return once(`archedPassage|${String(half)}|${String(band)}|${String(spring)}|${String(depth)}`, () => {
@@ -188,8 +187,6 @@ export function archedPassage(half: number, band: number, spring: number, depth:
       if (p === undefined || q === undefined) continue;
       b.polygon([new THREE.Vector3(p[0], p[1], -depth), new THREE.Vector3(q[0], q[1], -depth), new THREE.Vector3(q[0], q[1], 0), new THREE.Vector3(p[0], p[1], 0)]);
     }
-    const passage = b.build();
-    passage.name = 'archedPassage';
-    return passage;
+    return b.build();
   });
 }

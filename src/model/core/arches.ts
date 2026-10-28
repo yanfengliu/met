@@ -105,7 +105,7 @@ export interface OpenWallParams {
   readonly openEnds?: boolean;
 }
 
-/** A wall with holes of any head shape (see the header for the frame). Its geometry is named 'openWall': src/model/closure.test.ts finds its pieces by it. */
+/** A wall with holes of any head shape (see the header for the frame). */
 export function openWall(params: OpenWallParams): BufferGeometry {
   const holes = params.holes ?? [];
   checkHoles(params.width, params.height, holes);
@@ -188,16 +188,13 @@ function buildWall(width: number, height: number, thickness: number, holes: read
     }
     if (loop.depth < thickness) b.planar(pts, [], new Vector3(0, 0, -loop.depth), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
   }
-  const wall = b.build();
-  wall.name = 'openWall';
-  return wall;
+  return b.build();
 }
 
 /**
  * The lining of a hole through a wall, in openWall's frame: the band between the hole's outline and a smaller one's on the same sill, `depth` deep
  * from the front face toward −Z. Its outer face lies on the reveal of a hole cut to `outer` (the same 12 facets per head as openWall's), its inner
  * face looks into the opening, and its feet on the sill line look down, so a section cut through a jamb shows a closed solid (src/viewer/cap-pass.ts).
- * Its geometry is named 'holeLining': src/model/closure.test.ts finds its pieces by it.
  */
 export function holeLining(outer: Hole, inner: Hole, depth: number): BufferGeometry {
   const sill = outer.y ?? 0;
@@ -219,9 +216,7 @@ export function holeLining(outer: Hole, inner: Hole, depth: number): BufferGeome
       if (p === undefined || q === undefined) continue;
       b.polygon([new Vector3(p[0], p[1], -depth), new Vector3(q[0], q[1], -depth), new Vector3(q[0], q[1], 0), new Vector3(p[0], p[1], 0)]);
     }
-    const lining = b.build();
-    lining.name = 'holeLining';
-    return lining;
+    return b.build();
   });
 }
 

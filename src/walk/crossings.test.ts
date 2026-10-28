@@ -3,8 +3,9 @@
  * When the build moves), on fixtures built through the page's collision path: one surface met through an edge or a corner of its triangles counts once,
  * two faces back to back in one piece count twice, and so do a face looking up and one looking down meeting at the line, so a closed piece is crossed an
  * even number of times; and a walker that a piece of two parts is built through is found inside the upper part. Two pins: two overlapping parts whose
- * faces share planes are crossed at each, so their overlap reads as outside (the bound src/model/closure.test.ts measures on the model), and a
- * rusticated wall whose window's sill lies on a channel's floor and head on a channel's ceiling lays one face at each, not two.
+ * faces share planes are crossed at each, so their overlap reads as outside, and a walker in it is found by their tops where they are shorter than it
+ * and missed wholly inside a taller one (the bound src/model/closure.test.ts keeps on the model); and a rusticated wall whose window's sill lies on a
+ * channel's floor and head on a channel's ceiling lays one face at each, not two.
  * Bound: fixtures only; src/model/closure.test.ts checks that every piece of the model is closed along vertical lines.
  */
 import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
@@ -146,6 +147,30 @@ describe('where a vertical line crosses a piece', () => {
     const w = world([step('overlap', b.build())]);
     expect(heightsAt(w, 0.3, 0.1), 'inside both parts').toEqual([0, 0, 3, 3]);
     expect(heightsAt(w, -1.5, -1.5), 'inside one').toEqual([0, 3]);
+  });
+
+  it('finds a walker that two overlapping parts shorter than it are built through, by their tops, and misses one wholly inside a taller overlap', () => {
+    for (const [height, settled] of [
+      [1.2, 'moved'],
+      [3, 'kept'],
+    ] as const) {
+      const b = new MeshBuilder();
+      b.box([-2, 0, -2], [2, height, 2]);
+      b.box([-1, 0, -1], [3, height, 3]);
+      const floor = new MeshBuilder();
+      floor.box([-20, -0.2, -20], [20, 0, 20]);
+      const timeline = new Timeline([step('floor', floor.build()), step('overlap', b.build())]);
+      const w = new CollisionWorld(new GeometryBvhs());
+      timeline.evaluate(1);
+      w.build(collisionMeshes(timeline.steps, 1));
+      const walker = new Walker(w, -1);
+      // Inside both parts, 1.1 m or more from their sides, out of reach of the capsule test.
+      walker.place(0.3, 0, 0.1, 0);
+      timeline.evaluate(2);
+      w.build(collisionMeshes(timeline.steps, 2));
+      expect(walker.settle(instancesBefore(timeline.steps, 1)), `parts ${String(height)} m tall`).toBe(settled);
+      if (settled === 'moved') expect(walker.feet.y, 'on their tops').toBeCloseTo(height, 6);
+    }
   });
 
   it("lays one face where a window's sill lies on a channel's floor and its head on a channel's ceiling, so the opening reads as outside", () => {

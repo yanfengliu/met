@@ -36,7 +36,7 @@ export interface WalkWorld {
 export type Settled = 'kept' | 'moved' | 'lost';
 
 /** A surface less than this above the feet is the one they stand on, metres. */
-const STANDING = 1e-3;
+export const STANDING = 1e-3;
 
 /**
  * Whether a piece crossed at `heights` (lowest first) along a vertical line holds some of that line between `low` and `high` inside it: between its first
