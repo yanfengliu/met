@@ -3,13 +3,14 @@
  * artworks on their way (docs/design/spec.md, Walk mode and Doors; work unit 2, integration). Walk mode is entered as a visitor enters it (the F key, or
  * the view menu's "Walk from the Great Hall"); then only held keys (W, A, S, D, Shift) and mouse drags move and turn the walker, E uses the door it looks
  * at, and its eye is read from the read-only `window.__met.walk` at every frame (./route-walk.ts). Three walks, each on one page from one entry:
- * - R1, R2 and R5 out and back: from the plaza spawn up the front steps into the central arch's middle door, closed and solid, which holds the walker a
- *   body's radius before its leaves while W stays held; turned onto a leaf, "E Open", and E swings it into the building; through it, and from the
- *   entrance bay, clear of the leaves' sweep, "E Close" and E shuts it behind; round Roche's desk on R1 to the nave's west side and on as R5 goes, up
- *   the Grand Staircase on R2's line over its landing and across the cross hall through its doorway into gallery 600, where Tiepolo's Triumph of
- *   Marius's card shows; turned round, back out through the doorway, down the stair and round the desk to the entrance bay; the door shut, "E Open"
- *   and E swings it out toward the plaza, away from the walker; out through it, and from before it, clear of the sweep, "E Close" and E shuts it
- *   behind; down the front steps to R1's start. At every frame drawn the card and the door prompt never both show, each only with its own kind of look
+ * - R1, R2 and R5 out and back: from the plaza spawn up the front steps on the axis, straight at the central arch's middle door, closed and solid,
+ *   whose prompt says "E Open" from 1.9 m out and which holds the walker a body's radius before its leaves while W stays held; E, looking straight on,
+ *   swings it into the building; through it, and from the entrance bay, clear of the leaves' sweep, turned back onto an open leaf, "E Close" and E
+ *   shuts it behind; round Roche's desk on R1 to the nave's west side and on as R5 goes, up the Grand Staircase on R2's line over its landing and
+ *   across the cross hall through its doorway into gallery 600, where Tiepolo's Triumph of Marius's card shows; turned round, back out through the
+ *   doorway, down the stair and up the nave to the entrance bay, straight at the shut door: "E Open", and E swings it out toward the plaza, away from
+ *   the walker; out through it, and from before it, clear of the sweep, onto an open leaf, "E Close" and E shuts it behind; down the front steps to
+ *   R1's start. At every frame drawn the card and the door prompt never both show, each only with its own kind of look
  *   target, with frames of the prompt alone before and after the card and of the card alone (review 7, F30).
  * - R3, the Temple of Dendur hall and R6 out and back: R3 from the Great Hall spawn to beside the platform; up the north side flight onto the platform,
  *   then aimed by drags and at a walk toward the Sphinx of Hatshepsut until its card shows within 6 m, and turned away until it goes; onto the terrace,
@@ -20,18 +21,20 @@
  *   away; R6 back, and the way the two share back to the spawn.
  * - R4 and R7 out and back, with Weston's door: R4 from the Great Hall spawn into the Leon Levy and Shelby White Court; R4 back to gallery 153's south
  *   door; R7 through it, Exhibition Gallery 199, the corridor through the party wall into gallery 549 and the court wall's opening into the Petrie Court,
- *   to Weston's door's axis; the door, closed and solid, holds the walker before its leaves, "E Open" and E swings it into wing B; through it into
- *   gallery 529, and there, clear of the sweep, "E Close" and E shuts it, "E Open" and E swings it open again toward the walker, the one way it opens;
- *   back through it into the court; R7 back to gallery 153; and the way the two share back to the spawn.
+ *   to Weston's door's axis; walked straight at, the door, closed and solid, shows "E Open" from 1.9 m out and holds the walker before its leaves, and
+ *   E swings it into wing B; through it into gallery 529, and there, clear of the sweep, onto an open leaf, "E Close" and E shuts it, then straight at
+ *   it, "E Open" and E swings it open again toward the walker, the one way it opens; back through it into the court; R7 back to gallery 153; and the
+ *   way the two share back to the spawn.
  * At the ends of R3 and R4, unthrottled, the walking frame budget is measured walking on and then running back.
  * Bound: a held key is let go once the eye passes the turn it walks to, early by the walker's coasting distance (src/walk/walker.ts, MOTION); at a
  * corner the walker then comes to rest and, if it coasted on more than 0.25 m (the keys can go up late when the machine is loaded), walks back onto the
- * corner at a walk. It rests 0.8 to 1.5 m past the end of a diagonal last leg (R1's), whose sideways motion builds up late. A leg that makes no progress
- * for 1.5 s fails with where the walker stands; each leg's end and each corner's stop are watched in the page at every frame. Each test's one deadline is
- * its timeout, times the CPU throttle (MET_CPU_THROTTLE, tests/e2e/helpers.ts `throttle`), as long frames past the page's 0.1 s cap slow the walk against
- * the wall clock. Heights are read where the eye has eased out of the last stair snap. Doors' leaves come from the finished model built in the test's
- * process (./route-places.ts), artworks' boxes from the collection's placements (./labels-helpers.ts). Frames of the doorways, passages, the stair's
- * landing and each arrival go to each test's output folder for a person to inspect; nothing here judges them.
+ * corner at a walk. A leg that makes no progress for 1.5 s fails with where the walker stands; each leg's end and each corner's stop are watched in the
+ * page at every frame. Each test's one deadline is its timeout, times the CPU throttle (MET_CPU_THROTTLE, tests/e2e/helpers.ts `throttle`), as long
+ * frames past the page's 0.1 s cap slow the walk against the wall clock. Heights are read where the eye has eased out of the last stair snap. On the Dendur forecourt the walker walks, its stop coasting 0.14 m
+ * to a run's 0.35 m, as the south flight lies 0.76 m in from the dais's 0.79 m side (at 4× a run's late stop walked off it). Doors' leaves come from the
+ * finished model built in the test's process (./route-places.ts); Weston's raised panels stand 18 mm proud of their stiles, so a walker held where it
+ * meets one stands that much farther out. Artworks' boxes come from the collection's placements (./labels-helpers.ts). Frames of the doorways,
+ * passages, the stair's landing and each arrival go to each test's output folder for a person to inspect; nothing here judges them.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -49,7 +52,7 @@ import { COURT_WALL, COURT_X0 } from '../../src/model/roche-south/kravis.js';
 import { BODY } from '../../src/walk/walker.js';
 import { expectWalkingBudget, open, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
 import { TRIUMPH } from './labels-helpers.js';
-import { approach, clearOfSwing, doorPlan, leafPoint, lineUp, screens, standOff, watchScreens } from './route-places.js';
+import { approach, clearOfSwing, doorPlan, leafPoint, lineUp, promptOnApproach, screenMark, screens, screensSince, standOff, watchScreens } from './route-places.js';
 import type { Screen } from './route-places.js';
 import { airborne, along, between, doorFacts, doorIs, entranceLeaves, face, fmt, into, legs, looksAt, MIDDLE_DOOR, MINUS_X, MINUS_Z, off, PLUS_X, PLUS_Z, toward, walk, walkFromGreatHall, walking } from './route-walk.js';
 import type { Facing, Sample, XZ } from './route-walk.js';
@@ -113,16 +116,21 @@ test.describe('walk routes both ways through real input', () => {
     const plan = doorPlan(MIDDLE_DOOR);
     const inward: Sample[] = [start];
     // R1 in: up the front steps at a run to 2 m before the doors, then on into the closed middle door with Shift and W held: its leaves hold the walker.
+    // The walk keeps to the axis from the plaza spawn, straight at the pair's meeting stiles, as a visitor walks up to the door.
     await walk(page, 'R1 to the doors', legs([...ROUTE_R1.points.slice(0, 1), [0, door.front + 2]], MINUS_Z), inward, [{ name: 'r1-doorway-outside', when: (eye) => eye[2] <= 2.6 }]);
+    const toDoor = await screenMark(page);
     const stopped = await into(page, ['Shift', 'KeyW'], MINUS_Z, -(door.front + BODY.radius + 0.1), inward, 10_000 * throttleRate());
+    // Walking straight at the closed door, from 1.9 m out until its leaves hold the walker, its prompt says "E Open" (final review, F46).
+    const coming = promptOnApproach(await screensSince(page, toDoor), plan, 'front', 'E Open');
+    expect(coming.near, 'frames walking at the closed door within 1.9 m of its leaves').toBeGreaterThan(5);
+    expect(coming.apart.slice(0, 5), `frames walking straight at the closed door with no "E Open" (${String(coming.apart.length)} of ${String(coming.near)})`).toEqual([]);
     const stop = door.front + BODY.radius;
     expect(Math.abs(stopped.eye[2] - stop), `held at ${fmt(stopped.eye)} by the closed leaves, their front face at Z ${door.front.toFixed(3)}, a body's radius before it Z ${stop.toFixed(3)}`).toBeLessThan(0.01);
     // Pushed on the pair's 8 mm gap, the body slides a few centimetres along the leaves before it rests (4.8 cm here), as along any wall it pushes on.
     expect(Math.abs(stopped.eye[0]), `held before the middle of the pair at ${fmt(stopped.eye)}`).toBeLessThan(0.1);
     expect(await doorFacts(page, MIDDLE_DOOR), 'the door that held it').toMatchObject({ state: 'closed', angle: 0 });
     await page.screenshot({ path: test.info().outputPath('r1-door-held.png') });
-    // Turned a little to the right, the eye meets the right leaf, off the pair's 8 mm gap, where it would meet none: "E Open", and E opens the door.
-    await face(page, toward(stopped.eye, 0.2, door.front));
+    // Still looking straight ahead: "E Open", and E opens the door.
     await looksAt(page, MIDDLE_DOOR, 'E Open');
     await page.keyboard.press('KeyE');
     expect((await doorIs(page, MIDDLE_DOOR, 'open')).angle, 'a quarter turn into the building, away from the walker').toBe(90);
@@ -149,8 +157,8 @@ test.describe('walk routes both ways through real input', () => {
     const r1 = `R1 in ${((Date.now() - started) / 1000).toFixed(1)} s, held by the closed door at ${fmt(stopped.eye)}, R5 to ${fmt(top.eye)}`;
     console.log(r1);
     expectThroughTheDoorway(inward, 'R1 in');
-    const west = inward.filter((s) => Math.hypot(s.eye[0] - nave[0], s.eye[2] - nave[1]) < 0.5);
-    expect(west.length, `${r1}: samples at the nave's west side, where R1 ends and R2 and R5 begin`).toBeGreaterThan(0);
+    const west = between(inward, nave[1] + 0.5, HALL_WEST_Z + 0.5).filter((s) => Math.abs(s.eye[0]) < 3);
+    expect(west.length, `${r1}: samples from the nave's west side, where R1 ends and R2 and R5 begin, to the hall's west end`).toBeGreaterThan(0);
     expect(off(west, MAIN_FLOOR_Y + EYE, 0.03), `${r1}: eyes off the Great Hall's floor at the nave's west side`).toEqual([]);
     // Heights from 1.4 m past the end of a flight, where the eye has eased out of its snaps (about 0.1 s, src/walk/walker.ts).
     expect(off(between(inward, STAIR_MID_FRONT_Z - 1.4, STAIR_MID_BACK_Z + 0.5), STAIR_LANDING_Y + EYE, 0.05), `${r1}: eyes off the landing`).toEqual([]);
@@ -161,6 +169,7 @@ test.describe('walk routes both ways through real input', () => {
     // R5 and R2 back, then R1 back: turned round by drags, out through the doorway, down the stair, round the desk and up the nave to the entrance bay.
     await face(page, Math.PI);
     const outward: Sample[] = [];
+    const fromHall = await screenMark(page);
     const bay = await walk(page, 'R5 and R1 back', legs([...reversed(ROUTE_R5).points, ...reversed(ROUTE_R1).points.slice(1, -1), [0, BAY_Z]], PLUS_Z), outward, [{ name: 'r5-doorway-back', when: (eye) => eye[2] >= INNER_EAST_Z + 0.5 }]);
     const r5back = `R5 back from gallery 600 and R1 back to ${fmt(bay.eye)}`;
     expect(off(between(outward, GALLERY_600_MID_Z, STAIR_TOP_Z - 0.5), SECOND_FLOOR_Y + EYE, 0.05), `${r5back}: eyes off the second floor, the doorway and the cross hall`).toEqual([]);
@@ -168,10 +177,11 @@ test.describe('walk routes both ways through real input', () => {
     expect(off(between(outward, STAIR_MID_BACK_Z + 1.4, STAIR_MID_FRONT_Z - 0.5), STAIR_LANDING_Y + EYE, 0.05), `${r5back}: eyes off the landing`).toEqual([]);
     expect(off(between(outward, HALL_WEST_Z, nave[1] + 0.5), MAIN_FLOOR_Y + EYE, 0.05), `${r5back}: eyes off the Great Hall's floor from the stair's foot to the nave's west side`).toEqual([]);
     expectInTheHall(bay, r5back);
-    // The door, shut behind on the way in: "E Open" on its leaf, and E swings it out toward the plaza, away from the walker inside.
+    // The door, shut behind on the way in, before the walker as it came up the nave: "E Open", and E swings it out toward the plaza, away from the walker.
     if ((await doorFacts(page, MIDDLE_DOOR))?.state !== 'open') {
-      await face(page, toward(bay.eye, 0.2, door.back));
       await looksAt(page, MIDDLE_DOOR, 'E Open');
+      const going = promptOnApproach(await screensSince(page, fromHall), plan, 'back', 'E Open');
+      expect(going.apart.slice(0, 5), `frames walking up the nave at the closed door with no "E Open" (${String(going.apart.length)} of ${String(going.near)})`).toEqual([]);
       await page.keyboard.press('KeyE');
       expect((await doorIs(page, MIDDLE_DOOR, 'open')).angle, 'a quarter turn out toward the plaza, away from the walker inside').toBe(-90);
     }
@@ -405,10 +415,17 @@ async function dendurHall(page: Page, samples: Sample[]): Promise<void> {
   await approach(page, SPHINX, Math.PI / 2, 'the Temple of Dendur hall');
   const dais: Sample[] = [];
   const terrace: XZ = [STRIP_X, TERRACE_Z];
-  const passage = await walk(page, 'up the dais into the gate', legs([lineUp(await walking(page), terrace), terrace, [NORTH_FLIGHT_X, TERRACE_Z], [NORTH_FLIGHT_X, FORECOURT_Z], [TEMPLE_AXIS_X, FORECOURT_Z], [TEMPLE_AXIS_X, PASSAGE_Z]], MINUS_X), dais);
+  const northHead: XZ = [NORTH_FLIGHT_X, FORECOURT_Z];
+  const southHead: XZ = [SOUTH_FLIGHT_X, FORECOURT_Z];
+  // Onto the terrace and up the north flight at a run; on the forecourt at a walk, whose stop coasts 0.14 m to a run's 0.35 m: the south flight's line
+  // lies 0.76 m in from the dais's side, which drops 0.79 m to the platform, and the passage ends at the gate's riser (at 4×, a run's late stop at the
+  // south flight walked off the dais). Down the south flight and along the terrace at a run again.
+  await walk(page, 'up the dais’s north flight', legs([lineUp(await walking(page), terrace), terrace, [NORTH_FLIGHT_X, TERRACE_Z], northHead], MINUS_X), dais);
+  const passage = await walk(page, 'into the gate’s passage', legs([northHead, [TEMPLE_AXIS_X, FORECOURT_Z], [TEMPLE_AXIS_X, PASSAGE_Z]], MINUS_X, 'walk'), dais);
   await page.screenshot({ path: test.info().outputPath('dendur-gate-passage.png') });
   expect(passage.eye[2] > GATE_THRESHOLD.minZ + 0.5 && passage.eye[2] < GATE_THRESHOLD.maxZ && Math.abs(passage.eye[0] - TEMPLE_AXIS_X) < 0.5, `in the gate's passage at ${fmt(passage.eye)}`).toBe(true);
-  const down = await walk(page, 'across the dais and down', legs([[TEMPLE_AXIS_X, passage.eye[2]], [TEMPLE_AXIS_X, FORECOURT_Z], [SOUTH_FLIGHT_X, FORECOURT_Z], [SOUTH_FLIGHT_X, TERRACE_Z], [TEMPLE_AXIS_X, TERRACE_Z]], MINUS_X), dais);
+  await walk(page, 'across the forecourt', legs([[TEMPLE_AXIS_X, passage.eye[2]], [TEMPLE_AXIS_X, FORECOURT_Z], southHead], MINUS_X, 'walk'), dais);
+  const down = await walk(page, 'down the dais’s south flight', legs([southHead, [SOUTH_FLIGHT_X, TERRACE_Z], [TEMPLE_AXIS_X, TERRACE_Z]], MINUS_X), dais);
   // On the forecourt and in the passage, on their one level, from 1 m past the north flight to 1 m before the south one.
   const forecourt = dais.filter((s) => s.eye[2] < DAIS_STEPS.minZ - 1 || (Math.abs(s.eye[0] - TEMPLE_AXIS_X) < 0.5 && s.eye[2] < GATE_THRESHOLD.maxZ)).filter((s) => s.eye[0] < NORTH_FLIGHT_X - 1 && s.eye[0] > SOUTH_FLIGHT_X + 1);
   expect(forecourt.length, 'samples on the forecourt and in the passage').toBeGreaterThan(0);
@@ -428,21 +445,28 @@ async function dendurHall(page: Page, samples: Sample[]): Promise<void> {
 }
 
 /**
- * Weston's door from R7's end in the Petrie Court: closed and solid, it holds the walker a body's radius before its leaves while W stays held; turned onto
- * a leaf, "E Open", and E swings it into wing B; through it into gallery 529, to where the walker stands clear of the leaves' sweep yet within reach of a
- * leaf open and closed (./route-places.ts `standOff`): "E Close" and E shuts it, "E Open" and E swings it open again toward the walker, the one way it
- * opens; back through it to R7's end. Every frame goes into `samples`.
+ * Weston's door from R7's end in the Petrie Court: walked straight at along its axis, closed and solid, it shows "E Open" from 1.9 m out and holds the
+ * walker a body's radius before its leaves while W stays held, and E, looking straight on, swings it into wing B; through it into gallery 529, to where
+ * the walker stands clear of the leaves' sweep yet within reach of a leaf open and closed (./route-places.ts `standOff`): turned onto an open leaf, "E
+ * Close" and E shuts it; turned straight at it, "E Open" and E swings it open again toward the walker, the one way it opens; back through it to R7's
+ * end. Every frame goes into `samples`.
  */
 async function westonDoor(page: Page, samples: Sample[]): Promise<void> {
   const door = doorPlan('weston');
   const into529 = reverse(door.normal);
   const across: Facing = [-door.normal[1], door.normal[0]];
+  // Turned to face the door along its axis, and walked straight at it with W held, as a visitor walks up to it: "E Open" from 1.9 m out (F46).
   await face(page, yawFor(into529));
+  await watchScreens(page);
   const held = await into(page, ['KeyW'], into529, -(door.front + BODY.radius + 0.1), samples, 10_000 * throttleRate());
-  expect(Math.abs(along(held.eye, door.normal) - (door.front + BODY.radius)), `held at ${fmt(held.eye)} by the closed leaves, a body's radius before their face`).toBeLessThan(0.01);
-  expect(Math.abs(along(held.eye, across) - along([door.middle[0], 0, door.middle[1]], across)), `held before the middle of the pair at ${fmt(held.eye)}`).toBeLessThan(0.1);
+  const coming = promptOnApproach(await screens(page, true), door, 'front', 'E Open');
+  expect(coming.near, 'frames walking at the closed door within 1.9 m of its leaves').toBeGreaterThan(5);
+  expect(coming.apart.slice(0, 5), `frames walking straight at Weston's closed door with no "E Open" (${String(coming.apart.length)} of ${String(coming.near)})`).toEqual([]);
+  // A body's radius before the leaves: before their stiles' face, or their raised panels' where it meets one.
+  const out = along(held.eye, door.normal) - BODY.radius;
+  expect(out > door.front - 0.01 && out < door.frontmost + 0.01, `held at ${fmt(held.eye)} by the closed leaves, a body's radius before their face (${door.front.toFixed(3)} at the stiles, ${door.frontmost.toFixed(3)} at the panels): ${out.toFixed(3)}`).toBe(true);
+  expect(Math.abs(along(held.eye, across) - along([door.middle[0], 0, door.middle[1]], across)), `held inside the doorway at ${fmt(held.eye)}`).toBeLessThan(door.leaf.width - BODY.radius);
   await page.screenshot({ path: test.info().outputPath('weston-held.png') });
-  await face(page, toward(held.eye, ...leafPoint(door, 'closed', 'front')));
   await looksAt(page, 'weston', 'E Open');
   await page.keyboard.press('KeyE');
   expect((await doorIs(page, 'weston', 'open')).angle, 'a quarter turn into wing B, away from the walker').toBe(90);
@@ -457,7 +481,8 @@ async function westonDoor(page: Page, samples: Sample[]): Promise<void> {
   await looksAt(page, 'weston', 'E Close');
   await page.keyboard.press('KeyE');
   expect(await doorIs(page, 'weston', 'closed'), 'shut from gallery 529').toMatchObject({ state: 'closed', angle: 0 });
-  await face(page, toward(inside.eye, ...leafPoint(door, 'closed', 'back')));
+  // Turned to face the closed door along its axis, straight on: "E Open".
+  await face(page, yawFor(door.normal));
   await looksAt(page, 'weston', 'E Open');
   await page.keyboard.press('KeyE');
   expect((await doorIs(page, 'weston', 'open')).angle, 'open again into wing B, toward the walker, the one way it opens').toBe(90);

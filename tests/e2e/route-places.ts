@@ -31,6 +31,8 @@ export interface DoorPlan {
   /** Along `normal`, world metres: the closed leaves' front and back faces, at their hinges' points. */
   readonly front: number;
   readonly back: number;
+  /** Along `normal`, how far the closed leaves reach toward the front, raised panels included (Weston's stand 18 mm proud of `front`). */
+  readonly frontmost: number;
   /** The doorway's middle in plan, between its leaves. */
   readonly middle: XZ;
   /** Every leaf's two hinge points in plan: the edge it turns about opening toward the back, and toward the front. */
@@ -63,16 +65,18 @@ export function doorPlan(id: string): DoorPlan {
         return [v.x, v.z];
       };
       let reach = 0;
+      let frontmost = Number.NEGATIVE_INFINITY;
       for (const part of parts) {
         if (part.geometry.boundingBox === null) part.geometry.computeBoundingBox();
         const b = part.geometry.boundingBox ?? new Box3();
         for (const [x, , z] of [part.hinge.back, part.hinge.front]) for (const cx of [b.min.x, b.max.x]) for (const cz of [b.min.z, b.max.z]) reach = Math.max(reach, Math.hypot(cx - x, cz - z));
+        for (const cx of [b.min.x, b.max.x]) for (const cz of [b.min.z, b.max.z]) frontmost = Math.max(frontmost, along(plan([cx, 0, cz]), normal));
       }
       const hinges = parts.flatMap((p) => [plan(p.hinge.back), plan(p.hinge.front)]);
       const middle: XZ = [hinges.reduce((s, h) => s + h[0], 0) / hinges.length, hinges.reduce((s, h) => s + h[1], 0) / hinges.length];
       const side = parts.map((p) => ({ back: plan(p.hinge.back), front: plan(p.hinge.front) })).reduce((a, b) => (along(b.back, across) > along(a.back, across) ? b : a));
       const width = along(side.back, across) - along(middle, across);
-      return { id, normal, front: Math.max(...parts.map((p) => along(plan(p.hinge.front), normal))), back: Math.min(...parts.map((p) => along(plan(p.hinge.back), normal))), middle, hinges, reach, leaf: { ...side, width } };
+      return { id, normal, front: Math.max(...parts.map((p) => along(plan(p.hinge.front), normal))), back: Math.min(...parts.map((p) => along(plan(p.hinge.back), normal))), frontmost, middle, hinges, reach, leaf: { ...side, width } };
     }
   }
   throw new Error(`No piece of the finished model is tagged as door "${id}" with a door unit's leaves: place them with kit.addTagged(door.leaf, …, doorTag("${id}")) (src/model/doors.ts).`);
@@ -205,6 +209,37 @@ export async function screens(page: Page, stop = false): Promise<Screen[]> {
     if (end) delete w.screens;
     return out;
   }, stop);
+}
+
+/** How many frames the record holds now, to read those from here on with `screensSince`. */
+export async function screenMark(page: Page): Promise<number> {
+  return page.evaluate(() => (window as unknown as { screens?: unknown[] }).screens?.length ?? 0);
+}
+
+/** A copy of the frames recorded from index `from` on, leaving the record as it is. */
+export async function screensSince(page: Page, from: number): Promise<Screen[]> {
+  return page.evaluate((k) => ((window as unknown as { screens?: Screen[] }).screens ?? []).slice(k), from);
+}
+
+/** How far out from a closed door's leaves a walk straight at it must see its prompt: the door's 2 m reach (src/walk/look.ts) less a margin. */
+const APPROACH = 1.9;
+
+/**
+ * The frames, among `frames`, in which the eye stands before door `door` on its `side`, within APPROACH of its closed leaves' face and inside the
+ * doorway's width, as a walk straight at the closed door crosses them, and those of them that do not show `words` under the crosshair with the door as
+ * the look target. On the axis of a pair the eye's ray runs between its leaves (work unit 2, final review, F46).
+ */
+export function promptOnApproach(frames: readonly Screen[], door: DoorPlan, side: 'front' | 'back', words: string): { readonly near: number; readonly apart: readonly string[] } {
+  const across: Facing = [-door.normal[1], door.normal[0]];
+  const face = side === 'front' ? door.front : door.back;
+  const out = side === 'front' ? 1 : -1;
+  const near = frames.filter((s) => {
+    if (s.eye === null) return false;
+    const d = out * (along([s.eye[0], s.eye[2]], door.normal) - face);
+    return d >= BODY.radius - 0.02 && d <= APPROACH && Math.abs(along([s.eye[0], s.eye[2]], across) - along(door.middle, across)) < door.leaf.width;
+  });
+  const apart = near.filter((s) => !(s.prompt && s.words === words && s.kind === 'door' && s.target?.id === door.id)).map((s) => `${fmt(s.eye ?? [0, 0, 0])}: prompt ${s.prompt ? `"${s.words}"` : 'hidden'}, look target ${String(s.target?.id ?? s.kind)}`);
+  return { near: near.length, apart };
 }
 
 /** The frames where the card does not follow the crosshair's look target: it shows exactly when that target is an artwork, and it is the card of the target read then. */
