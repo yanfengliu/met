@@ -14,10 +14,12 @@
  *   other line can be missed; a place the fill reaches, the walker reaches, as the replay shows.
  * - Where: inside the building's outline (src/model/site/footprint.ts) and the strip of the front steps and plaza on the axis (|X| ≤ 23.47 m, from the
  *   facade to 0.5 m short of the curb), so the fill walks neither the park nor the avenue.
- * - Met: an artwork when a place on its floor (feet within 0.6 m of its placement's level) has its eye, 1.6 m over the feet, within 6 m of the artwork's
- *   box (an artwork's look reach, src/walk/look.ts) and the line from the eye to 5 cm short of the box crosses no solid piece and passes none nearer
- *   than 2 cm, glass included (src/walk/sight.ts); a
- *   preset when an eye stands within 1 m of its camera; a spawn or a route's end when feet stand within 0.5 m of it in plan and 0.3 m of its level.
+ * - Met: an artwork when a place on its floor (feet within 0.6 m of its placement's level) has an eye, 1.6 m over the feet, whose look target, turned to
+ *   one of the artwork's aims within the walker's ±85° of pitch, is that artwork: the walking eye's own query (src/walk/look.ts `lookTarget`, so within
+ *   its 6 m reach and through untagged glass only) on the page's hit query (src/viewer/pick.ts), over the timeline's pieces and the door layer's stand-ins
+ *   and doorways registered as the page registers them, the doors as the fill counts them. The aims are the middle of each of its pieces' own boxes,
+ *   its object's first, then five more points of the object's: a quarter and three quarters up, toward the front and either side. A preset is met when an eye stands within 1 m
+ *   of its camera; a spawn or a route's end when feet stand within 0.5 m of it in plan and 0.3 m of its level.
  * - Each space with artworks is stood in at the place of the preset its collection step frames, which stands inside it, so a space seen only through
  *   an opening from another is not passed.
  * - The fill takes up places nearest an unmet target first and stops once every target is met. Short of that it fills all it can, and each unmet target
@@ -25,34 +27,41 @@
  * Red with the model of 691b8f7, before src/model/mmw/party-walls.ts opened ENGELHARD_PASSAGE and PETRIE_PASSAGE: both courts as spaces, the Engelhard
  * Court's 8 artworks, the Petrie Court's 10, the int-engelhard-north and int-petrie-court presets and R6's end, each artwork's nearest place across the wall
  * it sat behind (156,533 places in 22.5 s, every other target met). Red again with ENGELHARD_PASSAGE alone walled up (the court, its 8, its preset, R6's
- * end; 166,500 places) and with PETRIE_PASSAGE alone (the court, its 10, its preset; 172,282 places). Green, it stops at about 63,400 places in about 9 s
- * and walks the 123 targets' paths again in 0.5 s.
- * Review 12 of work unit 2 found two holes in the gate of 69cfa11, each now with its regression: each move began with `Walker.place`, which over a gap
+ * end; 166,500 places) and with PETRIE_PASSAGE alone (the court, its 10, its preset; 172,282 places). Green, it stops at about 62,500 places in about 17 s
+ * (9 s with the box rule below, on the same machine) and walks the 123 targets' paths again in 0.6 s.
+ * Review 12 of work unit 2 found two holes in the gate of 69cfa11, each given its regression: each move began with `Walker.place`, which over a gap
  * the walker had bridged set it on the floor below with no fall (F40; src/walk/reach.test.ts, the groove: 288 places on the closed floor at 69cfa11); and
  * the sight line was a 2 cm capsule taken as clear when nothing pushed it, so a line through the middle of a wall, whose faces pushed it opposite ways and
- * whose crossing the triangle distance does not see, read clear (F41; src/walk/sight.test.ts).
+ * whose crossing the triangle distance does not see, read clear (F41; that sight line, src/walk/sight.ts, went with the box rule in review 17).
+ * Review 17 found the gate of 0defda0 measuring distance and sight to an artwork's combined box, which can hold empty space: it took object 458998 as seen
+ * from an eye whose nearest tagged surface was 6.368 m away (F44). An artwork is now met only where the look target finds it; the fixture at the end, an L
+ * of two slabs whose box's corner lies 0.99 m from the eye and each slab 10.5 m off, is met by the old rule and not by this one.
  */
-import { Box3, Vector3 } from 'three';
-import type { InstancedMesh } from 'three';
+import { Box3, BoxGeometry, Layers, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
+import type { BufferGeometry, InstancedMesh } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { CHAPTERS } from '../build/chapters.js';
 import { SEQUENCE } from '../build/sequence.js';
 import { Timeline } from '../build/timeline.js';
+import { DoorLayer } from '../viewer/doors.js';
+import { ModelPicker } from '../viewer/pick.js';
 import { PRESETS } from '../viewer/presets.js';
 import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../walk/collision.js';
-import { LOOK_REACH } from '../walk/look.js';
+import { LOOK_REACH, lookTarget } from '../walk/look.js';
+import type { HitFn } from '../walk/look.js';
 import { reach, replay } from '../walk/reach.js';
 import type { Reach } from '../walk/reach.js';
-import { SightLines } from '../walk/sight.js';
 import { SPAWNS, spawnById, spawnYaw } from '../walk/spawns.js';
-import { BODY } from '../walk/walker.js';
+import { BODY, MOTION } from '../walk/walker.js';
 import { entryOf, stepArtworks } from './collection/place.js';
 import { SPACES_A } from './collection/spaces-a.js';
 import { SPACES_B } from './collection/spaces-b.js';
-import { doorById } from './doors.js';
+import { DOORS, doorById } from './doors.js';
 import { CURB_WEST_Z, STEPS_HALF_WIDTH } from './frame.js';
 import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6 } from './hunt/routes.js';
+import { doorLeavesOf } from './lib/window.js';
 import { insideOutline } from './site/footprint.js';
 
 const CELL = 0.5;
@@ -78,7 +87,8 @@ interface Target {
 }
 
 let world: CollisionWorld;
-let sight: SightLines;
+/** The page's hit query over the finished model (src/main.ts): what the walking eye's look target runs. */
+let hit: HitFn;
 let fill: Reach;
 let targets: readonly Target[] = [];
 let unmet: Set<Target>;
@@ -89,43 +99,71 @@ let opened = 0;
 let ms = 0;
 let replayMs = 0;
 
-const end = new Vector3();
+/** Where on an artwork's object the eye looks, as fractions of its own box: the middle, a quarter and three quarters up, toward the front, either side. */
+const AIMS: readonly (readonly [number, number, number])[] = [[0.5, 0.5, 0.5], [0.5, 0.25, 0.5], [0.5, 0.75, 0.5], [0.5, 0.5, 0.9], [0.2, 0.5, 0.5], [0.8, 0.5, 0.5]];
 
-/** Whether the line from `eye` to 5 cm short of `to` crosses no solid piece and passes none nearer than 2 cm. */
-function clear(eye: Vector3, to: Vector3): boolean {
-  const d = eye.distanceTo(to);
-  if (d < 0.1) return true;
-  end.copy(to).addScaledVector(eye.clone().sub(to).normalize(), 0.05);
-  return sight.clear(eye, end, 0.02);
+interface Piece {
+  readonly geometry: BufferGeometry;
+  readonly matrix: Matrix4;
+}
+
+/** The point of `piece` at fractions (fx, fy, fz) of its own box, in the world. */
+function pointOf({ geometry, matrix }: Piece, [fx, fy, fz]: readonly [number, number, number]): Vector3 {
+  if (geometry.boundingBox === null) geometry.computeBoundingBox();
+  const { min, max } = geometry.boundingBox ?? new Box3();
+  return new Vector3(min.x + (max.x - min.x) * fx, min.y + (max.y - min.y) * fy, min.z + (max.z - min.z) * fz).applyMatrix4(matrix);
+}
+
+/** The world points to look at on an artwork of `pieces`, its object first (src/model/collection/place.ts): the object's middle, every other piece's middle, then the rest of AIMS on the object. */
+function aimsOf(pieces: readonly Piece[]): Vector3[] {
+  const [object, ...rest] = pieces;
+  if (object === undefined) return [];
+  const [middle = [0.5, 0.5, 0.5], ...others] = AIMS;
+  return [pointOf(object, middle), ...rest.map((p) => pointOf(p, middle)), ...others.map((f) => pointOf(object, f))];
+}
+
+const look = new Vector3();
+
+/** Whether the walking eye at `eye`, turned to one of `aims` as far as the walker can pitch, has artwork `id` as its look target (src/walk/look.ts). */
+function labels(query: HitFn, eye: Vector3, aims: readonly Vector3[], id: string): boolean {
+  return aims.some((aim) => {
+    const length = look.subVectors(aim, eye).length();
+    if (length < 1e-6 || Math.abs(Math.asin(look.y / length)) > MOTION.maxPitch) return false;
+    const target = lookTarget(query, eye, look.divideScalar(length));
+    return target?.kind === 'artwork' && target.id === id;
+  });
+}
+
+/** The target of artwork `id` on floor `floor`, of `pieces`: met where a place on its floor has an eye whose look target, turned to one of its aims, is it. */
+function artworkTarget(name: string, id: string, floor: number, pieces: readonly Piece[], query: () => HitFn): Target {
+  const box = new Box3();
+  for (const { geometry, matrix } of pieces) {
+    if (geometry.boundingBox === null) geometry.computeBoundingBox();
+    box.union((geometry.boundingBox ?? new Box3()).clone().applyMatrix4(matrix));
+  }
+  const centre = box.getCenter(new Vector3());
+  const aims = aimsOf(pieces);
+  const eye = new Vector3();
+  return {
+    group: 'artwork',
+    name,
+    x: centre.x,
+    z: centre.z,
+    radius: LOOK_REACH.artwork + Math.hypot(box.max.x - box.min.x, box.max.z - box.min.z) / 2,
+    level: floor,
+    met: (x, y, z) => {
+      if (Math.abs(y - floor) > FLOOR) return false;
+      eye.set(x, y + EYE, z);
+      // A piece within the look's reach needs the box within it, which costs no cast.
+      return box.distanceToPoint(eye) <= LOOK_REACH.artwork && labels(query(), eye, aims, id);
+    },
+  };
 }
 
 function artworkTargets(): Target[] {
   return [...SPACES_A, ...SPACES_B].flatMap((def) => {
     const pieces = stepArtworks(def).pieces;
-    return def.placements.map((placement, k): Target => {
-      const box = new Box3();
-      for (const piece of pieces[k] ?? []) {
-        piece.geometry.computeBoundingBox();
-        box.union((piece.geometry.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix));
-      }
-      const centre = box.getCenter(new Vector3());
-      const eye = new Vector3();
-      const near = new Vector3();
-      return {
-        group: 'artwork',
-        name: `${def.space}: ${String(placement.id)} (${entryOf(placement.id).title.slice(0, 40)})`,
-        x: centre.x,
-        z: centre.z,
-        radius: LOOK_REACH.artwork + Math.hypot(box.max.x - box.min.x, box.max.z - box.min.z) / 2,
-        level: placement.floor,
-        met: (x, y, z) => {
-          if (Math.abs(y - placement.floor) > FLOOR) return false;
-          eye.set(x, y + EYE, z);
-          box.clampPoint(eye, near);
-          return eye.distanceTo(near) <= LOOK_REACH.artwork && clear(eye, near);
-        },
-      };
-    });
+    return def.placements.map((placement, k): Target => artworkTarget(`${def.space}: ${String(placement.id)} (${entryOf(placement.id).title.slice(0, 40)})`, String(placement.id), placement.floor, pieces[k] ?? [], () => hit));
   });
 }
 
@@ -164,8 +202,18 @@ beforeAll(() => {
   const meshes = [...new Set([...collisionMeshes(timeline.steps, timeline.n).filter((m) => !open.has(m)), ...closed])];
   world = new CollisionWorld(bvhs);
   world.build(meshes);
-  sight = new SightLines(meshes, bvhs);
   const floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
+  // The page's hit query (src/main.ts), the doors as the fill counts them: the door layer at t = N, the Hunt central doors opened, every other door closed.
+  const layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf);
+  layer.sync(timeline.n, 0, true);
+  for (const id of OPEN_DOORS) layer.use(id, null);
+  layer.sync(timeline.n, 0, true);
+  const all = timeline.steps.flatMap((s) => s.meshes);
+  // Bounds as the renderer's culling leaves them after a frame, which the picker trusts; at t = N every piece is at rest, so they are exact.
+  for (const mesh of all) mesh.computeBoundingSphere();
+  const picker = new ModelPicker(all, bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
+  picker.register(layer.pickMeshes, (mesh, i) => layer.tagOf(mesh, i));
+  hit = (ray, query) => picker.hit(ray, query);
   targets = [...artworkTargets(), ...placeTargets()];
   unmet = new Set(targets);
   // Each target is tried only by places in the cells within its radius.
@@ -261,5 +309,30 @@ describe('reachability from the Great Hall spawn, by the walk mode’s walker', 
   it('reaches every walk spawn and both ends of every route', () => {
     expect(misses('spawn')).toEqual([]);
     expect(misses('route')).toEqual([]);
+  });
+});
+
+describe('an artwork met by the look target, not by its box (review 17, F44)', () => {
+  it('is not met where its box’s corner is within 6 m of the eye and its pieces are not, and is met before a piece of it', () => {
+    // An L of two slabs 10 m long and 2 m high on a floor, one artwork; its box is the 10 m square they bound, empty but for them.
+    const cube = new BoxGeometry(1, 1, 1);
+    const stone = new MeshStandardMaterial({ name: 'stone' });
+    const bronze = new MeshStandardMaterial({ name: 'bronze' });
+    const slab = (x: number, z: number, w: number, d: number): Matrix4 => new Matrix4().compose(new Vector3(x, 1, z), new Quaternion(), new Vector3(w, 2, d));
+    const slabs: Piece[] = [{ geometry: cube, matrix: slab(5, 0.1, 10, 0.2) }, { geometry: cube, matrix: slab(0.1, 5, 0.2, 10) }];
+    const fixture = new Timeline([{ id: 'l', chapter: CHAPTERS[0].id, title: 'l', motion: { kind: 'rise' }, build(kit) {
+      kit.add(cube, stone, new Matrix4().compose(new Vector3(0, -0.5, 0), new Quaternion(), new Vector3(40, 1, 40)));
+      for (const { geometry, matrix } of slabs) kit.addTagged(geometry, bronze, matrix, { kind: 'artwork', id: 'L' });
+    } }]);
+    fixture.evaluate(1);
+    const picker = new ModelPicker(fixture.steps.flatMap((s) => s.meshes), new GeometryBvhs(), -1, { enabled: false, height: 0 }, new Layers(), (mesh, i) => fixture.tagOf(mesh, i));
+    const query: HitFn = (ray, q) => picker.hit(ray, q);
+    const target = artworkTarget('the L', 'L', 0, slabs, () => query);
+    // Feet at (10.7, 0, 10.7): the eye 0.99 m from the box's corner, which the gate of 0defda0 took as within reach, and 10.5 m from either slab.
+    const eye = new Vector3(10.7, EYE, 10.7);
+    expect(new Box3(new Vector3(0, 0, 0), new Vector3(10, 2, 10)).distanceToPoint(eye), 'the box’s corner').toBeCloseTo(0.99, 2);
+    expect(target.met(10.7, 0, 10.7), 'its box in reach, its pieces not').toBe(false);
+    expect(target.met(5, 0, 4), '3.8 m before a slab').toBe(true);
+    expect(target.met(5, 0.7, 4), 'but off its floor').toBe(false);
   });
 });
