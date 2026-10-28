@@ -312,7 +312,7 @@ test.describe('walk mode', () => {
       await press(page, `walk-spawn-${id}`);
       await page.waitForFunction((s) => window.__met?.walk.spawn === s && !window.__met.walk.preparing && window.__met.walk.eye !== null, id);
       expectWalkingBudget(await walkingBudget(page), `from the ${id} spawn`);
-      expect((await facts(page)).walk.target, `${id}: nothing tagged is in reach in this model yet`).toBeNull();
+      expect((await facts(page)).walk.target, `${id}: no door or artwork in reach of the spawn's view`).toBeNull();
     }
     expect(await currentT(page)).toBe(f.n);
   });

@@ -3,21 +3,26 @@
  * sequence's Timeline, the page's door layer over it (src/viewer/doors.ts) and the walk's world as walk mode builds it (src/walk/door-world.ts
  * `walkWorld`: the static world without the doors' leaves, and the leaves where the layer stands them), with the walk mode's own walker
  * (src/walk/walker.ts) stepped at 60 frames a second. From the Petrie Court on the door's axis the closed door stops the walker against its leaves;
- * opened as E opens it (`DoorLayer.use` from the walker's eye), it swings a quarter turn into wing B, and the walker walks through the doorway into
- * gallery 529 and back out into the court, on the main floor's level all the way but for the door frame's 8 cm sill.
+ * turned onto a leaf 0.15 m off their meeting line, the eye finds the door as the page's look target (src/walk/look.ts, through the page's picker with the
+ * layer's stand-ins and doorways registered as the page registers them), whose prompt says "E Open"; opened as E opens it (`DoorLayer.use` on the look target, from the walker's
+ * eye; red with the layer's meshes left out of the picker, which met nothing there; work unit 2, review 17, F48), it swings a quarter turn into wing B, and the walker walks through the doorway into gallery 529 and back out into
+ * the court, on the main floor's level all the way but for the door frame's 8 cm sill.
  * Bound: the walker walks on the door's axis, square to the facade; positions are the feet's; "no leaf inside the body" is read where the walker stops
  * at the closed door and where it ends, by src/walk/door-testing.ts `gap`, an oracle apart from the collision.
  */
-import { Matrix4, Vector3 } from 'three';
+import { Layers, Matrix4, Vector3 } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { SEQUENCE } from '../../build/sequence.js';
 import { Timeline } from '../../build/timeline.js';
 import { DoorLayer } from '../../viewer/doors.js';
+import { ModelPicker } from '../../viewer/pick.js';
 import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { gap } from '../../walk/door-testing.js';
 import { walkWorld } from '../../walk/door-world.js';
 import type { DoorWorld } from '../../walk/door-world.js';
+import { lookTarget } from '../../walk/look.js';
+import type { HitFn } from '../../walk/look.js';
 import { BODY, NO_INPUT, Walker } from '../../walk/walker.js';
 import type { WalkInput } from '../../walk/walker.js';
 import { DOORS } from '../doors.js';
@@ -38,6 +43,8 @@ let timeline: Timeline;
 let layer: DoorLayer;
 let world: DoorWorld;
 let floorY: number;
+/** The page's hit query: the timeline's pieces, and the door layer's stand-ins and doorways registered with their tags (src/main.ts). */
+let hit: HitFn;
 /** The world X of the closed leaves' front face toward the court, their raised panels aside: the plane of the hinges' front points (src/model/lib/window.ts). */
 let frontX: number;
 
@@ -46,8 +53,12 @@ beforeAll(() => {
   timeline.evaluate(timeline.n);
   layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'closed');
   layer.sync(timeline.n, 0, true);
-  world = walkWorld(timeline.steps, timeline.n, layer, new GeometryBvhs());
+  const bvhs = new GeometryBvhs();
+  world = walkWorld(timeline.steps, timeline.n, layer, bvhs);
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
+  const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
+  layer.registerWith(picker);
+  hit = (ray, query) => picker.hit(ray, query);
   const fronts: number[] = [];
   for (const step of timeline.steps) {
     step.meshes.forEach((mesh, m) => {
@@ -91,7 +102,13 @@ describe("Weston's 1888 door, walked from the Petrie Court", () => {
     expect(gap(layer, walker.feet), 'no leaf inside the body').toBeGreaterThan(-0.002);
     expect([toDoor.low, toDoor.high].map((y) => y - MAIN_FLOOR_Y), 'on the main floor all the way').toEqual([expect.closeTo(0, 2), expect.closeTo(0, 2)]);
 
-    expect(layer.use('weston', walker.eye()), 'E opens it').toBe(true);
+    // Turned onto a leaf 0.15 m off the leaves' meeting line, at the eye's height: the look target is the door, and E opens what it meets.
+    const eye = walker.eye();
+    walker.turn(Math.atan2(-(frontX - eye.x), -(WESTON_DOOR.z + 0.15 - eye.z)) - walker.yaw, 0);
+    const target = lookTarget(hit, walker.eye(), walker.look());
+    expect(target === null ? null : [target.kind, target.id, layer.prompt(target.id)], 'the look target, and the prompt under the crosshair').toEqual(['door', 'weston', 'E Open']);
+    expect(layer.use(target?.id ?? '', walker.eye()), 'E opens it').toBe(true);
+    walker.turn(NORTH - walker.yaw, 0);
     hold(walker, 1, NO_INPUT);
     expect(angle(), 'a quarter turn into the building, away from the walker').toBeCloseTo(90, 6);
     const through = hold(walker, 3, W);

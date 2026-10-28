@@ -8,7 +8,8 @@
  * (off an edge higher than a step, onto a slope too steep to stand on) reaches nothing: the fill walks, it never falls or jumps. A move toward a cell that
  * already holds a place in the same band is not tried. Places are taken up in the order they were reached, or, given `toward`, nearest first by it, so
  * a fill that stops once its targets are met (`stop`) walks less of what lies away from them. The moves from the start to a place are one continuous
- * walk, the walker never set down again; `replay` walks them again from the start, apart from the fill's saved states, and says where one does not.
+ * walk, the walker never set down again; `replay` walks them again from the start, apart from the fill's saved states, and says where one does not. A
+ * caller sees the walker as it stands at each new place (`stop`) and at the end of each path walked again (`replay`'s `at`), to look from its own eye.
  * Bound: a walker reaches every place the fill reaches, by the walk `replay` repeats; the reverse does not hold, as a walker that comes at a passage on
  * some other line than these moves can pass where they do not. Cells of 0.5 m (the default) keep places on the two sides of a wall apart: the walker's
  * centre stands its radius (0.35 m) off each face, so two such centres lie 0.7 m and the wall's thickness apart, more than a cell's diagonal for any
@@ -26,8 +27,11 @@ export interface ReachOptions {
   readonly band?: number;
   /** Whether the fill may walk to the plan point (x, z). Default: everywhere. */
   readonly inside?: (x: number, z: number) => boolean;
-  /** Called with each new place's index and feet; the fill stops once it returns true. */
-  readonly stop?: (place: number, x: number, y: number, z: number) => boolean;
+  /**
+   * Called with each new place's index and feet, and the fill's walker as it stands there, in the state the place keeps (`Walker.save`): to be read, or
+   * copied into another walker with `save` and `restore`, never moved. The fill stops once it returns true.
+   */
+  readonly stop?: (place: number, x: number, y: number, z: number, walker: Walker) => boolean;
   /** Which places to take up first: the least, as they stand when taken up (it may only grow for a place as the fill goes on). Default: the first reached. */
   readonly toward?: (x: number, y: number, z: number) => number;
 }
@@ -217,7 +221,7 @@ export function reach(world: WalkWorld, floorY: number, x: number, y: number, z:
     const i = out.add(walker, from, tx, tz);
     seen.set(k, i);
     queue.push(i, toward === undefined ? i : toward(fx, fy, fz));
-    return options.stop?.(i, fx, fy, fz) === true;
+    return options.stop?.(i, fx, fy, fz, walker) === true;
   };
   walker.place(x, y, z, yaw);
   if (visit(-1, Number.NaN, Number.NaN)) return out;
@@ -250,9 +254,10 @@ export function reach(world: WalkWorld, floorY: number, x: number, y: number, z:
  * Walks the fill's paths from the start to each of `ends` again, apart from its saved states: a fresh walker put down at the start as `reach` put it, each
  * move made again on from where this walk itself stood (where paths part, each goes on from that same state), toward the cell centre the fill's move
  * headed for. Returns, for each end, the farthest the walk stood from a place the fill recorded on its path, metres: 0 where the path walks end to end
- * as the fill found it, and Infinity where the walk left the ground.
+ * as the fill found it, and Infinity where the walk left the ground. Given `at`, it is then called with each end's index in `ends` and a walker in the state
+ * this walk left it in there, for any end the walk did not leave the ground on the way to.
  */
-export function replay(world: WalkWorld, floorY: number, x: number, y: number, z: number, yaw: number, fill: Reach, ends: readonly number[]): number[] {
+export function replay(world: WalkWorld, floorY: number, x: number, y: number, z: number, yaw: number, fill: Reach, ends: readonly number[], at?: (k: number, walker: Walker) => void): number[] {
   const needed = new Set<number>();
   for (const end of ends) for (let k = end; k >= 0 && !needed.has(k); k = fill.from[k] ?? -1) needed.add(k);
   const walker = new Walker(world, floorY);
@@ -277,5 +282,11 @@ export function replay(world: WalkWorld, floorY: number, x: number, y: number, z
     walker.save(saved);
     states.set(i, saved);
   }
+  ends.forEach((end, k) => {
+    const state = states.get(end);
+    if (at === undefined || state === undefined) return;
+    walker.restore(state);
+    at(k, walker);
+  });
   return ends.map((end) => off.get(end) ?? Number.POSITIVE_INFINITY);
 }
