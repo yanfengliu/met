@@ -1,8 +1,8 @@
 /**
  * Materials the core area needs beyond src/model/palette.ts, each created once and shared (docs/design/spec.md, Batching).
- * Colours: exterior.md [C7] (the Vaux front's granite bands about #B9B4AA), interior.md "The Medieval Sculpture Hall" (iron #1e1c1a, gilding #b08a3e,
- * walls and vault #dcd8d0), the Petrie Court photo (interior-images.md #33: Weston's light grey stone trim) and Heckscher's black-and-white
- * marble floor with red-slate borders (interior.md). Everything else comes from the palette.
+ * Colours: exterior.md [C7] (the Vaux front's granite bands about #B9B4AA and its dark voussoirs), interior.md "The Medieval Sculpture Hall" (iron
+ * #1e1c1a, gilding #b08a3e, walls and vault #dcd8d0), the Petrie Court photo (interior-images.md #33: Weston's light grey stone trim) and Heckscher's
+ * black-and-white marble floor with red-slate borders (interior.md). Everything else comes from the palette.
  */
 import { Color, DoubleSide, MeshStandardMaterial } from 'three';
 import type { Material } from 'three';
@@ -31,6 +31,11 @@ function shadowless<T extends Material>(material: T): T {
 export const core = Object.freeze({
   /** The Vaux front's grey-white granite bands, voussoirs and trim ([C7] about #B9B4AA). */
   granite: standard('core.granite', '#b9b4aa', 0.72),
+  /**
+   * The rock-faced dark grey granite of the Vaux voussoirs that alternate with the light ones ([C7]): the light granite's colour times 0.72, which
+   * renders at about 0.62 of the light granite seen from the Lehman court, as five photographs read the dark stones against the light, 0.63 on average.
+   */
+  graniteDark: standard('core.graniteDark', '#85827a', 0.85),
   /** Weston's light grey stone base, piers, arches and cornice (Petrie Court photo). */
   westonStone: standard('core.westonStone', '#c4c0b7', 0.78),
   /** The Medieval Sculpture Hall's plaster walls and vault (interior.md #dcd8d0). */

@@ -273,7 +273,12 @@ export function vauxHall(kit: Kit): void {
   }
 }
 
-/** Granite trim of the side and east walls: polychrome voussoirs over every 1880 arch and the floor, impost and ground-storey bands. */
+/**
+ * Granite trim of the side and east walls: polychrome voussoirs over every 1880 arch and the floor, impost and ground-storey bands. The voussoirs
+ * alternate light and dark grey granite as on the west front (vaux-front.ts): the south side's arcade and the east front's arches are banded alike
+ * in 1880 (exterior-images.md #65 and #66), and one of the east arches survives at the top of the Grand Staircase in light and dark granite
+ * (exterior-images.md #67).
+ */
 export function vauxSideTrim(kit: Kit): void {
   const spring = L1 + VAUX_ARCH_SPRING;
   const ring = (parity: 0 | 1, rise = VAUX_ARCH_RISE) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise, band: 0.42, count: 15, projection: 0.06, parity });
@@ -287,7 +292,7 @@ export function vauxSideTrim(kit: Kit): void {
     for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
       const z = ((SIDE_LINES[i] ?? 0) + (SIDE_LINES[i + 1] ?? 0)) / 2;
       kit.add(ring(0), core.granite, placed(x, spring, z, facing), i);
-      kit.add(ring(1), palette.brick, placed(x, spring, z, facing), i);
+      kit.add(ring(1), core.graniteDark, placed(x, spring, z, facing), i);
       kit.add(hood, core.granite, placed(x, spring, z, facing), i);
     }
     const face = x + out * proud;
@@ -299,10 +304,13 @@ export function vauxSideTrim(kit: Kit): void {
       addBox(kit, core.granite, x, y0, WEST_Z, face, y1, EAST_Z, 0);
     }
   }
+  // Open with the owner (exterior.md section 9): in 1880 the east front had two large arches on either side of its middle, each with a roundel in
+  // its head, not seven (exterior-images.md #66); the surviving one has a ring of dark granite blocks outside its voussoirs, not a light hood
+  // (exterior-images.md #67).
   for (const k of [-3, -2, -1, 0, 1, 2, 3]) {
     const rise = eastRise(k);
     kit.add(ring(0, rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
-    kit.add(ring(1, rise), palette.brick, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+    kit.add(ring(1, rise), core.graniteDark, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
     kit.add(hoodOf(rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
   }
   addBox(kit, core.granite, -A_HALF, spring - VAUX_BAND, EAST_Z, A_HALF, spring, EAST_Z + proud, 12);
