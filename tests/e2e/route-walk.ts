@@ -121,10 +121,12 @@ export interface Corner {
   readonly back: Move;
 }
 
-/** One leg: the movement keys held with Shift, how far past its end the eye is along the axis it ends on (done at 0 or more), and its corner. */
+/** One leg: the movement keys held, with Shift at a run, how far past its end the eye is along the axis it ends on (done at 0 or more), and its corner. */
 export interface Leg {
   readonly label: string;
   readonly keys: readonly Move[];
+  /** Whether Shift is held with the keys: a run, or else a walk. */
+  readonly run: boolean;
   readonly past: (eye: Vec3) => number;
   /** The level direction `past` measures along, and the position along it where the leg is done (`past` is 0). */
   readonly axis: Facing;
@@ -138,9 +140,11 @@ export const scale = (v: Facing, k: number): Facing => [v[0] * k, v[1] * k];
 /**
  * The legs that walk `points` facing `facing` (along an axis): each segment must run along the facing, across it or at 45° to them, so W, S, A or D, alone
  * or two together, walk it. A leg ends on the axis of the key the next leg lets go, early by that motion's coasting distance; one whose keys all stop, as
- * the last one's do, ends along its own direction a run's coast early; one whose keys all go on ends as the eye passes its end.
+ * the last one's do, ends along its own direction a coast early; one whose keys all go on ends as the eye passes its end. `pace` walks them at a run
+ * (Shift held) or at a walk, which coasts 0.14 m to a run's 0.35 m, for corners near an unguarded edge.
  */
-export function legs(points: readonly XZ[], facing: Facing): Leg[] {
+export function legs(points: readonly XZ[], facing: Facing, pace: 'run' | 'walk' = 'run'): Leg[] {
+  const straight = pace === 'run' ? COAST : MOTION.walk * MOTION.groundTau;
   // The walker's right when it faces `facing` (src/walk/walker.ts: yaw 0 faces −Z, and its right is then +X).
   const right: Facing = [-facing[1], facing[0]];
   const level = (u: number): boolean => Math.abs(u) < 1e-6;
@@ -163,10 +167,10 @@ export function legs(points: readonly XZ[], facing: Facing): Leg[] {
     const dropped = s.keys.filter((key) => !next.includes(key));
     const length = Math.hypot(s.d[0], s.d[1]);
     let axis: Facing = [s.d[0] / length, s.d[1] / length];
-    let coast = dropped.length === 0 ? 0 : COAST;
+    let coast = dropped.length === 0 ? 0 : straight;
     if (s.keys.length === 2 && dropped.length === 1) {
       axis = dropped[0] === 'KeyW' || dropped[0] === 'KeyS' ? scale(facing, Math.sign(s.ahead)) : scale(right, Math.sign(s.across));
-      coast = SIDE_COAST;
+      coast = pace === 'run' ? SIDE_COAST : straight / Math.SQRT2;
     }
     const end: Vec3 = [s.q[0], 0, s.q[1]];
     // A corner where one motion stops along an axis of the facing (every stop but a diagonal's last): the keys along that axis and back.
@@ -176,7 +180,7 @@ export function legs(points: readonly XZ[], facing: Facing): Leg[] {
     const keysOn: readonly [Move, Move] = onFacing ? ['KeyW', 'KeyS'] : ['KeyD', 'KeyA'];
     const corner: Corner | undefined = dropped.length > 0 && (onFacing || onRight) ? { axis, end, on: sense ? keysOn[0] : keysOn[1], back: sense ? keysOn[1] : keysOn[0] } : undefined;
     const edge = along(end, axis) - coast;
-    return { label: s.label, keys: s.keys, past: (eye: Vec3) => along(eye, axis) - edge, axis, edge, length, corner };
+    return { label: s.label, keys: s.keys, run: pace === 'run', past: (eye: Vec3) => along(eye, axis) - edge, axis, edge, length, corner };
   });
 }
 
@@ -204,10 +208,12 @@ export async function reached(page: Page, axis: Facing, edge: number, sense: 1 |
   );
 }
 
-/** Walks the legs at a run with real key presses, adding every sample to `samples`; stops for the frames asked for. */
+/** Walks the legs at their pace with real key presses, adding every sample to `samples`; stops for the frames asked for. */
 export async function walk(page: Page, route: string, list: readonly Leg[], samples: Sample[], stops: readonly Stop[] = []): Promise<Sample> {
   const pending = [...stops];
   const held = new Set<string>();
+  /** The keys a leg holds: its movement keys, with Shift at a run. */
+  const keysOf = (leg: Leg | undefined): string[] => (leg === undefined ? [] : leg.run ? ['Shift', ...leg.keys] : [...leg.keys]);
   /** Holds exactly `keys`: lets go of the others first, then presses the new ones. */
   const hold = async (keys: readonly string[]): Promise<void> => {
     for (const key of [...held]) {
@@ -248,10 +254,10 @@ export async function walk(page: Page, route: string, list: readonly Leg[], samp
     }
     let best = now;
     let improved = Date.now();
-    await hold(['Shift', ...leg.keys]);
+    await hold(keysOf(leg));
     while (now < 0) {
       // The leg's end is watched in the page; once the eye passes it, the keys change at once to what comes next: none at a corner, else the next leg's.
-      if (await reached(page, leg.axis, leg.edge, 1, 300)) await hold(leg.corner !== undefined ? [] : ['Shift', ...(list[i + 1]?.keys ?? [])]);
+      if (await reached(page, leg.axis, leg.edge, 1, 300)) await hold(leg.corner !== undefined ? [] : keysOf(list[i + 1]));
       const frames = await record(page);
       samples.push(...frames);
       last = frames.at(-1) ?? last;
@@ -266,7 +272,7 @@ export async function walk(page: Page, route: string, list: readonly Leg[], samp
         await hold([]);
         last = await still(page);
         await page.screenshot({ path: test.info().outputPath(`${stop.name}.png`) });
-        await hold(['Shift', ...leg.keys]);
+        await hold(keysOf(leg));
         improved = Date.now();
       }
       if (now < 0 && Date.now() - improved > 1500) {

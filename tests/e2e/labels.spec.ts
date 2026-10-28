@@ -5,7 +5,7 @@
  *   gallery, size, the CC0 credit and a plain link to its page, at the bottom left above the folded bar (full width at 390×844), clear of every control,
  *   of the crosshair and of the door prompt's band under it, and above the whole bar when it is unfolded; a drag that looks down at the floor hides it
  *   and one that looks back up shows it again. At every frame drawn, the card shows exactly when the crosshair's one look target is an artwork (review
- *   6, F28); ./labels-doors.spec.ts walks past a door to the painting and back to show it never shows beside the door prompt (review 7, F30). At
+ *   6, F28); ./routes.spec.ts walks R1 and R5 through a door to the painting and back to show it never shows beside the door prompt (review 7, F30). At
  *   1280×720 a walking frame with the card showing keeps the 60 frames a second budget, and the link, clicked, opens the object's page in a new tab,
  *   its request stopped in the test's browser so nothing leaves the machine.
  * - Orbit view, at gallery 600's preset: a drag that starts on the painting shows no card; a click on it shows the card, moving neither the camera nor
