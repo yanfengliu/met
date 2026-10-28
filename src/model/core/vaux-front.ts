@@ -1,6 +1,6 @@
 /**
  * The Vaux and Mould west front of 1880 (history.md section 2; exterior.md [K7]): red brick with grey-white granite bands, seven pointed arches on
- * the main floor whose voussoirs alternate light and dark grey granite (exterior.md [C7]), striped tympana (the central one the original entrance),
+ * the main floor (five in the photographs, open with the owner: exterior.md section 9) whose voussoirs alternate light and dark grey granite ([C7]), striped tympana (the central one the original entrance),
  * segmental windows on the ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman
  * Wing (seen in int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch), the 1880 stereograph from the
  * southwest and the views of the front from the Lehman Wing (Untapped New York, 2026 and 2012; Forgotten New York, 2023; Heckscher 1995, figs. 105
