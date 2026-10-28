@@ -18,7 +18,7 @@
  * once (its bound, src/walk/collision.ts). And each upright face's inside: at seven points of every upright face of every shape (the lines' four and
  * one near the middle of each edge), BEHIND to one side or the other, the faces above wind to an inside, so a part with no top and no bottom, whose
  * open rims cancel along vertical lines, fails, unless the face lies back to back on another, one side of a two-sided membrane, which has no inside to
- * lose. A face stands upright when lines along vertical see it less than BEHIND wide, its area in plan over its longest edge in plan, in its frame.
+ * lose. A face stands upright when lines along vertical see it at most BEHIND wide, twice its area in plan over its longest edge in plan, in its frame.
  * Open findings the spec names, which these readings pass: the Arms and Armor Court's gables are wound wholly inside out, and two coffered soffits'
  * coffers are deeper than their shells, so each stands 4 cm out of the vault, a pocket whose faces look in.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
@@ -27,8 +27,9 @@
  * (src/model/lib/fittings.ts: 169 lines unbalanced), with the medieval piers' half shafts made whole cylinders, half in the core (3.9 m of overlap), with
  * one Hunt medallion of each pair three times as tall (2.27 m, which the piece measured reads as 0.76 m), with the piers' core left with no top and no
  * bottom (38 points of upright faces with no inside), with the moon gate panel's foot, top and ends left out (504), with the Great Hall pendentives'
- * spandrels on their old points, apart from the curved faces' (8), with UNIT_TILE no sheet (2,008 shapes open, 7 SHEETS counts off) and with the
- * window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off).
+ * spandrels on their old points, apart from the curved faces' (8), with UNIT_TILE no sheet (2,008 shapes open, 7 SHEETS counts off), with the
+ * window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off) and with `upright`'s rule of review 3 (its own check: a
+ * point read as not upright).
  * Bound: `openAlong` joins ends nearer than 0.1 mm and leaves out open boundary under 1 mm in all, each in the geometry's own frame, so an opening
  * narrower or with less boundary is not seen; a piece its matrix scales up sees both larger (up to 99 times, the Hunt foundations' unit boxes). The
  * other readings try up to FACES faces a shape, spread evenly over those that are not vertical, on its first walked piece, and seven points of each
@@ -200,8 +201,8 @@ function worldTriangles(geometry: BufferGeometry, world: Matrix4): Float64Array 
 const BEHIND = 1e-4;
 
 /**
- * Whether the face at `a`, `b`, `c` stands upright: lines along `vertical`, a unit direction in its frame, see it less than BEHIND wide, its area in
- * plan over its longest edge in plan. A face that is a point or a segment in plan is upright.
+ * Whether the face at `a`, `b`, `c` stands upright: lines along `vertical`, a unit direction in its frame, see it at most BEHIND wide, twice its area
+ * in plan over its longest edge in plan (its height across that edge). A face that is a point or a segment in plan is upright.
  */
 function upright(a: Vector3, b: Vector3, c: Vector3, vertical: Vector3): boolean {
   const twice = Math.abs(new Vector3().subVectors(b, a).cross(new Vector3().subVectors(c, a)).dot(vertical));
@@ -335,7 +336,7 @@ describe('the pieces the walk and the section cut read', () => {
     expect(open, 'pieces open along vertical lines: close them, or declare a true sheet with sheet() (src/model/lib/sheet.ts)').toEqual([]);
   });
 
-  it('call a face upright when vertical lines see it less than BEHIND wide, a point or a segment in plan among them', () => {
+  it('call a face upright when vertical lines see it at most BEHIND wide, a point or a segment in plan among them', () => {
     const [up, at] = [new Vector3(0, 1, 0), (x: number, y: number, z: number): Vector3 => new Vector3(x, y, z)];
     expect(upright(at(1, 2, 3), at(1, 2, 3), at(1, 2, 3), up), 'a point').toBe(true);
     expect(upright(at(0, 0, 0), at(1, 0, 0), at(0, 5, 0), up), 'standing in a vertical plane').toBe(true);

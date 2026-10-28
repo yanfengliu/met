@@ -263,12 +263,25 @@ function wallSpec(params: WallParams): WallSpec {
           start: r.start ?? r.course ?? 0.6,
           stop: r.stop ?? height - (r.course ?? 0.6) / 2,
         };
-  if (rustication !== null) require(part, rustication.depth < thickness, `rustication.depth ${String(rustication.depth)} must be less than the thickness ${String(thickness)}.`);
   if (rustication !== null) {
-    const [low, high] = [rustication.start - rustication.joint / 2, rustication.stop + rustication.joint / 2];
-    require(part, low >= -1e-9 && high <= height + 1e-9, `rustication's channels run from ${String(low)} to ${String(high)} m; keep them within the wall's height, 0 to ${String(height)} m (start, stop and joint).`);
+    require(part, rustication.depth < thickness, `rustication.depth ${String(rustication.depth)} must be less than the thickness ${String(thickness)}.`);
+    require(part, rustication.joint < rustication.course, `rustication.joint ${String(rustication.joint)} must be less than the course ${String(rustication.course)}, or the channels overlap.`);
+    // The channels the wall builds, from its first joint's foot to its last joint's head: above the wall's foot and below its top, where they would leave it open.
+    const joints = jointsOf(rustication);
+    const [first, last] = [joints[0], joints.at(-1)];
+    if (first !== undefined && last !== undefined) {
+      const [low, high] = [first - rustication.joint / 2, last + rustication.joint / 2];
+      require(part, low > 1e-6 && high < height - 1e-6, `rustication's channels run from ${String(low)} to ${String(high)} m; keep them above the wall's foot and below its top at ${String(height)} m (start, stop, course and joint).`);
+    }
   }
   return { width, height, thickness, openings, rustication, detail: checkDetail(part, params.detail ?? 'medium') };
+}
+
+/** The heights of a rustication's joints: from `start`, a course apart, up to `stop`. */
+function jointsOf(r: { readonly course: number; readonly start: number; readonly stop: number }): number[] {
+  const joints: number[] = [];
+  for (let y = r.start; y <= r.stop + 1e-9; y += r.course) joints.push(y);
+  return joints;
 }
 
 /** A wall with openings (see the header for the frame). */
@@ -291,8 +304,7 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
   const through = holes.filter((h) => h.depth >= T);
   // Front face, plain or banded.
   const r = spec.rustication;
-  const joints: number[] = [];
-  if (r !== null) for (let y = r.start; y <= r.stop + 1e-9; y += r.course) joints.push(y);
+  const joints = r === null ? [] : jointsOf(r);
   if (r === null) face(b, stripsAround(-W, W, 0, H, holes), 0, true);
   else {
     let y0 = 0;

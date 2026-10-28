@@ -88,6 +88,17 @@ describe('wall', () => {
     expect(() => wall({ width: 4, height: 3, openings: [{ x: 1.5, width: 2, height: 1 }] })).toThrow(/openings\[0\] .* reaches the wall's side/);
     expect(() => wall({ width: 6, height: 3, openings: [{ x: -1, width: 2, height: 1 }, { x: 0.5, width: 2, height: 1 }] })).toThrow(/overlap/);
   });
+
+  it('refuses channels that reach the foot or the top, or overlap, naming the channels the wall would build', () => {
+    const at = (start: number, stop: number, course = 1): Parameters<typeof wall>[0] => ({ width: 4, height: 2.1, thickness: 0.5, rustication: { course, joint: 0.1, depth: 0.05, start, stop } });
+    expect(() => wall(at(0.03, 1.03)), 'past the foot').toThrow(/channels run from -0.02.* keep them above the wall's foot and below its top at 2.1 m/);
+    expect(() => wall(at(0.05, 1.05)), 'its floor on the foot').toThrow(/channels run from 0 to/);
+    expect(() => wall(at(1.05, 2.05)), 'its ceiling on the top').toThrow(/keep them above the wall's foot and below its top/);
+    expect(() => wall(at(0.5, 0.5, 0.1)), 'a joint as tall as the course').toThrow(/rustication.joint 0.1 must be less than the course 0.1, or the channels overlap/);
+    // The last joint built, not `stop`, bounds them: a stop past the top whose joints all lie under it builds.
+    expect(wall(at(0.5, 2.2)), 'joints at 0.5 and 1.5 m').toBeDefined();
+    expect(wall(at(1.5, 1.4)), 'no joint at all').toBeDefined();
+  });
 });
 
 describe('arch elements', () => {
