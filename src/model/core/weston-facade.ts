@@ -42,8 +42,9 @@ const PORCH_TOP = 5.0;
  * building only (interior.md, Weston's 1888 door). Every source that shows the head shows it square, in a moulded stone architrave under the porch's
  * entablature: the Petrie Court photographs (interior-images.md #33 at full size; Heckscher fig. 110, 1995), the porch's drawing of April 1888 and the
  * approved elevation of 1885 (Heckscher figs. 29 and 28). #33 shows the east leaf a quarter turn open into wing B, the gap at its hinge side lit and
- * crossed by its hinges, and #33 and fig. 110 show stone in the reveals. The drawing's opening, 3.29 × 4.91 m, and its architrave, 0.22 m, are scaled by
- * 5.0 / 5.81 (0.861) with the porch, its order 5.81 m to the capitals' top there and PORCH_TOP here, so the head stands under the capitals as drawn.
+ * crossed by its hinges, and #33 and fig. 110 show stone in the reveals. The drawing's opening, 3.29 × 4.91 m, and its architrave's width over the head,
+ * 0.22 m, are scaled by 5.0 / 5.81 (0.861) with the porch, its order 5.81 m to the capitals' top there and PORCH_TOP here, so the head stands under the
+ * capitals as drawn; that width serves every side.
  * A plain stone frieze fills the wall from the architrave up to the entablature. The reveals and the head's soffit are lined in stone `lining` thick
  * through the wall, over a stone threshold `threshold` deep, as the gallery 600 doorway is (vaux-shell.ts).
  */

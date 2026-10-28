@@ -34,8 +34,9 @@ Read each source at its native size: the court photographs #33 and #35 (`interio
 - [x] Checks: the named gates and the controls; the shots compared.
 - [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): no blocker or major finding; six accepted and repaired, the stone lining of the reveals (F1) among them.
 - [x] Review 1 (Codex and Claude, `reviews/1_implementation.md`) of the repairs: no blocker or major finding; seven accepted and repaired (F6 to F12), the lining's open feet closed in `holeLining` (F12) among them.
-- [ ] Review 2 of those repairs, verify, merge, gallery.
+- [x] Review 2 (Codex and Claude, `reviews/2_implementation.md`) of those repairs: no blocker or major finding; Codex approves; F13 and F14, older than this change, deferred to one follow-up; F15 and F16, wording, repaired.
+- [ ] Verify, merge, gallery.
 
 ## Outcome
 
-Pending. Follow-up, queued with its gate in `docs/learning/lessons.md`: a unit test that every reference image a model source cites is marked viewed in `docs/research/`, once the citations take one form and #29 and #30 are viewed; proposed to the owner as a task of its own.
+Pending. One follow-up is queued with its gate in `docs/learning/lessons.md`: a unit test that every reference image a model source cites is marked viewed in `docs/research/`. It can land once the citations take one form and #29 and #30 are viewed. It is proposed to the owner as a task of its own. A second follow-up, from review 2 (F13, F14), would close every piece the walk and the section cut read along vertical lines (`openWall`'s bottom, `archedPassage`'s feet) under one gate.
