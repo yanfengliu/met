@@ -126,7 +126,7 @@ test.describe('the door prompt between a pair’s leaves', () => {
       await keys.hold(['KeyW']);
       const seen = await watch(page, MINUS_Z, -(front + before + travel(page, MOTION.walk, WALK_COAST)), 1);
       await keys.hold([]);
-      if (seen.kind !== 'line') throw new Error(`W held from the plaza spawn, the walker stuck at ${fmt(seen.eye)}, short of ${String(before)} m before the leaves.`);
+      if (seen.kind !== 'line') throw new Error(`W held from the plaza spawn, the watch ended ${seen.kind} with the eye at ${seen.eye === null ? 'none' : fmt(seen.eye)}, short of ${String(before)} m before the leaves.`);
       await learnLag(page, seen.t);
       await still(page);
     }

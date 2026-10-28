@@ -27,7 +27,7 @@
  *   way the two share back to the spawn.
  * At the ends of R3 and R4, unthrottled, the walking frame budget is measured walking on and then running back.
  * Bound: a held key is let go once the eye passes the turn it walks to, early by what the walker covers after: its coast (src/walk/walker.ts, MOTION) and
- * its speed times the release lag learnt in the page (./route-keys.ts); at a corner it comes to rest within 0.25 m of it, walking onto it at a walk, or
+ * its speed times the release lag learnt in the page (./route-keys.ts); at a corner it comes to rest within 0.25 m of it along its stopping axis, walking onto it at a walk, or
  * fails. A leg making no progress for 1.5 s fails with where the walker stands; legs' ends and corners' stops are watched in the page at every frame. A
  * door is used from where its leaf, open or shut, lies within 1.8 m and the body clear of its sweep (./route-places.ts `standOff`), or held at its closed
  * leaves, walked at at a walk, so with frames capped at 0.1 s the frames within the prompt's 1.9 m number at least 7 under any load. Each test's one

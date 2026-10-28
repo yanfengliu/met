@@ -10,6 +10,7 @@
 import type { Page } from '@playwright/test';
 
 import type { Vec3 } from '../../src/build/types.js';
+import { throttleRate } from './helpers.js';
 import type { Facing } from './route-walk.js';
 
 /** One axis's bounds, world metres, either end open (null). */
@@ -21,14 +22,19 @@ export interface Stop {
   readonly z?: Span;
 }
 
-/** What a watch ended on: the line crossed, a stop's box entered (its index) or no progress for the stall time; the eye then, and that frame's time (ms). */
+/**
+ * What a watch ended on: the line crossed, a stop's box entered (its index), no progress for the stall time, walk mode left (the page's eye gone), or no
+ * end within the watch's ceiling; the eye then, or the last one seen (null if none), and that frame's time (ms).
+ */
 export interface Watched {
-  readonly kind: 'line' | 'stop' | 'stuck';
+  readonly kind: 'line' | 'stop' | 'stuck' | 'gone' | 'late';
   readonly stop: number;
-  readonly eye: Vec3;
+  readonly eye: Vec3 | null;
   readonly t: number;
 }
 
+/** The longest any watch waits, milliseconds times the CPU throttle: a 100 m leg at a run takes 20 s, at a walk 50 s, so a watch past it is lost. */
+export const WATCH_MS = 60_000;
 /** How long a watch waits for the eye to come 5 cm nearer its line before it ends as stuck, milliseconds of the page's clock. */
 const STALL_MS = 1500;
 /** The release lags learnt on each page, seconds of the walk's time. */
@@ -95,31 +101,48 @@ export async function learnLag(page: Page, t: number): Promise<number | null> {
 
 /**
  * Waits in the page, checking every frame, until the eye's place along the level `axis` passes `line` going `dir` (1 up, −1 down), or it enters one of
- * `stops`' boxes, or it has come no 5 cm nearer the line for STALL_MS. One watch, so a key can change a round trip after the frame that asked for it.
+ * `stops`' boxes, or it has come no 5 cm nearer the line for STALL_MS, or walk mode is left, or WATCH_MS (times the throttle) pass. One watch, so a key can
+ * change a round trip after the frame that asked for it.
  */
 export async function watch(page: Page, axis: Facing, line: number, dir: 1 | -1, stops: readonly Stop[] = []): Promise<Watched> {
   const boxes = stops.map((s) => [s.x?.[0] ?? null, s.x?.[1] ?? null, s.z?.[0] ?? null, s.z?.[1] ?? null] as const);
-  const handle = await page.waitForFunction(
-    ([ax, az, at, sense, bs, stall, id]) => {
-      const w = window as unknown as { lineWatch?: { id: number; best: number; since: number } };
-      const eye = window.__met?.walk.eye;
-      if (eye == null) return false;
-      const frame = document.timeline.currentTime;
-      const t = typeof frame === 'number' ? frame : performance.now();
-      const ahead = sense * (eye[0] * ax + eye[2] * az - at);
-      if (ahead >= 0) return { kind: 'line', stop: -1, eye: [...eye], t };
-      const within = (v: number, lo: number | null, hi: number | null): boolean => (lo === null || v >= lo) && (hi === null || v <= hi);
-      const stop = bs.findIndex(([x0, x1, z0, z1]) => within(eye[0], x0, x1) && within(eye[2], z0, z1));
-      if (stop >= 0) return { kind: 'stop', stop, eye: [...eye], t };
-      const now = performance.now();
-      if (w.lineWatch?.id !== id) w.lineWatch = { id, best: ahead, since: now };
-      else if (ahead > w.lineWatch.best + 0.05) w.lineWatch = { id, best: ahead, since: now };
-      return now - w.lineWatch.since > stall ? { kind: 'stuck', stop: -1, eye: [...eye], t } : false;
-    },
-    [axis[0], axis[1], line, dir, boxes, STALL_MS, Math.random()] as const,
-    { polling: 'raf', timeout: 0 },
-  );
-  return (await handle.jsonValue()) as unknown as Watched;
+  const id = Math.random();
+  return page
+    .waitForFunction(
+      ([ax, az, at, sense, bs, stall, key]) => {
+        const w = window as unknown as { lineWatch?: { id: number; best: number; since: number; last: number[] | null } };
+        if (w.lineWatch?.id !== key) w.lineWatch = { id: key, best: Number.NEGATIVE_INFINITY, since: performance.now(), last: null };
+        const seen = w.lineWatch;
+        const frame = document.timeline.currentTime;
+        const t = typeof frame === 'number' ? frame : performance.now();
+        const eye = window.__met?.walk.eye;
+        if (eye == null) return { kind: 'gone', stop: -1, eye: seen.last, t };
+        seen.last = [...eye];
+        const ahead = sense * (eye[0] * ax + eye[2] * az - at);
+        if (ahead >= 0) return { kind: 'line', stop: -1, eye: [...eye], t };
+        const within = (v: number, lo: number | null, hi: number | null): boolean => (lo === null || v >= lo) && (hi === null || v <= hi);
+        const stop = bs.findIndex(([x0, x1, z0, z1]) => within(eye[0], x0, x1) && within(eye[2], z0, z1));
+        if (stop >= 0) return { kind: 'stop', stop, eye: [...eye], t };
+        const now = performance.now();
+        if (ahead > seen.best + 0.05) {
+          seen.best = ahead;
+          seen.since = now;
+        }
+        return now - seen.since > stall ? { kind: 'stuck', stop: -1, eye: [...eye], t } : false;
+      },
+      [axis[0], axis[1], line, dir, boxes, STALL_MS, id] as const,
+      { polling: 'raf', timeout: WATCH_MS * throttleRate() },
+    )
+    .then(
+      async (handle) => (await handle.jsonValue()) as unknown as Watched,
+      async (): Promise<Watched> => {
+        const last = await page.evaluate((key) => {
+          const w = window as unknown as { lineWatch?: { id: number; last: number[] | null } };
+          return w.lineWatch?.id === key ? w.lineWatch.last : null;
+        }, id);
+        return { kind: 'late', stop: -1, eye: last === null ? null : [last[0] ?? Number.NaN, last[1] ?? Number.NaN, last[2] ?? Number.NaN], t: Number.NaN };
+      },
+    );
 }
 
 /** The keys a walk holds: `hold` lets go of the others first, the movement keys before Shift, so a run stops at once, then presses the new ones. */

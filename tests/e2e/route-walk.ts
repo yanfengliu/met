@@ -4,7 +4,7 @@
  * plan lines, whose segments run along an axis or at 45° to one: facing along an axis, W, S, A or D walks a straight segment and two of them a diagonal
  * one; drags turn the walker. The doors on the way (docs/design/spec.md, Doors) are read from the read-only `window.__met.doors` and used by E, as a
  * visitor uses them. A leg lets go where the walker, going on for the release lag a key takes to reach the page under load, ends at its end (./route-keys.ts),
- * and at a corner it walks onto the corner until it rests within 0.25 m of it, or fails. See routes.spec.ts for the bounds.
+ * and at a corner it walks onto the corner until it rests within 0.25 m of it along the axis it stops on, or fails. See routes.spec.ts for the bounds.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -17,8 +17,8 @@ import { ENTRANCE_DOOR_Z, entranceDoor } from '../../src/model/hunt/arches.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { BODY, MOTION } from '../../src/walk/walker.js';
 import { open, openMenu, press, throttle, throttleRate } from './helpers.js';
-import { Keys, lag, learnLag, startKeyLog, travel, watch } from './route-keys.js';
-import type { Stop } from './route-keys.js';
+import { Keys, lag, learnLag, startKeyLog, travel, watch, WATCH_MS } from './route-keys.js';
+import type { Stop, Watched } from './route-keys.js';
 
 export type { Stop } from './route-keys.js';
 
@@ -194,6 +194,10 @@ export function legs(points: readonly XZ[], facing: Facing, pace: 'run' | 'walk'
   });
 }
 
+/** Why a watch on `leg` of `route` ended without its line: walk mode left, or no end within its ceiling; with the eye last seen. */
+const lost = (route: string, leg: string, seen: Watched): Error =>
+  new Error(`${route}: on the leg ${leg}, ${seen.kind === 'gone' ? 'walk mode was left' : `no end came within ${String(WATCH_MS)} ms times the throttle`}; the eye last seen at ${seen.eye === null ? 'none' : fmt(seen.eye)}.`);
+
 /** How near its corner a walk brings the walker to rest before the next leg, metres along the corner's axis; the walks onto it it may take; and the run-up a walk onto it starts from, to come up to speed (95% in 0.29 m). */
 const CORNER = 0.25;
 const SETTLE_WALKS = 8;
@@ -239,9 +243,10 @@ export async function walk(page: Page, route: string, list: readonly Leg[], samp
       await keys.hold([dir === 1 ? c.on : c.back]);
       const seen = await watch(page, c.axis, near ? at - go - RUN_UP : at - dir * go, dir);
       await keys.hold([]);
+      if (seen.kind === 'gone' || seen.kind === 'late') throw lost(route, `${label}, walking onto its corner`, seen);
       if (seen.kind === 'line') await learnLag(page, seen.t);
       await take();
-      if (seen.kind === 'stuck' && !near) throw new Error(`${route}: after the leg ${label}, walking onto its corner ${fmt(c.end)}, the walker stuck at ${fmt(seen.eye)}, ${error.toFixed(2)} m past it at the start.`);
+      if (seen.kind === 'stuck' && !near) throw new Error(`${route}: after the leg ${label}, walking onto its corner ${fmt(c.end)}, the walker stuck at ${seen.eye === null ? 'none' : fmt(seen.eye)}, ${error.toFixed(2)} m past it at the start.`);
     }
   };
   for (const [i, leg] of list.entries()) {
@@ -259,7 +264,11 @@ export async function walk(page: Page, route: string, list: readonly Leg[], samp
         await take();
         break;
       }
-      if (seen.kind === 'stuck') {
+      if (seen.kind === 'gone' || seen.kind === 'late') {
+        await keys.hold([]);
+        throw lost(route, leg.label, seen);
+      }
+      if (seen.kind === 'stuck' && seen.eye !== null) {
         await keys.hold([]);
         await take();
         throw new Error(`${route}: stuck on the leg ${leg.label}, the eye at ${fmt(seen.eye)} (on the ground: ${String(last.onGround)}), ${(lineOf(leg) - along(seen.eye, leg.axis)).toFixed(2)} m short.`);
