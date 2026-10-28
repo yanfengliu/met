@@ -102,7 +102,7 @@ Astor Court and the Petrie Court
 
 31. https://commons.wikimedia.org/wiki/File:Astor_Court,_the_Met,_Manhattan_Oct_2017.jpg (CC0, Thomson200). Not viewed. Informs: Astor Court overview.
 32. https://commons.wikimedia.org/wiki/File:Astor_court_colonnade.jpg (CC BY-SA 3.0, Alawa; described as looking north along the colonnade). Not viewed.
-33. https://commons.wikimedia.org/wiki/File:NYC_-_Metropolitan_Museum_-_Carroll_and_Milton_Petrie_European_Sculpture_Court.jpg (CC BY 3.0, Jean-Christophe Benoist, 2012-04-26). Not viewed. Informs: the Petrie Court, the long skylit court next to the Lehman Wing (see `interior.md`).
+33. https://commons.wikimedia.org/wiki/File:NYC_-_Metropolitan_Museum_-_Carroll_and_Milton_Petrie_European_Sculpture_Court.jpg (CC BY 3.0, Jean-Christophe Benoist, 2012-04-26, 6000×4000). Viewed at full size (2026-10-28). The camera stands on the court floor in its west part and looks east along it: Weston's 1888 front on the left, its arched bays and the entrance pavilion with the porch and balcony behind Carpeaux's Ugolino, the limestone south wall on the right, the glass roof over both. The door's head is flat, in a stepped stone architrave between fluted Ionic pilasters, with no fanlight; its east leaf stands open into wing B (`interior.md`, Weston's 1888 door). Informs: the Petrie Court, the 1888 front and its door.
 
 Petrie Court, added by the integration worker (2026-10-13)
 
@@ -117,6 +117,10 @@ Walking checks, added by work unit 2's M1 (2026-10-25; viewed in a browser by a 
 40. https://commons.wikimedia.org/wiki/File:Temple_of_Dendur_-_MET_-_Joy_of_Museums.jpg (CC BY-SA 4.0, Joyofmuseums, dated 2018-07-16, 1619×1160). Viewed. The gate's passage: its floor level with the forecourt behind, visitors standing there with no rope; frameless glass along the jambs. Informs: the passage's floor.
 41. https://commons.wikimedia.org/wiki/File:Columns_of_Temple_of_Dendur_at_Metropolitan_Museum_of_Art.jpg (CC BY-SA 4.0, Yair Haklai, 2012-05-26, 2448×3264). Viewed. The temple's porch: one sill step up from the forecourt, rope stanchions along its front. Informs: the way into the temple.
 42. https://www.metmuseum.org/perspectives/hugh-raffles-tiepolo (The Met; reference only, not freely licensed). Viewed. Its photograph captioned "Entry to the European Paintings galleries (Gallery 600)" shows the doorway on the axis, a semicircular arch with a moulded archivolt on plain piers, The Triumph of Marius centred beyond on a dark blue wall. Informs: the doorway's form and proportions (scaled against the 5.59 m canvas).
+
+Weston's door, added by work unit 3 (2026-10-28)
+
+43. Heckscher (see `interior.md`, Sources) fig. 110, p. 76: the Petrie Court in 1995 with Weston's south front (The Met; reference only, not freely licensed). Viewed. The camera stands on the court floor looking east along the front, with nothing in front of the porch: the Ionic aedicule of pilasters with its carved frieze, modillioned cornice and balcony, and the square-headed doorway in its architrave, the dark leaves rising to the head. Informs: the door's head and the porch's form.
 
 Plan source (not a photograph)
 

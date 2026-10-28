@@ -15,7 +15,7 @@ Tags: **(r)** read in the full source; **(s)** from search-result snippets only;
 - [HDC] Historic Districts Council, Kevin Roche and the Met: https://hdc.org/kevin-roche-metropolitan-museum-of-art/ (r)
 - [MC] The Met, "The Museum, Constructed", 2010: https://www.metmuseum.org/perspectives/the-museum-constructed (r)
 - [K26] The Met, "Today in Met history: April 6" (s); [BL] diannedurantewriter.com, brief history of the building (s); [PZ] The Met, plaza opening press release 2014 (s); [OL] OLIN project page (s); [BR] Britannica (s); [TAN] The Art Newspaper, 15 September 2026 (s).
-- Not read, best for a follow-up: M. H. Heckscher, "The Metropolitan Museum of Art: An Architectural History", MMA Bulletin 53:1, Summer 1995 (PDF over 10 MB): https://resources.metmuseum.org/resources/metpublications/pdf/The_Metropolitan_Museum_of_Art_An_Architectural_History_The_Metropolitan_Museum_of_Art_Bulletin_v_53_no_1_Summer_1995.pdf
+- Read in part for Weston's 1888 door (work unit 3, 2026-10-28; `interior.md`): pp. 21–25 with figs. 26–29, fig. 35 (p. 28), fig. 110 (p. 76) and the 1995 plan (p. 78) of M. H. Heckscher, "The Metropolitan Museum of Art: An Architectural History", MMA Bulletin 53:1, Summer 1995 (PDF over 10 MB): https://resources.metmuseum.org/resources/metpublications/pdf/The_Metropolitan_Museum_of_Art_An_Architectural_History_The_Metropolitan_Museum_of_Art_Bulletin_v_53_no_1_Summer_1995.pdf
 
 ## Chronology
 

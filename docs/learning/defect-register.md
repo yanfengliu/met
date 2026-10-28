@@ -2,6 +2,20 @@
 
 Defects the owner reported, each with the symptom as they saw it, what the investigation found, the cause, and the check that covers the defect's class from now on. An entry stays after its gate lands: this is the list of what the gates could not see, which is where the next defect comes from.
 
+## The Weston door's head is round (2026-10-28)
+
+**Reported symptom:** "the 1888 Weston entrance door into the Petrie Court may have the wrong head shape": the model built it arched, with a voussoir ring and a fanlight, and work unit 2's doors worker had noted that photograph #33 shows it square-headed.
+
+**Investigation:** Every source in `docs/research/` that shows the door, each read at its native size (`docs/research/interior.md`, Weston's 1888 door): the court photographs #33 (6000 × 4000) and #35 and Heckscher's fig. 110 (1995); Weston's 1883 study, his 1888 plan, his approved elevation of 1885 and the porch's drawing of April 1888 (Heckscher figs. 26 to 29); the King's Handbook engraving of 1891; and, too oblique to read the head, Heckscher's fig. 35 (about 1895) and the Detroit Publishing photograph of about 1900. Every one that shows the head shows it square, in a moulded architrave, with no fanlight. The 1888 drawing, at a quarter inch to the foot, gives the opening 3.29 × 4.91 m under capitals 5.81 m up.
+
+**Cause:** The core's first modelling (`20e9547`, 2026-10-11) gave the door a round head, 2.6 × 5.0 m, an estimate no source supports. The research index still listed #33, which the facade's code cites, as "Not viewed", so nothing recorded what it shows of the door. M2b's doors worker read #33 at full size and noted the discrepancy in the spec and the code, but left the head as it was, outside that milestone.
+
+**Correction:** The hole, the frame and the leaves are square-headed (`doorUnit` rect, no fanlight), in a 0.19 m stone architrave (`surround`) under a plain stone frieze up to the porch's entablature, in place of the voussoir ring. The opening is the 1888 drawing's scaled with the model's smaller porch: 2.83 × 4.23 m. The hole option `facets`, added for the arched frame, is gone (`src/model/core/weston-facade.ts`, `arches.ts`).
+
+**Check:** No automated gate tells a modelled form from the one its photograph shows. The check is the visual audit the local rules ask of every modelling change: the shots read at native resolution beside the photographs they cite, here `doors-weston` and `preset-int-petrie-court` against #33 and fig. 110. A recorded reading would have caught this sooner: every image a model source cites marked viewed in `docs/research/`, with what it shows. That gate does not exist yet. The sources cite images in several forms (#33, item 30, 37 to 40, primary 9), and besides #33 at least #29 and #30 are cited but still marked "Not viewed". The door's fit keeps its own gate: `src/model/door-fit.test.ts` goes red with the hole 2 cm narrower or lower than the frame, and with the 528/529 wall left in the doorway.
+
+**What it says about other checks:** A discrepancy a reviewer or worker notes but leaves out of scope needs a follow-up task with an owner, or it stays in the model as a note beside the code. The cited-but-unviewed images are where the next one of these is likeliest.
+
 ## The wheel stops zooming (2026-10-15)
 
 **Reported symptom:** "scroll wheel doesn't always work so well. Sometimes it stops zooming at all, like it's hard capped on something."

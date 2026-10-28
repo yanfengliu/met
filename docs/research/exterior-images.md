@@ -163,10 +163,10 @@ Viewed and measured at 1:1 by the `mmw` worker; the readings are in `src/model/m
 ### Historical (for the chapter boundaries)
 
 - https://commons.wikimedia.org/wiki/File:Original_Met.jpg — unknown, about 1880, public domain. The Vaux & Mould building alone in the park (chapter `vaux-mould-1880`).
-- https://commons.wikimedia.org/wiki/File:US-NY(1891)_p604_NYC,_METROPOLITAN_MUSEUM_OF_ART.jpg — King's Handbook, 1891, public domain. Engraving after the 1888 wing.
+- https://commons.wikimedia.org/wiki/File:US-NY(1891)_p604_NYC,_METROPOLITAN_MUSEUM_OF_ART.jpg — King's Handbook, 1891, public domain, 969×479. Engraving after the 1888 wing. Viewed 2026-10-28: Weston's south entrance front near square-on, three round-arched upper windows with roundels between them over a square-headed door with a pair of panelled leaves under an entablature, and the stair below it (`interior.md`, Weston's 1888 door).
 - https://commons.wikimedia.org/wiki/File:(King1893NYC)_pg311_METROPOLITAN_MUSEUM_OF_MODERN_ART,_CENTRAL_PARK,_NEAR_FIFTH_AVENUE.jpg — King's Handbook, 1893, public domain. The brick complex near Fifth Avenue (chapter `weston-tuckerman-1894`).
 - https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art,_Central_Park,_from_Robert_N._Dennis_collection_of_stereoscopic_views.jpg — about 1896, public domain. Stereoview of the brick buildings.
-- https://commons.wikimedia.org/wiki/File:1880_Met_Museum.jpg — Detroit Publishing Co., about 1900, public domain, 9406×6439. Probably the pre-Hunt complex (?).
+- https://commons.wikimedia.org/wiki/File:1880_Met_Museum.jpg — Detroit Publishing Co., about 1900, public domain, 9406×6439. Viewed at full size 2026-10-28: the brick complex from the park to the southwest, and at the right Weston's south front receding east, its entrance porch seen from the west with a blind panel between pilasters on its side and the 1888 stair before it, too obliquely to read the door's head (`interior.md`, Weston's 1888 door).
 - https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art,_New_York,_N._Y_(NYPL_b12647398-63134).tiff — Detroit Publishing Co., 1902–03, public domain. Postcard of the new Hunt facade (chapter `hunt-1902`).
 - https://commons.wikimedia.org/wiki/File:New_York_City_-_Metropolitan_Museum_of_Art_LCCN2003678130.jpg — Library of Congress, 1905, public domain. Hunt facade before the MMW wings.
 - https://commons.wikimedia.org/wiki/File:Metropolitan_Museum,_New_York,_N._Y_(NYPL_b12647398-69920).tiff — Detroit Publishing Co., 1908–09, public domain. Postcard, MMW wings under way (?).

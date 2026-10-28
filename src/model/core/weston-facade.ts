@@ -11,7 +11,7 @@ import type { BufferGeometry } from 'three';
 
 import type { Kit } from '../../build/types.js';
 import { doorTag } from '../doors.js';
-import { column, doorUnit, moulding, voussoirs, windowUnit } from '../lib/index.js';
+import { column, doorUnit, moulding, surround, voussoirs, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { openWall, type Hole } from './arches.js';
 import { B_SOUTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, L1, L2, LG, OUTER_WALL, PARAPET_Y, WESTON_ARCH_SPAN, WESTON_ARCH_SPRING, WESTON_BAY, WESTON_DADO, WESTON_LOWER_HEAD, WESTON_PAVILION_HALF, WEST_Z } from './constants.js';
@@ -35,15 +35,18 @@ const MAIN_X = [-1.55, 0, 1.55];
 const GROUND_X = [-1.3, 1.3];
 const ARCH_SILL = 0.35;
 const PAVILION_WINDOW = { width: 5.0, sill: 0.5, spring: 2.6 } as const;
+/** The porch's columns, from L1 to their capitals' top, where its entablature starts. */
+const PORCH_TOP = 5.0;
 /**
- * The 1888 entrance door (src/model/doors.ts `weston`): a pair of wooden leaves under a fanlight, which open into the building only. The Petrie Court
- * photograph (interior-images.md #33, Benoist 2012, at full size) shows the doorway's east leaf standing a quarter turn open into wing B, its top edge
- * running back into the building, the gap at its hinge side lit and crossed by its hinges; the about-1900 view (exterior-images.md, 1880_Met_Museum.jpg)
- * shows the porch and its steps but not the leaves. #33 shows the opening square-headed, in a moulded stone architrave under the porch's entablature,
- * where the model has the round head kept here. The pavilion's hole is cut to the frame's own outline, the 16 facets doorUnit gives an arch at its
- * default detail, so the frame fills it: cut with openWall's 12, the frame's head passed up to 11 mm into the brick between the hole's facets.
+ * The 1888 entrance door (src/model/doors.ts `weston`): a pair of wooden panelled leaves rising to a square head, with no fanlight, which open into the
+ * building only (interior.md, Weston's 1888 door). Every source that shows the head shows it square, in a moulded stone architrave under the porch's
+ * entablature: the Petrie Court photographs (interior-images.md #33 at full size; Heckscher fig. 110, 1995), the porch's drawing of April 1888 and the
+ * approved elevation of 1885 (Heckscher figs. 29 and 28). #33 shows the east leaf a quarter turn open into wing B, the gap at its hinge side lit and
+ * crossed by its hinges.
+ * The opening is the 1888 drawing's, 3.29 × 4.91 m, scaled by 0.86 with the porch (its order 5.81 m to the capitals' top there, PORCH_TOP here), so its
+ * head stands under the capitals as drawn; the architrave is 0.19 m wide, and a plain stone frieze fills the wall from it up to the entablature.
  */
-const DOOR = { width: 2.6, height: 5.0, facets: 16 } as const;
+const DOOR = { width: 2.83, height: 4.23, trim: 0.19 } as const;
 /** The 1888 entrance door into the Petrie Court: the plane of its frame (X), its middle (Z) and its width, for what must keep clear of it and its swing. */
 export const WESTON_DOOR = { x: B_SOUTH_X + 0.3, z: CENTRE_Z, width: DOOR.width } as const;
 
@@ -60,7 +63,7 @@ function pavilion(): BufferGeometry {
   const w = PAVILION_WINDOW;
   const holes: Hole[] = [
     ...[-3.6, 3.6].map((x): Hole => ({ head: 'segmental', x, y: GROUND_WINDOW.sill - WALL_BASE_Y, width: GROUND_WINDOW.width, height: GROUND_WINDOW.height, rise: GROUND_WINDOW.rise })),
-    { head: 'round', y: L1 - WALL_BASE_Y, width: DOOR.width, height: DOOR.height, facets: DOOR.facets },
+    { y: L1 - WALL_BASE_Y, width: DOOR.width, height: DOOR.height },
     ...[-3.6, 3.6].map((x): Hole => ({ x, y: MAIN_WINDOW.sill - WALL_BASE_Y, width: MAIN_WINDOW.width, height: MAIN_WINDOW.height })),
     { head: 'round', y: L2 + w.sill - WALL_BASE_Y, width: w.width, height: w.spring - w.sill + w.width / 2 },
     ...[-4.6, 4.6].map((x): Hole => ({ head: 'round', x, y: L2 + 1.0 - WALL_BASE_Y, width: 0.9, height: 2.6, depth: 0.2 })),
@@ -93,8 +96,9 @@ export function westonTrim(kit: Kit): void {
   const stone = core.westonStone;
   const e = SOUTH;
   const disc = cylinder(20);
-  const door0 = CENTRE_Z - DOOR.width / 2;
-  const door1 = CENTRE_Z + DOOR.width / 2;
+  // The door's architrave, outer edge to outer edge: the dado stops at it.
+  const door0 = CENTRE_Z - DOOR.width / 2 - DOOR.trim;
+  const door1 = CENTRE_Z + DOOR.width / 2 + DOOR.trim;
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, L1 - 0.45, L1, 0.14, 0, 0);
   for (const [a0, a1] of [
@@ -116,7 +120,7 @@ export function westonTrim(kit: Kit): void {
   for (const edge of strips) elevationBox(kit, e, stone, edge - 0.28, edge + 0.28, L1 + WESTON_DADO, CORNICE_Y, 0.08, 0, 2);
   const ring = voussoirs({ span: WESTON_ARCH_SPAN, depth: 0.5, count: 17, projection: 0.1 });
   const bigRing = voussoirs({ span: PAVILION_WINDOW.width, depth: 0.6, count: 19, projection: 0.12 });
-  const doorRing = voussoirs({ span: DOOR.width, depth: 0.42, count: 13, projection: 0.1 });
+  const architrave = surround({ width: DOOR.width, height: DOOR.height, trim: DOOR.trim, projection: 0.08, sill: false, head: 'none' });
   const cornice = moulding({ profile: 'cornice-plain', path: [[-WESTON_BAY / 2, 0, 0], [WESTON_BAY / 2, 0, 0]], height: 0.8, projection: 0.75 });
   const pavCornice = moulding({ profile: 'cornice-plain', path: [[-WESTON_PAVILION_HALF, 0, 0], [WESTON_PAVILION_HALF, 0, 0]], height: 0.9, projection: 0.85 });
   BAYS.forEach((c) => {
@@ -130,7 +134,8 @@ export function westonTrim(kit: Kit): void {
   });
   const w = PAVILION_WINDOW;
   kit.add(bigRing, stone, placed(B_SOUTH_X, L2 + w.spring, CENTRE_Z, FACING.south), 7);
-  kit.add(doorRing, stone, placed(B_SOUTH_X, L1 + DOOR.height - DOOR.width / 2, CENTRE_Z, FACING.south), 4);
+  kit.add(architrave, stone, placed(B_SOUTH_X, L1, CENTRE_Z, FACING.south), 4);
+  elevationBox(kit, e, stone, door0, door1, L1 + DOOR.height + DOOR.trim, L1 + PORCH_TOP, 0.06, 0, 4);
   for (const x of [-3.6, 3.6]) {
     kit.add(disc, stone, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 1.25, 0.12), 8);
     kit.add(disc, palette.brick, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 0.85, 0.16), 8);
@@ -146,7 +151,7 @@ export function westonOpenings(kit: Kit): void {
   const arched = windowUnit({ width: WESTON_ARCH_SPAN, height: WESTON_ARCH_SPRING - ARCH_SILL + WESTON_ARCH_SPAN / 2, shape: 'arch', cols: 3, rows: 3 });
   const w = PAVILION_WINDOW;
   const big = windowUnit({ width: w.width, height: w.spring - w.sill + w.width / 2, shape: 'arch', cols: 4, rows: 3 });
-  const door = doorUnit({ width: DOOR.width, height: DOOR.height, shape: 'arch', swing: 'back' });
+  const door = doorUnit({ width: DOOR.width, height: DOOR.height, fanlight: false, swing: 'back' });
   const x = B_SOUTH_X + 0.3;
   const put = (parts: { frame: BufferGeometry; glass?: BufferGeometry; bars?: BufferGeometry }, zz: number, y: number, order: number): void => {
     const m = placed(x, y, zz, FACING.south);
@@ -167,12 +172,11 @@ export function westonOpenings(kit: Kit): void {
   const dm = placed(x, L1, CENTRE_Z, FACING.south);
   kit.add(door.frame, palette.metalDark, dm, 5);
   kit.addTagged(door.leaf, core.westonDoorWood, dm, doorTag('weston'), 5);
-  if (door.glass) kit.add(door.glass, palette.glassDark, dm, 5);
   // The porch: columns 0.65 m out from the face, the entablature and balcony slab 1.45 m out, and an iron railing on it.
-  const shaft = column({ order: 'ionic', diameter: 0.55, height: 5.0 });
+  const shaft = column({ order: 'ionic', diameter: 0.55, height: PORCH_TOP });
   const cx = B_SOUTH_X - 0.65;
   for (const zz of [-2.85, -2.05, 2.05, 2.85]) kit.add(shaft, core.westonStone, placed(cx, L1, CENTRE_Z + zz, FACING.south), 6);
-  const top = L1 + 5.0;
+  const top = L1 + PORCH_TOP;
   addBox(kit, core.westonStone, B_SOUTH_X - 1.0, top, CENTRE_Z - 3.3, B_SOUTH_X, top + 0.8, CENTRE_Z + 3.3, 7);
   addBox(kit, core.westonStone, B_SOUTH_X - 1.45, top + 0.8, CENTRE_Z - 3.5, B_SOUTH_X, top + 1.05, CENTRE_Z + 3.5, 7);
   const rail = palette.metalDark;

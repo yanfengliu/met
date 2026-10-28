@@ -55,9 +55,9 @@ export interface FrontDoorway {
 
 /**
  * `runs` with any wall that the map stands in `doorway`'s opening from the front moved onto the line of the nearer reveal, its face continuing the
- * reveal, and the walls that end on it following it. The 1888 door has one: the wall between galleries 528 and 529 (map Z −104.7), moved 0.45 m
+ * reveal, and the walls that end on it following it. The 1888 door has one: the wall between galleries 528 and 529 (map Z −104.7), moved 0.57 m
  * west. The decoded floor map (interior.md, Plan source) has the door in the middle of gallery 529, its opening on the old front's line from
- * Z −102.73 to −99.21, but the model's pavilion stands at the facade's middle, 2.68 m west of that, so on the map's line this wall stood 0.45 m
+ * Z −102.73 to −99.21, but the model's pavilion stands at the facade's middle, 2.68 m west of that, so on the map's line this wall stood 0.57 m
  * inside the doorway and in the swing of the door's west leaf, which opens into the building (src/model/door-fit.test.ts).
  */
 function clearOf(runs: readonly Run[], doorway: FrontDoorway): Run[] {

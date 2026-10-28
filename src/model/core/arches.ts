@@ -24,8 +24,6 @@ export interface Hole {
   readonly rise?: number;
   /** Depth of a blind niche, metres; through the wall when absent. */
   readonly depth?: number;
-  /** Facets round an arched head, as openWall cuts it. Default 12; a frame of another count fills the hole only when cut to its own (weston-facade.ts). */
-  readonly facets?: number;
 }
 
 /** The rise a head has when none is given. */
@@ -110,7 +108,7 @@ export interface OpenWallParams {
 /** A wall with holes of any head shape (see the header for the frame). */
 export function openWall(params: OpenWallParams): BufferGeometry {
   const holes = params.holes ?? [];
-  const key = `openWall:${keyOf(params.width, params.height, params.thickness, params.openEnds ?? false)}:${holes.map((h) => keyOf(h.head ?? 'rect', h.x ?? 0, h.y ?? 0, h.width, h.height, riseOf(h), h.depth ?? -1, h.facets ?? 12)).join('|')}`;
+  const key = `openWall:${keyOf(params.width, params.height, params.thickness, params.openEnds ?? false)}:${holes.map((h) => keyOf(h.head ?? 'rect', h.x ?? 0, h.y ?? 0, h.width, h.height, riseOf(h), h.depth ?? -1)).join('|')}`;
   return memo(key, () => buildWall(params.width, params.height, params.thickness, holes, params.openEnds ?? false));
 }
 
@@ -130,7 +128,7 @@ function buildWall(width: number, height: number, thickness: number, holes: read
     [W, height],
     [-W, height],
   ];
-  const loops = holes.map((h) => ({ outline: holeOutline(h, h.facets ?? 12), depth: h.depth !== undefined && h.depth < thickness ? h.depth : thickness, door: (h.y ?? 0) <= 1e-6 && (h.head ?? 'rect') !== 'circle' }));
+  const loops = holes.map((h) => ({ outline: holeOutline(h, 12), depth: h.depth !== undefined && h.depth < thickness ? h.depth : thickness, door: (h.y ?? 0) <= 1e-6 && (h.head ?? 'rect') !== 'circle' }));
   const through = loops.filter((l) => l.depth >= thickness);
   b.planar(outline, loops.map((l) => l.outline), new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
   // Back face, mirrored in u so it faces −Z.
