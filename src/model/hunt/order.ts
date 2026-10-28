@@ -1,7 +1,7 @@
 /**
  * Hunt facade, the order: four granite-capped pedestals, one under each column pair, then the eight colossal Corinthian columns with the fluted pilasters behind them.
  * Evidence: S7 (Schneider 2019) at 1:1 for the pair spacing (0.225 bay), the pedestals (die 0.375 bay, 1.65 m tall) and the column (1.5 m, 12.75 m);
- * S9 (Epicgenius 2023 #30) for the pilasters behind the columns and their capitals.
+ * S9 (Epicgenius 2023 frame 30) for the pilasters behind the columns and their capitals.
  */
 import type { StepDef } from '../../build/types.js';
 import { palette } from '../palette.js';

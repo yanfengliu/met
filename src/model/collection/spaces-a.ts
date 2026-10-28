@@ -149,7 +149,7 @@ export const engelhardSpace: CollectionStepDef = {
   focus: { kind: 'preset', id: 'int-engelhard-north' },
   space: 'engelhard-court',
   placements: ENGELHARD,
-  // interior-images.md #P5: the court's marbles stand on grey stone pedestals, as the generic ones before them did.
+  // interior-images.md #P5 and #18: the court's marbles stand on grey stone pedestals, as the generic ones before them did.
   plinth: palette.granite,
 };
 export const engelhardCollectionStep = collectionStep(engelhardSpace);

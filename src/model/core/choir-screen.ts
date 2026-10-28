@@ -1,7 +1,7 @@
 /**
  * The choir screen from Valladolid Cathedral, about 1763, attributed to Rafael Amezúa (Met 56.234.1, object 201926): wrought iron, gilded and
- * painted, on a limestone base, 15.85 m high and 12.80 m wide (interior.md), set up in the Medieval Sculpture Hall in 1956. After P8 (Met,_cancellata.JPG)
- * and the Met's photograph ES4661 (interior-images.md #P8 and #44): three tiers of iron balusters between posts, the lowest with an arched gate, each tier
+ * painted, on a limestone base, 15.85 m high and 12.80 m wide (interior.md), set up in the Medieval Sculpture Hall in 1956. After the photographs
+ * interior-images.md #P8 and #44 (Met,_cancellata.JPG and the Met's ES4661): three tiers of iron balusters between posts, the lowest with an arched gate, each tier
  * capped by a gilded frieze, and a gilded cresting of three medallions and finials, the middle one with a cross.
  */
 import { Matrix4 } from 'three';
@@ -14,7 +14,11 @@ import { core } from './materials.js';
 import { addBox, cylinder, placed } from './shapes.js';
 
 const W = SCREEN_WIDTH / 2;
-/** Tier bounds above the hall floor: [bottom, top] of the balusters; a gilded frieze sits on each. */
+/**
+ * Tier bounds above the hall floor: [bottom, top] of the balusters; a gilded frieze sits on each. Open with the owner (work unit 4, F-owner-1): the
+ * level view interior-images.md #29, scaled by the screen's width, puts the friezes' tops at about 5.1, 8.5 and 11.2 m and the cresting at 4.7 m,
+ * against 5.9, 9.85 and 13.0 m and 2.85 m here.
+ */
 const TIERS: readonly (readonly [number, number])[] = [
   [0.7, 5.4],
   [5.9, 9.4],

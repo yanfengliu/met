@@ -2,7 +2,7 @@
  * Hunt wing, the limestone walls (1898–1900): the pavilion's front wall in two layers (a rusticated skin with the arches' outer order and the niches,
  * and the thick body behind it with the inner order), its rusticated end piers, the flanking extensions' fronts, the side walls on the
  * McKim, Mead & White seams, and the Great Hall's end and west walls that rise above the extensions' roofs.
- * Evidence: S7 (Schneider 2019) at 1:1 for the arches, piers and extensions; S9 (Epicgenius 2023 #30) for the end piers' rustication; floor map for the hall walls.
+ * Evidence: S7 (Schneider 2019) at 1:1 for the arches, piers and extensions; S9 (Epicgenius 2023 frame 30) for the end piers' rustication; floor map for the hall walls.
  */
 import * as THREE from 'three';
 

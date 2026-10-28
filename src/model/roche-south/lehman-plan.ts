@@ -6,8 +6,8 @@
  * Section: tagged E (estimates). The eave and apex come from a camera fit to photo P9 (int-lehman-pyramid-up) on the octagon's corners, the eave
  * lines, the apex and seven purlins of the narrow face the camera faces: the pyramid rises 11.1 m (10.3–11.2 m over every fit) over its eave;
  * the eave's height scales with the lens, and the photo's EXIF (Samsung SGH-T959, 3.79 mm, about 2,430 px) puts it 17.1 m over the camera,
- * which stands 1.5 m over the court floor at its south end, tilted 29.5° north. The gallery ring's sloped glass ceiling is from the 2011 gallery
- * photograph (interior-images.md #30).
+ * which stands 1.5 m over the court floor at its south end, tilted 29.5° north. The gallery ring's ceiling slopes up toward the court in the 2011 gallery
+ * photograph (interior-images.md #30), and the orthophoto shows it glazed (exterior-images.md #9).
  */
 import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, MAIN_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
 import { LEHMAN_BLOCK, MAP_Z, OUTER_WALL } from './blocks.js';

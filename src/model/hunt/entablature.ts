@@ -2,7 +2,7 @@
  * Hunt facade, the crowning storey: the entablature breaking forward over each column pair (architrave, frieze, modillioned cornice) with a cornice-only run
  * over the arches between the breaks; the attic with its dentilled cornice and the mask-and-shell cresting; the four uncarved blocks on the breaks.
  * Evidence: S7 (Schneider 2019) at 1:1 (breaks 3.67 m from the capitals to Y 21.7, main run's dentils level with the breaks', the attic cornice at 25.7,
- * cresting peaks at 28.3, masks about 2.4 m apart; blocks 6.4 m wide on a 1.7 m plinth), S9 (Epicgenius 2023 #30) for the breaks' returns and the blocks' depth.
+ * cresting peaks at 28.3, masks about 2.4 m apart; blocks 6.4 m wide on a 1.7 m plinth), S9 (Epicgenius 2023 frame 30) for the breaks' returns and the blocks' depth.
  */
 import * as THREE from 'three';
 

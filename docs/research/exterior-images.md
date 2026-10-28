@@ -4,7 +4,7 @@ Reference photographs for modelling and for the photo-for-render visual audit. I
 
 Compiled 2026-10-11. Licences and authors come from each file's Commons metadata (extmetadata) and were not re-checked one by one; check the file page before reusing an image outside this repo. "Viewed" means the research worker looked at the image in the browser; unviewed entries were picked from titles, descriptions, categories and geotags, and their viewpoints are inferred. Geotags on Commons are often camera-phone or Flickr positions and several fall inside the building; viewpoints below are corrected where the image was viewed.
 
-A model source cites an entry by this file's name and the entry's number or label, `exterior-images.md #9` or `#E43`. `src/cited-images.test.ts` fails when a file under `src/model/` cites an entry that is not marked viewed: a primary's heading says "(primary, viewed)", and any other entry holds the sentence "Viewed", "Viewed at full size" or "Viewed at 1:1", with or without a date.
+A model source cites an entry by this file's name and the entry's number or label, `exterior-images.md #9` or `#E43`. An ID is never reused or renumbered; a new entry takes the next free number. `src/cited-images.test.ts` fails when a file under `src/model/` cites an entry that is not marked viewed: a primary's heading says "(primary, viewed)", and any other entry holds the sentence "Viewed", "Viewed at full size" or "Viewed at 1:1", with or without a date.
 
 ## Primary images and camera presets
 
@@ -14,7 +14,7 @@ Nine primaries for the visual audit. Presets are three.js perspective cameras: p
 |---|---|---|---|---|---|---|
 | 1 | `ref-front-axis` | Schneider 2019 frontal | (0, 1.7, 44) | (0, 14, 0) | 50 | high (geotag on the axis at Z +43.7; photo is perspective-corrected, so for an exact match use a level camera with a vertical view offset) |
 | 2 | `ref-front-street` | Haklai 2012 frontal | (2, 1.6, 44.5) | (0, 11.9, 0) | 52 | medium (camera pitched up about 13°, from the horizon at people's eye level) |
-| 3 | `ref-column-pair-north` | Epicgenius 2023 #30 | (60, 1.6, 40) | (27, 20, 2) | 14 | low (telephoto from the northeast) |
+| 3 | `ref-column-pair-north` | Epicgenius 2023 frame 30 | (60, 1.6, 40) | (27, 20, 2) | 14 | low (telephoto from the northeast) |
 | 4 | `ref-entrance-up` | PerpetualTraveler 2022 | (−2, 5.3, 7) | (0, 17, 0) | 70 | medium (on the landing at the central arch) |
 | 5 | `ref-fountain-north` | Hałun 2023 | (46, 1.4, 21) | (5, 9, 2) | 55 | medium (from the north fountain looking southwest) |
 | 6 | `ref-park-south` | Peel 2024 | (−200, 3, −92) | (−151.6, 9, −68) | 50 | low (from the east end of Wallach Walk, OSM X −265..−192, Z −104..−85) |
@@ -36,7 +36,7 @@ Nine primaries for the visual audit. Presets are three.js perspective cameras: p
 - Viewpoint: east sidewalk just north of the axis, about (2, 1.6, 44.5), looking west and up.
 - Informs: column proportions, arch and door heights, step count (H4, H10, H11, P3), limestone and granite colours (C1–C5).
 
-### 3. Epicgenius 2023 #30 — north outer column pair (primary, viewed)
+### 3. Epicgenius 2023 frame 30 — north outer column pair (primary, viewed)
 
 - https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_30.jpg — Epicgenius, 2023-04-14, CC BY-SA 4.0, 5184×3456.
 - Shows the north outer pair from below and the northeast: freestanding columns with fluted wall pilasters behind them, the entablature break returning to the wall, the stepped rough-stone block on its plinth, the cresting with masks, a medallion and the north arch's archivolt; to the right the lower flanking extension with a caryatid.
@@ -93,14 +93,14 @@ Unviewed unless marked. Coordinates are Commons geotags converted to the world f
 
 10. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_main_building,_5th_Avenue_entrance_01.jpg — TheCatalyst31, 2025-10-16, CC BY-SA 4.0, 6000×4000. Current facade (2025). Informs: present-day state, niches. Siblings _02, _03, _04 in the same series.
 11. https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_45.jpg — Epicgenius, 2023-04-14, CC BY-SA 4.0. First frame of a 22-frame series along the facade (frames 24 to 45, same caption); likely covers the wings bay by bay. Informs: MMW bays and windows (W5).
-12. https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_36.jpg and https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_41.jpg — Epicgenius, 2023, CC BY-SA 4.0. Same series.
+12. https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_36.jpg and https://commons.wikimedia.org/wiki/File:5_Av_Apr_2023_41.jpg — Epicgenius, 2023, CC BY-SA 4.0. Same series. The second is [E41] below.
 13. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_entrance_NYC.JPG — Arad, 2007-05-11, CC BY-SA 3.0. Entrance facade (geotag wrong).
 14. https://commons.wikimedia.org/wiki/File:MET,_esterno.JPG — sailko, 2010-09-22, CC BY-SA 3.0. Entrance facade.
 15. https://commons.wikimedia.org/wiki/File:Museo_Metropolitano_de_Arte,_Manhattan,_Nueva_York,_EE.UU._2007-08-09,_DD_6664.jpg — Diego Delso, 2007-08-09, CC BY-SA 4.0. Portrait view of the pavilion.
 16. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_-_panoramio.jpg — Roman Suzuki, 2007-09-09, CC BY 3.0; camera (63, 31) on the north part of the plaza looking southwest (?). Oblique of the pavilion and north link.
 17. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art,_New_York_City_NY,_entrance.jpg — Arad, 2007-05-11, CC BY-SA 3.0; camera (60, 18) (?). Oblique from the north.
 18. https://commons.wikimedia.org/wiki/File:Das_Metropolitan_Museum_auf_der_5_th_Avenue_beim_Central_Park_-_panoramio.jpg — Martin Furtschegger, 2012-06-16, CC BY 3.0; camera (−9, 59) east of Fifth Avenue looking west (?).
-19. https://commons.wikimedia.org/wiki/File:The_Metropolitan_Museum_of_Art_Manhattan_NYC_sideview.jpg — Daniel Dimitrov, 2012-01-02, CC BY-SA 4.0. Side view along Fifth Avenue; informs the end pavilions' projection.
+19. https://commons.wikimedia.org/wiki/File:The_Metropolitan_Museum_of_Art_Manhattan_NYC_sideview.jpg — Daniel Dimitrov, 2012-01-02, CC BY-SA 4.0. Side view along Fifth Avenue; informs the end pavilions' projection. Viewed at 1:1 (2026-10-11). It is [D12] below.
 20. https://commons.wikimedia.org/wiki/File:New_York_Metropolitan_Museum_of_Art_(4679685892).jpg — Tony Hisgett, 2010-05-29, CC BY 2.0. Panorama of the front (geotag wrong).
 21. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_Of_Art_-_New_York_-_USA_-_panoramio_(2).jpg — Paulo JC Nogueira, 2014-04-05, CC BY-SA 3.0. Panorama from the plaza during the 2014 works.
 
