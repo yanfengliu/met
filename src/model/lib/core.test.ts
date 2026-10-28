@@ -68,6 +68,18 @@ describe('sweep', () => {
     expect(boxProblems(boxOf(geometry), { min: [-1.2, 0, -1.2], max: [1.2, 0.3, 1.2] })).toEqual([]);
     expect(triangles(geometry)).toBe(4 * 4 * 2);
   });
+
+  it('refuses a bend tighter than the profile reaches across the path, which would fold the surface through itself', () => {
+    // Clockwise seen from above, so the profile, 0.2 m across, runs inside: each corner's mitres take 0.2 m from both ends of a side.
+    const loop = (side: number): [number, number, number][] => [
+      [0, 0, 0],
+      [side, 0, 0],
+      [side, 0, side],
+      [0, 0, side],
+    ];
+    expect(() => sweep(square, loop(0.3), { closed: true })).toThrow(/^sweep: the path bends too tightly for the profile at points 0 and 1: the profile's point 0\.2000 across the path runs 0\.1000 m back along that 0\.3000 m segment/);
+    expect(() => sweep(square, loop(0.5), { closed: true })).not.toThrow();
+  });
 });
 
 describe('lathe', () => {

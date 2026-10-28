@@ -68,7 +68,7 @@ function corniceLoop(kit: Kit, frame: Matrix4, x0: number, x1: number, z0: numbe
   kit.add(geometry, palette.sandstone, frame.clone());
 }
 
-/** Vertical torus rolls of `radius` at the given (x, z) corners, from `y0` to `y1`. */
+/** Vertical torus rolls of `radius` at the given (x, z) corners, from `y0` up to `y1`. */
 function rolls(kit: Kit, frame: Matrix4, corners: readonly (readonly [number, number])[], y0: number, y1: number, radius: number): void {
   for (const [x, z] of corners) kit.add(ROLL, palette.sandstone, placed(frame, [x, y0, z], [2 * radius, y1 - y0, 2 * radius]));
 }
@@ -145,10 +145,10 @@ export function addTempleCrown(kit: Kit, frame: Matrix4): void {
   corniceLoop(kit, frame, -HX + rearInset, HX - rearInset, -HZ + rearInset, ZP - WALL, REAR_TOP, CORNICE - 0.1, 0.38);
   block(kit, frame, [-HX + inset + 0.02, WALL_TOP, ZP - WALL + 0.02], [HX - inset - 0.02, TEMPLE_HEIGHT - 0.03, HZ - inset - 0.02]);
   block(kit, frame, [-HX + rearInset + 0.02, REAR_TOP, -HZ + rearInset + 0.02], [HX - rearInset - 0.02, REAR_TOP + CORNICE - 0.13, ZP - WALL - 0.02]);
-  // Torus rolls: up the front and back corners, and where the pronaos rises above the rear roof.
+  // Torus rolls: up the front and back corners, and at the pronaos' back corners from its wall top up to the rear cornice's top.
   rolls(kit, frame, [[-HX + inset / 2, HZ - inset / 2], [HX - inset / 2, HZ - inset / 2]], 0, WALL_TOP, 0.1);
   rolls(kit, frame, [[-HX + rearInset / 2, -HZ + rearInset / 2], [HX - rearInset / 2, -HZ + rearInset / 2]], 0, REAR_TOP, 0.1);
-  rolls(kit, frame, [[-HX + inset / 2, ZP - WALL], [HX - inset / 2, ZP - WALL]], REAR_TOP + CORNICE - 0.1, WALL_TOP, 0.1);
+  rolls(kit, frame, [[-HX + inset / 2, ZP - WALL], [HX - inset / 2, ZP - WALL]], WALL_TOP, REAR_TOP + CORNICE - 0.1, 0.1);
   wingedSun(kit, frame, WALL_TOP + 0.5, HZ - inset + 0.22, 2.6);
   // Relief registers: two raised bands along each outer side wall, framing the carved scenes; the south ones stop at the side door.
   for (const y of [1.25, 3.3]) {

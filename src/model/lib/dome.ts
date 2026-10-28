@@ -222,6 +222,18 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     coffers: c === null ? null : { across: integer('barrelVault', 'coffers.across', c.across, 2, 60), along: integer('barrelVault', 'coffers.along', c.along, 1, 200), depth: positive('barrelVault', 'coffers.depth', c.depth ?? span / 40), rib: positive('barrelVault', 'coffers.rib', c.rib ?? span / 40) },
     detail: checkDetail('barrelVault', params.detail ?? 'medium'),
   };
+  if (full.coffers !== null) {
+    // Each coffer's floor must stay inside the shell, whose outer face runs along the chords of its facets (as buildVault divides it).
+    const radius = (span * span) / (8 * rise) + rise / 2;
+    const half = Math.asin(Math.min(1, span / 2 / radius));
+    const facets = full.coffers.across * Math.max(1, Math.ceil(byDetail(full.detail, [8, 16, 32]) / full.coffers.across));
+    const room = (radius + full.thickness) * Math.cos(half / facets) - radius;
+    require(
+      'barrelVault',
+      full.coffers.depth < room,
+      `coffers.depth ${String(full.coffers.depth)} reaches the shell's outer face: a shell ${String(full.thickness)} thick leaves ${room.toFixed(4)} m inside its facets, so each coffer's floor would stand out of it as a pocket wound inside out; make the shell thicker or the coffers shallower.`,
+    );
+  }
   return cached('barrelVault', full, () => buildVault(full));
 }
 

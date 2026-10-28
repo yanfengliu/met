@@ -2,11 +2,13 @@
  * Domes, drums, pendentives and barrel vaults.
  * Bound: geometry arrays only; whether a saucer dome reads like the Great Hall's is judged on captures.
  */
+import { Vector3 } from 'three';
 import type * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { attributeProblems, backfaceFraction, boxOf, boxProblems, centredProblems, invertedFraction, triangles } from './check.js';
 import { barrelVault, dome, drum, pendentives } from './dome.js';
+import { inwardAlong } from './facing.js';
 
 /** A 14 m saucer dome at medium detail: smooth enough at interior distances without dominating a step's budget. */
 const DOME_BUDGET = 6_000;
@@ -95,5 +97,14 @@ describe('barrel vault', () => {
       expect(triangles(geometry)).toBeLessThanOrEqual(VAULT_BUDGET);
     }
     expect(() => barrelVault({ span: 4, length: 3, rise: 3 })).toThrow(/more than half the span/);
+  });
+
+  it("refuses coffers that reach the shell's outer face, which would stand out of it as pockets wound inside out, and keeps those it holds", () => {
+    // The Hunt arches' soffit as it was: 0.1 m coffers in a 0.06 m shell, each standing 4 cm out of it.
+    const was = { span: 4.6, length: 1.2, coffers: { across: 11, along: 1, depth: 0.1, rib: 0.16 } };
+    expect(() => barrelVault({ ...was, thickness: 0.06 })).toThrow(/barrelVault: coffers\.depth 0\.1 reaches the shell's outer face: a shell 0\.06 thick leaves 0\.05\d+ m inside its facets/);
+    // Just thick enough at its facets' chords, and thicker: no line along vertical crosses a pocket.
+    expect(() => barrelVault({ ...was, thickness: 0.1 })).toThrow(/reaches the shell's outer face/);
+    expect(inwardAlong(barrelVault({ ...was, thickness: 0.14 }), new Vector3(0, 1, 0), 160)).toEqual({ lines: 0, worst: 0, at: null });
   });
 });

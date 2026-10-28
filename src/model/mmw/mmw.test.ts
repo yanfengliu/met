@@ -21,8 +21,11 @@ import { SACKLER_GLASS_TOP_Y } from '../frame.js';
 import { AW_PARAPET_Y } from '../roche-north/american.js';
 import { KRAVIS_ROOF_Y } from '../roche-south/kravis.js';
 import { RF_ROOF_Y } from '../roche-south/rockefeller.js';
+import { MeshBuilder } from '../lib/builder.js';
+import { partVolumes } from '../lib/facing.js';
 import { buildFrontCornices, buildFrontOrders } from './facade.js';
 import { FRONTS } from './facade-layout.js';
+import { extrudeOutline } from './facade-parts.js';
 import { normalOf } from './shapes.js';
 import { astorCourt1981Steps, greekRomanCourt2007Steps, mmwSteps, northWallsRaised1978Steps, southWallsRaised1990Steps } from './index.js';
 
@@ -191,5 +194,20 @@ describe('mmw shared walls', () => {
       return top >= roof ? [] : [`${name}: wall top ${top.toFixed(2)} under the roof at ${roof.toFixed(2)}`];
     });
     expect(short).toEqual([]);
+  });
+});
+
+describe('mmw parts', () => {
+  it('extrude an outline either way round to one solid facing out, as the armour court gables need (clockwise, they faced in)', () => {
+    const triangle: [number, number][] = [
+      [0, 0],
+      [4, 0],
+      [2, 3],
+    ];
+    for (const outline of [triangle, [...triangle].reverse()]) {
+      const b = new MeshBuilder();
+      extrudeOutline(b, outline, 0.5);
+      expect(partVolumes(b.build(), new Vector3(0, 1, 0)).map((part) => Number(part.volume.toFixed(6)))).toEqual([3]);
+    }
   });
 });

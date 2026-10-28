@@ -42,8 +42,8 @@ const endArch = lazy(() => wall({ width: NAVE, height: TOP - HALL_ARCH_SPRING_Y,
 
 function arches(kit: Kit): void {
   const y = HALL_ARCH_SPRING_Y;
-  // The transverse arches' coffered soffits (P2), a ring of coffers just inside each opening, its axis across the arch.
-  const soffit = barrelVault({ span: NAVE - 0.2, length: PIER_W - 0.04, thickness: 0.08, coffers: { across: 15, along: 2, depth: 0.12, rib: 0.2 } });
+  // The transverse arches' coffered soffits (P2), a ring of coffers just inside each opening, its axis across the arch, the shell's back hidden in the arch.
+  const soffit = barrelVault({ span: NAVE - 0.2, length: PIER_W - 0.04, thickness: 0.16, coffers: { across: 15, along: 2, depth: 0.12, rib: 0.2 } });
   PIER_X.forEach((x, i) => {
     kit.add(transverse(), hunt.hallStone, at(x + PIER_W / 2, y, NAVE_MID_Z, Math.PI / 2), i);
     kit.add(soffit, hunt.hallStone, at(x, y + 0.045, NAVE_MID_Z, Math.PI / 2), i);

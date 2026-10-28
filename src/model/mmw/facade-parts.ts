@@ -110,8 +110,14 @@ export function crownKeystone(): BufferGeometry {
   return keystone({ width: 0.42, height: ENTABLATURE_Y - ARCH_CROWN_Y, projection: 0.22 });
 }
 
-/** Extrudes a counter-clockwise outline in the (x, y) plane from z = −depth/2 to +depth/2, with its sides. */
-export function extrudeOutline(b: MeshBuilder, outline: readonly (readonly [number, number])[], depth: number): void {
+/** Extrudes an outline in the (x, y) plane, either way round, from z = −depth/2 to +depth/2, with its sides, every face looking out. */
+export function extrudeOutline(b: MeshBuilder, given: readonly (readonly [number, number])[], depth: number): void {
+  // The caps face out either way round (`planar`); the sides only round a counter-clockwise outline, so a clockwise one is turned.
+  const twice = given.reduce((sum, [x, y], k) => {
+    const [nx, ny] = given[(k + 1) % given.length] ?? [x, y];
+    return sum + x * ny - nx * y;
+  }, 0);
+  const outline = twice < 0 ? [...given].reverse() : given;
   const h = depth / 2;
   b.planar(outline, [], new Vector3(0, 0, h), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
   b.planar(

@@ -103,8 +103,9 @@ export function leafInto(builder: MeshBuilder, shape: LeafShape, res: LeafResolu
     front.push(frontRow);
     back.push(backRow);
   }
-  builder.grid(front);
-  builder.grid(back, { flip: true });
+  // The tip curls down past level, so each quad takes the diagonal that folds it least, or its edge folds through itself.
+  builder.grid(front, { flattest: true });
+  builder.grid(back, { flip: true, flattest: true });
   // Rims: left edge, right edge, tip and foot.
   for (let j = 0; j < rows; j++) {
     const f0 = front[j];

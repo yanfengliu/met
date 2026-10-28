@@ -8,19 +8,20 @@
  * stand-ins draw them (src/model/lib/window.ts `doorLeavesOf`), but the sheets their builders declare (src/model/lib/sheet.ts), which SHEETS counts by
  * step and material so that a new one is seen; the walk reads no inside in a sheet, whatever its crossings, and the cut leaves it out. Pieces read alike
  * form a shape: one geometry with one direction of world vertical in its frame.
- * Four readings. The mesh's own, exact: along world vertical in each shape's frame (src/model/lib/check.ts `openAlong`); a shape every face of which
+ * Five readings. The mesh's own, exact: along world vertical in each shape's frame (src/model/lib/check.ts `openAlong`); a shape every face of which
  * stands upright gives no crossing to read, so it must be a declared sheet. The walk's: its crossing query (`CollisionWorld.crossings`) on a collision
  * world of the walked meshes, along four lines through each of up to FACES faces of each walked shape that are not vertical (one inside the face, one
- * near each corner), each meeting its piece at that face an even number of times. The faces' winding on the same lines: as many look up as look down,
- * so a face wound the wrong way or doubled fails, though a part wound wholly inside out does not; and where parts of one piece overlap, which the
- * parity rule reads as outside, no line runs through them for as long as settle's span (BODY.height less STANDING), read on the shape's first walked
- * piece and scaled to its walked piece that stretches the lines most, so a walker built into a piece is found, but on a line the crossing rule reads
- * once (its bound, src/walk/collision.ts). And each upright face's inside: at seven points of every upright face of every shape (the lines' four and
- * one near the middle of each edge), BEHIND to one side or the other, the faces above wind to an inside, so a part with no top and no bottom, whose
- * open rims cancel along vertical lines, fails, unless the face lies back to back on another, one side of a two-sided membrane, which has no inside to
- * lose. A face stands upright when lines along vertical see it at most BEHIND wide, twice its area in plan over its longest edge in plan, in its frame.
- * Open findings the spec names, which these readings pass: the Arms and Armor Court's gables are wound wholly inside out, and two coffered soffits'
- * coffers are deeper than their shells, so each stands 4 cm out of the vault, a pocket whose faces look in.
+ * near each corner), each meeting its piece at that face an even number of times. The faces' winding on the same lines: as many look up as look down, so
+ * a face wound the wrong way or doubled fails, and no stretch where more look down than up above it, a pocket wound inside out where a surface folds
+ * through itself or stands out of its part; and where parts of one piece overlap, which the parity rule reads as outside, no line runs through them for
+ * as long as settle's span (BODY.height less STANDING), read on the shape's first walked piece and scaled to its walked piece that stretches the lines
+ * most, so a walker built into a piece is found, but on a line the crossing rule reads once (its bound, src/walk/collision.ts). And each upright face's
+ * inside: at seven points of every upright face of every shape (the lines' four and one near the middle of each edge), BEHIND to one side or the other,
+ * the faces above wind to an inside, so a part with no top and no bottom, whose open rims cancel along vertical lines, fails, unless the face lies back
+ * to back on another, one side of a two-sided membrane, which has no inside to lose. A face stands upright when lines along vertical see it at most
+ * BEHIND wide, twice its area in plan over its longest edge in plan, in its frame. And each closed part's facing as drawn: its volume read along vertical
+ * by its faces (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one, signed by its piece's matrix,
+ * which an instanced mesh does not turn back; and no piece of the model mirrored.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
  * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage), with main's crossing rule, which counted hits within 1 µm once (206
  * shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside turned up
@@ -28,14 +29,17 @@
  * one Hunt medallion of each pair three times as tall (2.27 m, which the piece measured reads as 0.76 m), with the piers' core left with no top and no
  * bottom (38 points of upright faces with no inside), with the moon gate panel's foot, top and ends left out (504), with the Great Hall pendentives'
  * spandrels on their old points, apart from the curved faces' (8), with UNIT_TILE no sheet (2,008 shapes open, 7 SHEETS counts off), with the
- * window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off) and with `upright`'s rule of review 3 (its own check: a
- * point read as not upright).
+ * window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off), with `upright`'s rule of review 3 (its own check: a
+ * point read as not upright), with `extrudeOutline` taking the armour court gables' clockwise outline as given (src/model/mmw/facade-parts.ts: 2 parts
+ * facing in, 48 lines through pockets), with the Dendur rolls' ends reversed (src/model/roche-north/temple.ts: 2 pieces mirrored, facing in), with the
+ * Hunt arches' and Great Hall arches' soffits as thin as their coffers were deep and `barrelVault`'s refusal off (58 lines) and with the acanthus
+ * leaves' quads split along one diagonal (src/model/lib/acanthus.ts: 2 lines).
  * Bound: `openAlong` joins ends nearer than 0.1 mm and leaves out open boundary under 1 mm in all, each in the geometry's own frame, so an opening
  * narrower or with less boundary is not seen; a piece its matrix scales up sees both larger (up to 99 times, the Hunt foundations' unit boxes). The
  * other readings try up to FACES faces a shape, spread evenly over those that are not vertical, on its first walked piece, and seven points of each
- * upright face; they see an opening, a wrong winding, an overlap or a missing inside only under one of their lines or at one of their points. The
- * overlap is read from the winding, so an overlap with a part wound inside out is not seen; the gables overlap no other part of their piece, as their
- * builder makes them.
+ * upright face; they see an opening, a wrong winding, an overlap, a pocket or a missing inside only under one of their lines or at one of their points.
+ * The overlap is read from the winding, so an overlap with a part wound inside out is not seen, and the facing reading finds none. That reading sees a
+ * part's sign in all, so one wound inside out among the outward parts it closes only together with can pass (its own bound).
  */
 import { DoubleSide, Matrix3, Matrix4, Ray, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';
@@ -49,6 +53,7 @@ import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../walk/collision.js';
 import { BODY, STANDING } from '../walk/walker.js';
 import { openAlong } from './lib/check.js';
+import { partVolumes } from './lib/facing.js';
 import { isSheet } from './lib/sheet.js';
 import { doorLeavesOf } from './lib/window.js';
 
@@ -281,11 +286,11 @@ function backed(geometry: BufferGeometry, face: number, p: Vector3, normal: Vect
 }
 
 /**
- * Along the vertical line through (x, z), the triangles' crossings read by their winding (faces looking up entering, those looking down leaving, a
- * mirrored piece's turned back by `mirror`): the sum of their facings, and the length where their parity and their winding disagree on what is inside,
- * where parts overlap. Hits within 1 µm of height are read together.
+ * Along the vertical line through (x, z), the triangles' crossings read by their winding as drawn (faces looking up entering, those looking down
+ * leaving): the sum of their facings, the length where their parity and their winding disagree on what is inside, where parts overlap, and the length
+ * where more faces look down than up above it, wound inside out. Hits within 1 µm of height are read together.
  */
-function windingAlong(tris: Float64Array, x: number, z: number, mirror: number): { sum: number; overlap: number } {
+function windingAlong(tris: Float64Array, x: number, z: number): { sum: number; overlap: number; inward: number } {
   const hits: [number, number][] = [];
   for (let o = 0; o < tris.length; o += 9) {
     const [ax, ay, az, bx, by, bz, cx, cy, cz] = [tris[o] ?? 0, tris[o + 1] ?? 0, tris[o + 2] ?? 0, tris[o + 3] ?? 0, tris[o + 4] ?? 0, tris[o + 5] ?? 0, tris[o + 6] ?? 0, tris[o + 7] ?? 0, tris[o + 8] ?? 0];
@@ -295,12 +300,13 @@ function windingAlong(tris: Float64Array, x: number, z: number, mirror: number):
     const w = ((bz - az) * (x - ax) - (bx - ax) * (z - az)) / d;
     const u = ((x - ax) * (cz - az) - (z - az) * (cx - ax)) / -d;
     if (u < -1e-12 || w < -1e-12 || u + w > 1 + 1e-12) continue;
-    hits.push([ay + u * (by - ay) + w * (cy - ay), Math.sign(d) * mirror]);
+    hits.push([ay + u * (by - ay) + w * (cy - ay), Math.sign(d)]);
   }
   hits.sort((p, q) => q[0] - p[0]);
   let winding = 0;
   let parity = 0;
   let overlap = 0;
+  let inward = 0;
   for (let k = 0; k < hits.length; ) {
     const top = hits[k]?.[0] ?? 0;
     let n = 0;
@@ -308,8 +314,9 @@ function windingAlong(tris: Float64Array, x: number, z: number, mirror: number):
     parity = (parity + n) % 2;
     const next = hits[k]?.[0];
     if (next !== undefined && winding !== 0 !== (parity === 1)) overlap += top - next;
+    if (next !== undefined && winding < 0) inward += top - next;
   }
-  return { sum: winding, overlap };
+  return { sum: winding, overlap, inward };
 }
 
 describe('the pieces the walk and the section cut read', () => {
@@ -387,6 +394,41 @@ describe('the pieces the walk and the section cut read', () => {
     expect(hollow, 'upright faces with nothing inside on either side, a part with no top and no bottom or a surface in a solid: close the part, or make the surface a sheet of its own').toEqual([]);
   });
 
+  it('face out as drawn: every closed part holds its inside behind its faces, its piece unmirrored by its matrix', () => {
+    const inward: string[] = [];
+    for (const shape of shapes) {
+      // An instanced mesh draws a piece its matrix mirrors with its faces turned in, so the pieces are read by their matrices' sign.
+      const bySign = new Map<number, Piece[]>();
+      for (const piece of shape.pieces) {
+        const sign = Math.sign(piece.world.determinant());
+        bySign.set(sign, [...(bySign.get(sign) ?? []), piece].slice(0, 3));
+      }
+      for (const geometry of [shape.geometry, ...(doorLeavesOf(shape.geometry) ?? []).map((leaf) => leaf.geometry)]) {
+        for (const part of partVolumes(geometry, shape.vertical)) {
+          if (Math.abs(part.volume) <= Math.max(part.noise, 1e-12)) continue;
+          for (const [sign, [first, ...more] = []] of bySign) {
+            if (first === undefined || part.volume * sign > 0) continue;
+            const at = part.at.clone().applyMatrix4(first.world);
+            const what = `${[first, ...more].map((p) => `${p.step}/${p.material} piece ${String(p.slot)}`).join(', ')}${sign < 0 ? ', mirrored by its matrix' : ''}`;
+            inward.push(`${what}: ${part.parts > 1 ? `${String(part.parts)} parts that close together` : 'a part'} of ${Math.abs(part.volume * first.world.determinant()).toFixed(4)} m³ faces in, by X ${at.x.toFixed(2)}, Z ${at.z.toFixed(2)}, ${at.y.toFixed(2)} m up`);
+          }
+        }
+      }
+    }
+    expect(inward, "closed parts facing in as drawn: wind each part's faces to look out of it, and mirror a piece in its geometry, not its matrix").toEqual([]);
+  });
+
+  it('leave no piece of the model mirrored by its matrix, read here or not, which its instanced mesh would draw inside out', () => {
+    const mirrored = timeline.steps.flatMap((step) =>
+      step.meshes.flatMap((mesh) => {
+        mesh.updateMatrixWorld(true);
+        const world = (slot: number): Matrix4 => new Matrix4().fromArray(mesh.instanceMatrix.array, slot * 16).premultiply(mesh.matrixWorld);
+        return Array.from({ length: mesh.count }, (_, slot) => slot).filter((slot) => world(slot).determinant() < 0).map((slot) => `${step.def.id} piece ${String(slot)}`);
+      }),
+    );
+    expect(mirrored, 'pieces mirrored by their matrices: mirror them in their geometry (MeshBuilder.transform turns a mirrored copy back), or swap the ends that run backward').toEqual([]);
+  });
+
   it('declare as sheets only what SHEETS counts', () => {
     const changed = [...new Set([...sheets.keys(), ...Object.keys(SHEETS)])]
       .sort()
@@ -406,6 +448,7 @@ describe('the pieces the walk and the section cut read', () => {
     }
     const misread: string[] = [];
     const unbalanced: string[] = [];
+    const inward: string[] = [];
     let worst = { length: 0, where: '' };
     let lines = 0;
     const [a, b, c, n, p] = [new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()];
@@ -414,7 +457,6 @@ describe('the pieces the walk and the section cut read', () => {
       if (piece === undefined) continue;
       const instance = (firsts.get(piece.mesh) ?? 0) + piece.slot;
       const tris = worldTriangles(shape.geometry, piece.world);
-      const mirror = Math.sign(piece.world.determinant());
       // The overlaps measured on this piece, in the walked piece of the shape stretched most along its lines.
       const tallest = shape.pieces.reduce((most, q) => (walkedSet.has(q.mesh) && q.stretch > most.stretch ? q : most), piece);
       const stretch = tallest.stretch / piece.stretch;
@@ -438,9 +480,10 @@ describe('the pieces the walk and the section cut read', () => {
           const heights = world.crossings(p.x, p.z, -Infinity, Infinity).find((l) => l.instance === instance)?.heights ?? [];
           const wrong = !heights.some((h) => Math.abs(h - p.y) < 1e-4) ? 'misses the face it was drawn through' : heights.length % 2 !== 0 ? 'is crossed an odd number of times' : null;
           if (wrong !== null && (bad += 1) === 1) first = `by X ${p.x.toFixed(2)}, Z ${p.z.toFixed(2)} ${wrong}: ${heights.map((h) => h.toFixed(3)).join(', ') || 'no crossing'}`;
-          const wound = windingAlong(tris, p.x, p.z, mirror);
+          const wound = windingAlong(tris, p.x, p.z);
           const where = `${piece.step}/${piece.material} by X ${p.x.toFixed(2)}, Z ${p.z.toFixed(2)}`;
           if (wound.sum !== 0) unbalanced.push(`${where}: its faces looking up and looking down differ by ${String(wound.sum)}`);
+          if (wound.inward > 0) inward.push(`${where}: ${wound.inward.toFixed(4)} m with more faces looking down than up above it`);
           if (wound.overlap * stretch > worst.length) worst = { length: wound.overlap * stretch, where: `${where}${tallest === piece ? '' : `, scaled ${stretch.toFixed(2)} times to ${tallest.step}/${tallest.material} piece ${String(tallest.slot)}`}` };
         }
       }
@@ -449,6 +492,7 @@ describe('the pieces the walk and the section cut read', () => {
     expect(lines, 'lines tried').toBeGreaterThan(50_000);
     expect(misread, 'pieces the walk reads open: close them along vertical lines (see the crossing rule, src/walk/collision.ts crossings)').toEqual([]);
     expect(unbalanced.slice(0, 20), `lines whose faces looking up and looking down do not balance, ${String(unbalanced.length)} in all: wind each face to look out of its part`).toEqual([]);
+    expect(inward.slice(0, 20), `lines through a part or a pocket of one wound inside out, ${String(inward.length)} in all: keep each surface from folding through itself`).toEqual([]);
     expect(worst.length, `the most a line runs through overlapping parts of one piece, ${worst.where}: keep overlaps shorter along vertical lines than settle's span, BODY.height less STANDING`).toBeLessThan(BODY.height - STANDING);
   });
 });
