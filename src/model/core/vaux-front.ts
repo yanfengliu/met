@@ -82,6 +82,7 @@ export function westFrontTrim(kit: Kit): void {
     // A granite transom through the wall at the springing closes the gap between window head and tympanum.
     addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, spring - VAUX_BAND, WEST_Z, x + VAUX_ARCH_SPAN / 2, spring, WEST_Z + WEST_WALL, 4);
     kit.add(ring(0), core.granite, placed(x, spring, WEST_Z, facing), 5);
+    // Open with the owner (work unit 4, F-owner-4): exterior-images.md #60 shows these voussoirs in dark grey stone, not brick.
     kit.add(ring(1), palette.brick, placed(x, spring, WEST_Z, facing), 5);
     kit.add(hood, core.granite, placed(x, spring, WEST_Z, facing), 5);
     kit.add(panel, palette.brick, placed(x, spring, WEST_Z + 0.32, facing), 5);
