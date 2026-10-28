@@ -266,10 +266,11 @@ export class WalkMode {
     if (this.frameTimes.length > FRAME_WINDOW) this.frameTimes.shift();
   }
 
+  /** The walk facts. Their `target` is found afresh, as an action finds it, but writes nothing: `lastTarget`, the last frame's, stands until the next frame. */
   facts(): WalkFacts {
     const walking = this.on && !this.prepare;
     const times = [...this.frameTimes].sort((a, b) => a - b);
-    const target = this.target();
+    const target = walking ? this.find() : null;
     return {
       mode: this.on ? 'walk' : 'orbit',
       preparing: this.preparing,

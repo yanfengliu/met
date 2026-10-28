@@ -2,7 +2,9 @@
  * The look target (docs/design/spec.md, Walk mode: Look target), the one way doors and labels find what the visitor looks at: the nearest tagged piece
  * (src/build/types.ts, `PieceTag`) on the eye's ray within its kind's reach, found by the page's hit query (src/viewer/pick.ts, `ModelPicker.hit`),
  * which passes through untagged glass and water but stops at any other surface, a tagged one it does not accept included, so a wall or a closed
- * door, glazed or not, hides what is behind it.
+ * door, glazed or not, hides what is behind it. A closed door's doorway, a box over its leaves and the gaps between and round them that the door layer
+ * registers with the hit query alone (src/viewer/doorways.ts), is the door's, so the ray finds a closed door anywhere in its doorway, its leaves' 8 mm meeting line
+ * included (work unit 2, review 17, F46).
  * Walk mode runs it every walking frame and again whenever something reads the target, so an action reads the target as the view stands then.
  */
 import { Ray } from 'three';

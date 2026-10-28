@@ -7,8 +7,8 @@
  * down to 1.3 m inside the same doorway, and drags turn the eye onto the right leaf, open against its jamb, where the prompt, "E Close", shows again. At every frame drawn, read from the page's
  * DOM, the card and the prompt never both show; there are frames with the prompt and no card before the card and after it, and frames with the card and
  * no prompt; the prompt shows only with a door under the crosshair, saying "E Open" or "E Close", and the card only with an artwork.
- * Bound: 1280×720; one doorway and one painting, the only door and artwork a walk from a spawn reaches (the Engelhard Court's Bank door, the one door
- * near artworks, stands in a court no walk reaches, given to another worker); frames are read by a requestAnimationFrame loop beside the page's own,
+ * Bound: 1280×720; one doorway and one painting (the Engelhard Court's Bank door, the one other door near artworks, is locked, and stands at the end of
+ * route R6, which this walk does not take); frames are read by a requestAnimationFrame loop beside the page's own,
  * which runs after it in each frame and writes nothing.
  */
 import { expect, test } from '@playwright/test';

@@ -6,7 +6,9 @@
  * where they stand and not where the closed leaves stood, are capped where the cut passes through them, open or part open, and hold bounds over every
  * pose (F3); the lifecycle: unusable while its step is incomplete, the timeline's closed leaf taking over at once while the door keeps its state,
  * reset when the step is taken away, the default taken when the step completes, into the building with no walker, never past a lock (F4); and each door
- * reported as its meshes draw it, read back from the stand-ins' matrices rather than from its state (review 8, F32).
+ * reported as its meshes draw it, read back from the stand-ins' matrices rather than from its state (review 8, F32); a closed door's doorway, a box for the
+ * picker alone in no scene, met through the gaps between and round its leaves but not on its frame, and gone at an opening door's first turn (review 17,
+ * F46); and a door's piece the resting pieces leave out refused (F47).
  * Bound: no WebGL; the cap pass's choice and the picks are checked on the meshes, not on pixels (tests/e2e/doors.spec.ts looks at pixels).
  */
 import { BoxGeometry, Box3, Layers, Matrix4, MeshStandardMaterial, Quaternion, Ray, Vector3 } from 'three';
@@ -297,6 +299,53 @@ describe('the door layer', () => {
     }
   });
 
+  it('stands a closed door’s doorway for the hit query alone, over its leaves and the gaps round them, which the zoom passes, and takes it away while the door opens (review 17, F46; review 18, F50)', () => {
+    const { timeline, layer } = fixture();
+    const [doorway, ...others] = layer.doorwayMeshes;
+    if (doorway === undefined || others.length > 0) throw new Error('The layer has no doorway mesh, or more than one.');
+    const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), -1, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
+    layer.registerWith(picker);
+    const doorQuery = { accept: (t: PieceTag | null): boolean => t?.kind === 'door', throughTransparent: true };
+    /** Along −Z at height 1.5 m from 3 m out at X `x`: the door the hit query meets, how far, and how far the zoom goes. */
+    const meets = (x: number): [string | null, number | null, number | null] => {
+      const ray = new Ray(new Vector3(x, 1.5, 3), new Vector3(0, 0, -1));
+      const hit = picker.hit(ray, doorQuery);
+      return [hit?.tag?.id ?? null, hit?.distance ?? null, picker.distance(ray)];
+    };
+    // The front door's leaves meet 8 mm apart at X 0 and keep 4 mm off its jambs (X ±W): rays there pass between them.
+    const gaps = [0, W - 0.002, -10];
+    at(timeline, layer, DOORS_STEP + 0.5);
+    expect(doorway.count, 'none while the doors’ step is incomplete').toBe(0);
+    at(timeline, layer, BUILT);
+    expect(doorway.parent, 'in no scene: no camera draws it').toBeNull();
+    expect(layer.root.children).not.toContain(doorway);
+    expect(layer.meshes, 'nor is it a stand-in, for the cap pass').not.toContain(doorway);
+    // Closed: the meeting line and a jamb's gap meet the doorway in the hit query at the leaves' front face, and so does the locked door's meeting line at
+    // X −10; the zoom passes the seam where nothing is drawn, to the wall 3 m behind the front door and to open sky behind the locked one (red with the
+    // doorways in both queries, as at 1f3d7c9: the zoom stopped at the box; review 18, F50).
+    const faceZ = (g: typeof glazed): number => {
+      if (g.leaf.boundingBox === null) g.leaf.computeBoundingBox();
+      return g.leaf.boundingBox?.max.z ?? Number.NaN;
+    };
+    for (const x of gaps) {
+      const shut = x === -10;
+      expect(meets(x), `closed, at X ${String(x)}`).toEqual([shut ? 'shut' : 'front', expect.closeTo(3 - faceZ(shut ? panelled : glazed), 6), shut ? null : expect.closeTo(3 + 3 - 0.1, 6)]);
+    }
+    // A frame's face beside the jamb stops both, as before: the doorway covers the opening, not the frame.
+    expect(meets(W + 0.01)).toEqual([null, null, expect.closeTo(3, 6)]);
+    // Opening, it goes at the first turn of the leaves: the eye looks through the doorway a door opened. Closed again, it is back.
+    layer.use('front', new Vector3(0, 1.6, 3));
+    at(timeline, layer, BUILT, SWING_SECONDS / 20);
+    expect(facts(layer, 'front')?.state).toBe('opening');
+    expect(meets(0), 'opening').toEqual([null, null, expect.closeTo(3 + 3 - 0.1, 6)]);
+    at(timeline, layer, BUILT, SWING_SECONDS);
+    expect(meets(0), 'open').toEqual([null, null, expect.closeTo(3 + 3 - 0.1, 6)]);
+    expect(meets(-10)[0], 'the locked door’s stands').toBe('shut');
+    layer.use('front', new Vector3(0, 1.6, 3));
+    at(timeline, layer, BUILT, SWING_SECONDS);
+    expect(meets(0)[0], 'closed again').toBe('front');
+  });
+
   it('is met by the zoom’s pick and the hit query where its leaves stand, not where they stood, and capped where the cut passes through them, open or part open (review 0, F3)', () => {
     const { timeline, layer } = fixture();
     at(timeline, layer, BUILT);
@@ -347,12 +396,20 @@ describe('the door layer', () => {
     }
   });
 
-  it('fails on a door piece that is no door unit’s closed leaves, a door the layer does not know, and a door in two steps, naming each', () => {
+  it('fails on a door piece that is no door unit’s closed leaves, a door the layer does not know, a door in two steps and a piece with no resting matrix, naming each', () => {
     const odd = new Timeline([step('odd', (kit) => { kit.addTagged(cube, stone, new Matrix4(), tag('front')); })]);
     expect(() => new DoorLayer(odd.steps, (i) => odd.restingPieces(i), DEFS, doorLeavesOf)).toThrow(/Door "front": its piece in step "odd" \(mesh odd#0\) is not a door unit's closed leaves/);
     const stranger = new Timeline([step('strange', (kit) => { kit.addTagged(glazed.leaf, bronze, new Matrix4(), tag('back')); })]);
     expect(() => new DoorLayer(stranger.steps, (i) => stranger.restingPieces(i), DEFS, doorLeavesOf)).toThrow(/Door "back" in step "strange" is no door the layer knows; add it to src\/model\/doors.ts/);
     const twice = new Timeline([step('one', (kit) => { kit.addTagged(glazed.leaf, bronze, new Matrix4(), tag('front')); }), step('two', (kit) => { kit.addTagged(glazed.leaf, bronze, SIDE, tag('front')); })]);
     expect(() => new DoorLayer(twice.steps, (i) => twice.restingPieces(i), DEFS, doorLeavesOf)).toThrow(/Door "front" has pieces in steps "one" and "two"/);
+    // A door's piece that the resting pieces leave out, a locked door's included: the layer of 0defda0 skipped a locked one in silence, so the walk's door
+    // world held none of it and a walker passed through the shut door (review 17, F47).
+    const { timeline } = fixture();
+    for (const [id, verb] of [['shut', 'hold it shut at in the walk'], ['front', 'turn it from']] as const) {
+      const left = timeline.steps[DOORS_STEP]?.tags.findIndex((tags) => tags?.some((t) => t?.id === id) === true) ?? -1;
+      const resting = (i: number): ReturnType<Timeline['restingPieces']> => timeline.restingPieces(i).filter((p) => i !== DOORS_STEP || p.mesh !== left);
+      expect(() => new DoorLayer(timeline.steps, resting, DEFS, doorLeavesOf)).toThrow(`Door "${id}": its piece in step "doors" (mesh doors#${String(left)}, instance 0) is none of the step's resting pieces, so the layer has no matrix to ${verb}; pass each step's pieces at rest (Timeline.restingPieces) as \`resting\`.`);
+    }
   });
 });
