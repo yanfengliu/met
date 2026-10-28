@@ -1,7 +1,7 @@
 /**
  * The Sackler Wing's glass: the sloped stippled north wall, the hung stippled glass ceiling and the ribbed glass roof above it (Aldred p. 78; Aramco World 1980).
  * All three share one bay grid along Z, from the back wall to the block line: ten bays, each a wall bay between two white structural fins
- * (six panes across, eleven up, the panes about twice as tall as wide; Verbruggen 2015 and DP244278), a ceiling panel and a glazed ridge (NYC orthophoto 2018: ridges about 5.4 m apart running north-south).
+ * (six panes across, eleven up, the panes about twice as tall as wide; Verbruggen 2015 and DP244278, interior-images.md #12 and #16), a ceiling panel and a glazed ridge (NYC orthophoto 2018: ridges about 5.4 m apart running north-south).
  * The wall stands with its foot on the block line X = SACKLER_NORTH_FACE_X and leans inward to SACKLER_GLASS_TOP_X at the roof (the coordinator's rule for sloped glass).
  */
 import { Matrix4, Quaternion, Vector3 } from 'three';

@@ -3,12 +3,12 @@
  * Metres, world frame of docs/design/spec.md. Shared facts come from src/model/frame.ts; everything here is local to this area.
  * Tags: M measured (source named), D derived (working shown), E estimated (photo or reasoning named, with a confidence).
  *
- * Photographs measured (docs/research/exterior-images.md and Commons, viewed 2026-10-11):
+ * Photographs measured, viewed 2026-10-11 (docs/research/exterior-images.md #P35, #P37, #P47, #P50, #L14 and #D12):
  * - [P35] Mapillary tomjmat 2020-05-25 16H21M35S and [P37] 16H21M37S: the north link frontally from Fifth Avenue, camera about 39 m out.
  * - [P47] 16H21M47S and [P50] 16H21M50S: the south link frontally, and the south end pavilion's north end bay with its tall blind niche.
  * - [L14] Library of Congress LC-USZ62-101736, about 1914: the north link (seven arched windows) and the north end pavilion's south side and giant order.
  * - [D12] Daniel Dimitrov 2012, "The Metropolitan Museum of Art Manhattan NYC sideview": the south link's bays, base windows and archivolts.
- * - [E39]..[E43] Epicgenius, "5 Av Apr 2023 39" to "43" (Commons, CC BY-SA 4.0; the series named in exterior-images.md), viewed at 1:1 on 2026-10-13: [E43] the
+ * - [E39]..[E43] Epicgenius, "5 Av Apr 2023 39" to "43" (Commons, CC BY-SA 4.0; exterior-images.md #E39, #E40, #E41, #E42 and #E43), viewed at 1:1 on 2026-10-13: [E43] the
  *   south link's last four bays and the Hunt extension frontally from the far sidewalk, 27 mm (6277 px focal), about 44 m out and pitched up about 15°;
  *   [E40] the whole south link; [E41] the south extension frontally; [E42] and [E39] the south end pavilion's north-east corner and its seam with the link.
  * Heights: [P37] is level to 1.7° and yawed about 9°; at the link's second window the 5.2 m bay spans 530 px, so the wall reads 99 px/m above the plaza at the

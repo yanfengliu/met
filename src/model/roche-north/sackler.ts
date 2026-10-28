@@ -3,7 +3,7 @@
  * Order (docs/research/history.md section 7, interior.md "Proposed interior build steps"): foundations, the limestone end walls, the gallery floor, the granite
  * platform, the pool, the gate and the temple, the sloping stone back wall, then the glass: the sloped north wall, the hung ceiling and the glazed roof.
  * The McKim, Mead & White blocks own the walls on X 118.0 and Z −41.3 (exterior.md section 2); floors and roofs here run up to those lines.
- * Walking (work unit 2, M1; interior.md, The pool's edge and The gate's front and the forecourt; interior-images.md 37 to 40): the pool's bottom lies a
+ * Walking (work unit 2, M1; interior.md, The pool's edge and The gate's front and the forecourt; interior-images.md #37, #38, #39 and #40): the pool's bottom lies a
  * step under its square edge, so a visitor who stepped in steps out; the gate's passage is filled to the forecourt's level, walked into from the forecourt,
  * with a riser and a low steel rail toward the terrace, as there are no steps on the axis.
  */

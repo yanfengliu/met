@@ -16,6 +16,10 @@
     {
       "id": 3,
       "theme": "weston-door-head"
+    },
+    {
+      "id": 4,
+      "theme": "cited-images-viewed"
     }
   ]
 }

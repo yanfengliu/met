@@ -8,6 +8,8 @@ Levels used for camera heights (from `interior.md`, "Floor levels"): `L1` = main
 
 "Viewed" means the photo was examined in a browser during this research (2026-10-11) and its viewpoint worked out from what it shows. "Not viewed" means the entry rests on the file's title and description only, and its viewpoint is unchecked.
 
+A model source cites an entry by this file's name and the entry's number, `interior-images.md #33` (`#P1` for a primary image). `src/cited-images.test.ts` fails when a file under `src/model/` cites an entry that is not marked viewed.
+
 ## Primary images for the visual audit
 
 Nine viewpoints, one or two per major space. Each has a proposed camera preset. Positions and targets are world metres; `fov` is the vertical field of view in degrees for three.js (`PerspectiveCamera.fov`), estimated from the framing (none of these files states its lens). Aspect is the photo's own. Use these as starting points: nudge each preset until the render lines up with the photo, then record the final values in `src/viewer/presets.ts`.
@@ -63,11 +65,11 @@ Grand Staircase
 
 Temple of Dendur
 
-12. https://commons.wikimedia.org/wiki/File:The_Sackler_Wing_(21473312203).jpg (CC BY-SA 2.0, Erwin Verbruggen, 2015-10-03). Not viewed. Informs: whole gallery, glass wall.
-13. https://commons.wikimedia.org/wiki/File:Temple_of_Dendur-Metropolitan_Museum_of_Art.jpg (CC BY-SA 3.0, Yair Haklai, 2012-05-26). Not viewed. Informs: gate, temple, pool.
+12. https://commons.wikimedia.org/wiki/File:The_Sackler_Wing_(21473312203).jpg (CC BY-SA 2.0, Erwin Verbruggen, 2015-10-03, 4507×3005). Viewed at full size (2026-10-28). The camera stands high at the gallery's south-east and looks north-west over the terrace before the gate: the gate left of centre, the temple at the left edge, the pool's dark water in the right foreground, and the sloped glass north wall across the back, its bays between white fins each six stippled panes across, the panes about twice as tall as wide; the image's top cuts the wall below the roof. A bench-high stone coping runs round the terrace's north and east sides with visitors sitting on it, and outside it the terrace falls to the water in stepped granite courses. Informs: whole gallery, glass wall, the terrace's coping.
+13. https://commons.wikimedia.org/wiki/File:Temple_of_Dendur-Metropolitan_Museum_of_Art.jpg (CC BY-SA 3.0, Yair Haklai, 2012-05-26, 3264×2448). Viewed at full size (2026-10-28). The camera stands south-east of the gate and looks west-north-west: the gate right of centre, a winged sun disk on its cornice and a rough, broken mass of blocks against its south side; the temple left of centre with its two-column porch, on the forecourt of old flagstones raised a step or two over the terrace, a short flight going down at the forecourt's south end; the beige ashlar end wall, the hung ceiling of square glass panels with track lights, and the sloped glass north wall at the right. Informs: gate, temple, forecourt, ceiling height.
 14. https://commons.wikimedia.org/wiki/File:Dendur_Temple_in_Metropolitan_Museum_of_Art_20240523.jpg (CC BY 4.0, 颐园居, 2024-05-23). Not viewed. Informs: temple and pool.
 15. https://commons.wikimedia.org/wiki/File:The_Temple_of_Dendur_-_Flickr_-_Marcela_McGreal.jpg (CC BY 2.0, Marcela McGreal). Not viewed.
-16. https://commons.wikimedia.org/wiki/File:The_Temple_of_Dendur_MET_DP244278.jpg (CC0, The Met's own object photograph). Not viewed. Informs: temple elevation, sandstone colour under controlled light.
+16. https://commons.wikimedia.org/wiki/File:The_Temple_of_Dendur_MET_DP244278.jpg (CC0, The Met's own object photograph DP244278, 3913×2931). Viewed at full size (2026-10-28). The camera stands on the east walkway on the temple's axis and looks west, at dusk: two seated granite colossi at the walkway's edge, steel posts and a sagging rope between them, the walkway's paving ending in a square edge just over the dark water; beyond the pool the platform's granite face, the gate square-on with the temple's porch seen through its doorway and the mass of blocks against its south side, the ashlar end wall, the hung ceiling with track lights, and the sloped glass north wall at the right. Informs: temple elevation, sandstone colour under controlled light, the pool's east end.
 17. https://commons.wikimedia.org/wiki/File:Temple_of_Dendur-_night.jpg (CC BY-SA 2.0, Rosemanios, 2005-12-30). Not viewed. Informs: night lighting through the glass wall.
 
 Charles Engelhard Court
@@ -92,11 +94,11 @@ Arms and Armor court
 
 Medieval Sculpture Hall
 
-29. https://commons.wikimedia.org/wiki/File:Choir_screen_from_the_Cathedral_of_Valladolid_MET_MM29152.jpg (CC0, The Met's own object photograph). Not viewed. Informs: screen elevation.
+29. https://commons.wikimedia.org/wiki/File:Choir_screen_from_the_Cathedral_of_Valladolid_MET_MM29152.jpg (CC0, The Met's own object photograph MM29152, black and white, 3206×4000). Viewed at full size (2026-10-28). The screen square-on and level, framed by an arch, with tapestries hung behind its two upper tiers: on a limestone base, three tiers of turned and twisted balusters, the lowest with an iron arch over its central gate, each tier under a frieze of gilt ornament, and a cresting of three medallions with vases and finials, the middle one round and crowned by a cross, the side ones oval under sunbursts. Scaled by its 12.80 m width (176 px a metre; the floor-to-cross height then reads 15.85 m within 1%), the friezes top out at about 5.1, 8.5 and 11.2 m over the floor and the cresting rises about 4.7 m. Informs: screen elevation.
 
 Robert Lehman Wing
 
-30. https://commons.wikimedia.org/wiki/File:Robert_Lehman_Wing_-_Visitors_Watching_Impressionist_Masters.JPG (CC BY-SA 3.0, Sumanch, 2011-01-02). Not viewed. Informs: gallery ring around the court.
+30. https://commons.wikimedia.org/wiki/File:Robert_Lehman_Wing_-_Visitors_Watching_Impressionist_Masters.JPG (CC BY-SA 3.0, Sumanch, 2011-01-02, 3072×2304). Viewed at full size (2026-10-28). The camera stands in the gallery ring round the court and looks along it: Impressionist paintings in gilt frames on the outer wall at the left; over that wall, from a light stone band at its top, a ceiling of dark bands between light ribs rising toward the court, which the photograph does not show to be glass; the court's tall square limestone piers at the right, and between them a stair with brass handrails going down to a landing with an exhibition sign. Informs: gallery ring around the court, its sloped ceiling.
 
 Astor Court and the Petrie Court
 
@@ -121,6 +123,10 @@ Walking checks, added by work unit 2's M1 (2026-10-25; viewed in a browser by a 
 Weston's door, added by work unit 3 (2026-10-28)
 
 43. Heckscher (see `interior.md`, Sources) fig. 110, p. 76: the Petrie Court in 1995 with Weston's south front (The Met; reference only, not freely licensed). Viewed. The camera stands on the court floor looking east along the front, with nothing in front of the porch: the Ionic aedicule of pilasters with its carved frieze, modillioned cornice and balcony, and the square-headed doorway in its architrave, the dark leaves rising to the head. Informs: the door's head and the porch's form.
+
+The choir screen's photograph on the Met's object page, added by work unit 4 (2026-10-28)
+
+44. https://www.metmuseum.org/art/collection/search/201926, its primary image ES4661 (https://images.metmuseum.org/CRDImages/es/original/ES4661.jpg; The Met's Open Access, CC0, colour, 1592×1918). Viewed at full size (2026-10-28). The screen's upper part from below, with tapestries hung behind it: the cresting of three gilt medallions with vases and finials, the middle one round and crowned by a rayed cross on a vase between two scrolled branches, the side ones under sunbursts; under it the dark top frieze with gilt inlay, the upper tier of turned balusters with gilt knops and a few twisted bars, the middle frieze of gilt scrolls and rosettes, and the middle tier. It does not show the lowest tier or the gate. Informs: the cresting and the friezes, their colours.
 
 Plan source (not a photograph)
 

@@ -91,7 +91,7 @@ const GROVES: readonly { readonly polygon: readonly Point[]; readonly spacing: n
   { polygon: [[40, -165], [140, -165], [140, -195], [40, -195]], spacing: 18 },
 ];
 
-/** Sight lines of the park photographs (exterior-images.md, primaries 6 to 8): no tree within `clear` metres of the segment camera → target. */
+/** Sight lines of the park photographs (exterior-images.md #6, #7 and #8): no tree within `clear` metres of the segment camera → target. */
 const SIGHT_LINES: readonly { readonly from: Point; readonly to: Point; readonly clear: number }[] = [
   { from: [-200, -92], to: [-151.6, -68], clear: 9 },
   { from: [175, -140], to: [140, -125], clear: 9 },

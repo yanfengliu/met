@@ -1,6 +1,6 @@
 /**
  * Plan and section of the Lila Acheson Wallace Wing (KRJDA, 1987) and the Iris and B. Gerald Cantor Roof Garden on it.
- * Plan: the Met floor map (floors G, 1, 1M, 2, 4 and 5; blocks.ts MAP_Z) and the 2018 orthophoto (exterior-images.md, primary 9): a glazed roof
+ * Plan: the Met floor map (floors G, 1, 1M, 2, 4 and 5; blocks.ts MAP_Z) and the 2018 orthophoto (exterior-images.md #9): a glazed roof
  * strip along the park face (Z −158.8 to −150.2), two long roof monitors over the second-floor galleries (Z −145.8..−143.0 and −138.2..−135.3),
  * glazed strips west and south of the roof garden, and the garden itself (map floor 5) with hedges along its west and south edges and a pergola along
  * its east edge (X −112 to −89, Z −119 to −108.3). Levels tagged E are estimates.

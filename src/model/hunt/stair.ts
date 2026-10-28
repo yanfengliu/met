@@ -6,7 +6,7 @@
  * top −56.89, cross hall −59.74..−66.79. Risers and goings are not published: 27 and 19 risers of 0.149 m divide the measured rise and run (an estimate).
  * Evidence: P3 (颐园居 2024) for the coupled columns, the entablature and its modillions, the ribbed vault and the arched opening at the top; LPC77 for
  * the five arches a side and Bitter's angels in their spandrels (blocked out here as plain spandrels). The cross hall's back wall opens on the axis into
- * gallery 600 through a round-arched doorway (interior.md, The Grand Staircase; interior-images.md 36 and 42; work unit 2, M1), with a stone-lined
+ * gallery 600 through a round-arched doorway (interior.md, The Grand Staircase; interior-images.md #36 and #42; work unit 2, M1), with a stone-lined
  * passage behind it through the core's east wall.
  */
 import type { Kit, StepDef } from '../../build/types.js';

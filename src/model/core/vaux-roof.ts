@@ -1,7 +1,7 @@
 /**
  * The top of the Vaux and Mould building: the skylit upper galleries (today European Paintings galleries 600, 601, 619, 620 and 635-640), the flat
  * roofs round their skylights, and the pitched roof over the central hall's nave, the brown roof the 2018 orthophoto shows on the axis
- * (exterior.md S5; Original_Met.jpg shows the 1880 central block's raised, skylit roof between the pavilions).
+ * (exterior.md S5; Original_Met.jpg, exterior-images.md #49, shows the 1880 central block's raised, skylit roof between the pavilions).
  */
 import { Vector3 } from 'three';
 

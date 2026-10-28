@@ -1,8 +1,8 @@
 /**
  * Materials of the Roche south area that the shared palette (src/model/palette.ts) lacks, each defined once and shared by every piece.
  * Colours: the Lehman pyramid's light grey steel is read by eye from photo P9 (docs/research/interior.md, Lehman Wing: steel #cfd2d4);
- * the roof garden's weathered teak deck from the 2019 roof-garden photograph listed in docs/research/exterior-images.md (camera on the roof garden);
- * flat-roof grey from the 2018 orthophoto (exterior-images.md, primary 9).
+ * the roof garden's weathered teak deck from the 2019 roof-garden photograph (docs/research/exterior-images.md #44);
+ * flat-roof grey from the 2018 orthophoto (exterior-images.md #9).
  * Glass and water cast no shadows: `glassClear` is transparent and flagged like the palette's glass.
  */
 import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';

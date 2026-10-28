@@ -69,7 +69,7 @@ export const greekCourtSpace: CollectionStepDef = {
   focus: { kind: 'preset', id: 'int-greek-roman-court' },
   space: 'greek-roman-court',
   placements: ROMAN,
-  // P6 (interior-images.md): the court's marbles stand on dark grey pedestals.
+  // interior-images.md #P6: the court's marbles stand on dark grey pedestals.
   plinth: mmwMaterials.pedestalGrey,
 };
 export const greekCourtCollectionStep = collectionStep(greekCourtSpace);
@@ -149,7 +149,7 @@ export const engelhardSpace: CollectionStepDef = {
   focus: { kind: 'preset', id: 'int-engelhard-north' },
   space: 'engelhard-court',
   placements: ENGELHARD,
-  // P5 (interior-images.md): the court's marbles stand on grey stone pedestals, as the generic ones before them did.
+  // interior-images.md #P5: the court's marbles stand on grey stone pedestals, as the generic ones before them did.
   plinth: palette.granite,
 };
 export const engelhardCollectionStep = collectionStep(engelhardSpace);

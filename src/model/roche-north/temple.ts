@@ -2,8 +2,8 @@
  * The Temple of Dendur and its gate (about 15 BC, Aeolian sandstone; re-erected in the Sackler Wing, 1978), the area's landmark objects.
  * Temple: 6.40 m wide and high, 12.50 m long (Met API 547802), eleven courses (Aldred p. 77), an east pronaos of two composite-capital columns between antae
  * with screen walls, a lower rear block (vestibule and sanctuary), cavetto cornices on torus rolls, rolls up every corner and faintly battered walls.
- * Gate: 8.08 m high (Met API), 4.6 m wide and 3.35 m deep (DP244278), a doorway 2.0 × 5.2 m, a winged sun disk on each face of its cornice, the broken stub
- * of the vanished enclosure wall on its south side (Haklai 2012). Local frames: origin at the base centre, front (east) +Z; world +Z is east, so no turn.
+ * Gate: 8.08 m high (Met API), 4.6 m wide and 3.35 m deep (DP244278, interior-images.md #16), a doorway 2.0 × 5.2 m, a winged sun disk on each face of its cornice, the broken stub
+ * of the vanished enclosure wall on its south side (Haklai 2012, interior-images.md #13). Local frames: origin at the base centre, front (east) +Z; world +Z is east, so no turn.
  */
 import { CylinderGeometry, Matrix4, Quaternion, Vector3 } from 'three';
 

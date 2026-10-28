@@ -31,7 +31,7 @@ export const OUTER_WALL = 1.0; // east, south and north outer walls
 export const PARTY_WALL = 0.9; // core-1880-a's side walls at X ±14.5 (exterior in 1880, party walls since 1888)
 export const PARTITION = 0.4; // interior walls on the map's lines
 
-// --- Vaux and Mould building (history.md section 2; photos Original_Met.jpg about 1880, the Lehman-court view 2026) -------
+// --- Vaux and Mould building (history.md section 2; photos exterior-images.md #49 and #60: Original_Met.jpg about 1880, the Lehman-court view 2026) -------
 export const VAUX_HALL_WEST_Z = -117.63; // map gallery 305, west edge (the hall's west end wall stands between it and 520)
 export const VAUX_HALL_EAST_Z = -83.32; // map gallery 305, east edge
 export const VAUX_HALL_WALL = 1.1; // the hall's end walls; the map leaves 1.15 m between 520 and 305

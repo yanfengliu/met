@@ -2,7 +2,7 @@
  * The Michael C. Rockefeller Wing (KRJDA, 1982), first wing of chapter `roche-south-1990`.
  * Sources: docs/research/history.md section 8 (steps), exterior.md [K5] (the sloping south glass wall, src/model/frame.ts ROCKEFELLER_*) and [R3]
  * (ridge skylights); plan from the Met floor map (galleries 341–363 on the main floor, 800–830 on the second, blocks.ts MAP_Z).
- * Ridge skylights: counted on the 2018 orthophoto (exterior-images.md, primary 9): eleven ridges along X at a 5.47 m pitch, valleys at Z −96.0
+ * Ridge skylights: counted on the 2018 orthophoto (exterior-images.md #9): eleven ridges along X at a 5.47 m pitch, valleys at Z −96.0
  * to −41.3. The eleventh straddles the block line Z −38.5: its north slope rises from the valley at −41.3 to its ridge at −38.6, on the line; its south
  * slope reaches about −36.8 west of X −121 and is cut by the south end pavilion's roof east of it (re-read 2026-10-13 by the integration worker). Ten are
  * built whole, and the eleventh's north slope as a lean-to against the south pavilion's raised wall on the line (mmw party-walls.ts), inside this block.

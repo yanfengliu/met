@@ -1,7 +1,7 @@
 /**
  * The Henry R. Kravis Wing and the Carroll and Milton Petrie European Sculpture Court (KRJDA, 1990), last wing of chapter `roche-south-1990`.
  * Sources: history.md section 8; interior.md, "Other skylit volumes" (the court, map gallery 548, X −61.44 to −51.24) and the Petrie Court photograph
- * (interior-images.md, item 33): Weston's 1888 brick-and-stone south facade, built by the core area on X −49.7, is the court's north wall; the
+ * (interior-images.md #33): Weston's 1888 brick-and-stone south facade, built by the core area on X −49.7, is the court's north wall; the
  * court's south wall is limestone; a long glass roof with a central ridge spans the court (orthophoto: ridge at X −56.2, hipped ends near Z −128 and
  * −85, flatter glazing beyond them). Every line of this block but the park face Z −138.2 belongs to an older block, which builds the wall there.
  */
@@ -34,7 +34,7 @@ export const COURT_X0 = -61.45;
 /** The court's limestone south wall's thickness, south from COURT_X0 (the McKim, Mead & White party wall's passage into gallery 549 keeps clear of it). */
 export const COURT_WALL = 0.8;
 /**
- * D: the court's glass roof rests on the 1888 front: both Petrie Court photographs (interior-images.md #33, Benoist 2012, and #35, Haklai 2012) show its
+ * D: the court's glass roof rests on the 1888 front: both Petrie Court photographs (interior-images.md #33 and #35: Benoist 2012 and Haklai 2012) show its
  * north eave on a dark gutter laid on the old front's coping and its south eave level with it on the limestone wall, the ridge in the middle (orthophoto
  * X −56.2). The gutter is 0.45 m deep (E), so the eaves sit at the Kravis roof's level.
  */

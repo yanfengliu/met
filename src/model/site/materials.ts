@@ -1,6 +1,6 @@
 /**
  * Materials of the site area that the shared palette does not have, each defined once here (docs/design/spec.md, Batching).
- * Colours are sRGB as photographed or judged from the reference images of docs/research/exterior-images.md (the 2018 orthophoto and the Hałun 2023 view);
+ * Colours are sRGB as photographed or judged from the 2018 orthophoto and the Hałun 2023 view (docs/research/exterior-images.md #9 and #5);
  * flat ground surfaces opt out of shadow casting like the palette's ground materials, and water jets are transparent, so they never cast shadows.
  * Landscape opts out of the section cut (`userData.sectionCut === false`, src/viewer/section-cut.ts): only the building is cut, so everything the site
  * builds as landscape stays whole: trees, ground, streets, paths, rocks, walls, fences, lamps, benches, fountains and the plaza's furniture. Where the

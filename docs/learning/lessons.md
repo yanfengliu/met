@@ -10,4 +10,4 @@ When the gate lands, prove it red by reintroducing the defect, record that in [g
 
 ## Rules
 
-- A model source may cite a reference photograph only once `docs/research/` records it as viewed and says what it shows, or a guessed form stands beside the photograph that contradicts it. — **gate:** a unit test that every image a file under `src/model/` cites from `interior-images.md` or `exterior-images.md` is an entry marked viewed ([evidence](lessons-evidence.md#a-cited-reference-photograph-must-be-recorded-as-viewed))
+None is waiting for its gate.

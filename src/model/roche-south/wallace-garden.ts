@@ -2,7 +2,7 @@
  * The Iris and B. Gerald Cantor Roof Garden (opened 1 August 1987; history.md, Chronology) and the Wallace Wing's glass, last of the wing.
  * Garden: the map's floor 5 outline (wallace-plan.ts GARDEN, inside the ROOF_GARDEN_* box of src/model/frame.ts); its weathered teak deck, box hedges in
  * planters along the park edges, a white steel pergola along the east edge, a stair and lift house, and a few small trees, as the 2018 orthophoto and
- * the 2019 roof-garden photograph (exterior-images.md, camera on the Roof Garden looking north) show them.
+ * the 2019 roof-garden photograph (exterior-images.md #44, from the Roof Garden looking north) show them.
  */
 import { Matrix4 } from 'three';
 

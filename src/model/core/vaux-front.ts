@@ -3,7 +3,7 @@
  * the main floor with alternating granite and brick voussoirs and striped tympana (the central one the original entrance), segmental windows on the
  * ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman Wing (seen in
  * int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch) and the view of the west front from the
- * Lehman court (Untapped New York, 2026), both in exterior-images.md and this file's handoff. Trim may project up to 1.5 m into the Lehman
+ * Lehman court (Untapped New York, 2026), exterior-images.md #49 and #60. Trim may project up to 1.5 m into the Lehman
  * court (coordinator, 2026-10-11); walls do not.
  */
 import { Matrix4 } from 'three';

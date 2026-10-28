@@ -1,7 +1,7 @@
 /**
  * Theodore Weston's south facade of wing B, 1888 (history.md section 3), on X −49.7 facing south: since 1990 the north wall of the Carroll and
  * Milton Petrie European Sculpture Court (Kravis Wing), so it is seen from inside that court. After the Petrie Court photograph (interior-images.md
- * #33, J.-C. Benoist 2012) and the about-1900 view 1880_Met_Museum.jpg (exterior-images.md): a stone dado with roundels, three tall main-floor windows
+ * #33, J.-C. Benoist 2012) and the about-1900 view 1880_Met_Museum.jpg (exterior-images.md #53): a stone dado with roundels, three tall main-floor windows
  * between stone piers in each bay, an entablature at the second floor, a round arch of rusticated voussoirs over the upper windows, rusticated
  * quoin piers with roundels between the arches, a cornice; at the centre the 1888 entrance pavilion with its porch and balcony and a great round
  * window. Trim may project up to 1.5 m into the court (coordinator, 2026-10-11).

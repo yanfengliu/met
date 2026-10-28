@@ -37,16 +37,16 @@ export const SACKLER_WEST_Z = -103.0;
 export const DENDUR_FLOOR_Y = MAIN_FLOOR_Y;
 /** E ±0.2: the granite platform stands about 1 m above the walkways (P4, against visitors and the 2 m speaker stands). */
 export const PLATFORM_Y = DENDUR_FLOOR_Y + 1.0;
-/** E: the coping round the terrace is a bench-high kerb (Verbruggen 2015, visitors sitting on it). */
+/** E: the coping round the terrace is a bench-high kerb (Verbruggen 2015, interior-images.md #12: visitors sitting on it). */
 export const COPING_HEIGHT = 0.45;
-/** E: the pool's water lies just below the walkway floor (DP244278, the east end; 0.15 to 0.25 m of dry stone over it in Marfaing 2017, interior-images.md 37). */
+/** E: the pool's water lies just below the walkway floor (DP244278, interior-images.md #16, the east end; 0.15 to 0.25 m of dry stone over it in Marfaing 2017, interior-images.md #37). */
 export const POOL_WATER_Y = DENDUR_FLOOR_Y - 0.15;
 /**
  * E: the pool's bottom, 0.3 m under the walkways (its depth is not found; interior.md, The pool's edge): the square stone edge is then a step that a visitor
  * who stepped in climbs out over anywhere on the walkway sides, under the walker's 0.35 m step (work unit 2, M1; it was 0.6 m, a trap).
  */
 export const POOL_FLOOR_Y = DENDUR_FLOOR_Y - 0.3;
-/** E ±0.6: the hung glass ceiling, about 16 m over the walkways (DP244278 against the 8.08 m gate; Haklai 2012 against the 6.40 m temple), just under the roof deck. */
+/** E ±0.6: the hung glass ceiling, about 16 m over the walkways (interior-images.md #16 and #13: DP244278 against the 8.08 m gate, Haklai 2012 against the 6.40 m temple), just under the roof deck. */
 export const DENDUR_CEILING_Y = 19.9;
 /** The roof deck at the head of the sloped glass wall (frame.ts SACKLER_GLASS_TOP_Y). */
 export const SACKLER_ROOF_Y = SACKLER_GLASS_TOP_Y;
@@ -98,7 +98,7 @@ export const GATE_SLABS = { minX: 126.12, maxX: 140.81, minZ: -68.57, maxZ: -64.
 export const FORECOURT = { minX: 127.64, maxX: 139.31, minZ: -82.04, maxZ: -68.54 } as const;
 /**
  * E: the temple stands on a dais of its own, raised again above the platform (P4: a granite face about 0.75 m high some 2.6 m from the temple's south wall;
- * Haklai 2012: steps down from it toward the gate). Its sides follow the forecourt lines (map partitions X 127.64 and 139.31); it runs back to the rough blocks.
+ * Haklai 2012, interior-images.md #13: steps down from it toward the gate). Its sides follow the forecourt lines (map partitions X 127.64 and 139.31); it runs back to the rough blocks.
  */
 export const DAIS = { minX: FORECOURT.minX, maxX: FORECOURT.maxX, minZ: -93.4, maxZ: FORECOURT.maxZ } as const;
 export const DAIS_Y = PLATFORM_Y + 0.75;
@@ -107,10 +107,10 @@ export const DAIS_STEPS = { width: 1.52, minZ: -70.58 } as const;
 /**
  * D: granite filling the gate's passage, between its piers (1.0 m each side of the axis, 1 cm clear of them), from its back line to its front face, up to
  * the forecourt's flagstones: the gate is walked into from the forecourt and not crossed from the terrace, its front a riser to the terrace
- * (interior.md, The gate's front and the forecourt; interior-images.md 39 and 40; work unit 2, M1).
+ * (interior.md, The gate's front and the forecourt; interior-images.md #39 and #40; work unit 2, M1).
  */
 export const GATE_THRESHOLD = { minX: TEMPLE_AXIS_X - 0.99, maxX: TEMPLE_AXIS_X + 0.99, minZ: GATE_SLABS.minZ, maxZ: GATE_Z + GATE_DEPTH / 2, topY: DAIS_Y + 0.04 } as const;
-/** E: the low steel rail on the terrace before the gate's front (interior-images.md 39): 0.45 m high, 0.43 m out from the front, a little wider than the passage. */
+/** E: the low steel rail on the terrace before the gate's front (interior-images.md #39): 0.45 m high, 0.43 m out from the front, a little wider than the passage. */
 export const GATE_RAIL = { minX: TEMPLE_AXIS_X - 1.3, maxX: TEMPLE_AXIS_X + 1.3, z: GATE_Z + GATE_DEPTH / 2 + 0.43, height: 0.45 } as const;
 
 // --- American Wing plan (map floor 1, shifted) ----------------------------------------------------
