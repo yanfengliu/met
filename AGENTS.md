@@ -74,7 +74,7 @@ Node 24 (`.nvmrc`), npm, Vite, strict TypeScript, Vitest, ESLint and Playwright 
 
 `npm run verify` is the pre-commit gate: the five commands below, in this order.
 
-- `npm test`: Vitest over `src/**/*.test.ts` and `scripts/**/*.test.ts`, including `src/repo-conventions.test.ts`, which fails on a file over 500 lines under `src/`, `scripts/` or `tests/` and on an `import.meta.env` or `process.env` read under `src/`.
+- `npm test`: Vitest over `src/**/*.test.ts` and `scripts/**/*.test.ts`, including `src/repo-conventions.test.ts`, which fails on a file over 500 lines under `src/`, `scripts/` or `tests/` and on an `import.meta.env` or `process.env` read under `src/`. Every test has 60 s (`vitest.config.ts`). Off GitHub's runner (`CI` not `true`), a passed test that takes over a sixth of its timeout fails the run, as does one whose time or timeout Vitest does not give (`scripts/test-headroom.ts`). The runner ran the heaviest tests up to 2.8 times slower than the local machine, and at Vitest's 5 s default it timed out the closure gate's upright-face test, which took 2.3 to 2.8 s here; with that default back, the check names 6 of 650 tests.
 - `npm run typecheck`: `tsc --noEmit`, strict plus `noUncheckedIndexedAccess`, over `src/`, `scripts/`, `tests/` and the root configs.
 - `npm run lint`: ESLint with typescript-eslint strict type-checked rules, `--max-warnings 0`.
 - `npm run build`: `tsc --noEmit && vite build`, the two-page site (`index.html`, `parts.html`) into `dist/`.
