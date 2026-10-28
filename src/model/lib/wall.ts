@@ -287,10 +287,10 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
   const through = holes.filter((h) => h.depth >= T);
   // Front face, plain or banded.
   const r = spec.rustication;
+  const joints: number[] = [];
+  if (r !== null) for (let y = r.start; y <= r.stop + 1e-9; y += r.course) joints.push(y);
   if (r === null) face(b, stripsAround(-W, W, 0, H, holes), 0, true);
   else {
-    const joints: number[] = [];
-    for (let y = r.start; y <= r.stop + 1e-9; y += r.course) joints.push(y);
     let y0 = 0;
     for (const j of joints) {
       face(b, stripsAround(-W, W, y0, j - r.joint / 2, holes), 0, true);
@@ -303,19 +303,23 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
         b.polygon([new THREE.Vector3(lo, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, 0), new THREE.Vector3(lo, j + r.joint / 2, 0)]);
       }
       for (const hole of holes) channelSidesInto(b, hole, j - r.joint / 2, j + r.joint / 2, r.depth);
-      // At each end of the wall, a face back to back with the end, facing the channel, closes the channel's end as at a jamb.
-      for (const s of [-1, 1]) {
-        const quad = [new THREE.Vector3(s * W, j - r.joint / 2, 0), new THREE.Vector3(s * W, j + r.joint / 2, 0), new THREE.Vector3(s * W, j + r.joint / 2, -r.depth), new THREE.Vector3(s * W, j - r.joint / 2, -r.depth)];
-        b.polygon(s > 0 ? quad : quad.reverse());
-      }
       y0 = j + r.joint / 2;
     }
     face(b, stripsAround(-W, W, y0, H, holes), 0, true);
   }
   // Back face, cut by the through openings only.
   face(b, stripsAround(-W, W, 0, H, through), -T, false);
-  // Ends, top and the foot, which is left open under doors; behind a blind one, a niche on the floor, it runs on under the wall.
-  b.box([-W, 0, -T], [W, H, 0], ['+z', '-z', '-y']);
+  // Ends, top and the foot, which is left open under doors; behind a blind one, a niche on the floor, it runs on under the wall. A channelled wall's
+  // ends are notched where each channel runs out, so the channel's floor, back and ceiling meet them.
+  b.box([-W, 0, -T], [W, H, 0], ['+z', '-z', '-y', ...(r === null ? [] : ['+x', '-x'])]);
+  if (r !== null) {
+    // The end's outline in (depth into the wall, height), down its front edge round each channel.
+    const end: V2[] = [[0, 0], [T, 0], [T, H], [0, H]];
+    for (const j of [...joints].reverse()) end.push([0, Math.min(H, j + r.joint / 2)], [r.depth, Math.min(H, j + r.joint / 2)], [r.depth, Math.max(0, j - r.joint / 2)], [0, Math.max(0, j - r.joint / 2)]);
+    const outline = end.filter((p, k) => k === 0 || p[0] !== end[k - 1]?.[0] || p[1] !== end[k - 1]?.[1]);
+    // Depth runs along −Z at both ends; the axes turn so each end faces out, +X or −X.
+    for (const s of [-1, 1]) b.planar(outline.map(([d, y]) => [s * d, y] as const), [], new THREE.Vector3(s * W, 0, 0), new THREE.Vector3(0, 0, -s), new THREE.Vector3(0, 1, 0));
+  }
   for (const [lo, hi] of intervalsAt(-W, W, 1e-6, holes)) {
     b.polygon([new THREE.Vector3(lo, 0, -T), new THREE.Vector3(hi, 0, -T), new THREE.Vector3(hi, 0, 0), new THREE.Vector3(lo, 0, 0)]);
   }

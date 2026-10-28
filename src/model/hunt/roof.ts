@@ -30,8 +30,8 @@ const FASCIA = 0.02;
 /**
  * A hipped roof from the eaves rectangle up to an inner flat rectangle (a frustum of four planes), open in the middle for the skylight curb:
  * the lead skin and, under it to 0.3 m below the top, the plastered slab seen from the hall's upper spaces, as two geometries (two materials), each
- * closed along vertical lines. Under the skin at the eaves a lead fascia, a closed band FASCIA wide, runs the roof's depth, so the eaves show lead;
- * round the opening each shows its own.
+ * closed along vertical lines. Under the skin at the eaves a lead fascia, a closed band FASCIA wide, runs the roof's depth, so the eaves show lead and
+ * the plaster stops at its inner edge; round the opening each shows its own.
  */
 const hallRoof = (() => {
   let made: { top: THREE.BufferGeometry; under: THREE.BufferGeometry } | undefined;
@@ -43,26 +43,25 @@ const hallRoof = (() => {
     // The eaves' and the opening's corners, each loop running round the same way.
     const outer = [v(e.x0, e.y, e.z1), v(e.x1, e.y, e.z1), v(e.x1, e.y, e.z0), v(e.x0, e.y, e.z0)];
     const inner = [v(t.x0, t.y, t.z1), v(t.x1, t.y, t.z1), v(t.x1, t.y, t.z0), v(t.x0, t.y, t.z0)];
-    /** The slab between `drop0` and `drop1` under the roof's top: four sloping planes over and under, each wound to face out, the rim round the opening, and at the eaves one down to `eaves`, or none. */
-    const slab = (drop0: number, drop1: number, eaves: number | null): THREE.BufferGeometry => {
+    const lower = (p: THREE.Vector3, drop: number): THREE.Vector3 => p.clone().setY(p.y - drop);
+    /** The slab between `drop0` and `drop1` under the roof's top, out to `edge` at the eaves: four sloping planes over and under, the rim round the opening and the rim at the edge, each wound to face out. */
+    const slab = (drop0: number, drop1: number, edge: readonly THREE.Vector3[]): THREE.BufferGeometry => {
       const b = new MeshBuilder();
-      const lower = (p: THREE.Vector3, drop: number): THREE.Vector3 => p.clone().setY(p.y - drop);
       for (let k = 0; k < 4; k += 1) {
-        const [o0, o1] = [outer[k] ?? v(0, 0, 0), outer[(k + 1) % 4] ?? v(0, 0, 0)];
+        const [o0, o1] = [edge[k] ?? v(0, 0, 0), edge[(k + 1) % 4] ?? v(0, 0, 0)];
         const [i0, i1] = [inner[k] ?? v(0, 0, 0), inner[(k + 1) % 4] ?? v(0, 0, 0)];
         b.polygon([lower(o0, drop0), lower(o1, drop0), lower(i1, drop0), lower(i0, drop0)]);
         b.polygon([lower(o0, drop1), lower(i0, drop1), lower(i1, drop1), lower(o1, drop1)]);
-        if (eaves !== null) b.polygon([lower(o0, eaves), lower(o1, eaves), lower(o1, drop0), lower(o0, drop0)]);
+        b.polygon([lower(o0, drop1), lower(o1, drop1), lower(o1, drop0), lower(o0, drop0)]);
         b.polygon([lower(i0, drop0), lower(i1, drop0), lower(i1, drop1), lower(i0, drop1)]);
       }
       return b.build();
     };
-    // The fascia's inner edge, a fraction of the way up the hips that keeps its narrowest side FASCIA wide.
+    // The fascia's inner edge, a fraction of the way up the hips that keeps its narrowest side FASCIA wide; the plaster slab stops there.
     const run = Math.min(...[0, 1, 2, 3].flatMap((k) => [Math.abs((inner[k]?.x ?? 0) - (outer[k]?.x ?? 0)), Math.abs((inner[k]?.z ?? 0) - (outer[k]?.z ?? 0))]));
     const inward = (k: number): THREE.Vector3 => (outer[k] ?? v(0, 0, 0)).clone().lerp(inner[k] ?? v(0, 0, 0), FASCIA / run);
     const top = new MeshBuilder();
-    top.append(slab(0, LEAD, LEAD));
-    const lower = (p: THREE.Vector3, drop: number): THREE.Vector3 => p.clone().setY(p.y - drop);
+    top.append(slab(0, LEAD, outer));
     for (let k = 0; k < 4; k += 1) {
       const [o0, o1] = [outer[k] ?? v(0, 0, 0), outer[(k + 1) % 4] ?? v(0, 0, 0)];
       const [n0, n1] = [inward(k), inward((k + 1) % 4)];
@@ -72,7 +71,7 @@ const hallRoof = (() => {
       top.polygon([lower(o0, ROOF_DEPTH), lower(o1, ROOF_DEPTH), lower(o1, LEAD), lower(o0, LEAD)]);
       top.polygon([lower(n0, LEAD), lower(n1, LEAD), lower(n1, ROOF_DEPTH), lower(n0, ROOF_DEPTH)]);
     }
-    made = { top: top.build(), under: slab(LEAD, ROOF_DEPTH, null) };
+    made = { top: top.build(), under: slab(LEAD, ROOF_DEPTH, [0, 1, 2, 3].map(inward)) };
     return made;
   };
 })();

@@ -225,7 +225,7 @@ export class CollisionWorld {
     this.matrices = new Float64Array(n * 16);
     this.inverses = new Float64Array(n * 16);
     this.boxes = new Float64Array(n * 6);
-    this.sheets = new Uint8Array(n);
+    this.sheets = Uint8Array.from(geometries, (g) => (isSheet(g) ? 1 : 0));
     this.bvhs = geometries.map((g) => this.cache.get(g));
     this.local = geometries.map((g) => {
       if (g.boundingBox === null) g.computeBoundingBox();

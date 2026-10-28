@@ -12,12 +12,13 @@
  * through (src/viewer/cap-pass.ts), so a piece under the cut never shows its back in the cut colour, however close its faces or coarse the depth buffer.
  * Transparent meshes are left out, and so are sheets, surfaces with no inside (src/model/lib/sheet.ts, `capsMesh`). Every other piece is closed along
  * vertical lines and has an inside behind each upright face (src/model/closure.test.ts), so a cut through it, seen straight down, shows the cut colour
- * across its whole section where its faces look out, never what lies below. A part wound inside out (two builders', an open finding the spec names)
- * leaves no back face there for this pass and shows its lit inner faces instead.
- * Bound: a piece may still be open sideways (a wall's end run into another, a face left out where two parts meet) or hold a two-sided membrane (a
- * channel's end against a reveal), so a slanted view can see out of its section where it meets no back face, and the back of a membrane the plane
- * passes through shows the cut colour while the cut is on. On a piece the plane passes through, the bias lets a back face win over a front face of that piece less than CAP_DEPTH_BIAS steps in front of
- * it: along an edge where the two meet, a sliver about 0.03 px wide (a rare antialiasing sample of the cut colour), and across a part of the piece thinner
+ * across its whole section where its faces look out, never what lies below. A part wound inside out (the Arms and Armor Court's gables, an open finding
+ * the spec names) leaves no back face there for this pass and shows its lit inner faces instead.
+ * Bound: a piece may still be open sideways (a wall's end run into another, a face left out where two parts meet), so a slanted view can see out of its
+ * section where it meets no back face. It may hold two faces back to back, a two-sided membrane (a channel's end against a reveal): in a piece the plane
+ * passes through, the back of either one wins over the front of the other below the cut, so the membrane shows the cut colour from either side. On a
+ * piece the plane passes through, the bias lets a back face win over a front face of that piece less than CAP_DEPTH_BIAS steps in front of it: along an
+ * edge where the two meet, a sliver about 0.03 px wide (a rare antialiasing sample of the cut colour), and across a part of the piece thinner
  * than that, which needs a near plane far closer than what is in view (4 steps are 0.4 to 15 mm in the floor views and close-ups, 8 cm 100 m away with
  * the near plane at 3 cm).
  */

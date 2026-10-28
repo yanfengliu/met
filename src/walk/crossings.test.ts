@@ -4,10 +4,10 @@
  * two faces back to back in one piece count twice, and so do a face looking up and one looking down meeting at the line, so a closed piece is crossed an
  * even number of times; a walker that a piece of two parts is built through is found inside the upper part; and a declared sheet has no inside even
  * where its panes overlap, as a hipped skylight's do over a hip, so one built through a walker leaves it be, which the same panes undeclared do not.
- * Two pins: two overlapping parts whose faces share planes are crossed at each, so their overlap reads as outside, a walker in it is found by their
- * tops where they are shorter than it and missed wholly inside a taller one (the bound src/model/closure.test.ts keeps on the model), and a line along
- * edges both parts have in one of those planes reads them once (the crossing rule's bound, src/walk/collision.ts); and a rusticated
- * wall whose window's sill lies on a channel's floor and head on a channel's ceiling lays one face at each, not two.
+ * Two pins: two overlapping parts whose faces share planes are crossed at each, so their overlap reads as outside, and a walker in it is found by their
+ * tops where they are shorter than it and missed wholly inside a taller one (the bound src/model/closure.test.ts keeps on the model), or on a line along
+ * edges both parts have in one of those planes, which reads them once (the crossing rule's bound, src/walk/collision.ts); and a rusticated wall whose
+ * window's sill lies on a channel's floor and head on a channel's ceiling lays one face at each, not two.
  * Bound: fixtures only; src/model/closure.test.ts checks that every piece of the model is closed along vertical lines.
  */
 import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
@@ -122,7 +122,7 @@ describe('where a vertical line crosses a piece', () => {
     expect(walker.onGround).toBe(true);
   });
 
-  it('keeps reading a piece crossed an odd number of times, a sheet, as having no inside, so one built through a walker leaves it be', () => {
+  it('keeps reading a piece crossed an odd number of times, a single surface, as having no inside, so one built through a walker leaves it be', () => {
     const sheet = new BufferGeometry();
     sheet.setAttribute('position', new Float32BufferAttribute([-2, 1, -2, -2, 1, 2, 2, 1, 2, 2, 1, -2], 3));
     sheet.setAttribute('normal', new Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
@@ -141,7 +141,7 @@ describe('where a vertical line crosses a piece', () => {
     walker.place(0.3, 0, -0.4, 0);
     timeline.evaluate(2);
     walk.build(collisionMeshes(timeline.steps, 2));
-    expect(walker.settle(instancesBefore(timeline.steps, 1)), 'the sheet at 1 m crosses its body, but has no inside to hold it').toBe('kept');
+    expect(walker.settle(instancesBefore(timeline.steps, 1)), 'the surface at 1 m crosses its body, but has no inside to hold it').toBe('kept');
   });
 
   it('reads no inside in a declared sheet, even where its panes overlap, so one built through a walker leaves it be; undeclared, the walker is inside', () => {
@@ -176,6 +176,11 @@ describe('where a vertical line crosses a piece', () => {
         const line = w.crossings(x, z, -10, 10).find((p) => p.instance >= from);
         expect(line?.heights.length, `${what}: crossings on the walker's axis`).toBe(2);
         expect(line?.sheet, `${what}: ${declared ? '' : 'not '}a sheet`).toBe(declared);
+        // A world of pieces that move reads the mark as a static one does.
+        const moving = new CollisionWorld(new GeometryBvhs());
+        moving.buildPieces([g]);
+        moving.move(0, new Matrix4());
+        expect(moving.crossings(x, z, -10, 10)[0]?.sheet, `${what}, moving: ${declared ? '' : 'not '}a sheet`).toBe(declared);
         const settled = walker.settle(from);
         if (declared) expect(settled, `${what}, a sheet: no inside`).toBe('kept');
         else expect(settled, `${what}, no sheet: inside between its two crossings`).not.toBe('kept');
@@ -194,10 +199,12 @@ describe('where a vertical line crosses a piece', () => {
     expect(heightsAt(w, 0.5, 0.5), "along both bottoms' diagonals").toEqual([0, 3, 3]);
   });
 
-  it('finds a walker that two overlapping parts shorter than it are built through, by their tops, and misses one wholly inside a taller overlap', () => {
-    for (const [height, settled] of [
-      [1.2, 'moved'],
-      [3, 'kept'],
+  it('finds a walker that two overlapping parts shorter than it are built through, by their tops, and misses one wholly inside a taller overlap or on a line read once', () => {
+    // The last: on the line along both bottoms' diagonals, which the crossing rule reads once there, its bound.
+    for (const [height, x, z, settled] of [
+      [1.2, 0.3, 0.1, 'moved'],
+      [3, 0.3, 0.1, 'kept'],
+      [1.2, 0.5, 0.5, 'kept'],
     ] as const) {
       const b = new MeshBuilder();
       b.box([-2, 0, -2], [2, height, 2]);
@@ -210,10 +217,10 @@ describe('where a vertical line crosses a piece', () => {
       w.build(collisionMeshes(timeline.steps, 1));
       const walker = new Walker(w, -1);
       // Inside both parts, 1.1 m or more from their sides, out of reach of the capsule test.
-      walker.place(0.3, 0, 0.1, 0);
+      walker.place(x, 0, z, 0);
       timeline.evaluate(2);
       w.build(collisionMeshes(timeline.steps, 2));
-      expect(walker.settle(instancesBefore(timeline.steps, 1)), `parts ${String(height)} m tall`).toBe(settled);
+      expect(walker.settle(instancesBefore(timeline.steps, 1)), `parts ${String(height)} m tall, at X ${String(x)}, Z ${String(z)}`).toBe(settled);
       if (settled === 'moved') expect(walker.feet.y, 'on their tops').toBeCloseTo(height, 6);
     }
   });

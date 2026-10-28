@@ -12,24 +12,28 @@
  * stands upright gives no crossing to read, so it must be a declared sheet. The walk's: its crossing query (`CollisionWorld.crossings`) on a collision
  * world of the walked meshes, along four lines through each of up to FACES faces of each walked shape that are not vertical (one inside the face, one
  * near each corner), each meeting its piece at that face an even number of times. The faces' winding on the same lines: as many look up as look down,
- * so a face wound the wrong way or doubled fails, though a part wound wholly inside out does not (two builders' parts are, an open finding the spec
- * names); and where parts of one piece overlap, which the parity rule reads as outside, no line runs through them for as long as settle's span
- * (BODY.height less STANDING), read on the shape's first walked piece and scaled to its walked piece that stretches the lines most, so a walker built
- * into a piece is found. And each upright face's inside: at the same four points of every upright face of every shape, BEHIND to one side or the other,
- * the faces above wind to an inside, so a part with no top and no bottom, whose open rims cancel along vertical lines, fails, unless the face lies back
- * to back on another, one side of a two-sided membrane, which has no inside to lose.
+ * so a face wound the wrong way or doubled fails, though a part wound wholly inside out does not; and where parts of one piece overlap, which the
+ * parity rule reads as outside, no line runs through them for as long as settle's span (BODY.height less STANDING), read on the shape's first walked
+ * piece and scaled to its walked piece that stretches the lines most, so a walker built into a piece is found. And each upright face's inside: at
+ * seven points of every upright face of every shape (the lines' four and one near the middle of each edge), BEHIND to one side or the other, the faces
+ * above wind to an inside, so a part with no top and no bottom, whose open rims cancel along vertical lines, fails, unless the face lies back to back on
+ * another, one side of a two-sided membrane, which has no inside to lose. A face stands upright when lines along vertical see it less than BEHIND wide.
+ * Open findings the spec names, which these readings pass: the Arms and Armor Court's gables are wound wholly inside out, and two coffered soffits'
+ * coffers are deeper than their shells, so each stands 4 cm out of the vault, a pocket whose faces look in.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
  * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage), with main's crossing rule, which counted hits within 1 µm once (206
  * shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside turned up
  * (src/model/lib/fittings.ts: 169 lines unbalanced), with the medieval piers' half shafts made whole cylinders, half in the core (3.9 m of overlap), with
  * one Hunt medallion of each pair three times as tall (2.27 m, which the piece measured reads as 0.76 m), with the piers' core left with no top and no
- * bottom (30 points of its upright faces with no inside), with the moon gate panel's foot, top and ends left out (288), with UNIT_TILE no sheet (2,008
- * shapes open, 7 SHEETS counts off) and with the window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off).
+ * bottom (30 points of upright faces with no inside), with the moon gate panel's foot, top and ends left out (288), with the Great Hall pendentives'
+ * spandrels on their old points, apart from the curved faces' (8), with UNIT_TILE no sheet (2,008 shapes open, 7 SHEETS counts off) and with the
+ * window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off).
  * Bound: `openAlong` joins ends nearer than 0.1 mm and leaves out open boundary under 1 mm in all, each in the geometry's own frame, so an opening
  * narrower or with less boundary is not seen; a piece its matrix scales up sees both larger (up to 99 times, the Hunt foundations' unit boxes). The
- * other readings try up to FACES faces a shape, spread evenly over those that are not vertical, on its first walked piece, and four points of each
- * upright face; they see an opening, a wrong winding, an overlap or a missing inside only under one of their lines. The overlap is read from the
- * winding, so an overlap with a part wound inside out is not seen; neither of the two overlaps another part of its piece, as their builders make them.
+ * other readings try up to FACES faces a shape, spread evenly over those that are not vertical, on its first walked piece, and seven points of each
+ * upright face; they see an opening, a wrong winding, an overlap or a missing inside only under one of their lines or at one of their points. The
+ * overlap is read from the winding, so an overlap with a part wound inside out is not seen; the gables overlap no other part of their piece, as their
+ * builder makes them.
  */
 import { DoubleSide, Matrix3, Matrix4, Ray, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';
@@ -116,6 +120,8 @@ const LINES: readonly (readonly [number, number, number])[] = [
   [0.029, 0.94, 0.031],
   [0.032, 0.028, 0.94],
 ];
+/** The points of an upright face where an inside is looked for: the lines' four, and one near the middle of each edge. */
+const UPRIGHT_POINTS: readonly (readonly [number, number, number])[] = [...LINES, [0.485, 0.485, 0.03], [0.03, 0.485, 0.485], [0.485, 0.03, 0.485]];
 
 /** One piece as its mesh draws it: its step, its material's name, its mesh, its slot there and its world matrix. */
 interface Piece {
@@ -189,6 +195,15 @@ function worldTriangles(geometry: BufferGeometry, world: Matrix4): Float64Array 
   return out;
 }
 
+/** How far either side of an upright face its inside is looked for, and how narrow across vertical lines an upright face is, in its geometry's frame. */
+const BEHIND = 1e-4;
+
+/** Whether the face at `a`, `b`, `c` stands upright: lines along `vertical`, a unit direction in its frame, see it less than BEHIND wide. */
+function upright(a: Vector3, b: Vector3, c: Vector3, vertical: Vector3): boolean {
+  const twice = new Vector3().subVectors(b, a).cross(new Vector3().subVectors(c, a)).dot(vertical);
+  return Math.abs(twice) < BEHIND * Math.max(a.distanceTo(b), b.distanceTo(c), c.distanceTo(a));
+}
+
 /** Whether some face of `geometry` crosses lines along `vertical`, a unit direction in its frame: a face that does not stand upright. */
 function faceAcross(geometry: BufferGeometry, vertical: Vector3): boolean {
   const position = geometry.getAttribute('position');
@@ -197,16 +212,12 @@ function faceAcross(geometry: BufferGeometry, vertical: Vector3): boolean {
   for (let k = 0; k + 2 < (index?.count ?? position.count); k += 3) {
     const corner = (j: number): number => (index === null ? j : index.getX(j));
     a.fromBufferAttribute(position, corner(k));
-    b.fromBufferAttribute(position, corner(k + 1)).sub(a);
-    c.fromBufferAttribute(position, corner(k + 2)).sub(a);
-    b.cross(c);
-    if (Math.abs(b.dot(vertical)) > 1e-6 * b.length()) return true;
+    b.fromBufferAttribute(position, corner(k + 1));
+    c.fromBufferAttribute(position, corner(k + 2));
+    if (!upright(a, b, c, vertical)) return true;
   }
   return false;
 }
-
-/** How far either side of an upright face its inside is looked for, in its geometry's frame. */
-const BEHIND = 1e-4;
 
 /**
  * The winding at `q`, in a geometry's frame, of the faces that a line along `vertical`, a unit direction, meets above it, from `reach` above it: +1 for
@@ -342,14 +353,15 @@ describe('the pieces the walk and the section cut read', () => {
         c.fromBufferAttribute(position, corner(k + 2));
         n.subVectors(b, a).cross(q.subVectors(c, a));
         const length = n.length();
-        if (length < 1e-12 || Math.abs(n.dot(vertical)) > 1e-6 * length) continue;
+        if (length < 1e-12 || !upright(a, b, c, vertical)) continue;
         n.divideScalar(length);
-        // At the walk's four points of the face; a part wound inside out has its inside in front of its faces, so either side will do.
-        for (const [wa, wb, wc] of LINES) {
+        // At the face's points; a part wound inside out has its inside in front of its faces, so either side will do.
+        for (const [wa, wb, wc] of UPRIGHT_POINTS) {
           p.set(0, 0, 0).addScaledVector(a, wa).addScaledVector(b, wb).addScaledVector(c, wc);
           if ([1, -1].some((side) => windingAbove(bvh, q.copy(p).addScaledVector(n, side * BEHIND), vertical, reach) !== 0)) continue;
           if (backed(geometry, k / 3, p, n)) continue;
-          if ((bad += 1) === 1) first = `by X ${p.x.toFixed(2)}, Y ${p.y.toFixed(2)}, Z ${p.z.toFixed(2)} in its frame`;
+          const at = p.clone().applyMatrix4(shape.pieces[0]?.world ?? new Matrix4());
+          if ((bad += 1) === 1) first = `by X ${at.x.toFixed(2)}, Z ${at.z.toFixed(2)}, ${at.y.toFixed(2)} m up`;
         }
       }
       if (bad > 0) hollow.push(`${[...new Set(shape.pieces.map((pc) => `${pc.step}/${pc.material}`))].join(', ')}: ${String(bad)} points of upright faces with no inside on either side, the first ${first}`);
@@ -386,7 +398,8 @@ describe('the pieces the walk and the section cut read', () => {
       const tris = worldTriangles(shape.geometry, piece.world);
       const mirror = Math.sign(piece.world.determinant());
       // The overlaps measured on this piece, in the walked piece of the shape stretched most along its lines.
-      const stretch = shape.pieces.reduce((most, q) => (walkedSet.has(q.mesh) ? Math.max(most, q.stretch) : most), piece.stretch) / piece.stretch;
+      const tallest = shape.pieces.reduce((most, q) => (walkedSet.has(q.mesh) && q.stretch > most.stretch ? q : most), piece);
+      const stretch = tallest.stretch / piece.stretch;
       // Its faces that are not vertical, as offsets into tris.
       const faces: number[] = [];
       for (let o = 0; o < tris.length; o += 9) {
@@ -410,7 +423,7 @@ describe('the pieces the walk and the section cut read', () => {
           const wound = windingAlong(tris, p.x, p.z, mirror);
           const where = `${piece.step}/${piece.material} by X ${p.x.toFixed(2)}, Z ${p.z.toFixed(2)}`;
           if (wound.sum !== 0) unbalanced.push(`${where}: its faces looking up and looking down differ by ${String(wound.sum)}`);
-          if (wound.overlap * stretch > worst.length) worst = { length: wound.overlap * stretch, where: `${where}${stretch > 1 + 1e-9 ? `, in a piece ${stretch.toFixed(2)} times as tall` : ''}` };
+          if (wound.overlap * stretch > worst.length) worst = { length: wound.overlap * stretch, where: `${where}${tallest === piece ? '' : `, scaled ${stretch.toFixed(2)} times to ${tallest.step}/${tallest.material} piece ${String(tallest.slot)}`}` };
         }
       }
       if (bad > 0) misread.push(`${piece.step}/${piece.material} piece ${String(piece.slot)}: ${String(bad)} lines misread, the first ${first}`);

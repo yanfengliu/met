@@ -7,7 +7,7 @@
  * - it stands at t = N: its step is complete, every mesh of it drawn in full, every drawn instance one piece, and the pieces those the placements give;
  * - a standing artwork's floor, under its footprint's middle and corners, is the level its placement names, within 12 mm (no float, no sinking);
  * - a hung one has a wall behind its back, within 4 cm, at its middle and corners;
- * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides);
+ * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides, a sheet having none: `meets`);
  * - it is 1 m clear of the walking routes R1–R7 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court, R7 into the Petrie Court) beyond the walker's
  *   radius, of the Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into
  *   gallery 600 (hunt/stair.ts), of the Dendur gate's threshold and rail (roche-north/plan.ts), of the Dendur pool, and of the passages into the
@@ -28,7 +28,7 @@ import type { BuiltStep } from '../../build/timeline.js';
 import { ModelPicker } from '../../viewer/pick.js';
 import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
-import type { GroundHit } from '../../walk/collision.js';
+import type { GroundHit, LineCrossings } from '../../walk/collision.js';
 import { BODY } from '../../walk/walker.js';
 import { INNER_EAST_Z } from '../core/layout.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
@@ -164,6 +164,11 @@ beforeAll(() => {
 
 /** The world point of a piece's local unit-box point (x, z in −0.5..0.5, y in 0..1). */
 const at = (piece: DrawnPiece, x: number, y: number, z: number): Vector3 => new Vector3(x, y, z).applyMatrix4(piece.matrix);
+/** How a piece a vertical line crosses at `line` meets the stretch from `bottom` to `top` along it: crossing it, holding it inside, or not; a sheet has no inside. */
+function meets(line: LineCrossings, bottom: number, top: number): 'crosses it' | 'encloses it' | null {
+  if (line.heights.some((y) => y > bottom && y < top)) return 'crosses it';
+  return !line.sheet && line.heights.filter((y) => y < bottom).length % 2 === 1 ? 'encloses it' : null;
+}
 const boxOf = (piece: DrawnPiece): Box3 => {
   piece.geometry.computeBoundingBox();
   return (piece.geometry.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
@@ -211,6 +216,15 @@ function polygonToSegment(poly: readonly (readonly [number, number])[], a: reado
 
 const name = (a: Artwork): string => `${a.def.space} ${String(a.id)} (${entryOf(a.id).title.slice(0, 40)})`;
 const where = (m: Matrix4): string => `(${[m.elements[12], m.elements[13], m.elements[14]].map((v) => v.toFixed(3)).join(', ')})`;
+
+describe('a piece meeting an artwork along a vertical line', () => {
+  it('holds it inside between two crossings, but a sheet, which has none, does not', () => {
+    const panes: LineCrossings = { instance: 0, heights: [1, 3], normalYs: [1, 1], sheet: false };
+    expect(meets(panes, 1.5, 2), 'a solid from 1 to 3 m').toBe('encloses it');
+    expect(meets({ ...panes, sheet: true }, 1.5, 2), 'a sheet at 1 and 3 m').toBeNull();
+    expect(meets({ ...panes, sheet: true }, 0.5, 2), 'the sheet crossing it at 1 m').toBe('crosses it');
+  });
+});
 
 describe('the collection at t = N', () => {
   it('places every pick once, in its own space’s step, and builds each step in full', () => {
@@ -310,10 +324,9 @@ describe('the collection at t = N', () => {
             const v = -0.5 + (k / nz) * (1 - 0.02 / size.z) + 0.01 / size.z;
             const p = at(piece, u, 0, v);
             for (const c of world.crossings(p.x, p.z, bottom, top)) {
-              const through = c.heights.some((y) => y > bottom && y < top);
-              const within = c.heights.filter((y) => y < bottom).length % 2 === 1;
-              if (through || within) {
-                problems.push(`${name(art)}, its ${piece.role} at (${p.x.toFixed(2)}, ${p.z.toFixed(2)}), ${bottom.toFixed(2)}..${top.toFixed(2)}: ${owners[c.instance] ?? '?'} ${through ? 'crosses it' : 'encloses it'} (${c.heights.map((y) => y.toFixed(2)).join(', ')})`);
+              const how = meets(c, bottom, top);
+              if (how !== null) {
+                problems.push(`${name(art)}, its ${piece.role} at (${p.x.toFixed(2)}, ${p.z.toFixed(2)}), ${bottom.toFixed(2)}..${top.toFixed(2)}: ${owners[c.instance] ?? '?'} ${how} (${c.heights.map((y) => y.toFixed(2)).join(', ')})`);
                 reported = true;
                 break;
               }

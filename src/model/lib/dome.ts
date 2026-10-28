@@ -181,16 +181,15 @@ export function pendentives(params: PendentiveParams): THREE.BufferGeometry {
       const angle = (side * Math.PI) / 2;
       const outward = new THREE.Vector3(Math.cos(angle), 0, -Math.sin(angle));
       const along = new THREE.Vector3(0, 1, 0).cross(outward);
-      // Two spandrels above the arch, left and right of its crown, each counter-clockwise in (along, up).
-      const half = Math.max(2, Math.round(across / 2));
+      // Two spandrels above the arch, left and right of its crown, each counter-clockwise in (along, up). Their arch runs through the points where the
+      // curved faces' first row meets this plane (at tan θ of the way out, for that row's angles θ round the bay's axis), so the two share their edges.
+      const arch = Array.from({ length: across / 2 + 1 }, (_, k): [number, number] => {
+        const t = Math.tan((Math.PI / 2) * (k / across));
+        return [s * t, s * Math.sqrt(Math.max(0, 1 - t * t))];
+      });
       for (const sign of [-1, 1]) {
-        const outline: [number, number][] = [];
-        for (let i = 0; i <= half; i++) {
-          const a = sign < 0 ? Math.PI - (Math.PI / 2) * (i / half) : Math.PI / 2 - (Math.PI / 2) * (i / half);
-          outline.push([s * Math.cos(a), s * Math.sin(a)]);
-        }
-        if (sign < 0) outline.push([-s, s]);
-        else outline.push([s, s]);
+        const outline: [number, number][] = sign < 0 ? [...arch].reverse().map(([x, y]): [number, number] => [-x, y]) : [...arch];
+        outline.push([sign * s, s]);
         b.planar(outline, [], outward.clone().multiplyScalar(s), along, new THREE.Vector3(0, 1, 0));
       }
     }
