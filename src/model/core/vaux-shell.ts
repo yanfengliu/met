@@ -195,7 +195,7 @@ export function vauxIronFrame(kit: Kit): void {
   ironStairs(kit);
 }
 
-/** A triangular gable: base ±width/2 at y = 0, apex (0, rise), from z = 0 back to −thickness. */
+/** A triangular gable, closed: base ±width/2 at y = 0, apex (0, rise), from z = 0 back to −thickness. */
 export function gablePrism(width: number, rise: number, thickness: number): BufferGeometry {
   return memo(`gable:${keyOf(width, rise, thickness)}`, () => {
     const b = new MeshBuilder();
@@ -205,6 +205,7 @@ export function gablePrism(width: number, rise: number, thickness: number): Buff
     b.polygon([v(w, 0, -thickness), v(-w, 0, -thickness), v(0, rise, -thickness)]);
     b.polygon([v(w, 0, 0), v(w, 0, -thickness), v(0, rise, -thickness), v(0, rise, 0)]);
     b.polygon([v(-w, 0, -thickness), v(-w, 0, 0), v(0, rise, 0), v(0, rise, -thickness)]);
+    b.polygon([v(-w, 0, -thickness), v(w, 0, -thickness), v(w, 0, 0), v(-w, 0, 0)]);
     return b.build();
   });
 }

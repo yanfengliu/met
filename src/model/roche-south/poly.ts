@@ -1,6 +1,7 @@
 /**
  * Plan geometry for the Roche south area: polygons in world (X, Z) metres, as the block polygons of docs/research/exterior.md section 2 give them.
- * Pure math, no three.js: signed area, edge normals, an inset that keeps chosen edges in place, a half-plane clip and point tests.
+ * Pure math, no three.js: signed area, edge normals, an inset that keeps chosen edges in place, a half-plane clip, point tests and the split of a
+ * boundary that touches itself into simple loops.
  */
 
 /** A plan point (X north, Z east), metres. */
@@ -97,6 +98,60 @@ export function distanceToEdges(points: readonly P2[], p: P2): number {
     best = Math.min(best, Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dz * t));
   }
   return best;
+}
+
+/** The point of the polygon's boundary nearest to `p`. */
+export function nearestOnEdges(points: readonly P2[], p: P2): P2 {
+  let best = Infinity;
+  let out: P2 = p;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i] ?? [0, 0];
+    const b = points[(i + 1) % points.length] ?? [0, 0];
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / (dx * dx + dz * dz)));
+    const q: P2 = [a[0] + dx * t, a[1] + dz * t];
+    const d = Math.hypot(p[0] - q[0], p[1] - q[1]);
+    if (d < best) [best, out] = [d, q];
+  }
+  return out;
+}
+
+/**
+ * A polygon whose boundary touches itself, a vertex on another edge or met twice, split there into the simple loops it bounds, each wound as the
+ * polygon is; a simple polygon comes back as its one loop, unchanged. Earcut, which triangulates the prisms' faces (./shapes.ts), drops or overlaps
+ * triangles at such a touch (the Lehman roof's top and bottom each lost a triangle). Bound: touches within `tolerance` metres; a boundary that crosses
+ * itself is not mended.
+ */
+export function simpleLoops(points: readonly P2[], tolerance = 1e-6): P2[][] {
+  const n = points.length;
+  const ring: P2[] = [];
+  points.forEach((a, i) => {
+    const b = points[(i + 1) % n] ?? a;
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const length2 = dx * dx + dz * dz;
+    ring.push(a);
+    // The other vertices on this edge, from a toward b.
+    const on: [number, P2][] = [];
+    points.forEach((p, j) => {
+      if (j === i || j === (i + 1) % n || length2 === 0) return;
+      const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / length2;
+      if (t > 0 && t < 1 && Math.hypot(a[0] + dx * t - p[0], a[1] + dz * t - p[1]) <= tolerance) on.push([t, p]);
+    });
+    for (const [, p] of on.sort((u, v) => u[0] - v[0])) ring.push(p);
+  });
+  // Walk the boundary; on meeting a vertex already passed, the way round since then is a loop of its own, and the walk goes on from that vertex.
+  const loops: P2[][] = [];
+  const path: P2[] = [];
+  for (const p of ring) {
+    const k = path.findIndex((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) <= tolerance);
+    if (k < 0) path.push(p);
+    else loops.push(path.splice(k));
+    if (k >= 0) path.push(p);
+  }
+  loops.push(path);
+  return loops.filter((loop) => loop.length >= 3 && Math.abs(signedArea2(loop)) > tolerance * tolerance);
 }
 
 /** Whether a point lies inside a polygon or within `tolerance` metres of it. */

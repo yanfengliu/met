@@ -6,19 +6,19 @@
 import { Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
-import { MeshBuilder } from '../lib/index.js';
+import { MeshBuilder, sheet } from '../lib/index.js';
 
-/** A 1 × 1 m quad in XZ, centred on the origin, facing +Y. */
+/** A 1 × 1 m quad in XZ, centred on the origin, facing +Y: a sheet laid on a surface (paving, a gutter, paint; ../lib/sheet.ts). */
 export const UNIT_TILE: BufferGeometry = (() => {
   const b = new MeshBuilder();
   b.polygon([new Vector3(-0.5, 0, 0.5), new Vector3(0.5, 0, 0.5), new Vector3(0.5, 0, -0.5), new Vector3(-0.5, 0, -0.5)]);
-  return b.build();
+  return sheet(b.build());
 })();
 
 /** A 1 m cube hanging from its top face: x and z in ±0.5, y in [−1, 0]; scaled in y it is a slab of that thickness under its top. */
 export const UNIT_SLAB: BufferGeometry = (() => {
   const b = new MeshBuilder();
-  b.box([-0.5, -1, -0.5], [0.5, 0, 0.5], ['-y']);
+  b.box([-0.5, -1, -0.5], [0.5, 0, 0.5]);
   return b.build();
 })();
 

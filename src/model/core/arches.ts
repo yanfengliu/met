@@ -294,6 +294,9 @@ export function tympanum(params: TympanumParams): BufferGeometry {
       b.polygon([new Vector3(-w0, y0, depth), new Vector3(w0, y0, depth), new Vector3(w1, y1, depth), new Vector3(-w1, y1, depth)]);
       b.polygon([new Vector3(-w0, y0, 0), new Vector3(w0, y0, 0), new Vector3(w0, y0, depth), new Vector3(-w0, y0, depth)]);
       b.polygon([new Vector3(-w1, y1, depth), new Vector3(w1, y1, depth), new Vector3(w1, y1, 0), new Vector3(-w1, y1, 0)]);
+      // Its sloping ends, which close it along vertical lines; its back lies on the panel.
+      b.polygon([new Vector3(w0, y0, 0), new Vector3(w1, y1, 0), new Vector3(w1, y1, depth), new Vector3(w0, y0, depth)]);
+      b.polygon([new Vector3(-w0, y0, depth), new Vector3(-w1, y1, depth), new Vector3(-w1, y1, 0), new Vector3(-w0, y0, 0)]);
     }
     return b.build();
   });

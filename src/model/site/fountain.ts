@@ -54,8 +54,8 @@ function buildStone(): BufferGeometry {
     [-h, h],
   ];
   b.planar(outline, [hole], new Vector3(0, FOUNTAIN_TOP, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1));
-  // Outer sides, down into the paving.
-  b.box([-h, -0.3, -h], [h, FOUNTAIN_TOP, h], ['+y', '-y']);
+  // Outer sides, down into the paving, and the underside there.
+  b.box([-h, -0.3, -h], [h, FOUNTAIN_TOP, h], ['+y']);
   // The basin's wall from the rim down to the floor, facing the centre, and the floor.
   b.grid([ring(BASIN_RADIUS, FOUNTAIN_TOP - FLOOR_DROP), ring(BASIN_RADIUS, FOUNTAIN_TOP)], { wrapU: true, flip: true });
   b.polygon(ring(BASIN_RADIUS, FOUNTAIN_TOP - FLOOR_DROP));

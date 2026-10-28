@@ -7,6 +7,7 @@
  * Bound: the planes `attach` hands out, without WebGL; what the GPU draws is checked by eye in the cut-aerial-ne and cut-top captures, and the cut colour
  * a floor view shows by tests/e2e/floors.spec.ts.
  */
+import { BoxGeometry, InstancedMesh, PlaneGeometry } from 'three';
 import type { Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
@@ -16,7 +17,8 @@ import type { StepDef } from '../build/types.js';
 import { palette } from '../model/palette.js';
 import { plaza2014Steps, siteSteps } from '../model/site/index.js';
 import { siteMaterials } from '../model/site/materials.js';
-import { cappedBySection, cutBySection, SectionCut } from './section-cut.js';
+import { sheet } from '../model/lib/sheet.js';
+import { cappedBySection, capsMesh, cutBySection, SectionCut } from './section-cut.js';
 
 const LANDSCAPE_STEPS: readonly StepDef[] = [...siteSteps, ...plaza2014Steps];
 const LANDSCAPE_IDS = new Set(LANDSCAPE_STEPS.map((s) => s.id));
@@ -86,5 +88,11 @@ describe('section cut materials', () => {
     expect(cappedBySection(palette.glass)).toBe(false);
     expect(cappedBySection(palette.limestone)).toBe(true);
     expect(cappedBySection(palette.water)).toBe(true);
+  });
+
+  it('leaves a sheet out of the cap pass whatever its material, a surface with no inside to show (src/model/lib/sheet.ts)', () => {
+    expect(capsMesh(new InstancedMesh(new BoxGeometry(), palette.limestone, 1))).toBe(true);
+    expect(capsMesh(new InstancedMesh(sheet(new PlaneGeometry()), palette.limestone, 1))).toBe(false);
+    expect(capsMesh(new InstancedMesh(new BoxGeometry(), palette.glass, 1))).toBe(false);
   });
 });

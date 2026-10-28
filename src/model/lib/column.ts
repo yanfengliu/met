@@ -69,7 +69,7 @@ export function atticBase(params: AtticBaseParams = {}): THREE.BufferGeometry {
 export function atticBaseInto(b: MeshBuilder, diameter: number, detail: Detail): void {
   const D = diameter;
   const half = (PLINTH_WIDTH / 2) * D;
-  b.box([-half, 0, -half], [half, D / 6, half], ['-y']);
+  b.box([-half, 0, -half], [half, D / 6, half]);
   const segments = byDetail(detail, [16, 32, 48]);
   const profile = atticBaseProfile(byDetail(detail, [3, 5, 7]));
   latheInto(b, { closed: true, points: profile.points.map(([r, y]) => [r * D, y * D] as const) }, { segments });
@@ -183,6 +183,20 @@ export function pedestalInto(b: MeshBuilder, width: number, depth: number, heigh
       [-hx, 0, -hz],
     ],
     { closed: true },
+  );
+  // The plinth's underside, from the profile's foot, closes it.
+  const foot = profile.points[0]?.[0] ?? 0;
+  b.planar(
+    [
+      [-hx - foot, -hz - foot],
+      [hx + foot, -hz - foot],
+      [hx + foot, hz + foot],
+      [-hx - foot, hz + foot],
+    ],
+    [],
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(0, 0, -1),
   );
   const top = profile.points.at(-1)?.[0] ?? 0;
   const ex = hx + top;

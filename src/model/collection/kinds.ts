@@ -188,7 +188,7 @@ export const slab = lazy(() => {
 export const block = lazy(() => {
   const b = new MeshBuilder();
   b.box([-0.5, 0, -0.5], [0.5, 0.9, 0.5]);
-  b.box([-0.46, 0.9, -0.46], [0.46, 1, 0.46], ['-y']);
+  b.box([-0.46, 0.9, -0.46], [0.46, 1, 0.46]);
   return b.build();
 });
 

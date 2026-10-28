@@ -153,13 +153,13 @@ export interface DentilParams {
   depth?: number;
 }
 
-/** A dentil block. Origin at its back-top centre; projects +Z, hangs −Y. */
+/** A dentil block, closed, though its back and top lie against the frieze and the soffit. Origin at its back-top centre; projects +Z, hangs −Y. */
 export function dentil(params: DentilParams = {}): THREE.BufferGeometry {
   const width = positive('dentil', 'width', params.width ?? 0.1);
   const full = { width, height: positive('dentil', 'height', params.height ?? width * 1.5), depth: positive('dentil', 'depth', params.depth ?? width) };
   return cached('dentil', full, () => {
     const b = new MeshBuilder();
-    b.box([-full.width / 2, -full.height, 0], [full.width / 2, 0, full.depth], ['-z', '+y']);
+    b.box([-full.width / 2, -full.height, 0], [full.width / 2, 0, full.depth]);
     return b.build();
   });
 }

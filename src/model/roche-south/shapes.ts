@@ -10,8 +10,8 @@
 import { Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
-import { MeshBuilder, type V2 } from '../lib/index.js';
-import { ccw, inwardNormal, type P2 } from './poly.js';
+import { MeshBuilder, sheet, type V2 } from '../lib/index.js';
+import { ccw, contains, inwardNormal, simpleLoops, type P2 } from './poly.js';
 
 export type V3 = readonly [number, number, number];
 
@@ -24,12 +24,12 @@ function unitBox(): BufferGeometry {
 function unitTriangle(): BufferGeometry {
   const b = new MeshBuilder();
   b.polygon([new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(0, 1, 0)]);
-  return b.build();
+  return sheet(b.build());
 }
 
 /** Shared by every box-like piece of the area (walls, slabs, piers, bars, steps of a stair landing). */
 export const UNIT_BOX = unitBox();
-/** Shared by every glass pane of the area. */
+/** Shared by every glass pane of the area, a sheet (../lib/sheet.ts). */
 export const UNIT_TRIANGLE = unitTriangle();
 
 const UP = new Vector3(0, 1, 0);
@@ -114,15 +114,20 @@ function sideQuads(b: MeshBuilder, loop: readonly P2[], y0: number, y1: number):
   }
 }
 
-/** A closed vertical prism over a plan outline with optional holes, from y0 to y1 (a floor slab with its voids, a roof, a court paving). */
+/**
+ * A closed vertical prism over a plan outline with optional holes, from y0 to y1 (a floor slab with its voids, a roof, a court paving). An outline that
+ * touches itself is split there into simple loops (./poly.ts `simpleLoops`), each with the holes inside it, so earcut covers its top and bottom whole.
+ */
 export function prism(outline: readonly P2[], holes: readonly (readonly P2[])[], y0: number, y1: number): BufferGeometry {
   const b = new MeshBuilder();
-  const outer = ccw(outline);
   const inner = holes.map((h) => ccw(h).reverse());
   const flip = (loop: readonly P2[]): V2[] => loop.map(([x, z]) => [x, -z] as const);
-  b.planar(flip(outer), inner.map(flip), new Vector3(0, y1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1));
-  b.planar(outer, inner, new Vector3(0, y0, 0), new Vector3(1, 0, 0), new Vector3(0, 0, 1));
-  sideQuads(b, outer, y0, y1);
+  for (const outer of simpleLoops(ccw(outline))) {
+    const within = inner.filter((h) => contains(outer, h[0] ?? [0, 0]));
+    b.planar(flip(outer), within.map(flip), new Vector3(0, y1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1));
+    b.planar(outer, within, new Vector3(0, y0, 0), new Vector3(1, 0, 0), new Vector3(0, 0, 1));
+    sideQuads(b, outer, y0, y1);
+  }
   for (const loop of inner) sideQuads(b, loop, y0, y1);
   return b.build();
 }

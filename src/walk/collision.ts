@@ -25,6 +25,8 @@ const CELL = 4;
 export const COLLISION_MARGIN = 0.05;
 /** A contact whose push is closer to vertical than this (the horizontal part of a unit push) is a floor or ceiling, not a wall, for a horizontal push. */
 const MIN_HORIZONTAL = 0.1;
+/** A line's hit with a barycentric coordinate under this lies on an edge or a corner of its triangle, where the next triangle of its surface meets it too. */
+const ON_EDGE = 1e-9;
 
 /** Whether a material blocks walking: every one unless it says `userData.solid === false` (water, foliage, glass standing in for an open door). */
 export function isSolid(material: Material | readonly Material[]): boolean {
@@ -443,8 +445,10 @@ export class CollisionWorld {
 
   /**
    * Every crossing of the vertical line through (x, z) with each solid piece whose world box reaches the span from `bottom` to `top`, over the piece's
-   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`). A line through an edge or a vertex
-   * meets the triangles there at one height, which counts once, so a closed piece is crossed an even number of times.
+   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`). A line through an edge or a corner of
+   * one surface's triangles meets each of them there, at one height and facing one way, which counts once; every other hit counts on its own, so two
+   * faces back to back (one part's top under the bottom of the part on it, in one piece) are two crossings, and a closed piece is crossed an even number
+   * of times (src/model/closure.test.ts).
    */
   crossings(x: number, z: number, bottom: number, top: number): LineCrossings[] {
     const out: LineCrossings[] = [];
@@ -457,19 +461,26 @@ export class CollisionWorld {
       // From a metre over the piece's world box down through all of it; the world direction (0, -1, 0) in its frame, as in groundBelow.
       transformPoint(e, o, tmpVector.set(x, (this.boxes[k * 6 + 4] ?? 0) + 1, z), ray.origin);
       ray.direction.set(-(e[o + 4] ?? 0), -(e[o + 5] ?? 0), -(e[o + 6] ?? 0)).normalize();
-      const found: [number, number][] = [];
+      // Each hit's height, its up-turned normal's Y, which way it faces (+1 up, −1 down) and whether it lies on an edge of its triangle.
+      const found: [number, number, number, boolean][] = [];
       for (const local of this.bvhs[k]?.raycast(ray, DoubleSide) ?? []) {
         transformPoint(this.matrices, o, local.point, point);
         const n = local.face?.normal;
         if (n === undefined) normal.set(0, 1, 0);
         else normal.set((e[o] ?? 0) * n.x + (e[o + 1] ?? 0) * n.y + (e[o + 2] ?? 0) * n.z, (e[o + 4] ?? 0) * n.x + (e[o + 5] ?? 0) * n.y + (e[o + 6] ?? 0) * n.z, (e[o + 8] ?? 0) * n.x + (e[o + 9] ?? 0) * n.y + (e[o + 10] ?? 0) * n.z).normalize();
-        found.push([point.y, Math.abs(normal.y)]);
+        const b = local.barycoord ?? undefined;
+        found.push([point.y, Math.abs(normal.y), Math.sign(normal.y), b === undefined || Math.min(b.x, b.y, b.z) < ON_EDGE]);
       }
       found.sort((a, b) => a[0] - b[0]);
       const heights: number[] = [];
       const normalYs: number[] = [];
-      for (const [y, ny] of found) {
-        if (heights.length > 0 && y - (heights[heights.length - 1] ?? 0) < 1e-6) continue;
+      // The hits kept at the height being read.
+      let level: (typeof found)[number][] = [];
+      for (const hit of found) {
+        const [y, ny, facing, edge] = hit;
+        if (level.length > 0 && y - (level[0]?.[0] ?? 0) >= 1e-6) level = [];
+        if (edge && level.some(([, , f, onEdge]) => onEdge && f === facing)) continue;
+        level.push(hit);
         heights.push(y);
         normalYs.push(ny);
       }

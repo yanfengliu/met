@@ -63,6 +63,7 @@ export {
   type ParapetCapParams,
   type ProfileSize,
 } from './profiles.js';
+export { isSheet, sheet } from './sheet.js';
 export { stairFlight, stairLanding, type StairFlight, type StairFlightParams, type StairLandingParams } from './stair.js';
 export { surround, type HeadKind, type SurroundParams } from './surround.js';
 export { lathe, sweep, type LatheOptions, type SweepOptions } from './sweep.js';

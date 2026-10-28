@@ -3,10 +3,11 @@
  *
  * The fluted surface is one grid patch per flute and per fillet, so the arrises between them stay crisp while each flute shades round.
  * The apophyge and astragal are lathed sleeves that pass a few millimetres inside the shaft surface, so they meet it in a clean intersection instead of a crack.
+ * The flutes run out before both ends, where the surface is a circle, closed by a flat disc.
  */
 import * as THREE from 'three';
 
-import type { MeshBuilder } from './builder.js';
+import { polygonNormal, type MeshBuilder } from './builder.js';
 import { byDetail, type Detail } from './params.js';
 import { ProfilePen } from './profile.js';
 import { latheInto } from './sweep.js';
@@ -117,6 +118,8 @@ function flutesInto(b: MeshBuilder, spec: ShaftSpec, y0: number): void {
   const fluteHalfWidth = (r0 * period * (1 - filletShare)) / 2;
   const across = byDetail(spec.detail, [2, 3, 5]);
   const rings = fluteRings(spec, fluteHalfWidth);
+  const foot: THREE.Vector3[] = [];
+  const head: THREE.Vector3[] = [];
   // Flute k is centred on angle k·period − π/2, so one flute faces +Z.
   for (let k = 0; k < n; k++) {
     const centre = k * period - Math.PI / 2;
@@ -142,7 +145,17 @@ function flutesInto(b: MeshBuilder, spec: ShaftSpec, y0: number): void {
     }
     b.grid(fluteRows);
     b.grid(filletRows);
+    foot.push(...(fluteRows[0] ?? []));
+    head.push(...(fluteRows.at(-1) ?? []));
   }
+  discInto(b, foot, false);
+  discInto(b, head, true);
+}
+
+/** A flat disc over a ring of points round the shaft (a flute's run-out repeats its points), facing up or down. */
+function discInto(b: MeshBuilder, ring: readonly THREE.Vector3[], up: boolean): void {
+  const points = ring.filter((p, i) => p.distanceTo(ring[(i + ring.length - 1) % ring.length] ?? p) > 1e-9);
+  b.polygon(polygonNormal(points).y > 0 === up ? points : [...points].reverse());
 }
 
 /** A point at `radius` and `angle` (radians from +X toward −Z, counter-clockwise seen from above). */

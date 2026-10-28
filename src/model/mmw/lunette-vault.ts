@@ -5,7 +5,8 @@
  *
  * Local frame: the vault's axis runs along X, centred at the origin; it springs at y = 0 from z = ±span/2; its intrados is a half ellipse of half-width span/2 and
  * rise `rise` (a stilted vault when rise > span/2). Windows stand in the side walls (z = ±span/2) at `windows` x positions, each `width` wide, its sill `sill` above the
- * springing and its round head springing at `jamb`. Only the intrados and the tunnels are built (faces look into the room); the roof covers the back.
+ * springing and its round head springing at `jamb`. The intrados and the tunnels look into the room. The back, unseen in the attic under the roof, closes
+ * the vault along vertical lines: the intrados raised BACK, but level just over the tunnels' heads where that is higher, from wall to wall.
  * The vault's hole edges and the tunnels' heads share their sample points, so the groins close without cracks.
  */
 import { Vector3 } from 'three';
@@ -26,6 +27,8 @@ export interface LunetteVaultParams {
 /** Segments over the vault's crown band; samples across each window's head (cosine-spaced, dense at the springings). */
 const CROWN_STEPS = 40;
 const HEAD_SAMPLES = 20;
+/** The vault's thickness at its crown, and over the tunnels' heads, metres. */
+const BACK = 0.3;
 
 export function lunetteVault(p: LunetteVaultParams): BufferGeometry {
   const a = p.span / 2;
@@ -105,6 +108,18 @@ export function lunetteVault(p: LunetteVaultParams): BufferGeometry {
         b.polygon(side > 0 ? quad : quad.reverse());
       }
     }
+  }
+
+  // The back, one strip from end to end per step of its section from +Z over to −Z, facing up.
+  const level = p.jamb + r + BACK;
+  const back = Array.from({ length: CROWN_STEPS + 1 }, (_, k) => {
+    const phi = (Math.PI * k) / CROWN_STEPS;
+    return [a * Math.cos(phi), Math.max(level, p.rise * Math.sin(phi) + BACK)] as const;
+  });
+  for (let k = 0; k + 1 < back.length; k += 1) {
+    const [z0, y0] = back[k] ?? [0, 0];
+    const [z1, y1] = back[k + 1] ?? [0, 0];
+    b.polygon([new Vector3(-L, y0, z0), new Vector3(L, y0, z0), new Vector3(L, y1, z1), new Vector3(-L, y1, z1)]);
   }
   return b.build();
 }

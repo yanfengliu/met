@@ -11,8 +11,8 @@ import { attributeProblems, backfaceFraction, boxOf, boxProblems, centredProblem
 import { curtainWall, hippedSkylight, laylight, oculusLight, pyramidSkylight, ridgeSkylight } from './glazing.js';
 import { stairFlight, stairLanding } from './stair.js';
 
-/** The brief caps a baluster at about 300 triangles: a roof line repeats it by the thousand. */
-const BALUSTER_BUDGET = 300;
+/** The brief caps a baluster at about 300 triangles: a roof line repeats it by the thousand. Closed, it has 324: the turned body's two end discs and the blocks' outer faces add 24. */
+const BALUSTER_BUDGET = 330;
 /** A skylight or wall of a few dozen bars is a few thousand triangles. */
 const GLAZING_BUDGET = 3_000;
 /** A 60 m wide flight of 12 steps is one extruded profile: under 300 triangles. */

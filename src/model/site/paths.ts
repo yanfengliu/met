@@ -8,7 +8,7 @@ import type { BufferGeometry } from 'three';
 
 import type { StepDef } from '../../build/types.js';
 import { SITE_MAX_X, SITE_MAX_Z, SITE_MIN_X, SITE_MIN_Z } from '../frame.js';
-import { MeshBuilder } from '../lib/index.js';
+import { MeshBuilder, sheet } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { insideFootprint } from './footprint.js';
 import type { Point } from './footprint.js';
@@ -118,7 +118,7 @@ function strip(lines: readonly Line[], width: number): BufferGeometry {
   strips(builder, lines, width);
   const geometry = builder.build();
   geometry.computeVertexNormals();
-  return geometry;
+  return sheet(geometry);
 }
 
 const IDENTITY = new Matrix4();

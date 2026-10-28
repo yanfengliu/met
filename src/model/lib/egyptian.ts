@@ -269,20 +269,26 @@ export function papyriformColumn(params: PapyriformColumnParams): THREE.BufferGe
 }
 
 /**
- * A bundle of `stems` rounded stems: one smooth strip per stem from groove to groove, so the grooves stay crisp.
- * `rings` gives each ring's height and outer radius; lobe centres sit at θ = 2πk/stems (the first on +x), grooves `depth` × radius deeper.
+ * A bundle of `stems` rounded stems: one smooth strip per stem from groove to groove, so the grooves stay crisp, closed by a flat end on its first and
+ * last rings. `rings` gives each ring's height and outer radius; lobe centres sit at θ = 2πk/stems (the first on +x), grooves `depth` × radius deeper.
  */
 function bundleInto(builder: MeshBuilder, rings: readonly (readonly [number, number])[], depth: number, stems: number, perStem: number): void {
-  for (let k = 0; k < stems; k++) {
-    const rows = rings.map(([y, radius]) =>
-      Array.from({ length: perStem + 1 }, (_, j) => {
-        const offset = j / perStem - 0.5;
-        const theta = ((2 * Math.PI) / stems) * (k + offset);
-        const r = radius * (1 - depth + depth * Math.max(0, Math.cos(Math.PI * offset)) ** 0.7);
-        return vec(r * Math.cos(theta), y, -r * Math.sin(theta));
-      }),
-    );
-    builder.grid(rows);
+  const at = (k: number, j: number, y: number, radius: number): THREE.Vector3 => {
+    const offset = j / perStem - 0.5;
+    const theta = ((2 * Math.PI) / stems) * (k + offset);
+    const r = radius * (1 - depth + depth * Math.max(0, Math.cos(Math.PI * offset)) ** 0.7);
+    return vec(r * Math.cos(theta), y, -r * Math.sin(theta));
+  };
+  for (let k = 0; k < stems; k++) builder.grid(rings.map(([y, radius]) => Array.from({ length: perStem + 1 }, (_, j) => at(k, j, y, radius))));
+  // Each end's outline runs round the lobes; earcut covers it, grooves and all.
+  for (const [ring, up] of [
+    [rings[0], false],
+    [rings.at(-1), true],
+  ] as const) {
+    if (ring === undefined) continue;
+    const [y, radius] = ring;
+    const outline = Array.from({ length: stems * perStem }, (_, i) => at(Math.floor(i / perStem), i % perStem, y, radius)).map((p) => [p.x, up ? -p.z : p.z] as const);
+    builder.planar(outline, [], vec(0, y, 0), vec(1, 0, 0), vec(0, 0, up ? -1 : 1));
   }
 }
 
@@ -297,7 +303,8 @@ function buildColumn(p: ColumnFull): THREE.BufferGeometry {
   // Base disc with a rounded top edge.
   const baseTop = PAPYRUS.baseTop * h;
   const edge = 0.25 * baseTop;
-  const base = new ProfilePen(PAPYRUS.baseRadius * d, 0)
+  const base = new ProfilePen(0, 0)
+    .to(PAPYRUS.baseRadius * d, 0)
     .to(PAPYRUS.baseRadius * d, baseTop - edge)
     .quarter(-edge, edge, true, segments)
     .to(0, baseTop)
@@ -321,9 +328,9 @@ function buildColumn(p: ColumnFull): THREE.BufferGeometry {
   const yb1 = PAPYRUS.bandsTop * h;
   const bandStep = (yb1 - yb0) / 5;
   const bandRadius = 0.43 * d;
-  const bands = new ProfilePen(0.3 * d, yb0).to(bandRadius, yb0);
+  const bands = new ProfilePen(0, yb0).to(bandRadius, yb0);
   for (let k = 0; k < 5; k++) bands.half(0, bandStep, 0.012 * d, segments);
-  latheInto(builder, bands.to(0.3 * d, yb1).open(), { segments: around });
+  latheInto(builder, bands.to(0, yb1).open(), { segments: around });
   // Capital and abacus.
   const ya = PAPYRUS.abacusBottom * h;
   if (p.capital === 'bud') {
@@ -345,7 +352,7 @@ function buildColumn(p: ColumnFull): THREE.BufferGeometry {
     const s = (PAPYRUS.budAbacus * d) / 2;
     builder.box([-s, ya, -s], [s, h, s]);
   } else {
-    const bell = new ProfilePen(0.4 * d, yb1 - overlap);
+    const bell = new ProfilePen(0, yb1 - overlap).to(0.4 * d, yb1 - overlap);
     const rows = byDetail(p.detail, [4, 7, 12]);
     const lip = 0.012 * h;
     for (let k = 1; k <= rows; k++) {
@@ -353,9 +360,9 @@ function buildColumn(p: ColumnFull): THREE.BufferGeometry {
       bell.to(d * (0.4 + (PAPYRUS.bellRadius - 0.4) * Math.sin((Math.PI / 2) * t)), yb1 + (ya - lip - yb1) * t);
     }
     latheInto(builder, bell.to(PAPYRUS.bellRadius * d, ya).to(0, ya).open(), { segments: around });
-    // The abacus stands on the bell's flat top, so its own bottom face is left out.
+    // The abacus stands on the bell's flat top.
     const s = (PAPYRUS.bellAbacus * d) / 2;
-    builder.box([-s, ya, -s], [s, h, s], ['-y']);
+    builder.box([-s, ya, -s], [s, h, s]);
   }
   return builder.build();
 }

@@ -43,6 +43,22 @@ export function cylinder(sides: number): BufferGeometry {
   });
 }
 
+/**
+ * A unit half cylinder (radius 0.5, height 1, origin at the bottom centre of its flat back in z = 0), its round side toward +Z, with `sides` facets
+ * round the half turn, closed: a shaft standing against a face, so it does not overlap the solid behind it (the parity rule reads an overlap as outside).
+ */
+export function halfCylinder(sides: number): BufferGeometry {
+  return memo(`halfCylinder:${String(sides)}`, () => {
+    const b = new MeshBuilder();
+    const ring = (y: number): Vector3[] => Array.from({ length: sides + 1 }, (_, k) => new Vector3(0.5 * Math.cos((Math.PI * k) / sides), y, 0.5 * Math.sin((Math.PI * k) / sides)));
+    b.grid([ring(0), ring(1)], { flip: true });
+    b.polygon(ring(1).reverse());
+    b.polygon(ring(0));
+    b.polygon([new Vector3(0.5, 0, 0), new Vector3(-0.5, 0, 0), new Vector3(-0.5, 1, 0), new Vector3(0.5, 1, 0)]);
+    return b.build();
+  });
+}
+
 /** Matrix of a unit box filling the world box [x0, x1] × [y0, y1] × [z0, z1] (any corner order). */
 export function boxMatrix(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): Matrix4 {
   const sx = Math.abs(x1 - x0);

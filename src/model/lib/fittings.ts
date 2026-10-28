@@ -53,9 +53,10 @@ export function urn(params: UrnParams = {}): Urn {
   return cached(part, full, () => buildUrn(full));
 }
 
-/** The urn's lathe profile in units of its height: outside from the foot up, over the rim, down the inside of the mouth to its floor. */
+/** The urn's lathe profile in units of its height: from the axis across the foot, outside from the foot up, over the rim, down the inside of the mouth to its floor. */
 function urnProfile(segments: number): Profile {
-  const pen = new ProfilePen(0.15, URN.plinthHeight)
+  const pen = new ProfilePen(0, URN.plinthHeight)
+    .to(0.15, URN.plinthHeight)
     .to(0.15, 0.385)
     .quarter(-0.015, 0.015, true, segments)
     .to(0.115, 0.4)
@@ -101,9 +102,10 @@ function buildUrn(p: UrnFull): Urn {
   const segments = byDetail(p.detail, [1, 2, 3]);
   const stone = new MeshBuilder();
   const a = 0.18 * h;
+  const plinth = scaleProfile(plinthProfile(segments), h, h);
   sweepInto(
     stone,
-    scaleProfile(plinthProfile(segments), h, h),
+    plinth,
     [
       [-a, 0, a],
       [a, 0, a],
@@ -114,6 +116,9 @@ function buildUrn(p: UrnFull): Urn {
   );
   const top = URN.plinthHeight * h;
   stone.polygon([vec(-a, top, a), vec(a, top, a), vec(a, top, -a), vec(-a, top, -a)]);
+  // The plinth's underside, out to its foot.
+  const b = a + (plinth.points[0]?.[0] ?? 0);
+  stone.polygon([vec(-b, 0, -b), vec(b, 0, -b), vec(b, 0, b), vec(-b, 0, b)]);
   latheInto(stone, scaleProfile(urnProfile(segments), h, h), { segments: byDetail(p.detail, [12, 20, 32]) });
   if (!p.flowers) return Object.freeze({ urn: stone.build() });
 
@@ -167,9 +172,10 @@ export function lampPost(params: LampPostParams = {}): LampPost {
   return cached(part, full, () => buildLampPost(full));
 }
 
-/** Base, collar, shaft and its top ring, in units of the height, up to `shaftTop`, closed at the axis there. */
+/** Base, collar, shaft and its top ring, in units of the height, up to `shaftTop`, closed at the axis at both ends. */
 function postProfile(shaftTop: number, segments: number): Profile {
-  return new ProfilePen(LAMP.baseRadius, 0)
+  return new ProfilePen(0, 0)
+    .to(LAMP.baseRadius, 0)
     .to(LAMP.baseRadius, 0.02)
     .quarter(-0.008, 0.008, true, segments)
     .to(0.055, 0.03)

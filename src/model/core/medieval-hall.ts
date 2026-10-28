@@ -32,7 +32,7 @@ import {
 } from './constants.js';
 import { INTERIOR, NAVE_OUTER_X } from './layout.js';
 import { core } from './materials.js';
-import { FACING, addBox, cylinder, keyOf, memo, placed, runsBetween } from './shapes.js';
+import { FACING, addBox, halfCylinder, keyOf, memo, placed, runsBetween } from './shapes.js';
 import { END_DOOR, SIDE_BAY, SIDE_LINES } from './vaux-shell.js';
 
 const [AX0, , AX1] = INTERIOR.a;
@@ -56,27 +56,30 @@ export function hallFloor(kit: Kit): void {
   }
 }
 
-/** A compound pier: square core on a base, a half-column on each face to the arcade's springing and, toward the nave, a shaft to the vault. Front +Z = the nave. */
+/**
+ * A compound pier: square core on a base, a half-column on each face to the arcade's springing and, toward the nave, a half shaft to the vault. Front +Z =
+ * the nave. The shafts stand against the core's faces rather than in it, so no part of the pier overlaps another.
+ */
 function pier(): BufferGeometry {
   return memo('hallPier', () => {
     const b = new MeshBuilder();
     const h = HALL_PIER / 2;
-    b.box([-h - 0.15, 0, -h - 0.15], [h + 0.15, 0.45, h + 0.15], ['-y']);
-    b.box([-h, 0.45, -h], [h, HALL_ARCADE_SPRING, h], ['-y', '+y']);
+    b.box([-h - 0.15, 0, -h - 0.15], [h + 0.15, 0.45, h + 0.15]);
+    b.box([-h, 0.45, -h], [h, HALL_ARCADE_SPRING, h]);
     b.box([-h - 0.12, HALL_ARCADE_SPRING, -h - 0.12], [h + 0.12, HALL_ARCADE_SPRING + 0.35, h + 0.12]);
-    const shaft = cylinder(12);
-    const put = (x: number, z: number, r: number, y0: number, y1: number): void => {
-      b.append(shaft, placed(x, y0, z, 0, [2 * r, y1 - y0, 2 * r]));
+    const shaft = halfCylinder(6);
+    const put = (x: number, z: number, yaw: number, r: number, y0: number, y1: number): void => {
+      b.append(shaft, placed(x, y0, z, yaw, [2 * r, y1 - y0, 2 * r]));
     };
-    for (const [x, z] of [
-      [h, 0],
-      [-h, 0],
-      [0, -h],
+    for (const [x, z, yaw] of [
+      [h, 0, FACING.north],
+      [-h, 0, FACING.south],
+      [0, -h, FACING.west],
     ] as const) {
-      put(x, z, 0.22, 0.45, HALL_ARCADE_SPRING);
+      put(x, z, yaw, 0.22, 0.45, HALL_ARCADE_SPRING);
     }
     // The nave shaft rises past the arcade to carry the vault's transverse rib.
-    put(0, h, 0.28, 0.45, HALL_VAULT_SPRING_Y - L1);
+    put(0, h, FACING.east, 0.28, 0.45, HALL_VAULT_SPRING_Y - L1);
     b.box([-0.42, HALL_VAULT_SPRING_Y - L1 - 0.4, h - 0.3], [0.42, HALL_VAULT_SPRING_Y - L1, h + 0.42]);
     return b.build();
   });

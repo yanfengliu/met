@@ -23,7 +23,7 @@ import {
   STEPS_BOTTOM_Z,
   STEPS_HALF_WIDTH,
 } from '../frame.js';
-import { MeshBuilder } from '../lib/index.js';
+import { MeshBuilder, sheet } from '../lib/index.js';
 import { BLOCKS, FOOTPRINT_XS, FOOTPRINT_ZS, SLANTED_EDGES, insideOutline, side } from './footprint.js';
 import type { Point, SlantedEdge } from './footprint.js';
 import { GROUND_MAX_Z, ZONE_XS, ZONE_ZS, isGrass, terrainY, zoneAt } from './ground.js';
@@ -309,7 +309,8 @@ function buildGround(): GroundGeometry {
       wallQuad(target, p, q, Math.min(a0, b0), Math.max(a0, b0), Math.min(a1, b1), Math.max(a1, b1), facing);
     }
   }
-  return { grass: grass.build(), bare: bare.build(), curbs: curbs.build(), walls: walls.build(), cuts: cuts.build(), pad: buildPad() };
+  // The terrain and the pad are sheets, surfaces with no inside (../lib/sheet.ts); the curbs, walls and cuts are faces along vertical lines.
+  return { grass: sheet(grass.build()), bare: sheet(bare.build()), curbs: curbs.build(), walls: walls.build(), cuts: cuts.build(), pad: sheet(buildPad()) };
 }
 
 let ground: GroundGeometry | null = null;

@@ -21,33 +21,66 @@ const CURB = { x: 22.8, z0: -24.3, z1: -9.9, y: 28.0, height: 0.35 } as const;
 export const WING_ROOF_Y = EXT_PARAPET_Y - 1.4;
 export const GALLERY_ROOF_Y = 20.5;
 
+/** The lead skin's thickness over the hall roof's plaster, and the whole roof's, metres. */
+const LEAD = 0.05;
+const ROOF_DEPTH = 0.3;
+
 /**
  * A hipped roof from the eaves rectangle up to an inner flat rectangle (a frustum of four planes), open in the middle for the skylight curb:
- * the lead top and, 0.3 m under it, the plastered underside seen from the hall's upper spaces, as two geometries (two materials).
+ * the lead skin and, under it to 0.3 m below the top, the plastered slab seen from the hall's upper spaces, as two geometries (two materials), each a
+ * closed slab with its edges at the eaves and round the opening.
  */
 const hallRoof = (() => {
   let made: { top: THREE.BufferGeometry; under: THREE.BufferGeometry } | undefined;
   return (): { top: THREE.BufferGeometry; under: THREE.BufferGeometry } => {
     if (made !== undefined) return made;
-    const top = new MeshBuilder();
-    const under = new MeshBuilder();
     const e = { x0: -HALL_END_WALL_X - 0.4, x1: HALL_END_WALL_X + 0.4, z0: HALL_WEST_WALL_Z - 0.4, z1: ATTIC_BACK_Z, y: HALL_EAVES_Y };
     const t = { x0: -CURB.x, x1: CURB.x, z0: CURB.z0, z1: CURB.z1, y: CURB.y };
     const v = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z);
-    // Four sloping planes, each wound to face up and out.
-    top.polygon([v(e.x0, e.y, e.z1), v(e.x1, e.y, e.z1), v(t.x1, t.y, t.z1), v(t.x0, t.y, t.z1)]);
-    top.polygon([v(e.x1, e.y, e.z0), v(e.x0, e.y, e.z0), v(t.x0, t.y, t.z0), v(t.x1, t.y, t.z0)]);
-    top.polygon([v(e.x1, e.y, e.z1), v(e.x1, e.y, e.z0), v(t.x1, t.y, t.z0), v(t.x1, t.y, t.z1)]);
-    top.polygon([v(e.x0, e.y, e.z0), v(e.x0, e.y, e.z1), v(t.x0, t.y, t.z1), v(t.x0, t.y, t.z0)]);
-    // The underside, facing down.
-    under.polygon([v(e.x0, e.y - 0.3, e.z1), v(t.x0, t.y - 0.3, t.z1), v(t.x1, t.y - 0.3, t.z1), v(e.x1, e.y - 0.3, e.z1)]);
-    under.polygon([v(e.x1, e.y - 0.3, e.z0), v(t.x1, t.y - 0.3, t.z0), v(t.x0, t.y - 0.3, t.z0), v(e.x0, e.y - 0.3, e.z0)]);
-    under.polygon([v(e.x1, e.y - 0.3, e.z1), v(t.x1, t.y - 0.3, t.z1), v(t.x1, t.y - 0.3, t.z0), v(e.x1, e.y - 0.3, e.z0)]);
-    under.polygon([v(e.x0, e.y - 0.3, e.z0), v(t.x0, t.y - 0.3, t.z0), v(t.x0, t.y - 0.3, t.z1), v(e.x0, e.y - 0.3, e.z1)]);
-    made = { top: top.build(), under: under.build() };
+    // The eaves' and the opening's corners, each loop running round the same way.
+    const outer = [v(e.x0, e.y, e.z1), v(e.x1, e.y, e.z1), v(e.x1, e.y, e.z0), v(e.x0, e.y, e.z0)];
+    const inner = [v(t.x0, t.y, t.z1), v(t.x1, t.y, t.z1), v(t.x1, t.y, t.z0), v(t.x0, t.y, t.z0)];
+    /** The slab between `drop0` and `drop1` under the roof's top: four sloping planes over and under, each wound to face out, and its two rims. */
+    const slab = (drop0: number, drop1: number): THREE.BufferGeometry => {
+      const b = new MeshBuilder();
+      const lower = (p: THREE.Vector3, drop: number): THREE.Vector3 => p.clone().setY(p.y - drop);
+      for (let k = 0; k < 4; k += 1) {
+        const [o0, o1] = [outer[k] ?? v(0, 0, 0), outer[(k + 1) % 4] ?? v(0, 0, 0)];
+        const [i0, i1] = [inner[k] ?? v(0, 0, 0), inner[(k + 1) % 4] ?? v(0, 0, 0)];
+        b.polygon([lower(o0, drop0), lower(o1, drop0), lower(i1, drop0), lower(i0, drop0)]);
+        b.polygon([lower(o0, drop1), lower(i0, drop1), lower(i1, drop1), lower(o1, drop1)]);
+        b.polygon([lower(o0, drop1), lower(o1, drop1), lower(o1, drop0), lower(o0, drop0)]);
+        b.polygon([lower(i0, drop0), lower(i1, drop0), lower(i1, drop1), lower(i0, drop1)]);
+      }
+      return b.build();
+    };
+    made = { top: slab(0, LEAD), under: slab(LEAD, ROOF_DEPTH) };
     return made;
   };
 })();
+
+/**
+ * The Grand Staircase's pitched lead roof, a closed prism on its curb: two slopes from the curb's top to the ridge, the gable ends and the underside,
+ * `width` across the ridge (X) and `length` along it (Z), from `curb` up at `pitch` degrees, as the ridge skylight whose frame it shares.
+ */
+function leadGable(width: number, length: number, pitch: number, curb: number): THREE.BufferGeometry {
+  const key = [width, length, pitch, curb].join('|');
+  const known = gables.get(key);
+  if (known !== undefined) return known;
+  const b = new MeshBuilder();
+  const [hx, hz] = [width / 2, length / 2];
+  const top = curb + hx * Math.tan((pitch * Math.PI) / 180);
+  const v = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z);
+  b.polygon([v(hx, curb, hz), v(hx, curb, -hz), v(0, top, -hz), v(0, top, hz)]);
+  b.polygon([v(-hx, curb, -hz), v(-hx, curb, hz), v(0, top, hz), v(0, top, -hz)]);
+  b.polygon([v(-hx, curb, hz), v(hx, curb, hz), v(0, top, hz)]);
+  b.polygon([v(hx, curb, -hz), v(-hx, curb, -hz), v(0, top, -hz)]);
+  b.polygon([v(-hx, curb, -hz), v(hx, curb, -hz), v(hx, curb, hz), v(-hx, curb, hz)]);
+  const made = b.build();
+  gables.set(key, made);
+  return made;
+}
+const gables = new Map<string, THREE.BufferGeometry>();
 
 export const roofSteps: readonly StepDef[] = [
   {
@@ -75,7 +108,7 @@ export const roofSteps: readonly StepDef[] = [
       const stair = ridgeSkylight({ width: 2 * STAIR_HALL_OUTER_X + 0.4, length, pitch: 28, curbHeight: 0.3, bays: 8 });
       const at0 = at(0, STAIR_WALL_TOP_Y, HALL_WEST_WALL_Z - length / 2);
       kit.add(stair.frame, palette.roofLead, at0, 1);
-      kit.add(stair.glass, palette.roofLead, at0, 1);
+      kit.add(leadGable(2 * STAIR_HALL_OUTER_X + 0.4, length, 28, 0.3), palette.roofLead, at0, 1);
       // The wings' glazed hip skylights (R1).
       const wing = hippedSkylight({ width: 10, length: 24, pitch: 30, curbHeight: 0.5, bays: 8 });
       for (const s of [-1, 1]) {

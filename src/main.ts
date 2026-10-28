@@ -35,7 +35,7 @@ import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from 
 import type { CameraPose } from './viewer/presets.js';
 import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
 import { RendererError } from './viewer/renderer-error.js';
-import { cappedBySection } from './viewer/section-cut.js';
+import { capsMesh } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
 import { pointerRay } from './viewer/zoom.js';
 
@@ -93,14 +93,14 @@ function boot(): void {
   app.appendChild(viewport);
   document.body.appendChild(app);
 
-  // The section cut's cap pass leaves out transparent meshes and those whose material the cut does not clip (src/viewer/section-cut.ts); of the
-  // others it draws the pieces the cut passes through (src/viewer/cap-pass.ts).
+  // The section cut's cap pass leaves out transparent meshes, those whose material the cut does not clip and sheets (src/viewer/section-cut.ts
+  // `capsMesh`); of the others, every one a closed solid, it draws the pieces the cut passes through (src/viewer/cap-pass.ts).
   const meshes = timeline.steps.flatMap((s) => s.meshes);
-  const capped = meshes.filter((m) => Array.isArray(m.material) || cappedBySection(m.material));
+  const capped = meshes.filter(capsMesh);
   // The door layer (src/viewer/doors.ts): once a door's step is complete, stand-ins turned about their hinges draw its leaves in place of the timeline's
   // closed ones, which it hides by their layer mask; the cap pass and the picker take the stand-ins too.
   const doors = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, query.doors ?? 'closed');
-  capped.push(...doors.meshes.filter((m) => !Array.isArray(m.material) && cappedBySection(m.material)));
+  capped.push(...doors.meshes.filter((m) => !Array.isArray(m.material) && capsMesh(m)));
   const viewer = new Viewer(viewport, { root: timeline.root, bounds: timeline.bounds, casterBounds: timeline.casterBounds, materials: timeline.materials, capped });
   viewer.scene.add(doors.root);
   const rig = viewer.rig;

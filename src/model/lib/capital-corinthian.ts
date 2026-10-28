@@ -261,6 +261,9 @@ function flatInto(b: MeshBuilder, spec: CorinthianSpec): void {
   b.grid(frontRows, { flat: true });
   b.grid(rightRows, { flat: true });
   b.grid(leftRows, { flat: true });
+  // Its underside on the shaft's top and its top under the abacus close it.
+  b.polygon([new THREE.Vector3(-side(0), 0, 0), new THREE.Vector3(side(0), 0, 0), new THREE.Vector3(side(0), 0, front(0)), new THREE.Vector3(-side(0), 0, front(0))]);
+  b.polygon([new THREE.Vector3(-side(z.yAb), z.yAb, front(z.yAb)), new THREE.Vector3(side(z.yAb), z.yAb, front(z.yAb)), new THREE.Vector3(side(z.yAb), z.yAb, 0), new THREE.Vector3(-side(z.yAb), z.yAb, 0)]);
   const planar = (x0: number): SurfaceMap => (s, y, o) => new THREE.Vector3(x0 + s, y, front(y) + o);
   const corner = (sign: number): SurfaceMap => {
     const n = new THREE.Vector3(sign, 0, 1).normalize();

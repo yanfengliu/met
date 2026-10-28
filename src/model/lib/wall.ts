@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three';
 
-import { MeshBuilder, type V2 } from './builder.js';
+import { MeshBuilder, polygonNormal, type V2 } from './builder.js';
 import { cached } from './cache.js';
 import { byDetail, checkDetail, nonNegative, oneOf, positive, require, type Detail } from './params.js';
 import { sweepInto } from './sweep.js';
@@ -167,6 +167,39 @@ function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[]):
   return out;
 }
 
+/**
+ * Where a channel from `lo` to `hi`, `depth` deep, runs into an opening's head, sill or arch, the reveal's front strip borders the channel, not stone:
+ * a face back to back with it there, facing the channel, closes the stone along vertical lines (docs/design/spec.md, Walk mode: When the build moves). Its
+ * vertical sides, the jambs, are crossed by no vertical line and are left alone; so is a head or sill on the channel's edge, which its floor or ceiling meets.
+ */
+function channelSidesInto(b: MeshBuilder, hole: Hole, lo: number, hi: number, depth: number): void {
+  const pts = hole.outline;
+  const cx = pts.reduce((sum, p) => sum + p[0], 0) / pts.length;
+  const cy = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
+  // A door's sill, its outline's first side, has no reveal.
+  for (let k = hole.minY <= 1e-9 ? 1 : 0; k < pts.length; k++) {
+    const [xa, ya] = pts[k] ?? [0, 0];
+    const [xc, yc] = pts[(k + 1) % pts.length] ?? [0, 0];
+    if (Math.abs(xc - xa) < 1e-9) continue;
+    let t0 = 0;
+    let t1 = 1;
+    if (Math.abs(yc - ya) < 1e-12) {
+      if (!(ya > lo + 1e-9 && ya < hi - 1e-9)) continue;
+    } else {
+      const ta = (lo - ya) / (yc - ya);
+      const tb = (hi - ya) / (yc - ya);
+      t0 = Math.max(0, Math.min(ta, tb));
+      t1 = Math.min(1, Math.max(ta, tb));
+      if (t1 - t0 < 1e-9) continue;
+    }
+    const [px, py] = [xa + (xc - xa) * t0, ya + (yc - ya) * t0];
+    const [qx, qy] = [xa + (xc - xa) * t1, ya + (yc - ya) * t1];
+    const quad = [new THREE.Vector3(px, py, 0), new THREE.Vector3(qx, qy, 0), new THREE.Vector3(qx, qy, -depth), new THREE.Vector3(px, py, -depth)];
+    const n = polygonNormal(quad);
+    b.polygon(n.x * ((px + qx) / 2 - cx) + n.y * ((py + qy) / 2 - cy) > 0 ? quad : quad.reverse());
+  }
+}
+
 function face(b: MeshBuilder, quads: readonly [V2, V2, V2, V2][], z: number, front: boolean): void {
   for (const q of quads) {
     const points = q.map(([x, y]) => new THREE.Vector3(x, y, z));
@@ -266,6 +299,7 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
       for (const [lo, hi] of intervalsAt(-W, W, j + r.joint / 2, holes)) {
         b.polygon([new THREE.Vector3(lo, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, 0), new THREE.Vector3(lo, j + r.joint / 2, 0)]);
       }
+      for (const hole of holes) channelSidesInto(b, hole, j - r.joint / 2, j + r.joint / 2, r.depth);
       // Where a channel meets an opening, close its end so it does not look into the reveal.
       for (const hole of through) {
         const lowY = j - r.joint / 2;
@@ -283,10 +317,16 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
   }
   // Back face, cut by the through openings only.
   face(b, stripsAround(-W, W, 0, H, through), -T, false);
-  // Ends and top; the foot is left open under doors.
+  // Ends, top and the foot, which is left open under doors; behind a blind one, a niche on the floor, it runs on under the wall.
   b.box([-W, 0, -T], [W, H, 0], ['+z', '-z', '-y']);
   for (const [lo, hi] of intervalsAt(-W, W, 1e-6, holes)) {
     b.polygon([new THREE.Vector3(lo, 0, -T), new THREE.Vector3(hi, 0, -T), new THREE.Vector3(hi, 0, 0), new THREE.Vector3(lo, 0, 0)]);
+  }
+  for (const hole of holes) {
+    const span = hole.minY <= 1e-9 && hole.depth < T ? spanAt(hole.outline, 1e-6) : null;
+    if (span === null) continue;
+    const [lo, hi] = span;
+    b.polygon([new THREE.Vector3(lo, 0, -T), new THREE.Vector3(hi, 0, -T), new THREE.Vector3(hi, 0, -hole.depth), new THREE.Vector3(lo, 0, -hole.depth)]);
   }
   // Reveals: each outline swept from the front plane to its depth, facing into the opening; blind niches get a back.
   // A door (an opening at the foot) has no sill face, which would lie in the floor's plane.
