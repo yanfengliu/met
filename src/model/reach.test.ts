@@ -18,8 +18,8 @@
  *   one of the artwork's aims within the walker's ±85° of pitch, is that artwork: the walking eye's own query (src/walk/look.ts `lookTarget`, so within
  *   its 6 m reach and through untagged glass only) on the page's hit query (src/viewer/pick.ts), over the timeline's pieces and the door layer's stand-ins
  *   and doorways registered as the page registers them, the doors as the fill counts them. The aims are the middle of each of its pieces' own boxes,
- *   its object's first, then five more points of the object's: a quarter and three quarters up, toward the front and either side. A preset is met when an eye stands within 1 m
- *   of its camera; a spawn or a route's end when feet stand within 0.5 m of it in plan and 0.3 m of its level.
+ *   its object's first, then five more points of the object's: a quarter and three quarters up, toward the front and either side. A preset is met
+ *   when an eye stands within 1 m of its camera; a spawn or a route's end when feet stand within 0.5 m of it in plan and 0.3 m of its level.
  * - Each space with artworks is stood in at the place of the preset its collection step frames, which stands inside it, so a space seen only through
  *   an opening from another is not passed.
  * - The fill takes up places nearest an unmet target first and stops once every target is met. Short of that it fills all it can, and each unmet target
