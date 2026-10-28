@@ -7,7 +7,7 @@
 import { CylinderGeometry, Matrix4, Quaternion, SphereGeometry, TorusGeometry, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
-import { MeshBuilder } from '../lib/index.js';
+import { MeshBuilder, sheet } from '../lib/index.js';
 
 /** A matrix from a position, Euler-free axis rotation and per-axis scale. */
 function m(x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, axis?: readonly [number, number, number], angle = 0): Matrix4 {
@@ -101,7 +101,7 @@ export function banner(): Banner {
   // (z, y) on axes (+Z, +Y) faces −X, so that copy goes on the −X side; the +X side mirrors y to face +X.
   cloth.planar(outline.map(([z, y]) => [z, y] as const), [], new Vector3(-t, 0, 0), new Vector3(0, 0, 1), new Vector3(0, 1, 0));
   cloth.planar(outline.map(([z, y]) => [z, -y] as const), [], new Vector3(t, 0, 0), new Vector3(0, 0, 1), new Vector3(0, -1, 0));
-  bannerCache = Object.freeze({ pole: pole.build(), cloth: cloth.build() });
+  bannerCache = Object.freeze({ pole: pole.build(), cloth: sheet(cloth.build()) });
   return bannerCache;
 }
 

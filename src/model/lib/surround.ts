@@ -16,6 +16,16 @@ import { openingOutline, type OpeningShape } from './wall.js';
 
 export type HeadKind = 'none' | 'cornice' | 'triangular' | 'segmental';
 
+/** A pediment's tympanum: `outline` (in the wall's plane, counter-clockwise seen from +Z) from the wall face out to z = `face`, closed, its faces looking out. */
+function tympanumInto(b: MeshBuilder, outline: readonly THREE.Vector3[], face: number): void {
+  b.polygon(outline.map((q) => q.clone().setZ(face)));
+  b.polygon([...outline].reverse().map((q) => q.clone().setZ(0)));
+  outline.forEach((q, k) => {
+    const r = outline[(k + 1) % outline.length] ?? q;
+    b.polygon([q.clone().setZ(face), q.clone().setZ(0), r.clone().setZ(0), r.clone().setZ(face)]);
+  });
+}
+
 export interface SurroundParams {
   width: number;
   /** Sill to crown of the opening, metres. */
@@ -103,7 +113,7 @@ export function surround(params: SurroundParams): THREE.BufferGeometry {
       const apex = base + Math.tan((full.pitch * Math.PI) / 180) * span;
       rakePath.push([span, base, 0], [0, apex, 0], [-span, base, 0]);
       // Tympanum, set back from the cornice face.
-      b.polygon([new THREE.Vector3(-span, base, p * 0.3), new THREE.Vector3(span, base, p * 0.3), new THREE.Vector3(0, apex, p * 0.3)]);
+      tympanumInto(b, [new THREE.Vector3(-span, base, 0), new THREE.Vector3(span, base, 0), new THREE.Vector3(0, apex, 0)], p * 0.3);
     } else {
       const rise = span * 0.32;
       const radius = (span * span + rise * rise) / (2 * rise);
@@ -114,9 +124,9 @@ export function surround(params: SurroundParams): THREE.BufferGeometry {
       for (let k = 0; k <= steps; k++) {
         const a = Math.PI / 2 - half + (2 * half * k) / steps;
         rakePath.push([radius * Math.cos(a), cy + radius * Math.sin(a), 0]);
-        tympanum.push(new THREE.Vector3(radius * Math.cos(a), cy + radius * Math.sin(a), p * 0.3));
+        tympanum.push(new THREE.Vector3(radius * Math.cos(a), cy + radius * Math.sin(a), 0));
       }
-      b.polygon(tympanum.reverse().concat([]).reverse());
+      tympanumInto(b, tympanum, p * 0.3);
     }
     // Raking cornice: running from the right eave over the top to the left, its top faces outward (right of travel).
     sweepInto(b, turned(cornice, true), rakePath, { up: [0, 0, 1], pathCreaseDeg: 10 });

@@ -310,7 +310,7 @@ function buildGround(): GroundGeometry {
     }
   }
   // The terrain and the pad are sheets, surfaces with no inside (../lib/sheet.ts); the curbs, walls and cuts are faces along vertical lines.
-  return { grass: sheet(grass.build()), bare: sheet(bare.build()), curbs: curbs.build(), walls: walls.build(), cuts: cuts.build(), pad: sheet(buildPad()) };
+  return { grass: sheet(grass.build()), bare: sheet(bare.build()), curbs: sheet(curbs.build()), walls: sheet(walls.build()), cuts: sheet(cuts.build()), pad: sheet(buildPad()) };
 }
 
 let ground: GroundGeometry | null = null;

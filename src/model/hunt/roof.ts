@@ -24,11 +24,14 @@ export const GALLERY_ROOF_Y = 20.5;
 /** The lead skin's thickness over the hall roof's plaster, and the whole roof's, metres. */
 const LEAD = 0.05;
 const ROOF_DEPTH = 0.3;
+/** The lead fascia's width at the eaves, metres. */
+const FASCIA = 0.02;
 
 /**
  * A hipped roof from the eaves rectangle up to an inner flat rectangle (a frustum of four planes), open in the middle for the skylight curb:
  * the lead skin and, under it to 0.3 m below the top, the plastered slab seen from the hall's upper spaces, as two geometries (two materials), each
- * closed along vertical lines. The lead's edge at the eaves runs the roof's whole depth, so the eaves show lead; round the opening each shows its own.
+ * closed along vertical lines. Under the skin at the eaves a lead fascia, a closed band FASCIA wide, runs the roof's depth, so the eaves show lead;
+ * round the opening each shows its own.
  */
 const hallRoof = (() => {
   let made: { top: THREE.BufferGeometry; under: THREE.BufferGeometry } | undefined;
@@ -54,7 +57,22 @@ const hallRoof = (() => {
       }
       return b.build();
     };
-    made = { top: slab(0, LEAD, ROOF_DEPTH), under: slab(LEAD, ROOF_DEPTH, null) };
+    // The fascia's inner edge, a fraction of the way up the hips that keeps its narrowest side FASCIA wide.
+    const run = Math.min(...[0, 1, 2, 3].flatMap((k) => [Math.abs((inner[k]?.x ?? 0) - (outer[k]?.x ?? 0)), Math.abs((inner[k]?.z ?? 0) - (outer[k]?.z ?? 0))]));
+    const inward = (k: number): THREE.Vector3 => (outer[k] ?? v(0, 0, 0)).clone().lerp(inner[k] ?? v(0, 0, 0), FASCIA / run);
+    const top = new MeshBuilder();
+    top.append(slab(0, LEAD, LEAD));
+    const lower = (p: THREE.Vector3, drop: number): THREE.Vector3 => p.clone().setY(p.y - drop);
+    for (let k = 0; k < 4; k += 1) {
+      const [o0, o1] = [outer[k] ?? v(0, 0, 0), outer[(k + 1) % 4] ?? v(0, 0, 0)];
+      const [n0, n1] = [inward(k), inward((k + 1) % 4)];
+      // Its top under the skin, its bottom level with the slab's, its outer face at the eaves and its inner face, each wound to face out.
+      top.polygon([lower(o0, LEAD), lower(o1, LEAD), lower(n1, LEAD), lower(n0, LEAD)]);
+      top.polygon([lower(o0, ROOF_DEPTH), lower(n0, ROOF_DEPTH), lower(n1, ROOF_DEPTH), lower(o1, ROOF_DEPTH)]);
+      top.polygon([lower(o0, ROOF_DEPTH), lower(o1, ROOF_DEPTH), lower(o1, LEAD), lower(o0, LEAD)]);
+      top.polygon([lower(n0, LEAD), lower(n1, LEAD), lower(n1, ROOF_DEPTH), lower(n0, ROOF_DEPTH)]);
+    }
+    made = { top: top.build(), under: slab(LEAD, ROOF_DEPTH, null) };
     return made;
   };
 })();

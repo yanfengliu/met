@@ -172,9 +172,9 @@ function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[], 
 }
 
 /**
- * Where a channel from `lo` to `hi`, `depth` deep, runs into an opening's head, sill or arch, the reveal's front strip borders the channel, not stone:
- * a face back to back with it there, facing the channel, closes the stone along vertical lines (docs/design/spec.md, Walk mode: When the build moves). Its
- * vertical sides, the jambs, are crossed by no vertical line and are left alone; so is a head or sill on the channel's edge, which its floor or ceiling meets.
+ * Where a channel from `lo` to `hi`, `depth` deep, runs into an opening's jamb, head, sill or arch, the reveal's front strip borders the channel, not
+ * stone: a face back to back with it there, facing the channel, closes the channel's end, so it does not look into the reveal, and the stone along
+ * vertical lines (docs/design/spec.md, Walk mode: When the build moves). A head or sill on the channel's edge, which its floor or ceiling meets, is left alone.
  */
 function channelSidesInto(b: MeshBuilder, hole: Hole, lo: number, hi: number, depth: number): void {
   const pts = hole.outline;
@@ -184,7 +184,6 @@ function channelSidesInto(b: MeshBuilder, hole: Hole, lo: number, hi: number, de
   for (let k = hole.minY <= 1e-9 ? 1 : 0; k < pts.length; k++) {
     const [xa, ya] = pts[k] ?? [0, 0];
     const [xc, yc] = pts[(k + 1) % pts.length] ?? [0, 0];
-    if (Math.abs(xc - xa) < 1e-9) continue;
     let t0 = 0;
     let t1 = 1;
     if (Math.abs(yc - ya) < 1e-12) {
@@ -304,16 +303,10 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
         b.polygon([new THREE.Vector3(lo, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, 0), new THREE.Vector3(lo, j + r.joint / 2, 0)]);
       }
       for (const hole of holes) channelSidesInto(b, hole, j - r.joint / 2, j + r.joint / 2, r.depth);
-      // Where a channel meets an opening, close its end so it does not look into the reveal.
-      for (const hole of through) {
-        const lowY = j - r.joint / 2;
-        const highY = j + r.joint / 2;
-        if (!(hole.minY < lowY && hole.maxY > highY)) continue;
-        const span = spanAt(hole.outline, j);
-        if (span === null) continue;
-        const [lo, hi] = span;
-        b.polygon([new THREE.Vector3(lo, lowY, -r.depth), new THREE.Vector3(lo, lowY, 0), new THREE.Vector3(lo, highY, 0), new THREE.Vector3(lo, highY, -r.depth)]);
-        b.polygon([new THREE.Vector3(hi, lowY, 0), new THREE.Vector3(hi, lowY, -r.depth), new THREE.Vector3(hi, highY, -r.depth), new THREE.Vector3(hi, highY, 0)]);
+      // At each end of the wall, a face back to back with the end, facing the channel, closes the channel's end as at a jamb.
+      for (const s of [-1, 1]) {
+        const quad = [new THREE.Vector3(s * W, j - r.joint / 2, 0), new THREE.Vector3(s * W, j + r.joint / 2, 0), new THREE.Vector3(s * W, j + r.joint / 2, -r.depth), new THREE.Vector3(s * W, j - r.joint / 2, -r.depth)];
+        b.polygon(s > 0 ? quad : quad.reverse());
       }
       y0 = j + r.joint / 2;
     }

@@ -7,7 +7,7 @@
 import { Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
-import { MeshBuilder } from '../lib/index.js';
+import { MeshBuilder, sheet } from '../lib/index.js';
 import type { V2 } from '../lib/index.js';
 import { keyOf, memo } from './shapes.js';
 
@@ -316,7 +316,7 @@ export function tympanum(params: TympanumParams): BufferGeometry {
     const arc = headPoints(params.head, 0, 0, params.span, rise, 0, 24);
     if (params.part === 'panel') {
       b.planar(arc, [], new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
-      return b.build();
+      return sheet(b.build());
     }
     const halfAt = (y: number): number => {
       let best = 0;

@@ -10,7 +10,7 @@ import { CylinderGeometry, IcosahedronGeometry, Matrix4, Quaternion, Vector3 } f
 import type { BufferGeometry } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
-import { hippedSkylight, MeshBuilder } from '../lib/index.js';
+import { hippedSkylight, MeshBuilder, sheet } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { END_ROOF_Y, LEVEL_2_NORTH, SLAB } from './dims.js';
 import { mmwMaterials } from './materials.js';
@@ -73,6 +73,11 @@ function moonGatePanel(): BufferGeometry {
     // Wound so the reveal faces the opening's centre.
     b.polygon([new Vector3(q[0], q[1], t), new Vector3(q[0], q[1], -t), new Vector3(p[0], p[1], -t), new Vector3(p[0], p[1], t)]);
   }
+  // Its foot, top and ends, each looking out, so the panel is closed and a vertical line reads its inside round the opening.
+  b.polygon([new Vector3(-w, 0, t), new Vector3(-w, 0, -t), new Vector3(w, 0, -t), new Vector3(w, 0, t)]);
+  b.polygon([new Vector3(-w, h, t), new Vector3(w, h, t), new Vector3(w, h, -t), new Vector3(-w, h, -t)]);
+  b.polygon([new Vector3(w, 0, t), new Vector3(w, 0, -t), new Vector3(w, h, -t), new Vector3(w, h, t)]);
+  b.polygon([new Vector3(-w, 0, -t), new Vector3(-w, 0, t), new Vector3(-w, h, t), new Vector3(-w, h, -t)]);
   gateCache = b.build();
   return gateCache;
 }
@@ -94,7 +99,7 @@ function gateRing(): BufferGeometry {
     inner.push([r0 * Math.cos(a), r0 + 0.05 + r0 * Math.sin(a)]);
   }
   b.planar(outer, [inner.slice().reverse()], new Vector3(0, 0, 0.16), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
-  ringCache = b.build();
+  ringCache = sheet(b.build());
   return ringCache;
 }
 

@@ -17,6 +17,7 @@ import { ExtendedTriangle } from 'three-mesh-bvh';
 import type { MeshBVH } from 'three-mesh-bvh';
 
 import type { BuiltStep } from '../build/timeline.js';
+import { isSheet } from '../model/lib/sheet.js';
 import type { GeometryBvhs } from './bvh-cache.js';
 
 /** Grid cell size over X and Z, in metres. */
@@ -51,11 +52,13 @@ export function instancesBefore(steps: readonly BuiltStep[], complete: number, l
   return collisionMeshes(steps, complete, leaveOut).reduce((sum, mesh) => sum + mesh.count, 0);
 }
 
-/** Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and its up-turned normal's Y. */
+/** Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and up-turned normal's Y, and whether it is a sheet. */
 export interface LineCrossings {
   readonly instance: number;
   readonly heights: readonly number[];
   readonly normalYs: readonly number[];
+  /** Its builder declared it a sheet (src/model/lib/sheet.ts): a surface with no inside, whatever its crossings. */
+  readonly sheet: boolean;
 }
 
 export interface CollisionStats {
@@ -101,10 +104,11 @@ function transformBox(e: Float64Array, o: number, minX: number, minY: number, mi
 
 export class CollisionWorld {
   private n = 0;
-  /** Per instance: its world matrix, the inverse, its world box (min xyz, max xyz) and its geometry's BVH. */
+  /** Per instance: its world matrix, the inverse, its world box (min xyz, max xyz), its geometry's BVH and whether it is a sheet (1). */
   private matrices = new Float64Array(0);
   private inverses = new Float64Array(0);
   private boxes = new Float64Array(0);
+  private sheets = new Uint8Array(0);
   private bvhs: MeshBVH[] = [];
   private x0 = 0;
   private z0 = 0;
@@ -171,6 +175,7 @@ export class CollisionWorld {
     this.matrices = new Float64Array(n * 16);
     this.inverses = new Float64Array(n * 16);
     this.boxes = new Float64Array(n * 6);
+    this.sheets = new Uint8Array(n);
     this.bvhs = [];
     this.stamps = new Uint32Array(n);
     this.visit = 0;
@@ -187,6 +192,7 @@ export class CollisionWorld {
       const bvh = this.cache.get(geometry);
       const perInstance = (geometry.index === null ? geometry.getAttribute('position').count : geometry.index.count) / 3;
       const source = mesh.instanceMatrix.array;
+      this.sheets.fill(isSheet(geometry) ? 1 : 0, k, k + mesh.count);
       for (let i = 0; i < mesh.count; i += 1, k += 1) {
         tmpMatrix.fromArray(source, i * 16);
         this.matrices.set(tmpMatrix.elements, k * 16);
@@ -219,6 +225,7 @@ export class CollisionWorld {
     this.matrices = new Float64Array(n * 16);
     this.inverses = new Float64Array(n * 16);
     this.boxes = new Float64Array(n * 6);
+    this.sheets = new Uint8Array(n);
     this.bvhs = geometries.map((g) => this.cache.get(g));
     this.local = geometries.map((g) => {
       if (g.boundingBox === null) g.computeBoundingBox();
@@ -445,10 +452,11 @@ export class CollisionWorld {
 
   /**
    * Every crossing of the vertical line through (x, z) with each solid piece whose world box reaches the span from `bottom` to `top`, over the piece's
-   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`). A line through an edge or a corner of
-   * one surface's triangles meets each of them there, at one height and facing one way, which counts once; every other hit counts on its own, so two
-   * faces back to back (one part's top under the bottom of the part on it, in one piece) are two crossings, and a closed piece is crossed an even number
-   * of times (src/model/closure.test.ts).
+   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`). Hits at one height that lie on edges of
+   * their triangles and face one way count once, as a line through an edge or a corner of one surface's triangles meets them; every other hit counts on
+   * its own, so two faces back to back (one part's top under the bottom of the part on it) are two crossings, and a closed piece is crossed an even
+   * number of times (src/model/closure.test.ts). Bound: a line exactly along edges that faces of two overlapping parts in one plane both have reads them
+   * once there (src/walk/crossings.test.ts).
    */
   crossings(x: number, z: number, bottom: number, top: number): LineCrossings[] {
     const out: LineCrossings[] = [];
@@ -484,7 +492,7 @@ export class CollisionWorld {
         heights.push(y);
         normalYs.push(ny);
       }
-      if (heights.length > 0) out.push({ instance: k, heights, normalYs });
+      if (heights.length > 0) out.push({ instance: k, heights, normalYs, sheet: this.sheets[k] === 1 });
     }
     return out;
   }

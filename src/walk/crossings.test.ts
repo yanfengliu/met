@@ -2,10 +2,12 @@
  * Where a vertical line crosses a piece (src/walk/collision.ts `crossings`), which the walk's settle reads by parity (docs/design/spec.md, Walk mode:
  * When the build moves), on fixtures built through the page's collision path: one surface met through an edge or a corner of its triangles counts once,
  * two faces back to back in one piece count twice, and so do a face looking up and one looking down meeting at the line, so a closed piece is crossed an
- * even number of times; and a walker that a piece of two parts is built through is found inside the upper part. Two pins: two overlapping parts whose
- * faces share planes are crossed at each, so their overlap reads as outside, and a walker in it is found by their tops where they are shorter than it
- * and missed wholly inside a taller one (the bound src/model/closure.test.ts keeps on the model); and a rusticated wall whose window's sill lies on a
- * channel's floor and head on a channel's ceiling lays one face at each, not two.
+ * even number of times; a walker that a piece of two parts is built through is found inside the upper part; and a declared sheet has no inside even
+ * where its panes overlap, as a hipped skylight's do over a hip, so one built through a walker leaves it be, which the same panes undeclared do not.
+ * Two pins: two overlapping parts whose faces share planes are crossed at each, so their overlap reads as outside, a walker in it is found by their
+ * tops where they are shorter than it and missed wholly inside a taller one (the bound src/model/closure.test.ts keeps on the model), and a line along
+ * edges both parts have in one of those planes reads them once (the crossing rule's bound, src/walk/collision.ts); and a rusticated
+ * wall whose window's sill lies on a channel's floor and head on a channel's ceiling lays one face at each, not two.
  * Bound: fixtures only; src/model/closure.test.ts checks that every piece of the model is closed along vertical lines.
  */
 import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
@@ -15,6 +17,8 @@ import { CHAPTERS } from '../build/chapters.js';
 import { Timeline } from '../build/timeline.js';
 import type { StepDef } from '../build/types.js';
 import { MeshBuilder } from '../model/lib/builder.js';
+import { hippedSkylight } from '../model/lib/glazing.js';
+import { sheet } from '../model/lib/sheet.js';
 import { wall } from '../model/lib/wall.js';
 import { GeometryBvhs } from './bvh-cache.js';
 import { CollisionWorld, collisionMeshes, instancesBefore } from './collision.js';
@@ -140,6 +144,45 @@ describe('where a vertical line crosses a piece', () => {
     expect(walker.settle(instancesBefore(timeline.steps, 1)), 'the sheet at 1 m crosses its body, but has no inside to hold it').toBe('kept');
   });
 
+  it('reads no inside in a declared sheet, even where its panes overlap, so one built through a walker leaves it be; undeclared, the walker is inside', () => {
+    // Two panes, the upper 2 cm over the lower; and the library's hipped skylight, whose panes, each set back along its own normal, overlap over a hip.
+    const panes = new MeshBuilder();
+    face(panes, 1, 2, true);
+    face(panes, 1.02, 2, true);
+    const skylight = hippedSkylight({ width: 4, length: 6 }).glass;
+    // Across the hip from (2, 3) to the ridge's end at (0, 1), which passes X 1 at Z 2.
+    const scan = world([step('skylight', skylight)]);
+    const hip = Array.from({ length: 200 }, (_, k) => 1.8 + k * 0.002).find((z) => scan.crossings(1, z, -10, 10).some((p) => p.heights.length === 2));
+    expect(hip, 'a line across the hip through two of its panes').toBeDefined();
+    for (const [what, geometry, x, z] of [
+      ['two panes', panes.build(), 0.3, -0.4],
+      ['a hipped skylight', skylight, 1, hip ?? 0],
+    ] as const) {
+      for (const declared of [true, false]) {
+        const g = geometry.clone();
+        g.userData = {};
+        if (declared) sheet(g);
+        const floor = new MeshBuilder();
+        floor.box([-20, -0.2, -20], [20, 0, 20]);
+        const timeline = new Timeline([step('floor', floor.build()), step('panes', g)]);
+        const w = new CollisionWorld(new GeometryBvhs());
+        timeline.evaluate(1);
+        w.build(collisionMeshes(timeline.steps, 1));
+        const walker = new Walker(w, -1);
+        walker.place(x, 0, z, 0);
+        timeline.evaluate(2);
+        w.build(collisionMeshes(timeline.steps, 2));
+        const from = instancesBefore(timeline.steps, 1);
+        const line = w.crossings(x, z, -10, 10).find((p) => p.instance >= from);
+        expect(line?.heights.length, `${what}: crossings on the walker's axis`).toBe(2);
+        expect(line?.sheet, `${what}: ${declared ? '' : 'not '}a sheet`).toBe(declared);
+        const settled = walker.settle(from);
+        if (declared) expect(settled, `${what}, a sheet: no inside`).toBe('kept');
+        else expect(settled, `${what}, no sheet: inside between its two crossings`).not.toBe('kept');
+      }
+    }
+  });
+
   it('counts the faces two overlapping parts share planes with each, so their overlap reads as outside (the bound the closure gate measures)', () => {
     const b = new MeshBuilder();
     b.box([-2, 0, -2], [2, 3, 2]);
@@ -147,6 +190,8 @@ describe('where a vertical line crosses a piece', () => {
     const w = world([step('overlap', b.build())]);
     expect(heightsAt(w, 0.3, 0.1), 'inside both parts').toEqual([0, 0, 3, 3]);
     expect(heightsAt(w, -1.5, -1.5), 'inside one').toEqual([0, 3]);
+    // The bound: along both parts' bottom diagonals, which cross there in the plane the parts share, hits at one height merge across the parts.
+    expect(heightsAt(w, 0.5, 0.5), "along both bottoms' diagonals").toEqual([0, 3, 3]);
   });
 
   it('finds a walker that two overlapping parts shorter than it are built through, by their tops, and misses one wholly inside a taller overlap', () => {
