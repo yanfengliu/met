@@ -45,16 +45,21 @@ export function cylinder(sides: number): BufferGeometry {
 
 /**
  * A unit half cylinder (radius 0.5, height 1, origin at the bottom centre of its flat back in z = 0), its round side toward +Z, with `sides` facets
- * round the half turn, closed: a shaft standing against a face, so it does not overlap the solid behind it (the parity rule reads an overlap as outside).
+ * round the half turn: a shaft standing against a face, so it does not overlap the solid behind it (the parity rule reads an overlap as outside). Its top
+ * and bottom close it along vertical lines; its flat back, which lies on the face it stands against and is crossed by no vertical line, is left out.
  */
 export function halfCylinder(sides: number): BufferGeometry {
   return memo(`halfCylinder:${String(sides)}`, () => {
     const b = new MeshBuilder();
     const ring = (y: number): Vector3[] => Array.from({ length: sides + 1 }, (_, k) => new Vector3(0.5 * Math.cos((Math.PI * k) / sides), y, 0.5 * Math.sin((Math.PI * k) / sides)));
-    b.grid([ring(0), ring(1)], { flip: true });
+    // The round side's normals point straight out, as `cylinder`'s do, so its facets shade alike up to its edges.
+    for (let k = 0; k < sides; k++) {
+      const [p, q] = [ring(0)[k] ?? new Vector3(), ring(0)[k + 1] ?? new Vector3()];
+      const vertex = (v: Vector3, y: number): number => b.vertex(v.x, y, v.z, v.x, 0, v.z);
+      b.quad(vertex(p, 0), vertex(p, 1), vertex(q, 1), vertex(q, 0));
+    }
     b.polygon(ring(1).reverse());
     b.polygon(ring(0));
-    b.polygon([new Vector3(0.5, 0, 0), new Vector3(-0.5, 0, 0), new Vector3(-0.5, 1, 0), new Vector3(0.5, 1, 0)]);
     return b.build();
   });
 }

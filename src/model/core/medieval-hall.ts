@@ -32,7 +32,7 @@ import {
 } from './constants.js';
 import { INTERIOR, NAVE_OUTER_X } from './layout.js';
 import { core } from './materials.js';
-import { FACING, addBox, halfCylinder, keyOf, memo, placed, runsBetween } from './shapes.js';
+import { FACING, addBox, cylinder, halfCylinder, keyOf, memo, placed, runsBetween } from './shapes.js';
 import { END_DOOR, SIDE_BAY, SIDE_LINES } from './vaux-shell.js';
 
 const [AX0, , AX1] = INTERIOR.a;
@@ -57,8 +57,9 @@ export function hallFloor(kit: Kit): void {
 }
 
 /**
- * A compound pier: square core on a base, a half-column on each face to the arcade's springing and, toward the nave, a half shaft to the vault. Front +Z =
- * the nave. The shafts stand against the core's faces rather than in it, so no part of the pier overlaps another.
+ * A compound pier: square core on a base, a half-column on each face to the arcade's springing and, toward the nave, a shaft to the vault. Front +Z = the
+ * nave. Against the core the shafts are half columns rather than columns through it, which the parity rule would read as outside where they overlap; the
+ * nave shaft rises whole from the springing, reaching into the nave wall set back behind the pier's face.
  */
 function pier(): BufferGeometry {
   return memo('hallPier', () => {
@@ -79,7 +80,8 @@ function pier(): BufferGeometry {
       put(x, z, yaw, 0.22, 0.45, HALL_ARCADE_SPRING);
     }
     // The nave shaft rises past the arcade to carry the vault's transverse rib.
-    put(0, h, FACING.east, 0.28, 0.45, HALL_VAULT_SPRING_Y - L1);
+    put(0, h, FACING.east, 0.28, 0.45, HALL_ARCADE_SPRING);
+    b.append(cylinder(12), placed(0, HALL_ARCADE_SPRING, h, 0, [0.56, HALL_VAULT_SPRING_Y - L1 - HALL_ARCADE_SPRING, 0.56]));
     b.box([-0.42, HALL_VAULT_SPRING_Y - L1 - 0.4, h - 0.3], [0.42, HALL_VAULT_SPRING_Y - L1, h + 0.42]);
     return b.build();
   });

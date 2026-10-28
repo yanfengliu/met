@@ -27,8 +27,8 @@ const ROOF_DEPTH = 0.3;
 
 /**
  * A hipped roof from the eaves rectangle up to an inner flat rectangle (a frustum of four planes), open in the middle for the skylight curb:
- * the lead skin and, under it to 0.3 m below the top, the plastered slab seen from the hall's upper spaces, as two geometries (two materials), each a
- * closed slab with its edges at the eaves and round the opening.
+ * the lead skin and, under it to 0.3 m below the top, the plastered slab seen from the hall's upper spaces, as two geometries (two materials), each
+ * closed along vertical lines. The lead's edge at the eaves runs the roof's whole depth, so the eaves show lead; round the opening each shows its own.
  */
 const hallRoof = (() => {
   let made: { top: THREE.BufferGeometry; under: THREE.BufferGeometry } | undefined;
@@ -40,8 +40,8 @@ const hallRoof = (() => {
     // The eaves' and the opening's corners, each loop running round the same way.
     const outer = [v(e.x0, e.y, e.z1), v(e.x1, e.y, e.z1), v(e.x1, e.y, e.z0), v(e.x0, e.y, e.z0)];
     const inner = [v(t.x0, t.y, t.z1), v(t.x1, t.y, t.z1), v(t.x1, t.y, t.z0), v(t.x0, t.y, t.z0)];
-    /** The slab between `drop0` and `drop1` under the roof's top: four sloping planes over and under, each wound to face out, and its two rims. */
-    const slab = (drop0: number, drop1: number): THREE.BufferGeometry => {
+    /** The slab between `drop0` and `drop1` under the roof's top: four sloping planes over and under, each wound to face out, the rim round the opening, and at the eaves one down to `eaves`, or none. */
+    const slab = (drop0: number, drop1: number, eaves: number | null): THREE.BufferGeometry => {
       const b = new MeshBuilder();
       const lower = (p: THREE.Vector3, drop: number): THREE.Vector3 => p.clone().setY(p.y - drop);
       for (let k = 0; k < 4; k += 1) {
@@ -49,19 +49,24 @@ const hallRoof = (() => {
         const [i0, i1] = [inner[k] ?? v(0, 0, 0), inner[(k + 1) % 4] ?? v(0, 0, 0)];
         b.polygon([lower(o0, drop0), lower(o1, drop0), lower(i1, drop0), lower(i0, drop0)]);
         b.polygon([lower(o0, drop1), lower(i0, drop1), lower(i1, drop1), lower(o1, drop1)]);
-        b.polygon([lower(o0, drop1), lower(o1, drop1), lower(o1, drop0), lower(o0, drop0)]);
+        if (eaves !== null) b.polygon([lower(o0, eaves), lower(o1, eaves), lower(o1, drop0), lower(o0, drop0)]);
         b.polygon([lower(i0, drop0), lower(i1, drop0), lower(i1, drop1), lower(i0, drop1)]);
       }
       return b.build();
     };
-    made = { top: slab(0, LEAD), under: slab(LEAD, ROOF_DEPTH) };
+    made = { top: slab(0, LEAD, ROOF_DEPTH), under: slab(LEAD, ROOF_DEPTH, null) };
     return made;
   };
 })();
 
+/** The Grand Staircase's lead roof: each slope's depth, measured plumb, and its gable ends' thickness, metres. */
+const SLOPE_DEPTH = 0.2;
+const GABLE_END = 0.3;
+
 /**
- * The Grand Staircase's pitched lead roof, a closed prism on its curb: two slopes from the curb's top to the ridge, the gable ends and the underside,
- * `width` across the ridge (X) and `length` along it (Z), from `curb` up at `pitch` degrees, as the ridge skylight whose frame it shares.
+ * The Grand Staircase's pitched lead roof on its curb, `width` across the ridge (X) and `length` along it (Z), from `curb` up at `pitch` degrees, as the
+ * ridge skylight whose frame it shares: two slopes SLOPE_DEPTH deep from the curb's top to the ridge, closed at the ends by gables GABLE_END thick. The
+ * attic under the slopes stays open, so a cut through the roof shows its slopes and gables in section over the vault, as a real roof's would.
  */
 function leadGable(width: number, length: number, pitch: number, curb: number): THREE.BufferGeometry {
   const key = [width, length, pitch, curb].join('|');
@@ -69,13 +74,26 @@ function leadGable(width: number, length: number, pitch: number, curb: number): 
   if (known !== undefined) return known;
   const b = new MeshBuilder();
   const [hx, hz] = [width / 2, length / 2];
-  const top = curb + hx * Math.tan((pitch * Math.PI) / 180);
+  const slope = Math.tan((pitch * Math.PI) / 180);
+  const top = curb + hx * slope;
+  // The underside: the slopes SLOPE_DEPTH lower, meeting the curb's top `inset` in from the eaves; the gables' inner faces at ±`inner`.
+  const [under, inset, inner] = [top - SLOPE_DEPTH, SLOPE_DEPTH / slope, hz - GABLE_END];
   const v = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z);
+  // The outer slopes and gable triangles, facing out.
   b.polygon([v(hx, curb, hz), v(hx, curb, -hz), v(0, top, -hz), v(0, top, hz)]);
   b.polygon([v(-hx, curb, -hz), v(-hx, curb, hz), v(0, top, hz), v(0, top, -hz)]);
   b.polygon([v(-hx, curb, hz), v(hx, curb, hz), v(0, top, hz)]);
   b.polygon([v(hx, curb, -hz), v(-hx, curb, -hz), v(0, top, -hz)]);
-  b.polygon([v(-hx, curb, -hz), v(hx, curb, -hz), v(hx, curb, hz), v(-hx, curb, hz)]);
+  // On the curb: each slope's foot along the whole length, and each gable's between them, facing down.
+  b.polygon([v(hx - inset, curb, -hz), v(hx, curb, -hz), v(hx, curb, hz), v(hx - inset, curb, hz)]);
+  b.polygon([v(-hx, curb, -hz), v(-hx + inset, curb, -hz), v(-hx + inset, curb, hz), v(-hx, curb, hz)]);
+  b.polygon([v(-hx + inset, curb, inner), v(hx - inset, curb, inner), v(hx - inset, curb, hz), v(-hx + inset, curb, hz)]);
+  b.polygon([v(-hx + inset, curb, -hz), v(hx - inset, curb, -hz), v(hx - inset, curb, -inner), v(-hx + inset, curb, -inner)]);
+  // The attic between the gables: the slopes' undersides and the gables' inner faces, facing into it.
+  b.polygon([v(hx - inset, curb, -inner), v(hx - inset, curb, inner), v(0, under, inner), v(0, under, -inner)]);
+  b.polygon([v(-hx + inset, curb, inner), v(-hx + inset, curb, -inner), v(0, under, -inner), v(0, under, inner)]);
+  b.polygon([v(hx - inset, curb, inner), v(-hx + inset, curb, inner), v(0, under, inner)]);
+  b.polygon([v(-hx + inset, curb, -inner), v(hx - inset, curb, -inner), v(0, under, -inner)]);
   const made = b.build();
   gables.set(key, made);
   return made;
