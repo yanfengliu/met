@@ -2,8 +2,8 @@
  * The doors through real input (docs/design/spec.md, Doors): from the plaza, walked up the front steps by held keys and turned by drags to look at a leaf
  * of the entrance's middle doorway within 2 m, the prompt under the crosshair says "E Open"; E swings the doorway's leaves into the building, away from
  * the walker, in canvas pixels and in `window.__met.doors`; looking at an open leaf it says "E Close", and a click while the pointer is locked closes it;
- * the timeline's scrubber, moved into the doors' step and back, shows the closed leaf and then the door open again at once, and taken back before the
- * step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
+ * the timeline's scrubber, moved into the doors' step and back, draws the closed leaf and then the door open again at once (read where the render drew
+ * them, `perf.lastDrawn.doors`), and taken back before the step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
  * first frame drawn, as its render drew them, the doors set before the walker is placed and that before the first frame (the page's marks, read beside a
  * probe of the first drawn frame), and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and 390×844;
  * and with the look target on, facing into the Great Hall from the landing while the doorway opens and closes, standing and then walking to and fro
@@ -200,6 +200,9 @@ async function doorCycles(page: Page, front: number): Promise<{ from: number; to
   return { from, to, frames, drawn, unseen };
 }
 
+/** Door `id` as the last frame drew it (`perf.lastDrawn.doors`): its first leaf's angle from its stand-in's matrix, or null while the timeline's closed leaves are drawn. */
+const drawnAngle = (page: Page, id: string): Promise<number | null | undefined> => page.evaluate((door) => window.__met?.perf.lastDrawn.doors.find((d) => d.id === door)?.angle, id);
+
 /** Moves the scrubber's thumb by mouse to timeline position `t`, as a person drags it. */
 async function scrubTo(page: Page, t: number, n: number): Promise<void> {
   const box = await page.getByTestId('scrubber').boundingBox();
@@ -246,9 +249,13 @@ test.describe('the doors', () => {
     await scrubTo(page, step + 0.5, f.n);
     await page.waitForFunction((id) => window.__met?.doors.find((d) => d.id === id)?.built === false, MIDDLE);
     expect(await doorFacts(page, MIDDLE)).toMatchObject({ state: 'open', angle: 90, built: false });
+    await settle(page);
+    expect(await drawnAngle(page, MIDDLE), 'drawn: the timeline’s closed leaves, not a stand-in').toBeNull();
     await press(page, 'btn-end');
     await page.waitForFunction((id) => window.__met?.doors.find((d) => d.id === id)?.built === true, MIDDLE);
     expect(await doorFacts(page, MIDDLE), 'open again at once, no swing').toMatchObject({ state: 'open', angle: 90 });
+    await settle(page);
+    expect(await drawnAngle(page, MIDDLE), 'drawn open, by the stand-ins').toBeCloseTo(90, 1);
     await press(page, 'bar-toggle');
     // A click while the pointer is locked closes it.
     const before = await lumaGrid(page);

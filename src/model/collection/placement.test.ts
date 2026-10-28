@@ -1,7 +1,7 @@
 /**
  * The collection placed in the finished model (docs/design/spec.md, Collection): the whole sequence's Timeline at t = N, and apart from it the model
  * without the collection's steps, as a collision world (solid pieces, three-mesh-bvh) and a picker (drawn pieces). Every artwork's every piece (object,
- * plinth, vitrine, frame) is checked by its real bounds, as its step's mesh draws it at t = N: each piece kit.add was given (collectStep, its order
+ * plinth, vitrine, frame) is checked by its real bounds, as its step's mesh draws it at t = N: each piece the kit was given (collectStep, its order
  * naming its artwork) is bound to the one drawn instance of the same geometry and material role whose float32 matrix equals its own, and the checks
  * read that instance's matrix:
  * - it stands at t = N: its step is complete, every mesh of it drawn in full, every drawn instance one piece, and the pieces those the placements give;
@@ -109,7 +109,7 @@ function roleOf(material: Material | Material[], def: CollectionStepDef): ArtPie
 }
 
 /**
- * A collection step's artworks as its meshes draw them at t = N: each piece kit.add was given (collectStep; its order names its artwork) takes the
+ * A collection step's artworks as its meshes draw them at t = N: each piece the kit was given (collectStep; its order names its artwork) takes the
  * one drawn instance, not yet taken, of its geometry and role whose matrix is its own to float32. The problems name a piece no instance draws and an
  * instance that is no piece.
  */
@@ -128,7 +128,7 @@ function drawnArtworks(step: BuiltStep, def: CollectionStepDef): { readonly artw
     match.taken = true;
     byOrder.set(piece.order, [...(byOrder.get(piece.order) ?? []), { geometry: match.mesh.geometry, role, matrix: new Matrix4().fromArray(match.mesh.instanceMatrix.array, match.slot * 16), mesh: match.mesh }]);
   });
-  for (const d of drawn) if (!d.taken) problems.push(`${def.id}: instance ${String(d.slot)} of mesh ${d.mesh.name} is none of the pieces kit.add was given`);
+  for (const d of drawn) if (!d.taken) problems.push(`${def.id}: instance ${String(d.slot)} of mesh ${d.mesh.name} is none of the pieces the kit was given`);
   for (const order of byOrder.keys()) if (def.placements[order] === undefined) problems.push(`${def.id}: pieces of order ${String(order)}, which is no placement's`);
   return { artworks: def.placements.map((placement, index) => ({ def, index, id: placement.id, pieces: byOrder.get(index) ?? [] })), problems };
 }
@@ -138,7 +138,7 @@ let world: CollisionWorld;
 let picker: ModelPicker;
 /** Which step each instance of the collision world belongs to, for messages. */
 let owners: string[];
-/** Every artwork as drawn at t = N, and what binding the drawn instances to kit.add's pieces found wrong. */
+/** Every artwork as drawn at t = N, and what binding the drawn instances to the kit's pieces found wrong. */
 let ARTWORKS: readonly Artwork[] = [];
 let unbound: readonly string[] = [];
 
@@ -231,7 +231,7 @@ describe('the collection at t = N', () => {
     expect(problems).toEqual([]);
   });
 
-  it('draws at t = N exactly the pieces kit.add was given, and those are the pieces the placements and the catalogue give', () => {
+  it('draws at t = N exactly the pieces the kit was given, and those are the pieces the placements and the catalogue give', () => {
     const problems = [...unbound];
     for (const art of ARTWORKS) {
       const left = [...art.pieces];
