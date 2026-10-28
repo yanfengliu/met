@@ -108,7 +108,8 @@ function boot(): void {
   const bvhs = new GeometryBvhs();
   const picker = new ModelPicker(meshes, bvhs, viewer.env.groundY, viewer.cut, rig.camera.layers, (mesh, instance) => timeline.tagOf(mesh, instance));
   rig.pick = (ray) => picker.distance(ray);
-  picker.register(doors.meshes, (mesh, instance) => doors.tagOf(mesh, instance));
+  // The stand-ins, and the closed doors' doorways, which no camera draws, so the eye's ray finds a door between its leaves (Doors: Use).
+  picker.register(doors.pickMeshes, (mesh, instance) => doors.tagOf(mesh, instance));
   // The walking eye's look target runs the hit query (src/walk/look.ts); an orbit-view pointer can run the same query on its own ray.
   // The doors that open are solid where the door layer stands them, and swing in the walker's physics steps while walking (src/walk/door-world.ts).
   const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query), doors }, (message) => { console.warn(message); });

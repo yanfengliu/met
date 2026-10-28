@@ -8,7 +8,8 @@
  * door cannot be used, but it keeps its state, which it shows again at once when the step completes; when the timeline takes the step away (f = 0) its
  * state resets. A locked door is never hidden and never opens, whatever is asked (`doors=` included).
  * The stand-ins share the timeline's geometry and materials (so the section cut clips them as it clips the closed leaves), hold bounds over every pose
- * of their leaves, and are for the page to register with the hit query, the zoom's pick (`tagOf`) and the cap pass. A swing takes SWING_SECONDS for a
+ * of their leaves, and are for the page to register with the hit query, the zoom's pick (`tagOf`) and the cap pass; with them it registers each closed
+ * door's doorway, a box over its leaves and the gaps round them that no camera draws (./doorways.ts, `pickMeshes`). A swing takes SWING_SECONDS for a
  * full opening, eased, away from the walker; a door turned back mid-swing goes back from where it stands. Each sync says what the page draws again:
  * the frame, and the shadows too only when a door that changed has a mesh that casts one.
  * Walking, the walk's collision (src/walk/door-world.ts) holds every door's leaves as solids where they stand (`parts`, `partMatrix`: a door that opens
@@ -28,6 +29,7 @@ import type { BuiltStep, RestingPiece } from '../build/timeline.js';
 import type { PieceTag } from '../build/types.js';
 import type { SwingingPart } from '../model/lib/window.js';
 import { SWING_SECONDS, ease, hingeTurn } from './door-swing.js';
+import { Doorways } from './doorways.js';
 import type { DoorChange, DoorDef, DoorDrawn, DoorFacts, DoorPrompt, DoorState, LeavesOf } from './door-swing.js';
 
 export { SWING_SECONDS, ease, hingeTurn } from './door-swing.js';
@@ -89,6 +91,8 @@ export class DoorLayer {
   readonly root = new Group();
   /** The stand-in meshes: the page registers them with the hit query, the zoom's pick and the cap pass. */
   readonly meshes: readonly InstancedMesh[];
+  /** What the page registers with the hit query and the zoom's pick: the stand-ins and the closed doors' doorways (./doorways.ts), which no camera draws. */
+  readonly pickMeshes: readonly InstancedMesh[];
   /** The timeline meshes of every door's leaves, the locked doors' too: the walk's static world leaves them out, its door world holds them (src/walk/door-world.ts). */
   readonly leafMeshes: ReadonlySet<InstancedMesh>;
   /** Each part of every door's leaves, for the walk's collision: a leaf's metal or panels and its glass for a door that opens, a locked door's closed pieces. */
@@ -96,6 +100,7 @@ export class DoorLayer {
   private readonly doors: Door[] = [];
   private readonly byId = new Map<string, Door>();
   private readonly standIns = new Map<InstancedMesh, StandIn>();
+  private readonly doorways: Doorways;
   /** The parts, in order: a leaf the door turns, or a locked door's piece fixed at its final matrix. */
   private readonly collidable: readonly { readonly door: Door; readonly leaf: Leaf | null; readonly base: Matrix4 }[];
   /** What the walk's steps changed since `takeChange` was last called. */
@@ -118,6 +123,8 @@ export class DoorLayer {
     // Every leaf to draw, grouped by its geometry and material: one stand-in mesh each.
     const groups = new Map<BufferGeometry, Map<Material, { door: Door; base: Matrix4; part: SwingingPart }[]>>();
     const fixed: { door: Door; geometry: BufferGeometry; base: Matrix4 }[] = [];
+    /** Each door's closed pieces at their final matrices, for its doorway. */
+    const closed = new Map<Door, { geometry: BufferGeometry; matrix: Matrix4 }[]>();
     for (const step of steps) {
       // Only a step holding a door's pieces: an artwork's tags need nothing of the layer.
       if (!step.tags.some((list) => list?.some((tag) => tag?.kind === 'door') === true)) continue;
@@ -135,6 +142,7 @@ export class DoorLayer {
           const matrix = matrices[m]?.[slot];
           // Left out, a locked door's piece would be no part of the walk's door world, and a walker would pass through it shut (review 17, F47).
           if (matrix === undefined) throw new Error(`Door "${tag.id}": its piece in step "${step.def.id}" (mesh ${mesh.name}, instance ${String(slot)}) is none of the step's resting pieces, so the layer has no matrix to ${door.def.locked ? 'hold it shut at in the walk' : 'turn it from'}; pass each step's pieces at rest (Timeline.restingPieces) as \`resting\`.`);
+          closed.set(door, [...(closed.get(door) ?? []), { geometry: mesh.geometry, matrix: new Matrix4().fromArray(matrix) }]);
           if (door.def.locked) {
             fixed.push({ door, geometry: mesh.geometry, base: new Matrix4().fromArray(matrix) });
             return;
@@ -171,6 +179,8 @@ export class DoorLayer {
       }
     }
     this.meshes = meshes;
+    this.doorways = new Doorways(this.doors.map((d) => ({ tag: d.tag, pieces: closed.get(d) ?? [] })));
+    this.pickMeshes = [...meshes, this.doorways.mesh];
     for (const door of this.doors) door.casts = door.sources.some((m) => m.castShadow) || door.leaves.some((l) => l.standIn.mesh.castShadow);
     this.leafMeshes = new Set(this.doors.flatMap((d) => d.sources));
     const turning = this.doors.flatMap((d) => d.leaves.map((leaf) => ({ door: d, leaf, base: leaf.base, geometry: leaf.standIn.mesh.geometry })));
@@ -179,8 +189,9 @@ export class DoorLayer {
     this.parts = parts.map(({ door, geometry }) => Object.freeze({ door: door.def.id, geometry }));
   }
 
-  /** The tag of the leaf drawn in slot `instance` of stand-in `mesh`, or null for a mesh not the layer's or an empty slot. */
+  /** The tag of the leaf drawn in slot `instance` of stand-in `mesh`, or of the doorway there (`pickMeshes`); null for a mesh not the layer's or an empty slot. */
   tagOf(mesh: InstancedMesh, instance: number): PieceTag | null {
+    if (mesh === this.doorways.mesh) return this.doorways.tagOf(instance);
     return this.standIns.get(mesh)?.drawn[instance]?.door.tag ?? null;
   }
 
@@ -418,8 +429,9 @@ export class DoorLayer {
     return local.z < (leaf.back.z + leaf.front.z) / 2 ? -1 : 1;
   }
 
-  /** Writes the stand-ins: every built unlocked door's leaves at the base matrix times their turn, packed from slot 0. */
+  /** Writes the stand-ins (every built unlocked door's leaves at the base matrix times their turn, packed from slot 0) and stands the closed doors' doorways. */
   private draw(): void {
+    this.doorways.update((k) => this.doors[k]?.built === true && this.doors[k].angle === 0);
     for (const standIn of this.standIns.values()) {
       const { mesh, drawn } = standIn;
       drawn.length = 0;

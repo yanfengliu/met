@@ -10,7 +10,7 @@
  * src/model/core/weston-door.test.ts.
  * Bound: the walker walks at the middle of each door, facing it square on, at 60 frames a second; positions are the feet's.
  */
-import { Box3, Matrix4, Vector3 } from 'three';
+import { Box3, Layers, Matrix4, Vector3 } from 'three';
 import type { InstancedMesh } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -18,11 +18,15 @@ import { SEQUENCE } from '../build/sequence.js';
 import { firstDifference, random, snapshot } from '../build/testing.js';
 import { Timeline } from '../build/timeline.js';
 import { DoorLayer } from '../viewer/doors.js';
+import { ModelPicker } from '../viewer/pick.js';
 import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../walk/collision.js';
 import type { GroundHit } from '../walk/collision.js';
 import { walkWorld } from '../walk/door-world.js';
-import { BODY, Walker } from '../walk/walker.js';
+import { lookTarget } from '../walk/look.js';
+import type { HitFn } from '../walk/look.js';
+import { spawnById, spawnYaw } from '../walk/spawns.js';
+import { BODY, NO_INPUT, Walker } from '../walk/walker.js';
 import type { WalkWorld } from '../walk/walker.js';
 import { WESTON_DOOR } from './core/weston-facade.js';
 import { DOORS, doorTag } from './doors.js';
@@ -96,7 +100,9 @@ describe('the model’s doors', () => {
     // Each Hunt doorway: two leaves, each of bronze and of glass; Weston's: two wooden leaves.
     expect([...drawnBy].sort()).toEqual([['hunt-entrance-middle', 4], ['hunt-entrance-north', 4], ['hunt-entrance-south', 4], ['weston', 2]]);
     const timelineMeshes = new Set([...meshesOf.values()].flat()).size;
-    expect(timelineMeshes + layer.meshes.length, `door meshes (${String(timelineMeshes)}) and the layer's draws (${String(layer.meshes.length)})`).toBeLessThanOrEqual(DOOR_DRAWS);
+    // The layer's meshes: its stand-ins, each a draw, and the doorways' one mesh, which the picker reads and no camera draws.
+    expect(layer.pickMeshes.length, 'the stand-ins and the doorways').toBe(layer.meshes.length + 1);
+    expect(timelineMeshes + layer.pickMeshes.length, `door meshes (${String(timelineMeshes)}) and the layer's (${String(layer.pickMeshes.length)})`).toBeLessThanOrEqual(DOOR_DRAWS);
     for (const id of ['mmw-north-link', 'mmw-south-link', 'bank']) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.layers.mask, `${id} is never hidden`).toBe(1);
   });
 
@@ -174,5 +180,61 @@ describe('the model’s doors', () => {
       const through = walk(holed);
       expect(through.along, `${door.id}: without its leaves the walker walks on through the doorway`).toBeLessThan(-0.5);
     }
+  });
+
+  it('is the look target where a pair’s leaves meet: the entrance’s middle door before a walker from the plaza spawn with W alone, and each locked door on its axis, which says Locked (review 17, F46 and F48)', () => {
+    const floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
+    const own = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf);
+    own.sync(timeline.n, 0, true);
+    const bvhs = new GeometryBvhs();
+    const world = walkWorld(timeline.steps, timeline.n, own, bvhs);
+    // The page's hit query (src/main.ts): the timeline's pieces, and the door layer's stand-ins and doorways registered with their tags.
+    const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
+    picker.register(own.pickMeshes, (mesh, i) => own.tagOf(mesh, i));
+    const hit: HitFn = (ray, query) => picker.hit(ray, query);
+    const target = (walker: Walker): string => {
+      const found = lookTarget(hit, walker.eye(), walker.look());
+      return found === null ? 'nothing' : `${found.kind} ${found.id}: ${String(own.prompt(found.id))}`;
+    };
+    // From the plaza spawn, on the axis facing the facade, W alone at a walk or a run: let go 1.3 m before the middle door's leaves, the crosshair on the
+    // line where they meet 8 mm apart (red at 0defda0, whose look target met nothing there at any of these rates; turned 0.5°, it met a leaf).
+    const spawn = spawnById('plaza');
+    if (spawn === undefined) throw new Error('src/walk/spawns.ts has no plaza spawn.');
+    const middle = before('hunt-entrance-middle').face;
+    for (const fps of [30, 60, 144]) {
+      for (const run of [false, true]) {
+        const walker = new Walker(world, floorY);
+        walker.place(spawn.feet[0], spawn.feet[1], spawn.feet[2], spawnYaw(spawn), (spawn.pitch * Math.PI) / 180);
+        for (let k = 0; k < 20 * fps && walker.feet.z > middle.z + 1.3; k += 1) walker.update(1 / fps, { forward: 1, right: 0, run });
+        for (let k = 0; k < fps; k += 1) walker.update(1 / fps, NO_INPUT);
+        const where = `${String(fps)} fps, ${run ? 'running' : 'walking'}, stopped at (${walker.feet.x.toFixed(3)}, ${walker.feet.z.toFixed(3)})`;
+        expect(walker.feet.z - middle.z, `${where}: before the doors, coasted from 1.3 m`).toBeGreaterThan(0.6);
+        expect(walker.feet.z - middle.z, where).toBeLessThan(1.3);
+        expect(Math.abs(walker.feet.x) + Math.abs(walker.look().x), `${where}: on the axis, looking along it, so between the leaves`).toBeLessThan(1e-9);
+        expect(target(walker), where).toBe('door hunt-entrance-middle: E Open');
+      }
+    }
+    // Each locked door, walked at on its axis from 2.5 m and let go 1.2 m before its leaves: the crosshair on their meeting line (red at 0defda0), and then
+    // turned onto a leaf 0.3 m across it (F48). Pressed on into the leaves, a walker slides along them, off the line.
+    const g: GroundHit = { y: 0, normalX: 0, normalY: 1, normalZ: 0 };
+    for (const door of DOORS.filter((d) => d.locked)) {
+      const { start, front, face } = before(door.id);
+      const across = new Vector3(front.z, 0, -front.x);
+      world.groundBelow(start.x, face.y + 1, start.z, 10, g);
+      const walker = new Walker(world, floorY);
+      walker.place(start.x, g.y, start.z, Math.atan2(front.x, front.z));
+      for (let k = 0; k < 4 * FPS && walker.feet.clone().sub(face).dot(front) > 1.2; k += 1) walker.update(1 / FPS, { forward: 1, right: 0, run: false });
+      for (let k = 0; k < FPS; k += 1) walker.update(1 / FPS, NO_INPUT);
+      const eye = walker.eye();
+      const look = walker.look();
+      const crossing = eye.clone().addScaledVector(look, face.clone().sub(eye).dot(front) / look.dot(front));
+      expect(Math.abs(crossing.clone().sub(face).dot(across)), `${door.id}: the crosshair within 2 mm of the leaves' meeting line`).toBeLessThan(0.002);
+      expect(target(walker), `${door.id}, on its axis`).toBe(`door ${door.id}: Locked`);
+      expect(own.use(door.id, eye), `${door.id}: E does nothing`).toBe(false);
+      const leaf = face.clone().addScaledVector(across, 0.3).setY(eye.y);
+      walker.turn(Math.atan2(-(leaf.x - eye.x), -(leaf.z - eye.z)) - walker.yaw, 0);
+      expect(target(walker), `${door.id}, a leaf 0.3 m across`).toBe(`door ${door.id}: Locked`);
+    }
+    expect(own.facts().filter((d) => d.locked).map((d) => d.state), 'the locked doors still shut').toEqual(['closed', 'closed', 'closed']);
   });
 });
