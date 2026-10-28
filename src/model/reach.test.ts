@@ -18,8 +18,9 @@
  *   placement's level) with an eye (`Walker.eye()`, the eye the page draws from) whose look target, turned to one of the artwork's aims within the
  *   walker's ±85° of pitch, is that artwork: the walking eye's own query (src/walk/look.ts `lookTarget`, so within its 6 m reach and through untagged glass
  *   only) on the page's hit query (src/viewer/pick.ts), over the timeline's pieces and the door layer's stand-ins and doorways registered as the page
- *   registers them, the doors as the fill counts them. The check is made again from the replay's walker at that place, in the state that walk left it
- *   in. The aims are the middle of each of its pieces' own boxes, its object's first, then five more points of the object's: a quarter and three
+ *   registers them, the doors as the fill counts them. At rest it moves under 1 mm a second with its eye within 1 mm of where it settles, 1.6 m over its
+ *   feet, within 2 s of physics and on the ground at every step on the way; a walker that leaves the ground or does not rest is refused there. The check
+ *   is made again, with the same helper, from the replay's walker at that place, in the state that walk left it in. The aims are the middle of each of its pieces' own boxes, its object's first, then five more points of the object's: a quarter and three
  *   quarters up, toward the front and either side. A preset is met when an eye stands within 1 m of its camera; a spawn or a route's end when feet stand
  *   within 0.5 m of it in plan and 0.3 m of its level.
  * - Each space with artworks is stood in at the place of the preset its collection step frames, which stands inside it, so a space seen only through
@@ -30,7 +31,7 @@
  * Court's 8 artworks, the Petrie Court's 10, the int-engelhard-north and int-petrie-court presets and R6's end, each artwork's nearest place across the wall
  * it sat behind (156,533 places in 22.5 s, every other target met). Red again with ENGELHARD_PASSAGE alone walled up (the court, its 8, its preset, R6's
  * end; 166,500 places) and with PETRIE_PASSAGE alone (the court, its 10, its preset; 172,282 places). Green, it stops at about 62,500 places in about 16 s
- * (9 s with the box rule below, on the same machine), and walks the 123 targets' paths again and looks again from them in 0.7 s.
+ * (9 s with the box rule below, on the same machine), and walks the 123 targets' paths again and looks again from them in 0.8 s.
  * Review 12 of work unit 2 found two holes in the gate of 69cfa11, each given its regression: each move began with `Walker.place`, which over a gap
  * the walker had bridged set it on the floor below with no fall (F40; src/walk/reach.test.ts, the groove: 288 places on the closed floor at 69cfa11); and
  * the sight line was a 2 cm capsule taken as clear when nothing pushed it, so a line through the middle of a wall, whose faces pushed it opposite ways and
@@ -42,6 +43,9 @@
  * eases out of stair snaps, and from the recorded states of nine of the places it accepted, the look missed (bowl 44745's nearest surface 6.00012 m from
  * the real eye; F51). An artwork is now looked at from where the walker comes to rest; the second fixture, a walker running away from a slab that is 5.8 m
  * off at the place and 6.1 m off where it stops, is met by the eye at feet + 1.6 m and not by the one it rests with.
+ * Review 19 found that helper taking rest as a speed under 1 mm a second alone: a wall that stopped a walker just after a stair snap left its eye easing,
+ * 22.7 cm under where it settles (F52), and a walker let go before a drop fell, landed and was taken as resting (F53). The last two fixtures, a step
+ * before a parapet under a beam and an edge over a floor 0.6 m down, are met by that helper and not by this one.
  */
 import { Box3, BoxGeometry, Layers, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh } from 'three';
@@ -144,21 +148,32 @@ function labels(query: HitFn, eye: Vector3, aims: readonly Vector3[], id: string
   });
 }
 
-/** At most this long a walker let go of the keys coasts before it rests, seconds of physics; from a run it is still within a millimetre a second in 0.6 s. */
+/** At most this long a walker let go of the keys may take to come to rest, seconds of physics; from a run it rests in about 0.6 s, a stair snap's ease included. */
 const REST_SECONDS = 2;
+/** At rest a walker moves under REST_SPEED metres a second and its eye stands within REST_EYE metres of where it settles, 1.6 m over its feet. */
+const REST_SPEED = 1e-3;
+const REST_EYE = 1e-3;
 /** How far a walker coasts from a run once let go (5 m/s for 0.07 s), and a stair's step it may take on the way, metres. */
 const COAST = MOTION.run * MOTION.groundTau + BODY.step;
 const state = new Float64Array(WALKER_STATE_SIZE);
+const seen = new Vector3();
+const settled = new Vector3();
 
-/** `into` in `walker`'s state, let go of the keys and stepped until it rests on the ground, as a visitor stops to look. */
-function rest(walker: Walker, into: Walker): Walker {
+/**
+ * `into` in `walker`'s state, let go of the keys and stepped until it rests, as a visitor stops to look: moving under REST_SPEED with its eye within
+ * REST_EYE of where it settles, on the ground at every step. Null where it leaves the ground on the way, a fall the fill never takes (review 19, F53),
+ * or does not come to rest within REST_SECONDS; a speed of nought with the eye still easing out of a stair snap is not rest (F52).
+ */
+function rest(walker: Walker, into: Walker): Walker | null {
   walker.save(state);
   into.restore(state);
   for (let k = 0; k < REST_SECONDS / MOTION.fixedStep; k += 1) {
     into.update(MOTION.fixedStep, NO_INPUT);
-    if (into.onGround && into.velocity.length() < 1e-3) break;
+    if (!into.onGround) return null;
+    const { x, y, z } = into.feet;
+    if (into.velocity.length() < REST_SPEED && into.eye(seen).distanceTo(settled.set(x, y + BODY.eye, z)) < REST_EYE) return into;
   }
-  return into;
+  return null;
 }
 
 /**
@@ -187,7 +202,7 @@ function artworkTarget(name: string, id: string, floor: number, pieces: readonly
       if (Math.abs(y - floor) > FLOOR + COAST || box.distanceToPoint(near.set(x, y + EYE, z)) > LOOK_REACH.artwork + COAST) return false;
       const { query, probe: into } = view();
       const still = rest(walker, into);
-      if (Math.abs(still.feet.y - floor) > FLOOR) return false;
+      if (still === null || Math.abs(still.feet.y - floor) > FLOOR) return false;
       still.eye(eye);
       // A piece within the look's reach needs the box within it, which costs no cast.
       return box.distanceToPoint(eye) <= LOOK_REACH.artwork && labels(query, eye, aims, id);
@@ -359,13 +374,17 @@ describe('an artwork met by the look target from where the walker rests, not by 
   const cube = new BoxGeometry(1, 1, 1);
   const stone = new MeshStandardMaterial({ name: 'stone' });
   const bronze = new MeshStandardMaterial({ name: 'bronze' });
+  /** A box from `min` to `max`, world metres. */
+  const block = ([x0, y0, z0]: readonly [number, number, number], [x1, y1, z1]: readonly [number, number, number]): Piece => ({ geometry: cube, matrix: new Matrix4().compose(new Vector3((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), new Quaternion(), new Vector3(x1 - x0, y1 - y0, z1 - z0)) });
   /** A slab 2 m high standing on the floor, centred on (x, z), `w` across X and `d` across Z. */
-  const slab = (x: number, z: number, w: number, d: number): Piece => ({ geometry: cube, matrix: new Matrix4().compose(new Vector3(x, 1, z), new Quaternion(), new Vector3(w, 2, d)) });
+  const slab = (x: number, z: number, w: number, d: number): Piece => block([x - w / 2, 0, z - d / 2], [x + w / 2, 2, z + d / 2]);
+  /** A floor 40 m square, its top at 0. */
+  const GROUND: readonly Piece[] = [block([-20, -1, -20], [20, 0, 20])];
 
-  /** A floor 40 m square with `slabs` on it as one artwork, A, meant on level `floor` (the floor's is 0): its target, a walker in its walk world and the hit query. */
-  function site(slabs: readonly Piece[], floor = 0): { readonly target: Target; readonly walker: Walker; readonly query: HitFn } {
+  /** `blocks` in stone with `slabs` among them as one artwork, A, meant on level `floor`: its target, a walker in its walk world and the hit query. */
+  function site(slabs: readonly Piece[], floor = 0, blocks: readonly Piece[] = GROUND): { readonly target: Target; readonly walker: Walker; readonly query: HitFn } {
     const timeline = new Timeline([{ id: 'site', chapter: CHAPTERS[0].id, title: 'site', motion: { kind: 'rise' }, build(kit) {
-      kit.add(cube, stone, new Matrix4().compose(new Vector3(0, -0.5, 0), new Quaternion(), new Vector3(40, 1, 40)));
+      for (const { geometry, matrix } of blocks) kit.add(geometry, stone, matrix);
       for (const { geometry, matrix } of slabs) kit.addTagged(geometry, bronze, matrix, { kind: 'artwork', id: 'A' });
     } }]);
     timeline.evaluate(1);
@@ -405,5 +424,40 @@ describe('an artwork met by the look target from where the walker rests, not by 
     // Standing still at the same place, it is met.
     walker.place(x, y, z, Math.PI);
     expect(target.met(x, y, z, walker), 'at rest there').toBe(true);
+  });
+
+  it('is not met from a walker the wall has stopped while its eye still eases up from a stair snap, but from its settled eye (review 19, F52)', () => {
+    // A 0.3 m step just before a parapet 1.2 m high under a beam from 1.8 m: an opening 0.6 m tall over the parapet, through which a slab 2.9 m on is seen
+    // from an eye under 1.8 m; the walker's settles 1.9 m over the step, where the beam hides the slab.
+    const slabs = [block([-1, 1.3, -3.1], [1, 1.7, -2.9])];
+    const { target, walker, query } = site(slabs, 0.3, [...GROUND, block([-3, 0, -0.45], [3, 0.3, 0]), block([-3, 0, -0.65], [3, 1.2, -0.45]), block([-3, 1.8, -0.65], [3, 3, -0.45])]);
+    // Run up the step into the parapet until it stops the walker: snapped up 0.3 m a few hundredths of a second before, its eye still eases.
+    walker.place(0, 0, 2.5, 0);
+    for (let k = 0; k < 240 && (k < 10 || walker.velocity.length() >= REST_SPEED); k += 1) walker.update(MOTION.fixedStep, { forward: 1, right: 0, run: true });
+    const { x, y, z } = walker.feet;
+    const eye = walker.eye();
+    expect([y, walker.velocity.length()], 'on the step, stopped by the parapet').toEqual([expect.closeTo(0.3, 6), expect.closeTo(0, 3)]);
+    expect(y + EYE - eye.y, 'its eye still under its settled height').toBeGreaterThan(0.15);
+    expect(labels(query, eye, aimsOf(slabs), 'A'), 'from that easing eye, through the opening').toBe(true);
+    // Red with rest taken as a speed under 1 mm a second alone, as at 2600751: it took that eye and met the slab.
+    expect(target.met(x, y, z, walker), 'from the eye it settles with, the beam hides it').toBe(false);
+  });
+
+  it('is not met where letting go of the keys carries the walker off an edge, though it lands where it would be met (review 19, F53)', () => {
+    // An upper floor, its top at 0, ending at Z 0 over a lower floor 0.6 m down, more than a step, with a slab 2.9 m on, on the lower floor's level.
+    const slabs = [block([-1, -0.6, -3.1], [1, 1.4, -2.9])];
+    const floors = [block([-5, -1, 0], [5, 0, 10]), block([-5, -1.6, -10], [5, -0.6, 0])];
+    const { target, walker, query } = site(slabs, -0.6, floors);
+    // A run toward the edge, let go 0.25 m before it: the walker coasts about 0.35 m, off the edge, and falls.
+    walker.place(0, 0, 3, 0);
+    for (let k = 0; k < 240 && walker.feet.z > 0.25; k += 1) walker.update(MOTION.fixedStep, { forward: 1, right: 0, run: true });
+    const { x, y, z } = walker.feet;
+    expect([y, walker.velocity.length()], 'on the upper floor at a run').toEqual([expect.closeTo(0, 6), expect.closeTo(MOTION.run, 1)]);
+    // Landed and at rest down there, the slab is in view.
+    const after = site(slabs, -0.6, floors).walker;
+    after.place(x, -0.6, -0.3, 0);
+    expect(labels(query, after.eye(), aimsOf(slabs), 'A'), 'from the lower floor where it lands').toBe(true);
+    // Red with a fall on the way to rest allowed, as at 2600751: it landed, rested and met the slab.
+    expect(target.met(x, y, z, walker), 'let go there, it would fall: refused').toBe(false);
   });
 });
