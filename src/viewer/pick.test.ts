@@ -5,7 +5,7 @@
  * a wall in front hides it; glass stops it unless the query passes through transparent pieces, while a tagged glass piece is found when accepted
  * and stops the ray when not, as a glazed door out of reach does; `far` and the accepted distance bound it; only drawn instances count; a pointer
  * ray from an orbit camera far off finds an artwork in a vitrine under a skylight; and a registered stand-in counts in both queries by its own tags
- * and the camera's layers, its BVH built as it joins, until it is unregistered.
+ * and the camera's layers, its BVH built as it joins, until it is unregistered, and one registered for the hit query alone is passed by the zoom.
  * Bound: boxes and straight rays, no WebGL.
  */
 import { BoxGeometry, InstancedMesh, Layers, Matrix4, MeshStandardMaterial, Quaternion, Ray, Vector3 } from 'three';
@@ -172,7 +172,7 @@ describe('ModelPicker.hit, the hit query', () => {
     expect(hit?.distance).toBeGreaterThan(100);
   });
 
-  it('meets a registered stand-in in both queries, by its own tags and the camera’s layers, its BVH built as it joins, until it is unregistered', () => {
+  it('meets a registered stand-in in both queries, by its own tags and the camera’s layers, its BVH built as it joins, until it is unregistered; one for the hit query alone the zoom passes (review 18, F50)', () => {
     const bvhs = new GeometryBvhs();
     const picker = new ModelPicker([], bvhs, -5, { enabled: false, height: 0 }, new Layers());
     const leaf = new InstancedMesh(new BoxGeometry(1, 1, 1), bronze, 1);
@@ -186,7 +186,15 @@ describe('ModelPicker.hit, the hit query', () => {
     leaf.layers.set(1);
     expect(picker.hit(eye, tagged), 'on a layer the camera does not draw, it is passed through').toBeNull();
     leaf.layers.set(0);
+    // Registered for the hit query alone, as a closed door's doorway is, which no camera draws (src/viewer/doorways.ts): the zoom passes it.
+    picker.register([leaf], () => door, { zoom: false });
+    expect(picker.distance(eye), 'for the hit query alone: the zoom passes it').toBeNull();
+    expect(picker.hit(eye, tagged)?.tag, 'and the hit query still meets it').toEqual(door);
+    picker.register([leaf], () => door);
+    expect(picker.distance(eye), 'registered again for both').toBeCloseTo(2, 6);
+    picker.register([leaf], () => door, { zoom: false });
     picker.unregister([leaf]);
     expect(picker.distance(eye), 'unregistered').toBeNull();
+    expect(picker.hit(eye, tagged), 'by both').toBeNull();
   });
 });

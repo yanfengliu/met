@@ -12,7 +12,8 @@
  * Meshes the timeline did not build, viewer-side stand-ins such as a door's moving leaves, join with their own tags through `register` and leave
  * through `unregister`. They count as the timeline's do: drawn instances only, so an original hidden by the camera's layers drops out while its
  * stand-in counts; instance matrices in world space (the mesh itself untransformed); a mesh's bounding sphere, when it has one, trusted as the
- * renderer's culling trusts it, so a stand-in that moves keeps it current.
+ * renderer's culling trusts it, so a stand-in that moves keeps it current. One registered for the hit query alone (`zoom: false`), a closed door's
+ * doorway that no camera draws for one (src/viewer/doorways.ts), is passed by `distance`, so the zoom heads only for what is drawn.
  * Each candidate instance is found by its bounding sphere, the ray taken into its frame and cast against its geometry's BVH (src/walk/bvh-cache.ts).
  * Reads the scene only.
  */
@@ -69,8 +70,9 @@ export class ModelPicker {
   private readonly point = new Vector3();
   private readonly toCentre = new Vector3();
   private readonly hits: Intersection[] = [];
-  /** Meshes registered after the picker was built, each with its tags. */
+  /** Meshes registered after the picker was built, each with its tags, and those of them for the hit query alone. */
   private readonly registered = new Map<InstancedMesh, TagOf>();
+  private readonly hitOnly = new Set<InstancedMesh>();
 
   constructor(
     private readonly meshes: readonly InstancedMesh[],
@@ -82,17 +84,25 @@ export class ModelPicker {
     private readonly tagOf: TagOf = noTags,
   ) {}
 
-  /** Adds meshes the timeline did not build, whose pieces' tags `tagOf` gives, to both queries; their BVHs are built now, in the shared cache. A mesh registered again takes the new `tagOf`. */
-  register(meshes: readonly InstancedMesh[], tagOf: TagOf): void {
+  /**
+   * Adds meshes the timeline did not build, whose pieces' tags `tagOf` gives, to both queries, or with `zoom: false` to the hit query alone, the zoom's
+   * `distance` passing them; their BVHs are built now, in the shared cache. A mesh registered again takes the new `tagOf` and `zoom`.
+   */
+  register(meshes: readonly InstancedMesh[], tagOf: TagOf, options: { readonly zoom?: boolean } = {}): void {
     for (const mesh of meshes) {
       this.registered.set(mesh, tagOf);
+      if (options.zoom === false) this.hitOnly.add(mesh);
+      else this.hitOnly.delete(mesh);
       this.bvhs.get(mesh.geometry);
     }
   }
 
   /** Takes registered meshes out of both queries. */
   unregister(meshes: readonly InstancedMesh[]): void {
-    for (const mesh of meshes) this.registered.delete(mesh);
+    for (const mesh of meshes) {
+      this.registered.delete(mesh);
+      this.hitOnly.delete(mesh);
+    }
   }
 
   /** The distance along `ray` (unit direction, world metres) to the first surface it meets, or null when it meets none. */
@@ -102,7 +112,7 @@ export class ModelPicker {
       const t = (this.groundY - ray.origin.y) / ray.direction.y;
       if (t > 0) best = t;
     }
-    this.each(ray, () => best, (_mesh, _instance, t) => {
+    this.each(ray, false, () => best, (_mesh, _instance, t) => {
       best = Math.min(best, t);
     });
     return Number.isFinite(best) ? best : null;
@@ -118,7 +128,7 @@ export class ModelPicker {
     const through = query.throughTransparent === true;
     // Where the ray stops (the nearest surface not accepted that it cannot pass), and the nearest accepted surface so far.
     const best: { stop: number; found: PickHit | null } = { stop: query.far ?? Number.POSITIVE_INFINITY, found: null };
-    this.each(ray, () => Math.min(best.stop, best.found?.distance ?? Number.POSITIVE_INFINITY), (mesh, instance, t, material) => {
+    this.each(ray, true, () => Math.min(best.stop, best.found?.distance ?? Number.POSITIVE_INFINITY), (mesh, instance, t, material) => {
       const tag = (this.registered.get(mesh) ?? this.tagOf)(mesh, instance);
       if (accept(tag, t)) {
         if (best.found === null || t < best.found.distance) best.found = { mesh, instance, distance: t, tag };
@@ -131,11 +141,11 @@ export class ModelPicker {
 
   /**
    * Calls `visit` with the nearest surface along `ray` of each drawn instance whose bounding sphere starts before `limit()` along it, nearer than that
-   * limit, with its material.
+   * limit, with its material; the meshes registered for the hit query alone only when it is the hit query's (`hit`).
    */
-  private each(ray: Ray, limit: () => number, visit: Visit): void {
+  private each(ray: Ray, hit: boolean, limit: () => number, visit: Visit): void {
     for (const mesh of this.meshes) this.eachInstance(mesh, ray, limit, visit);
-    for (const mesh of this.registered.keys()) this.eachInstance(mesh, ray, limit, visit);
+    for (const mesh of this.registered.keys()) if (hit || !this.hitOnly.has(mesh)) this.eachInstance(mesh, ray, limit, visit);
   }
 
   private eachInstance(mesh: InstancedMesh, ray: Ray, limit: () => number, visit: Visit): void {

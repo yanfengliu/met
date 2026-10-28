@@ -281,8 +281,11 @@ export function doorLeavesOf(geometry: THREE.BufferGeometry): readonly SwingingP
   return leafParts.get(geometry);
 }
 
-/** The gap a leaf keeps from its frame, its transom bar and its sill, metres; the two leaves of a pair, each this far from the middle, meet twice it apart. */
-const LEAF_GAP = 0.004;
+/**
+ * The gap a leaf keeps from its frame, its transom bar and its sill, metres; the two leaves of a pair, each this far from the middle, meet twice it apart.
+ * The door layer's doorways (src/viewer/doorways.ts) cover the closed leaves and these gaps.
+ */
+export const LEAF_GAP = 0.004;
 
 /**
  * One raised-panel leaf over [x0, x1] × [y0, y1], `t` thick about z = zc, with `panels` raised panels on both faces, spaced over a bay `bay` wide and

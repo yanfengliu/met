@@ -118,26 +118,37 @@ describe('the doors that open, against the walker', () => {
     expect(layer.facts()[0]?.state).toBe('closed');
   });
 
-  it('holds it alike at 30, 60 and 144 frames a second and through stalled frames', () => {
-    const at: number[] = [];
-    for (const fps of [30, 60, 144]) {
-      const { layer, walker } = site('open');
-      walker.place(0, 0, -0.55, OUT);
-      layer.use(ID, walker.eye());
-      const seen = hold(walker, layer, 1.5, NO_INPUT, fps, true);
-      at.push(seen[seen.length - 1] ?? Number.NaN);
+  it('holds an opening and a closing door alike at 30, 60 and 144 frames a second and through stalled frames', () => {
+    // As the two holds above: opened by someone in front with the walker in the −X leaf's swing behind it, and closed by the walker between its leaves.
+    const holds = [
+      { name: 'opening', start: 'closed', feet: [-0.35, -0.62], facing: INTO, from: new Vector3(0, 1.6, 1.5) },
+      { name: 'closing', start: 'open', feet: [0, -0.55], facing: OUT, from: null },
+    ] as const;
+    for (const { name, start, feet, facing, from } of holds) {
+      const begin = (): { layer: DoorLayer; walker: Walker } => {
+        const { layer, walker } = site(start);
+        walker.place(feet[0], 0, feet[1], facing);
+        layer.use(ID, from ?? walker.eye());
+        return { layer, walker };
+      };
+      const at: number[] = [];
+      for (const fps of [30, 60, 144]) {
+        const { layer, walker } = begin();
+        const seen = hold(walker, layer, 1.5, NO_INPUT, fps, true);
+        at.push(seen[seen.length - 1] ?? Number.NaN);
+      }
+      // Stalled frames: one of 0.25 s, the most a frame steps (30 physics steps of 1/120 s), and one of 2 s, which steps as far.
+      const { layer, walker } = begin();
+      for (const seconds of [0.25, 2, 0.25, 0.25, 0.25, 0.25]) {
+        walker.update(seconds, NO_INPUT);
+        expect(gap(layer, walker.feet), `${name}: after a stalled frame of ${String(seconds)} s`).toBeGreaterThan(-1e-6);
+      }
+      at.push(angle(layer));
+      const [first = 0] = at;
+      expect(first, `${name}: held part way`).toBeGreaterThan(5);
+      expect(first, `${name}: held part way`).toBeLessThan(85);
+      for (const a of at) expect(Math.abs(a - first), `${name}: held at ${at.map((v) => v.toFixed(2)).join('°, ')}°`).toBeLessThan(0.5);
     }
-    // Stalled frames: one of 0.25 s, the most a frame steps (30 physics steps of 1/120 s), and one of 2 s, which steps as far.
-    const { layer, walker } = site('open');
-    walker.place(0, 0, -0.55, OUT);
-    layer.use(ID, walker.eye());
-    for (const seconds of [0.25, 2, 0.25, 0.25, 0.25, 0.25]) {
-      walker.update(seconds, NO_INPUT);
-      expect(gap(layer, walker.feet), `after a stalled frame of ${String(seconds)} s`).toBeGreaterThan(-1e-6);
-    }
-    at.push(angle(layer));
-    const [first = 0] = at;
-    for (const a of at) expect(Math.abs(a - first), `held at ${at.map((v) => v.toFixed(2)).join('°, ')}°`).toBeLessThan(0.5);
   });
 
   it('turns a closing door held by a walker between its leaves back open on the side it stands, either side, so the walker goes free (review 15, F43)', () => {

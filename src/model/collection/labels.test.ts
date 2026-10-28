@@ -5,8 +5,9 @@
  * eye's look target (src/walk/look.ts) is that artwork, within its 6 m reach, and so is what the orbit view's click query (src/viewer/art-label.ts
  * `ARTWORK_QUERY`) meets along the same ray: no wall, glass that is no artwork's, or other artwork stands between, and a vitrine's glass answers for
  * the object inside it.
- * Bound: one eye per artwork, on its axis; artworks seen from the side or from far off are the e2e's (tests/e2e/labels.spec.ts) and the hit query's own
- * tests'. The ray's endpoint is the object's middle, which a hollow form could miss, so the test asks for the artwork's tag, not for the object piece.
+ * Bound: one eye per artwork, on its axis, which is not shown to be one the walker reaches (src/model/reach.test.ts shows each artwork the look target
+ * from a place the walker reaches; review 17, F44); artworks seen from the side or from far off are the e2e's (tests/e2e/labels.spec.ts) and the hit
+ * query's own tests'. The ray's endpoint is the object's middle, which a hollow form could miss, so the test asks for the artwork's tag, not for the object piece.
  */
 import { Layers, Ray, Vector3 } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
