@@ -14,6 +14,7 @@ import { cached } from './cache.js';
 import { byDetail, checkDetail, integer, oneOf, positive, require, type Detail } from './params.js';
 import type { Profile } from './profile.js';
 import { sweepInto } from './sweep.js';
+import { sheet } from './sheet.js';
 import { openingOutline, type OpeningShape } from './wall.js';
 
 export interface WindowParams {
@@ -201,7 +202,7 @@ export function windowUnit(params: WindowParams): WindowParts {
     barsInto(bars, spec, inner);
     const glass = new MeshBuilder();
     glassInto(glass, inner, -spec.depth / 2);
-    return Object.freeze({ frame: frame.build(), bars: bars.build(), glass: glass.build() });
+    return Object.freeze({ frame: frame.build(), bars: bars.build(), glass: sheet(glass.build()) });
   });
 }
 
@@ -376,7 +377,7 @@ export function doorUnit(params: DoorParams): DoorParts {
       const leaf: { panel: THREE.BufferGeometry; glass?: THREE.BufferGeometry; hinge: DoorHinge; swing: DoorSwing } = { panel: panel.build(), hinge, swing };
       all.append(leaf.panel);
       if (full.glazed) {
-        leaf.glass = pane.build();
+        leaf.glass = sheet(pane.build());
         allGlass.append(leaf.glass);
       }
       leaves.push(Object.freeze(leaf));
@@ -388,7 +389,7 @@ export function doorUnit(params: DoorParams): DoorParts {
       const pane: V2[] = full.shape === 'rect' ? [[-w, headBottom + f / 2], [w, headBottom + f / 2], [w, full.height - f], [-w, full.height - f]] : [[w, headBottom + f / 2], ...inner.filter(([, y]) => y > headBottom + f / 2), [-w, headBottom + f / 2]];
       const g = new MeshBuilder();
       glassInto(g, pane, zc);
-      glass = g.build();
+      glass = sheet(g.build());
     }
     const parts: { frame: THREE.BufferGeometry; leaf: THREE.BufferGeometry; leafGlass?: THREE.BufferGeometry; glass?: THREE.BufferGeometry; leaves: readonly DoorLeaf[] } = {
       frame: frame.build(),
@@ -397,7 +398,7 @@ export function doorUnit(params: DoorParams): DoorParts {
     };
     leafParts.set(parts.leaf, Object.freeze(leaves.map((l) => Object.freeze({ geometry: l.panel, hinge: l.hinge, swing: l.swing }))));
     if (full.glazed) {
-      parts.leafGlass = allGlass.build();
+      parts.leafGlass = sheet(allGlass.build());
       leafParts.set(parts.leafGlass, Object.freeze(leaves.flatMap((l) => (l.glass === undefined ? [] : [Object.freeze({ geometry: l.glass, hinge: l.hinge, swing: l.swing })]))));
     }
     if (glass !== undefined) parts.glass = glass;

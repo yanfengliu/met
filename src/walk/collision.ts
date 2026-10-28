@@ -17,6 +17,7 @@ import { ExtendedTriangle } from 'three-mesh-bvh';
 import type { MeshBVH } from 'three-mesh-bvh';
 
 import type { BuiltStep } from '../build/timeline.js';
+import { isSheet } from '../model/lib/sheet.js';
 import type { GeometryBvhs } from './bvh-cache.js';
 
 /** Grid cell size over X and Z, in metres. */
@@ -25,6 +26,8 @@ const CELL = 4;
 export const COLLISION_MARGIN = 0.05;
 /** A contact whose push is closer to vertical than this (the horizontal part of a unit push) is a floor or ceiling, not a wall, for a horizontal push. */
 const MIN_HORIZONTAL = 0.1;
+/** A line's hit with a barycentric coordinate under this lies on an edge or a corner of its triangle, where the next triangle of its surface meets it too. */
+const ON_EDGE = 1e-9;
 
 /** Whether a material blocks walking: every one unless it says `userData.solid === false` (water, foliage, glass standing in for an open door). */
 export function isSolid(material: Material | readonly Material[]): boolean {
@@ -49,11 +52,13 @@ export function instancesBefore(steps: readonly BuiltStep[], complete: number, l
   return collisionMeshes(steps, complete, leaveOut).reduce((sum, mesh) => sum + mesh.count, 0);
 }
 
-/** Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and its up-turned normal's Y. */
+/** Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and up-turned normal's Y, and whether it is a sheet. */
 export interface LineCrossings {
   readonly instance: number;
   readonly heights: readonly number[];
   readonly normalYs: readonly number[];
+  /** Its builder declared it a sheet (src/model/lib/sheet.ts): a surface with no inside, whatever its crossings. */
+  readonly sheet: boolean;
 }
 
 export interface CollisionStats {
@@ -99,10 +104,11 @@ function transformBox(e: Float64Array, o: number, minX: number, minY: number, mi
 
 export class CollisionWorld {
   private n = 0;
-  /** Per instance: its world matrix, the inverse, its world box (min xyz, max xyz) and its geometry's BVH. */
+  /** Per instance: its world matrix, the inverse, its world box (min xyz, max xyz), its geometry's BVH and whether it is a sheet (1). */
   private matrices = new Float64Array(0);
   private inverses = new Float64Array(0);
   private boxes = new Float64Array(0);
+  private sheets = new Uint8Array(0);
   private bvhs: MeshBVH[] = [];
   private x0 = 0;
   private z0 = 0;
@@ -169,6 +175,7 @@ export class CollisionWorld {
     this.matrices = new Float64Array(n * 16);
     this.inverses = new Float64Array(n * 16);
     this.boxes = new Float64Array(n * 6);
+    this.sheets = new Uint8Array(n);
     this.bvhs = [];
     this.stamps = new Uint32Array(n);
     this.visit = 0;
@@ -185,6 +192,7 @@ export class CollisionWorld {
       const bvh = this.cache.get(geometry);
       const perInstance = (geometry.index === null ? geometry.getAttribute('position').count : geometry.index.count) / 3;
       const source = mesh.instanceMatrix.array;
+      this.sheets.fill(isSheet(geometry) ? 1 : 0, k, k + mesh.count);
       for (let i = 0; i < mesh.count; i += 1, k += 1) {
         tmpMatrix.fromArray(source, i * 16);
         this.matrices.set(tmpMatrix.elements, k * 16);
@@ -217,6 +225,7 @@ export class CollisionWorld {
     this.matrices = new Float64Array(n * 16);
     this.inverses = new Float64Array(n * 16);
     this.boxes = new Float64Array(n * 6);
+    this.sheets = Uint8Array.from(geometries, (g) => (isSheet(g) ? 1 : 0));
     this.bvhs = geometries.map((g) => this.cache.get(g));
     this.local = geometries.map((g) => {
       if (g.boundingBox === null) g.computeBoundingBox();
@@ -443,8 +452,11 @@ export class CollisionWorld {
 
   /**
    * Every crossing of the vertical line through (x, z) with each solid piece whose world box reaches the span from `bottom` to `top`, over the piece's
-   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`). A line through an edge or a vertex
-   * meets the triangles there at one height, which counts once, so a closed piece is crossed an even number of times.
+   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`). Hits at one height that lie on edges of
+   * their triangles and face one way count once, as a line through an edge or a corner of one surface's triangles meets them; every other hit counts on
+   * its own, so two faces back to back (one part's top under the bottom of the part on it) are two crossings, and a closed piece is crossed an even
+   * number of times (src/model/closure.test.ts). Bound: a line exactly along edges that faces of two overlapping parts in one plane both have reads them
+   * once there (src/walk/crossings.test.ts).
    */
   crossings(x: number, z: number, bottom: number, top: number): LineCrossings[] {
     const out: LineCrossings[] = [];
@@ -457,23 +469,30 @@ export class CollisionWorld {
       // From a metre over the piece's world box down through all of it; the world direction (0, -1, 0) in its frame, as in groundBelow.
       transformPoint(e, o, tmpVector.set(x, (this.boxes[k * 6 + 4] ?? 0) + 1, z), ray.origin);
       ray.direction.set(-(e[o + 4] ?? 0), -(e[o + 5] ?? 0), -(e[o + 6] ?? 0)).normalize();
-      const found: [number, number][] = [];
+      // Each hit's height, its up-turned normal's Y, which way it faces (+1 up, −1 down) and whether it lies on an edge of its triangle.
+      const found: [number, number, number, boolean][] = [];
       for (const local of this.bvhs[k]?.raycast(ray, DoubleSide) ?? []) {
         transformPoint(this.matrices, o, local.point, point);
         const n = local.face?.normal;
         if (n === undefined) normal.set(0, 1, 0);
         else normal.set((e[o] ?? 0) * n.x + (e[o + 1] ?? 0) * n.y + (e[o + 2] ?? 0) * n.z, (e[o + 4] ?? 0) * n.x + (e[o + 5] ?? 0) * n.y + (e[o + 6] ?? 0) * n.z, (e[o + 8] ?? 0) * n.x + (e[o + 9] ?? 0) * n.y + (e[o + 10] ?? 0) * n.z).normalize();
-        found.push([point.y, Math.abs(normal.y)]);
+        const b = local.barycoord ?? undefined;
+        found.push([point.y, Math.abs(normal.y), Math.sign(normal.y), b === undefined || Math.min(b.x, b.y, b.z) < ON_EDGE]);
       }
       found.sort((a, b) => a[0] - b[0]);
       const heights: number[] = [];
       const normalYs: number[] = [];
-      for (const [y, ny] of found) {
-        if (heights.length > 0 && y - (heights[heights.length - 1] ?? 0) < 1e-6) continue;
+      // The hits kept at the height being read.
+      let level: (typeof found)[number][] = [];
+      for (const hit of found) {
+        const [y, ny, facing, edge] = hit;
+        if (level.length > 0 && y - (level[0]?.[0] ?? 0) >= 1e-6) level = [];
+        if (edge && level.some(([, , f, onEdge]) => onEdge && f === facing)) continue;
+        level.push(hit);
         heights.push(y);
         normalYs.push(ny);
       }
-      if (heights.length > 0) out.push({ instance: k, heights, normalYs });
+      if (heights.length > 0) out.push({ instance: k, heights, normalYs, sheet: this.sheets[k] === 1 });
     }
     return out;
   }

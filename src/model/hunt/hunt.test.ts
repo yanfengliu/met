@@ -21,13 +21,14 @@ import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import type { GroundHit } from '../../walk/collision.js';
 import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAIR_CENTRE_X_INNER, HUNT_PAIR_CENTRE_X_OUTER } from '../frame.js';
+import { levelFaces, openAlong } from '../lib/check.js';
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
 import { palette } from '../palette.js';
 import { ENTRANCE_DOOR_Z, LUNETTE_GRILLE } from './arches.js';
 import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
-import { lunetteGrille } from './shapes.js';
+import { archedPassage, lunetteGrille } from './shapes.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TOLERANCE = 0.3;
@@ -261,5 +262,15 @@ describe('the walk routes through the wing', () => {
     // The end wall's arch is 5.4 m wide (stair.ts); the cross hall runs on west of it.
     const found = holes(-2.6, 2.6, CROSS_HALL_FRONT_Z - 2, STAIR_TOP_Z - 0.02, SECOND);
     expect(found.slice(0, 4), `${String(found.length)} points at the head of the stair with no floor at Y ${SECOND.toFixed(2)}`).toEqual([]);
+  });
+});
+
+describe('the arched passage', () => {
+  it('is closed along vertical lines, its feet on the floor looking down (src/model/lib/check.ts openAlong; work unit 3, review 2, F13)', () => {
+    const passage = archedPassage(1.0, 0.3, 2.6, 1.41);
+    expect(openAlong(passage, new Vector3(0, 1, 0))).toBeNull();
+    const feet = levelFaces(passage, 0);
+    expect(feet.length, 'faces on the floor').toBeGreaterThan(0);
+    expect(feet.filter((ny) => ny > -0.999), 'faces on the floor not looking down').toEqual([]);
   });
 });

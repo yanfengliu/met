@@ -32,11 +32,12 @@ export function baluster(params: BalusterParams = {}): THREE.BufferGeometry {
     const b = new MeshBuilder();
     const foot = 0.11 * h;
     const cap = 0.1 * h;
-    b.box([-w, 0, -w], [w, foot, w], ['-y']);
-    b.box([-w, h - cap, -w], [w, h, w], ['+y']);
+    b.box([-w, 0, -w], [w, foot, w]);
+    b.box([-w, h - cap, -w], [w, h, w]);
     const n = byDetail(full.detail, [1, 2, 3]);
-    // Open at both ends: they meet the blocks' faces.
-    const profile: Profile = new ProfilePen(0.8 * w, foot)
+    // Closed by a disc at each end, on the blocks' faces.
+    const profile: Profile = new ProfilePen(0, foot)
+      .to(0.8 * w, foot)
       .half(0, 0.05 * h, 0.08 * w, n)
       .to(0.7 * w, 0.18 * h)
       .quarter(0.28 * w, 0.17 * h, true, n + 1)
@@ -45,6 +46,7 @@ export function baluster(params: BalusterParams = {}): THREE.BufferGeometry {
       .half(0, 0.05 * h, 0.12 * w, n)
       .to(0.6 * w, h - cap - 0.02 * h)
       .to(0.75 * w, h - cap)
+      .to(0, h - cap)
       .open();
     latheInto(b, profile, { segments: byDetail(full.detail, [6, 10, 16]) });
     return b.build();
@@ -175,8 +177,8 @@ function buildBalustrade(
     const w = p.postWidth / 2;
     const b = w + 0.03;
     const c = w + 0.045;
-    posts.box([-b, 0, -b], [b, p.plinthHeight * 1.15, b], ['-y']);
-    posts.box([-w, p.plinthHeight * 1.15, -w], [w, p.height - p.railHeight, w], ['-y', '+y']);
+    posts.box([-b, 0, -b], [b, p.plinthHeight * 1.15, b]);
+    posts.box([-w, p.plinthHeight * 1.15, -w], [w, p.height - p.railHeight, w]);
     posts.box([-c, p.height - p.railHeight, -c], [c, p.height + 0.05, c]);
     const angle = Math.atan2(-direction.z, direction.x);
     posts.transform(mark, new THREE.Matrix4().makeTranslation(at.x, at.y, at.z).multiply(new THREE.Matrix4().makeRotationY(angle)));

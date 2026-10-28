@@ -167,8 +167,9 @@ export function medallionDisc(radius: number, thickness: number, segments: numbe
 
 /**
  * The lining of a round-arched passage: two jambs and an arch `band` thick round an opening `2 * half` wide whose arch springs at `spring`, `depth`
- * long. Origin on the floor at the opening's middle; the passage runs from z = 0 toward −Z; the feet, on the floor, have no faces. The arch is 12
- * flat facets, as the core's round heads (core/arches.ts holeOutline and holeLining), so it meets the core's lining of the same section flush.
+ * long. Origin on the floor at the opening's middle; the passage runs from z = 0 toward −Z; its feet on the floor look down, so a section cut through
+ * a jamb shows a closed solid (src/viewer/cap-pass.ts). The arch is 12 flat facets, as the core's round heads (core/arches.ts holeOutline and
+ * holeLining), so it meets the core's lining of the same section flush.
  */
 export function archedPassage(half: number, band: number, spring: number, depth: number): THREE.BufferGeometry {
   return once(`archedPassage|${String(half)}|${String(band)}|${String(spring)}|${String(depth)}`, () => {
@@ -179,11 +180,11 @@ export function archedPassage(half: number, band: number, spring: number, depth:
     const b = new MeshBuilder();
     b.planar(outline, [], new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0));
     b.planar(outline.map(([u, v]): [number, number] => [-u, v]), [], new THREE.Vector3(0, 0, -depth), new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0));
-    // Each edge's face looks out of the band, to the right of travel: into the opening on the inner faces, away from it on the outer.
+    // Each edge's face looks out of the band, to the right of travel: into the opening on the inner faces, away from it on the outer, down at the feet.
     for (let k = 0; k < outline.length; k++) {
       const p = outline[k];
       const q = outline[(k + 1) % outline.length];
-      if (p === undefined || q === undefined || (p[1] === 0 && q[1] === 0)) continue;
+      if (p === undefined || q === undefined) continue;
       b.polygon([new THREE.Vector3(p[0], p[1], -depth), new THREE.Vector3(q[0], q[1], -depth), new THREE.Vector3(q[0], q[1], 0), new THREE.Vector3(p[0], p[1], 0)]);
     }
     return b.build();

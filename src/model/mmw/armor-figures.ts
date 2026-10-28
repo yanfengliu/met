@@ -7,7 +7,7 @@
 import { CylinderGeometry, Matrix4, Quaternion, SphereGeometry, TorusGeometry, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
-import { MeshBuilder } from '../lib/index.js';
+import { MeshBuilder, sheet } from '../lib/index.js';
 
 /** A matrix from a position, Euler-free axis rotation and per-axis scale. */
 function m(x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, axis?: readonly [number, number, number], angle = 0): Matrix4 {
@@ -17,7 +17,7 @@ function m(x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, axis?: reado
 
 const SPHERE = new SphereGeometry(0.5, 12, 8);
 const CYLINDER = new CylinderGeometry(0.5, 0.5, 1, 10);
-const CONE = new CylinderGeometry(0.42, 0.5, 1, 12, 1, true);
+const CONE = new CylinderGeometry(0.42, 0.5, 1, 12, 1);
 
 export interface MountedArmour {
   /** Horse's legs, tail and bridle: dark. */
@@ -48,7 +48,7 @@ export function mountedArmour(): MountedArmour {
   horse.append(CYLINDER, m(-1.15, 1.1, 0, 0.1, 0.8, 0.1, [0, 0, 1], -0.35));
   // Body under the caparison: barrel and chest.
   cloth.append(SPHERE, m(0, 1.42, 0, 2.05, 0.92, 0.82));
-  // The caparison's skirt: an open truncated cone round the body, falling to just above the knees.
+  // The caparison's skirt: a truncated cone round the body, falling to just above the knees, closed at both ends.
   cloth.append(CONE, m(0, 1.02, 0, 2.15, 0.62, 0.92));
   // Neck and head, armoured: crinet on the neck, chanfron on the face.
   armour.append(CYLINDER, m(0.98, 1.88, 0, 0.36, 0.95, 0.3, [0, 0, 1], -0.62));
@@ -101,7 +101,7 @@ export function banner(): Banner {
   // (z, y) on axes (+Z, +Y) faces −X, so that copy goes on the −X side; the +X side mirrors y to face +X.
   cloth.planar(outline.map(([z, y]) => [z, y] as const), [], new Vector3(-t, 0, 0), new Vector3(0, 0, 1), new Vector3(0, 1, 0));
   cloth.planar(outline.map(([z, y]) => [z, -y] as const), [], new Vector3(t, 0, 0), new Vector3(0, 0, 1), new Vector3(0, -1, 0));
-  bannerCache = Object.freeze({ pole: pole.build(), cloth: cloth.build() });
+  bannerCache = Object.freeze({ pole: pole.build(), cloth: sheet(cloth.build()) });
   return bannerCache;
 }
 

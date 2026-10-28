@@ -8,7 +8,7 @@ import { Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
 import type { Kit } from '../../build/types.js';
-import { MeshBuilder } from '../lib/index.js';
+import { MeshBuilder, sheet } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { GALLERY_CEILING_Y, ROOF_Y, SKYLIGHT_CURB, SKYLIGHT_PITCH_DEG } from './constants.js';
 import { ridgesOver, type Gallery, type Rect } from './layout.js';
@@ -21,18 +21,18 @@ const RAFTER_SPACING = 1.6;
 const LAYLIGHT_SPACING = 1.25;
 const CURB_WALL = 0.18;
 
-/** A unit pane in the XZ plane (x and z ±0.5) facing +Y. */
+/** A unit pane in the XZ plane (x and z ±0.5) facing +Y, a sheet (../lib/sheet.ts). */
 const UNIT_PANE: BufferGeometry = (() => {
   const b = new MeshBuilder();
   b.polygon([new Vector3(-0.5, 0, 0.5), new Vector3(0.5, 0, 0.5), new Vector3(0.5, 0, -0.5), new Vector3(-0.5, 0, -0.5)]);
-  return b.build();
+  return sheet(b.build());
 })();
 
-/** A unit gable pane in the XY plane, base x ±0.5 at y = 0, apex (0, 1), facing +Z. */
+/** A unit gable pane in the XY plane, base x ±0.5 at y = 0, apex (0, 1), facing +Z, a sheet. */
 const UNIT_GABLE: BufferGeometry = (() => {
   const b = new MeshBuilder();
   b.polygon([new Vector3(-0.5, 0, 0), new Vector3(0.5, 0, 0), new Vector3(0, 1, 0)]);
-  return b.build();
+  return sheet(b.build());
 })();
 
 /** A unit box stretched into a bar from `a` to `b`, `width` across and `depth` along `normal` (made perpendicular to the bar). */

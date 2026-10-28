@@ -10,14 +10,22 @@
  * Only the building is cut: a material with `userData.sectionCut === false` (the site's landscape: trees, ground, paths) gets no plane, and the cap pass
  * leaves its meshes out, so trees stay whole instead of showing cut-coloured crowns. Of the other meshes it draws only the pieces the plane passes
  * through (src/viewer/cap-pass.ts), so a piece under the cut never shows its back in the cut colour, however close its faces or coarse the depth buffer.
- * Bound: only closed meshes get a solid cut face; an open surface in a piece the plane passes through, seen from behind, shows the cut colour too while
- * the cut is on. Transparent meshes are left out. On a piece the plane passes through, the bias lets a back face win over a front face of that piece
- * less than CAP_DEPTH_BIAS steps in front of it: along an edge where the two meet, a sliver about 0.03 px wide (a rare antialiasing sample of the cut
- * colour), and across a part of the piece thinner than that, which needs a near plane far closer than what is in view (4 steps are 0.4 to 15 mm in the
- * floor views and close-ups, 8 cm 100 m away with the near plane at 3 cm).
+ * Transparent meshes are left out, and so are sheets, surfaces with no inside (src/model/lib/sheet.ts, `capsMesh`). Every other piece is closed along
+ * vertical lines and has an inside behind each upright face (src/model/closure.test.ts), so a cut through it, seen straight down, shows the cut colour
+ * across its whole section where its faces look out, never what lies below. A part wound inside out (the Arms and Armor Court's gables, an open finding
+ * the spec names) leaves no back face there for this pass and shows its lit inner faces instead.
+ * Bound: a piece may still be open sideways (a wall's end run into another, a face left out where two parts meet), so a slanted view can see out of its
+ * section where it meets no back face. It may hold two faces back to back, a two-sided membrane (a channel's end against a reveal): in a piece the plane
+ * passes through, the back of either one wins over the front of the other below the cut, so the membrane shows the cut colour from either side. On a
+ * piece the plane passes through, the bias lets a back face win over a front face of that piece less than CAP_DEPTH_BIAS steps in front of it: along an
+ * edge where the two meet, a sliver about 0.03 px wide (a rare antialiasing sample of the cut colour), and across a part of the piece thinner
+ * than that, which needs a near plane far closer than what is in view (4 steps are 0.4 to 15 mm in the floor views and close-ups, 8 cm 100 m away with
+ * the near plane at 3 cm).
  */
 import { BackSide, Color, MeshBasicMaterial, Plane, Vector3 } from 'three';
-import type { Material } from 'three';
+import type { Material, Mesh } from 'three';
+
+import { isSheet } from '../model/lib/sheet.js';
 
 /** Plane constant while the cut is off: far above anything modelled. */
 const OFF = 1e6;
@@ -37,6 +45,11 @@ export function cutBySection(material: Material): boolean {
 /** Whether the cap pass draws meshes of `material`: those the cut clips, except transparent ones (glass would show its back faces in the cut colour). */
 export function cappedBySection(material: Material): boolean {
   return cutBySection(material) && !material.transparent;
+}
+
+/** Whether the cap pass draws `mesh`: one of several materials, or of one `cappedBySection` takes, unless its geometry is a sheet, with no inside to show. */
+export function capsMesh(mesh: Mesh): boolean {
+  return !isSheet(mesh.geometry) && (Array.isArray(mesh.material) || cappedBySection(mesh.material));
 }
 
 export class SectionCut {

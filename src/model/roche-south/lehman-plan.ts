@@ -11,7 +11,7 @@
  */
 import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, MAIN_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
 import { LEHMAN_BLOCK, MAP_Z, OUTER_WALL } from './blocks.js';
-import { ccw, clipHalfPlane, inset, type P2 } from './poly.js';
+import { ccw, clipHalfPlane, contains, distanceToEdges, inset, type P2 } from './poly.js';
 
 /** Court centre: the map's court 963 (0, −147.68) on the world frame. */
 export const COURT_X = 0;
@@ -146,9 +146,25 @@ const ROOF_OPENING: readonly P2[] = [...BAND_LOW, ...[...courtEast].sort((p, q) 
 /**
  * The opening meets the roof's edge at the strip, where the court's east tip crosses it, so it is a bay in the outline rather than a hole: walk the
  * outline to that edge, round the opening the long way between its two points on the edge, and on. (A hole stopped short of the edge left a 0.1 m
- * sliver of roof across the top of the court's east opening, seen from the court as a beam in front of the 1880 front.)
+ * sliver of roof across the top of the court's east opening, seen from the court as a beam in front of the 1880 front.) A corner of the opening outside
+ * the outline moves along Z, the way the gallery ring's sides run, onto the outline: the ring's band reaches the outline's edge at Z −147.1 on the
+ * north side, and on the south, whose edge the map puts 0.1 m further out, it would cross the edge and back, an outline earcut cannot cover (it left a
+ * triangle out of the roof's top and another out of its bottom).
  */
-function bayed(outline: readonly P2[], opening: readonly P2[]): P2[] {
+function bayed(outline: readonly P2[], within: readonly P2[]): P2[] {
+  const onOutline = (p: P2): P2 => {
+    if (contains(outline, p) || distanceToEdges(outline, p) < 1e-9) return p;
+    // Where the outline's edges cross the line X = p's X, the crossing nearest p.
+    const zs = outline.flatMap((a, i) => {
+      const b = outline[(i + 1) % outline.length] ?? a;
+      if (a[0] === b[0] || (p[0] - a[0]) * (p[0] - b[0]) > 0) return [];
+      return [a[1] + ((b[1] - a[1]) * (p[0] - a[0])) / (b[0] - a[0])];
+    });
+    const z = zs.reduce((best, c) => (Math.abs(c - p[1]) < Math.abs(best - p[1]) ? c : best), Number.POSITIVE_INFINITY);
+    if (!Number.isFinite(z)) throw new Error(`lehman-plan.ts: the opening's corner at X ${p[0].toFixed(3)}, Z ${p[1].toFixed(3)} lies outside the roof outline, which no edge crosses at that X; keep the opening inside the outline.`);
+    return [p[0], z];
+  };
+  const opening = within.map(onOutline);
   const n = opening.length;
   const ends = opening.map((p, i) => (onStripEdge(p) ? i : -1)).filter((i) => i >= 0);
   const edge = outline.findIndex((a, i) => onStripEdge(a) && onStripEdge(outline[(i + 1) % outline.length] ?? a));

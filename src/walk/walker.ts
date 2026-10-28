@@ -36,7 +36,7 @@ export interface WalkWorld {
 export type Settled = 'kept' | 'moved' | 'lost';
 
 /** A surface less than this above the feet is the one they stand on, metres. */
-const STANDING = 1e-3;
+export const STANDING = 1e-3;
 
 /**
  * Whether a piece crossed at `heights` (lowest first) along a vertical line holds some of that line between `low` and `high` inside it: between its first
@@ -157,8 +157,8 @@ export class Walker {
   /**
    * Checks the walker against a world just built (docs/design/spec.md, Walk mode: When the build moves). It stays where it is unless it is buried,
    * the model over it with nothing but the workspace ground under it, or embedded, the line from just over its feet to its head inside a piece
-   * numbered `from` or later (the pieces added since it was last checked). Then it moves, at rest, to the lowest walkable surface over its feet where
-   * its body stands clear (`clearAt`). Returns 'lost' when no surface over it will do.
+   * numbered `from` or later (the pieces added since it was last checked), a sheet having no inside (src/model/lib/sheet.ts). Then it moves, at rest,
+   * to the lowest walkable surface over its feet where its body stands clear (`clearAt`). Returns 'lost' when no surface over it will do.
    */
   settle(from: number): Settled {
     const { feet } = this;
@@ -166,7 +166,7 @@ export class Walker {
     const base = feet.y + STANDING;
     const heights = lines.flatMap((p) => p.heights);
     const buried = heights.length > 0 && heights.every((y) => y > base);
-    const embedded = lines.some((p) => p.instance >= from && insideBetween(p.heights, base, feet.y + BODY.height));
+    const embedded = lines.some((p) => p.instance >= from && !p.sheet && insideBetween(p.heights, base, feet.y + BODY.height));
     if (!buried && !embedded) return 'kept';
     const surfaces = lines.flatMap((p) => p.heights.filter((y, i) => y > base && (p.normalYs[i] ?? 0) >= MIN_WALKABLE_NORMAL_Y)).sort((a, b) => a - b);
     const y = surfaces.find((s) => this.clearAt(lines, s));
@@ -185,12 +185,12 @@ export class Walker {
 
   /**
    * Whether the body stands clear with its feet at `y` over its place: no surface crosses its axis from STEP over its feet to its head, no piece's
-   * inside reaches that axis from just over its feet to its head, and nothing overhead meets the raised capsule (`bumpsHead`).
+   * inside (a sheet has none) reaches that axis from just over its feet to its head, and nothing overhead meets the raised capsule (`bumpsHead`).
    */
   private clearAt(lines: readonly LineCrossings[], y: number): boolean {
     const knee = y + BODY.step;
     const head = y + BODY.height;
-    for (const p of lines) if (p.heights.some((h) => h > knee && h <= head) || insideBetween(p.heights, y + STANDING, head)) return false;
+    for (const p of lines) if (p.heights.some((h) => h > knee && h <= head) || (!p.sheet && insideBetween(p.heights, y + STANDING, head))) return false;
     return !this.bumpsHead(y);
   }
 

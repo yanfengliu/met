@@ -17,6 +17,23 @@ function sound(geometry: THREE.BufferGeometry, name: string): void {
   expect(invertedFraction(geometry)).toBe(0);
 }
 
+/** The edges of `geometry`, its corners welded to 1 µm, that an odd number of its faces bear: none where every part meets the next edge to edge. */
+function oddEdges(geometry: THREE.BufferGeometry): number {
+  const position = geometry.getAttribute('position');
+  const index = geometry.getIndex();
+  const key = (j: number): string => [position.getX(j), position.getY(j), position.getZ(j)].map((v) => Math.round(v * 1e6)).join(',');
+  const count = new Map<string, number>();
+  for (let k = 0; k + 2 < (index?.count ?? position.count); k += 3) {
+    const corners = [0, 1, 2].map((i) => key(index === null ? k + i : index.getX(k + i)));
+    corners.forEach((p, i) => {
+      const q = corners[(i + 1) % 3] ?? p;
+      const edge = p < q ? `${p}|${q}` : `${q}|${p}`;
+      count.set(edge, (count.get(edge) ?? 0) + 1);
+    });
+  }
+  return [...count.values()].filter((n) => n % 2 === 1).length;
+}
+
 describe('dome', () => {
   it('hemisphere: springs from y = 0, crown at radius + thickness, closed from every side', () => {
     const geometry = dome({ radius: 6, thickness: 0.4 });
@@ -61,6 +78,10 @@ describe('pendentives', () => {
     expect(backfaceFraction(geometry, 400, 7, { notFromBelow: true })).toBeLessThan(0.12);
     expect(boxProblems(boxOf(geometry), { min: [-7, 0, -7], max: [7, 7, 7] }, 1e-3)).toEqual([]);
     expect(pendentives({ span: 14 })).toBe(geometry);
+  });
+
+  it("meet their spandrels edge to edge at every detail, the spandrels' arch on the curved faces' first row", () => {
+    for (const detail of ['low', 'medium', 'high'] as const) expect(oddEdges(pendentives({ span: 14, detail })), `edges borne by an odd number of faces, ${detail}`).toBe(0);
   });
 });
 

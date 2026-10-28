@@ -1,8 +1,8 @@
 /**
  * Glazing: ridge, hipped and pyramid skylights on a curb, flat laylights, round oculus lights, and vertical or sloped curtain walls with a mullion grid.
  *
- * Every part returns `{ frame, glass }`: `frame` is the curb, bars and mullions (metal), `glass` the panes, each a single sheet set inside the bars' depth (never on a bar face) and facing outward
- * (up and out for skylights, down for a laylight, +Z for a curtain wall). Render glass double-sided. Units metres.
+ * Every part returns `{ frame, glass }`: `frame` is the curb, bars and mullions (metal), each a closed solid, and `glass` the panes, each a single sheet set inside the bars' depth (never on a bar
+ * face) and facing outward (up and out for skylights, down for a laylight, +Z for a curtain wall), declared a sheet (./sheet.ts). Render glass double-sided. Units metres.
  * Skylights: origin at the bottom centre of the curb, ridge along Z. Laylight and oculus light: origin at their bottom centre. Curtain wall: origin at the bottom centre of the glass plane, which leans back (top toward −Z) by `slope`.
  */
 import * as THREE from 'three';
@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { MeshBuilder } from './builder.js';
 import { cached } from './cache.js';
 import { inRange, integer, positive, require } from './params.js';
+import { sheet } from './sheet.js';
 import { sweepInto } from './sweep.js';
 
 export interface Glazing {
@@ -128,7 +129,7 @@ export function ridgeSkylight(params: RidgeSkylightParams): Glazing {
     }
     barInto(frame, v(0, top, -hz), v(0, top, hz), s.bar * 1.4, s.barDepth, new THREE.Vector3(0, 1, 0));
     for (const end of [-1, 1]) paneInto(glass, [v(-hx, y0, end * hz), v(hx, y0, end * hz), v(0, top, end * hz)], new THREE.Vector3(0, 0, end), -s.bar / 4);
-    return Object.freeze({ frame: frame.build(), glass: glass.build() });
+    return Object.freeze({ frame: frame.build(), glass: sheet(glass.build()) });
   });
 }
 
@@ -175,7 +176,7 @@ export function hippedSkylight(params: HippedSkylightParams): Glazing {
       const tri = end > 0 ? [corners[0], corners[1], apex] : [corners[2], corners[3], apex];
       paneInto(glass, tri.filter((p): p is THREE.Vector3 => p !== undefined), normal, -s.barDepth / 4);
     }
-    return Object.freeze({ frame: frame.build(), glass: glass.build() });
+    return Object.freeze({ frame: frame.build(), glass: sheet(glass.build()) });
   });
 }
 
@@ -226,7 +227,7 @@ export function pyramidSkylight(params: PyramidSkylightParams): Glazing {
       for (let i = 1; i <= full.bars; i++) barInto(frame, a.clone().lerp(c, i / (full.bars + 1)), apex, full.bar, full.barDepth, normal);
       paneInto(glass, [a, c, apex], normal, -full.barDepth / 4);
     }
-    return Object.freeze({ frame: frame.build(), glass: glass.build() });
+    return Object.freeze({ frame: frame.build(), glass: sheet(glass.build()) });
   });
 }
 
@@ -275,7 +276,7 @@ export function laylight(params: LaylightParams): Glazing {
     }
     const glass = new MeshBuilder();
     paneInto(glass, [new THREE.Vector3(-hx, 0, -hz), new THREE.Vector3(hx, 0, -hz), new THREE.Vector3(hx, 0, hz), new THREE.Vector3(-hx, 0, hz)], new THREE.Vector3(0, -1, 0), -d / 2);
-    return Object.freeze({ frame: frame.build(), glass: glass.build() });
+    return Object.freeze({ frame: frame.build(), glass: sheet(glass.build()) });
   });
 }
 
@@ -332,7 +333,7 @@ export function curtainWall(params: CurtainWallParams): Glazing {
       frame.transform(0, lean);
       glass.transform(0, lean);
     }
-    return Object.freeze({ frame: frame.build(), glass: glass.build() });
+    return Object.freeze({ frame: frame.build(), glass: sheet(glass.build()) });
   });
 }
 
@@ -397,6 +398,6 @@ export function oculusLight(params: OculusLightParams): Glazing {
       pane.push(new THREE.Vector3(inner * Math.cos(a), 0, -inner * Math.sin(a)));
     }
     paneInto(glass, pane, new THREE.Vector3(0, -1, 0), -full.depth / 2);
-    return Object.freeze({ frame: frame.build(), glass: glass.build() });
+    return Object.freeze({ frame: frame.build(), glass: sheet(glass.build()) });
   });
 }

@@ -20,6 +20,10 @@
     {
       "id": 4,
       "theme": "cited-images-viewed"
+    },
+    {
+      "id": 5,
+      "theme": "closed-pieces"
     }
   ]
 }

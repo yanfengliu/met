@@ -2,7 +2,8 @@
  * Pilasters: flat columns standing against a wall, in the same three orders and proportions as `column` (with W, the face width, in place of D).
  *
  * Units metres. Origin at the bottom centre of the back face, which lies in the wall plane z = 0; the pilaster projects toward +Z by `projection` and its face looks +Z.
- * The base mouldings and the capital wrap the front and both returns; nothing is built behind z = 0.
+ * The base mouldings and the capital wrap the front and both returns; nothing is built behind z = 0. Every part is closed along vertical lines: each has
+ * a bottom and a top, and the back, in the wall plane, is the only face left out.
  */
 import * as THREE from 'three';
 
@@ -94,6 +95,15 @@ function baseMouldingProfile(W: number, segments: number): Profile {
     .open();
 }
 
+/** The base moulding's back, which closes it: down the face line from the moulding's top, then out along the plinth top to its foot. */
+function baseMouldingBack(W: number): Profile {
+  const s = W;
+  return new ProfilePen(-0.002 * s, 0.5 * s)
+    .to(-0.002 * s, s / 6)
+    .to(0.19 * s, s / 6)
+    .open();
+}
+
 export interface PilasterParts {
   readonly base?: THREE.BufferGeometry;
   readonly shaft: THREE.BufferGeometry;
@@ -120,8 +130,10 @@ export function pilasterParts(params: PilasterParams = {}): PilasterParts {
     if (spec.base === 'attic') {
       const bb = new MeshBuilder();
       const plinth = 0.25 * W;
-      bb.box([-W / 2 - plinth, 0, 0], [W / 2 + plinth, W / 6, P + plinth], ['-y', '-z']);
+      bb.box([-W / 2 - plinth, 0, 0], [W / 2 + plinth, W / 6, P + plinth], ['-z']);
       sweepInto(bb, baseMouldingProfile(W, byDetail(spec.detail, [3, 5, 7])), uPath(W / 2, P, 0), { pathCreaseDeg: 30 });
+      // Swept apart, so the moulding's own normals are as they were.
+      sweepInto(bb, baseMouldingBack(W), uPath(W / 2, P, 0), { pathCreaseDeg: 30 });
       parts.base = bb.build();
     }
     return Object.freeze(parts);
@@ -143,6 +155,16 @@ function pilasterShaftInto(b: MeshBuilder, spec: PilasterSpec, y0: number, y1: n
   const W = spec.width;
   const P = spec.projection;
   const hw = W / 2;
+  const n = spec.flutes;
+  const flute = W / (n + 0.3 * (n + 1));
+  const fillet = 0.3 * flute;
+  const half = flute / 2;
+  // Fillets (n + 1 of them, the outer two being the borders) and flutes between them; a flute k is centred on centreOf(k).
+  const centreOf = (k: number): number => -hw + fillet + half + k * (flute + fillet);
+  // Its underside and top close it. The flutes run out before both ends, where the face's edge runs straight through each flute's centre.
+  const front = spec.fluted ? Array.from({ length: n }, (_, k) => centreOf(k)) : [];
+  b.polygon([new THREE.Vector3(-hw, y0, 0), new THREE.Vector3(hw, y0, 0), new THREE.Vector3(hw, y0, P), ...[...front].reverse().map((x) => new THREE.Vector3(x, y0, P)), new THREE.Vector3(-hw, y0, P)]);
+  b.polygon([new THREE.Vector3(-hw, y1, 0), new THREE.Vector3(-hw, y1, P), ...front.map((x) => new THREE.Vector3(x, y1, P)), new THREE.Vector3(hw, y1, P), new THREE.Vector3(hw, y1, 0)]);
   // Returns, plain.
   b.polygon([new THREE.Vector3(hw, y0, P), new THREE.Vector3(hw, y0, 0), new THREE.Vector3(hw, y1, 0), new THREE.Vector3(hw, y1, P)]);
   b.polygon([new THREE.Vector3(-hw, y0, 0), new THREE.Vector3(-hw, y0, P), new THREE.Vector3(-hw, y1, P), new THREE.Vector3(-hw, y1, 0)]);
@@ -150,21 +172,15 @@ function pilasterShaftInto(b: MeshBuilder, spec: PilasterSpec, y0: number, y1: n
     b.polygon([new THREE.Vector3(-hw, y0, P), new THREE.Vector3(hw, y0, P), new THREE.Vector3(hw, y1, P), new THREE.Vector3(-hw, y1, P)]);
     return;
   }
-  const n = spec.flutes;
-  const flute = W / (n + 0.3 * (n + 1));
-  const fillet = 0.3 * flute;
   const depth = (flute / 2) * 0.85;
   const across = byDetail(spec.detail, [2, 3, 5]);
   const start = y0 + 0.12 * W;
   const stop = y1 - 0.1 * W;
   const steps: readonly number[] = byDetail<readonly number[]>(spec.detail, [[0, 1], [0, 0.2, 0.55, 1], [0, 0.1, 0.3, 0.6, 1]]);
-  const half = flute / 2;
   const rings: { y: number; q: number }[] = [{ y: y0, q: 0 }];
   for (const q of steps) rings.push({ y: start + q * half, q });
   for (const q of [...steps].reverse()) rings.push({ y: stop - q * half, q });
   rings.push({ y: y1, q: 0 });
-  // Fillets (n + 1 of them, the outer two being the borders) and flutes between them; a flute k is centred on centreOf(k).
-  const centreOf = (k: number): number => -hw + fillet + half + k * (flute + fillet);
   const fullness = (q: number): number => Math.sqrt(Math.max(0, 1 - (1 - q) * (1 - q)));
   for (let k = 0; k <= n; k++) {
     const rows = rings.map(({ y, q }) => {
@@ -237,9 +253,10 @@ function pilasterCapitalInto(b: MeshBuilder, spec: PilasterSpec): void {
   }
 }
 
-/** Mouldings swept round the U of the capital, with a flat top. */
+/** Mouldings swept round the U of the capital, with a flat top and an underside on the shaft's top. */
 function capitalBlockInto(b: MeshBuilder, W: number, P: number, profile: Profile): void {
   sweepInto(b, profile, uPath(W / 2, P, 0), { pathCreaseDeg: 30 });
+  b.polygon([new THREE.Vector3(-W / 2, 0, 0), new THREE.Vector3(W / 2, 0, 0), new THREE.Vector3(W / 2, 0, P), new THREE.Vector3(-W / 2, 0, P)]);
   const last = profile.points.at(-1) ?? [0, 0];
   const hx = W / 2 + last[0];
   const z1 = P + last[0];

@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three';
 
-import { MeshBuilder, type V2 } from './builder.js';
+import { MeshBuilder, polygonNormal, type V2 } from './builder.js';
 import { cached } from './cache.js';
 import { byDetail, checkDetail, nonNegative, oneOf, positive, require, type Detail } from './params.js';
 import { sweepInto } from './sweep.js';
@@ -151,10 +151,14 @@ export function stripsAround(x0: number, x1: number, ya: number, yb: number, hol
   return quads;
 }
 
-/** x-intervals of the line at height y outside every hole. */
-function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[]): [number, number][] {
+/**
+ * x-intervals of the line at height y outside every hole; with `edge`, outside too a hole whose sill (`'sill'`) or head (`'head'`) lies on the line,
+ * whose own face covers it there, so a channel's floor or ceiling never doubles it.
+ */
+function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[], edge?: 'sill' | 'head'): [number, number][] {
+  const on = (h: number): boolean => Math.abs(y - h) <= 1e-9;
   const spans = holes
-    .map((hole) => (y > hole.minY && y < hole.maxY ? spanAt(hole.outline, y) : null))
+    .map((hole) => ((y > hole.minY && y < hole.maxY) || (edge === 'sill' && on(hole.minY)) || (edge === 'head' && on(hole.maxY)) ? spanAt(hole.outline, y) : null))
     .filter((s): s is [number, number] => s !== null)
     .sort((a, b) => a[0] - b[0]);
   const out: [number, number][] = [];
@@ -165,6 +169,38 @@ function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[]):
   }
   if (x1 > left) out.push([left, x1]);
   return out;
+}
+
+/**
+ * Where a channel from `lo` to `hi`, `depth` deep, runs into an opening's jamb, head, sill or arch, the reveal's front strip borders the channel, not
+ * stone: a face back to back with it there, facing the channel, closes the channel's end, so it does not look into the reveal, and the stone along
+ * vertical lines (docs/design/spec.md, Walk mode: When the build moves). A head or sill on the channel's edge, which its floor or ceiling meets, is left alone.
+ */
+function channelSidesInto(b: MeshBuilder, hole: Hole, lo: number, hi: number, depth: number): void {
+  const pts = hole.outline;
+  const cx = pts.reduce((sum, p) => sum + p[0], 0) / pts.length;
+  const cy = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
+  // A door's sill, its outline's first side, has no reveal.
+  for (let k = hole.minY <= 1e-9 ? 1 : 0; k < pts.length; k++) {
+    const [xa, ya] = pts[k] ?? [0, 0];
+    const [xc, yc] = pts[(k + 1) % pts.length] ?? [0, 0];
+    let t0 = 0;
+    let t1 = 1;
+    if (Math.abs(yc - ya) < 1e-12) {
+      if (!(ya > lo + 1e-9 && ya < hi - 1e-9)) continue;
+    } else {
+      const ta = (lo - ya) / (yc - ya);
+      const tb = (hi - ya) / (yc - ya);
+      t0 = Math.max(0, Math.min(ta, tb));
+      t1 = Math.min(1, Math.max(ta, tb));
+      if (t1 - t0 < 1e-9) continue;
+    }
+    const [px, py] = [xa + (xc - xa) * t0, ya + (yc - ya) * t0];
+    const [qx, qy] = [xa + (xc - xa) * t1, ya + (yc - ya) * t1];
+    const quad = [new THREE.Vector3(px, py, 0), new THREE.Vector3(qx, qy, 0), new THREE.Vector3(qx, qy, -depth), new THREE.Vector3(px, py, -depth)];
+    const n = polygonNormal(quad);
+    b.polygon(n.x * ((px + qx) / 2 - cx) + n.y * ((py + qy) / 2 - cy) > 0 ? quad : quad.reverse());
+  }
 }
 
 function face(b: MeshBuilder, quads: readonly [V2, V2, V2, V2][], z: number, front: boolean): void {
@@ -227,8 +263,25 @@ function wallSpec(params: WallParams): WallSpec {
           start: r.start ?? r.course ?? 0.6,
           stop: r.stop ?? height - (r.course ?? 0.6) / 2,
         };
-  if (rustication !== null) require(part, rustication.depth < thickness, `rustication.depth ${String(rustication.depth)} must be less than the thickness ${String(thickness)}.`);
+  if (rustication !== null) {
+    require(part, rustication.depth < thickness, `rustication.depth ${String(rustication.depth)} must be less than the thickness ${String(thickness)}.`);
+    require(part, rustication.joint < rustication.course, `rustication.joint ${String(rustication.joint)} must be less than the course ${String(rustication.course)}, or the channels overlap.`);
+    // The channels the wall builds, from its first joint's foot to its last joint's head: above the wall's foot and below its top, where they would leave it open.
+    const joints = jointsOf(rustication);
+    const [first, last] = [joints[0], joints.at(-1)];
+    if (first !== undefined && last !== undefined) {
+      const [low, high] = [first - rustication.joint / 2, last + rustication.joint / 2];
+      require(part, low > 1e-6 && high < height - 1e-6, `rustication's channels run from ${String(low)} to ${String(high)} m; keep them above the wall's foot and below its top at ${String(height)} m (start, stop, course and joint).`);
+    }
+  }
   return { width, height, thickness, openings, rustication, detail: checkDetail(part, params.detail ?? 'medium') };
+}
+
+/** The heights of a rustication's joints: from `start`, a course apart, up to `stop`. */
+function jointsOf(r: { readonly course: number; readonly start: number; readonly stop: number }): number[] {
+  const joints: number[] = [];
+  for (let y = r.start; y <= r.stop + 1e-9; y += r.course) joints.push(y);
+  return joints;
 }
 
 /** A wall with openings (see the header for the frame). */
@@ -251,42 +304,46 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
   const through = holes.filter((h) => h.depth >= T);
   // Front face, plain or banded.
   const r = spec.rustication;
+  const joints = r === null ? [] : jointsOf(r);
   if (r === null) face(b, stripsAround(-W, W, 0, H, holes), 0, true);
   else {
-    const joints: number[] = [];
-    for (let y = r.start; y <= r.stop + 1e-9; y += r.course) joints.push(y);
     let y0 = 0;
     for (const j of joints) {
       face(b, stripsAround(-W, W, y0, j - r.joint / 2, holes), 0, true);
       face(b, stripsAround(-W, W, j - r.joint / 2, j + r.joint / 2, holes), -r.depth, true);
       // The channel's floor faces up (top of the course below), its ceiling faces down.
-      for (const [lo, hi] of intervalsAt(-W, W, j - r.joint / 2, holes)) {
+      for (const [lo, hi] of intervalsAt(-W, W, j - r.joint / 2, holes, 'sill')) {
         b.polygon([new THREE.Vector3(lo, j - r.joint / 2, 0), new THREE.Vector3(hi, j - r.joint / 2, 0), new THREE.Vector3(hi, j - r.joint / 2, -r.depth), new THREE.Vector3(lo, j - r.joint / 2, -r.depth)]);
       }
-      for (const [lo, hi] of intervalsAt(-W, W, j + r.joint / 2, holes)) {
+      for (const [lo, hi] of intervalsAt(-W, W, j + r.joint / 2, holes, 'head')) {
         b.polygon([new THREE.Vector3(lo, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, 0), new THREE.Vector3(lo, j + r.joint / 2, 0)]);
       }
-      // Where a channel meets an opening, close its end so it does not look into the reveal.
-      for (const hole of through) {
-        const lowY = j - r.joint / 2;
-        const highY = j + r.joint / 2;
-        if (!(hole.minY < lowY && hole.maxY > highY)) continue;
-        const span = spanAt(hole.outline, j);
-        if (span === null) continue;
-        const [lo, hi] = span;
-        b.polygon([new THREE.Vector3(lo, lowY, -r.depth), new THREE.Vector3(lo, lowY, 0), new THREE.Vector3(lo, highY, 0), new THREE.Vector3(lo, highY, -r.depth)]);
-        b.polygon([new THREE.Vector3(hi, lowY, 0), new THREE.Vector3(hi, lowY, -r.depth), new THREE.Vector3(hi, highY, -r.depth), new THREE.Vector3(hi, highY, 0)]);
-      }
+      for (const hole of holes) channelSidesInto(b, hole, j - r.joint / 2, j + r.joint / 2, r.depth);
       y0 = j + r.joint / 2;
     }
     face(b, stripsAround(-W, W, y0, H, holes), 0, true);
   }
   // Back face, cut by the through openings only.
   face(b, stripsAround(-W, W, 0, H, through), -T, false);
-  // Ends and top; the foot is left open under doors.
-  b.box([-W, 0, -T], [W, H, 0], ['+z', '-z', '-y']);
+  // Ends, top and the foot, which is left open under doors; behind a blind one, a niche on the floor, it runs on under the wall. A channelled wall's
+  // ends are notched where each channel runs out, so the channel's floor, back and ceiling meet them.
+  b.box([-W, 0, -T], [W, H, 0], ['+z', '-z', '-y', ...(r === null ? [] : ['+x', '-x'])]);
+  if (r !== null) {
+    // The end's outline in (depth into the wall, height), down its front edge round each channel.
+    const end: V2[] = [[0, 0], [T, 0], [T, H], [0, H]];
+    for (const j of [...joints].reverse()) end.push([0, j + r.joint / 2], [r.depth, j + r.joint / 2], [r.depth, j - r.joint / 2], [0, j - r.joint / 2]);
+    const outline = end.filter((p, k) => k === 0 || p[0] !== end[k - 1]?.[0] || p[1] !== end[k - 1]?.[1]);
+    // Depth runs along −Z at both ends; the axes turn so each end faces out, +X or −X.
+    for (const s of [-1, 1]) b.planar(outline.map(([d, y]) => [s * d, y] as const), [], new THREE.Vector3(s * W, 0, 0), new THREE.Vector3(0, 0, -s), new THREE.Vector3(0, 1, 0));
+  }
   for (const [lo, hi] of intervalsAt(-W, W, 1e-6, holes)) {
     b.polygon([new THREE.Vector3(lo, 0, -T), new THREE.Vector3(hi, 0, -T), new THREE.Vector3(hi, 0, 0), new THREE.Vector3(lo, 0, 0)]);
+  }
+  for (const hole of holes) {
+    const span = hole.minY <= 1e-9 && hole.depth < T ? spanAt(hole.outline, 1e-6) : null;
+    if (span === null) continue;
+    const [lo, hi] = span;
+    b.polygon([new THREE.Vector3(lo, 0, -T), new THREE.Vector3(hi, 0, -T), new THREE.Vector3(hi, 0, -hole.depth), new THREE.Vector3(lo, 0, -hole.depth)]);
   }
   // Reveals: each outline swept from the front plane to its depth, facing into the opening; blind niches get a back.
   // A door (an opening at the foot) has no sill face, which would lie in the floor's plane.

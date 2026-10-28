@@ -109,7 +109,9 @@ function buildTree(p: TreeFull): Tree {
   const trunk = new MeshBuilder();
   const r0 = 0.024 * h;
   const rTop = 0.72 * r0;
-  const flare = new ProfilePen(1.45 * r0, 0)
+  // From the axis on the ground, so the trunk's foot closes it.
+  const flare = new ProfilePen(0, 0)
+    .to(1.45 * r0, 0)
     .quarter(-0.45 * r0, 0.06 * h, false, byDetail(p.detail, [1, 2, 3]))
     .to(rTop, forkY)
     .to(0, forkY)
@@ -157,7 +159,7 @@ interface HedgeFull {
 
 /**
  * A clipped box hedge: a box whose top edges and end corners are rounded (radius min(0.18, a quarter of the width, height or length)), pressed in by up to 3 cm of seeded unevenness.
- * Origin at the base centre; the box is exactly x in [−length/2, length/2], y in [0, height], z in [−width/2, width/2]. The bottom face is left out (it sits on the ground).
+ * Origin at the base centre; the box is exactly x in [−length/2, length/2], y in [0, height], z in [−width/2, width/2]. Its bottom face, on the ground, closes it.
  */
 export function hedge(params: HedgeParams = {}): THREE.BufferGeometry {
   const part = 'hedge';
@@ -250,6 +252,15 @@ function buildHedge(p: HedgeFull): THREE.BufferGeometry {
       }
     }
   }
+  // The bottom, on the ground, over the sides' bottom rows: round from +Z (x rising), down +X (z falling), along −Z (x falling) and up −X (z rising).
+  const foot = [
+    ...xs.map((x) => shape(x, 0, hz)),
+    ...[...zs].reverse().map((z) => shape(hx, 0, z)),
+    ...[...xs].reverse().map((x) => shape(x, 0, -hz)),
+    ...zs.map((z) => shape(-hx, 0, z)),
+  ].map((s) => fit.map(s.p));
+  const outline = foot.filter((p, i) => p.distanceTo(foot[(i + foot.length - 1) % foot.length] ?? p) > 1e-9).map((p) => [p.x, p.z] as const);
+  builder.planar(outline, [], vec(0, 0, 0), vec(1, 0, 0), vec(0, 0, 1));
   return builder.build();
 }
 
