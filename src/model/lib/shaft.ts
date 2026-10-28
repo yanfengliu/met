@@ -3,7 +3,7 @@
  *
  * The fluted surface is one grid patch per flute and per fillet, so the arrises between them stay crisp while each flute shades round.
  * The apophyge and astragal are lathed sleeves that pass a few millimetres inside the shaft surface, so they meet it in a clean intersection instead of a crack.
- * The flutes run out before both ends, where the surface is a circle, closed by a flat disc.
+ * The flutes run out before both ends, where the surface is a polygon through the flute centres, closed by a flat face.
  */
 import * as THREE from 'three';
 
@@ -152,7 +152,7 @@ function flutesInto(b: MeshBuilder, spec: ShaftSpec, y0: number): void {
   discInto(b, head, true);
 }
 
-/** A flat disc over a ring of points round the shaft (a flute's run-out repeats its points), facing up or down. */
+/** A flat face over a ring of points round the shaft (a flute's run-out repeats its points), facing up or down. */
 function discInto(b: MeshBuilder, ring: readonly THREE.Vector3[], up: boolean): void {
   const points = ring.filter((p, i) => p.distanceTo(ring[(i + ring.length - 1) % ring.length] ?? p) > 1e-9);
   b.polygon(polygonNormal(points).y > 0 === up ? points : [...points].reverse());

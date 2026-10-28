@@ -184,7 +184,7 @@ export function pedestalInto(b: MeshBuilder, width: number, depth: number, heigh
     ],
     { closed: true },
   );
-  // The plinth's underside, from the profile's foot, closes it.
+  // The plinth's underside, from the profile's foot, closes it, facing down.
   const foot = profile.points[0]?.[0] ?? 0;
   b.planar(
     [
@@ -196,7 +196,7 @@ export function pedestalInto(b: MeshBuilder, width: number, depth: number, heigh
     [],
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(1, 0, 0),
-    new THREE.Vector3(0, 0, -1),
+    new THREE.Vector3(0, 0, 1),
   );
   const top = profile.points.at(-1)?.[0] ?? 0;
   const ex = hx + top;

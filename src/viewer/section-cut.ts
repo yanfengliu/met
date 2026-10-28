@@ -10,8 +10,8 @@
  * Only the building is cut: a material with `userData.sectionCut === false` (the site's landscape: trees, ground, paths) gets no plane, and the cap pass
  * leaves its meshes out, so trees stay whole instead of showing cut-coloured crowns. Of the other meshes it draws only the pieces the plane passes
  * through (src/viewer/cap-pass.ts), so a piece under the cut never shows its back in the cut colour, however close its faces or coarse the depth buffer.
- * Transparent meshes are left out, and so are sheets, surfaces with no inside (src/model/lib/sheet.ts, `capsMesh`). Every other piece is a closed
- * solid (src/model/closure.test.ts), so a cut through it shows the cut colour across its whole section, never what lies below.
+ * Transparent meshes are left out, and so are sheets, surfaces with no inside (src/model/lib/sheet.ts, `capsMesh`). Every other piece is closed along
+ * vertical lines (src/model/closure.test.ts), so a cut through it shows the cut colour across its whole section seen from above, never what lies below.
  * Bound: on a piece the plane passes through, the bias lets a back face win over a front face of that piece less than CAP_DEPTH_BIAS steps in front of
  * it: along an edge where the two meet, a sliver about 0.03 px wide (a rare antialiasing sample of the cut colour), and across a part of the piece thinner
  * than that, which needs a near plane far closer than what is in view (4 steps are 0.4 to 15 mm in the floor views and close-ups, 8 cm 100 m away with

@@ -94,7 +94,7 @@ function boot(): void {
   document.body.appendChild(app);
 
   // The section cut's cap pass leaves out transparent meshes, those whose material the cut does not clip and sheets (src/viewer/section-cut.ts
-  // `capsMesh`); of the others, every one a closed solid, it draws the pieces the cut passes through (src/viewer/cap-pass.ts).
+  // `capsMesh`); of the others, every one closed along vertical lines, it draws the pieces the cut passes through (src/viewer/cap-pass.ts).
   const meshes = timeline.steps.flatMap((s) => s.meshes);
   const capped = meshes.filter(capsMesh);
   // The door layer (src/viewer/doors.ts): once a door's step is complete, stand-ins turned about their hinges draw its leaves in place of the timeline's

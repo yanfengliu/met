@@ -151,10 +151,14 @@ export function stripsAround(x0: number, x1: number, ya: number, yb: number, hol
   return quads;
 }
 
-/** x-intervals of the line at height y outside every hole. */
-function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[]): [number, number][] {
+/**
+ * x-intervals of the line at height y outside every hole; with `edge`, outside too a hole whose sill (`'sill'`) or head (`'head'`) lies on the line,
+ * whose own face covers it there, so a channel's floor or ceiling never doubles it.
+ */
+function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[], edge?: 'sill' | 'head'): [number, number][] {
+  const on = (h: number): boolean => Math.abs(y - h) <= 1e-9;
   const spans = holes
-    .map((hole) => (y > hole.minY && y < hole.maxY ? spanAt(hole.outline, y) : null))
+    .map((hole) => ((y > hole.minY && y < hole.maxY) || (edge === 'sill' && on(hole.minY)) || (edge === 'head' && on(hole.maxY)) ? spanAt(hole.outline, y) : null))
     .filter((s): s is [number, number] => s !== null)
     .sort((a, b) => a[0] - b[0]);
   const out: [number, number][] = [];
@@ -293,10 +297,10 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
       face(b, stripsAround(-W, W, y0, j - r.joint / 2, holes), 0, true);
       face(b, stripsAround(-W, W, j - r.joint / 2, j + r.joint / 2, holes), -r.depth, true);
       // The channel's floor faces up (top of the course below), its ceiling faces down.
-      for (const [lo, hi] of intervalsAt(-W, W, j - r.joint / 2, holes)) {
+      for (const [lo, hi] of intervalsAt(-W, W, j - r.joint / 2, holes, 'sill')) {
         b.polygon([new THREE.Vector3(lo, j - r.joint / 2, 0), new THREE.Vector3(hi, j - r.joint / 2, 0), new THREE.Vector3(hi, j - r.joint / 2, -r.depth), new THREE.Vector3(lo, j - r.joint / 2, -r.depth)]);
       }
-      for (const [lo, hi] of intervalsAt(-W, W, j + r.joint / 2, holes)) {
+      for (const [lo, hi] of intervalsAt(-W, W, j + r.joint / 2, holes, 'head')) {
         b.polygon([new THREE.Vector3(lo, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, -r.depth), new THREE.Vector3(hi, j + r.joint / 2, 0), new THREE.Vector3(lo, j + r.joint / 2, 0)]);
       }
       for (const hole of holes) channelSidesInto(b, hole, j - r.joint / 2, j + r.joint / 2, r.depth);

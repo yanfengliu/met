@@ -11,7 +11,7 @@ import { Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
 import { MeshBuilder, sheet, type V2 } from '../lib/index.js';
-import { ccw, contains, inwardNormal, simpleLoops, type P2 } from './poly.js';
+import { ccw, contains, inwardNormal, signedArea2, simpleLoops, type P2 } from './poly.js';
 
 export type V3 = readonly [number, number, number];
 
@@ -116,20 +116,29 @@ function sideQuads(b: MeshBuilder, loop: readonly P2[], y0: number, y1: number):
 
 /**
  * A closed vertical prism over a plan outline with optional holes, from y0 to y1 (a floor slab with its voids, a roof, a court paving). An outline that
- * touches itself is split there into simple loops (./poly.ts `simpleLoops`), each with the holes inside it, so earcut covers its top and bottom whole.
+ * touches itself is split there into simple loops (./poly.ts `simpleLoops`): each it bounds is covered with the holes inside it, a notch it pinches off
+ * among them, so earcut covers its top and bottom whole.
  */
 export function prism(outline: readonly P2[], holes: readonly (readonly P2[])[], y0: number, y1: number): BufferGeometry {
   const b = new MeshBuilder();
-  const inner = holes.map((h) => ccw(h).reverse());
+  const loops = simpleLoops(ccw(outline));
+  const notches = loops.filter((loop) => signedArea2(loop) < 0);
+  // A hole is found by its first point; a notch, which touches the loop round it, by the mean of its points.
+  const inner = [...holes.map((h) => ({ loop: ccw(h).reverse(), at: h[0] ?? [0, 0] })), ...notches.map((loop) => ({ loop, at: mean(loop) }))];
   const flip = (loop: readonly P2[]): V2[] => loop.map(([x, z]) => [x, -z] as const);
-  for (const outer of simpleLoops(ccw(outline))) {
-    const within = inner.filter((h) => contains(outer, h[0] ?? [0, 0]));
+  for (const outer of loops.filter((loop) => signedArea2(loop) > 0)) {
+    const within = inner.filter((h) => contains(outer, h.at)).map((h) => h.loop);
     b.planar(flip(outer), within.map(flip), new Vector3(0, y1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1));
     b.planar(outer, within, new Vector3(0, y0, 0), new Vector3(1, 0, 0), new Vector3(0, 0, 1));
     sideQuads(b, outer, y0, y1);
   }
-  for (const loop of inner) sideQuads(b, loop, y0, y1);
+  for (const { loop } of inner) sideQuads(b, loop, y0, y1);
   return b.build();
+}
+
+/** The mean of a loop's points. */
+function mean(loop: readonly P2[]): P2 {
+  return [loop.reduce((sum, p) => sum + p[0], 0) / loop.length, loop.reduce((sum, p) => sum + p[1], 0) / loop.length];
 }
 
 /**

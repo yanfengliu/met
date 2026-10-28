@@ -80,7 +80,7 @@ function uPath(halfWidth: number, front: number, y: number): [number, number, nu
   ];
 }
 
-/** Attic base for a pilaster: the column profile re-measured from the shaft face (d = r − 0.5 for W = 1), from the plinth top, closed down the face line and back along the plinth top. */
+/** Attic base for a pilaster: the column profile re-measured from the shaft face (d = r − 0.5 for W = 1), from the plinth top. */
 function baseMouldingProfile(W: number, segments: number): Profile {
   const s = W;
   return new ProfilePen(0.19 * s, s / 6)
@@ -92,8 +92,16 @@ function baseMouldingProfile(W: number, segments: number): Profile {
     .to(0.11 * s, 0.4167 * s)
     .half(0, 0.0833 * s, 0.05 * s, Math.max(3, segments - 1))
     .to(-0.002 * s, 0.5 * s)
+    .open();
+}
+
+/** The base moulding's back, which closes it: down the face line from the moulding's top, then out along the plinth top to its foot. */
+function baseMouldingBack(W: number): Profile {
+  const s = W;
+  return new ProfilePen(-0.002 * s, 0.5 * s)
     .to(-0.002 * s, s / 6)
-    .close();
+    .to(0.19 * s, s / 6)
+    .open();
 }
 
 export interface PilasterParts {
@@ -124,6 +132,8 @@ export function pilasterParts(params: PilasterParams = {}): PilasterParts {
       const plinth = 0.25 * W;
       bb.box([-W / 2 - plinth, 0, 0], [W / 2 + plinth, W / 6, P + plinth], ['-z']);
       sweepInto(bb, baseMouldingProfile(W, byDetail(spec.detail, [3, 5, 7])), uPath(W / 2, P, 0), { pathCreaseDeg: 30 });
+      // Swept apart, so the moulding's own normals are as they were.
+      sweepInto(bb, baseMouldingBack(W), uPath(W / 2, P, 0), { pathCreaseDeg: 30 });
       parts.base = bb.build();
     }
     return Object.freeze(parts);
@@ -154,7 +164,7 @@ function pilasterShaftInto(b: MeshBuilder, spec: PilasterSpec, y0: number, y1: n
   // Its underside and top close it. The flutes run out before both ends, where the face's edge runs straight through each flute's centre.
   const front = spec.fluted ? Array.from({ length: n }, (_, k) => centreOf(k)) : [];
   b.polygon([new THREE.Vector3(-hw, y0, 0), new THREE.Vector3(hw, y0, 0), new THREE.Vector3(hw, y0, P), ...[...front].reverse().map((x) => new THREE.Vector3(x, y0, P)), new THREE.Vector3(-hw, y0, P)]);
-  b.polygon([new THREE.Vector3(-hw, y1, P), ...front.map((x) => new THREE.Vector3(x, y1, P)), new THREE.Vector3(hw, y1, P), new THREE.Vector3(hw, y1, 0), new THREE.Vector3(-hw, y1, 0)]);
+  b.polygon([new THREE.Vector3(-hw, y1, 0), new THREE.Vector3(-hw, y1, P), ...front.map((x) => new THREE.Vector3(x, y1, P)), new THREE.Vector3(hw, y1, P), new THREE.Vector3(hw, y1, 0)]);
   // Returns, plain.
   b.polygon([new THREE.Vector3(hw, y0, P), new THREE.Vector3(hw, y0, 0), new THREE.Vector3(hw, y1, 0), new THREE.Vector3(hw, y1, P)]);
   b.polygon([new THREE.Vector3(-hw, y0, 0), new THREE.Vector3(-hw, y0, P), new THREE.Vector3(-hw, y1, P), new THREE.Vector3(-hw, y1, 0)]);
