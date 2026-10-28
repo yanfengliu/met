@@ -96,7 +96,7 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     id: 'wings-openings',
     chapter: CHAPTER,
     title: 'Glaze the windows and the south entrance',
-    detail: 'Windows in both wings, the arched windows and doors of the south front, and the porch of paired columns that carries its balcony.',
+    detail: 'Windows in both wings, the arched windows and the square-headed entrance door of the south front, and the porch of paired columns that carries its balcony.',
     motion: { kind: 'pop' },
     stagger: 'z',
     build: (kit) => {

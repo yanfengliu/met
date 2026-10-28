@@ -152,7 +152,7 @@ function buildWall(width: number, height: number, thickness: number, holes: read
 /**
  * The lining of a hole through a wall, in openWall's frame: the band between the hole's outline and a smaller one's on the same sill, `depth` deep
  * from the front face toward −Z. Its outer face lies on the reveal of a hole cut to `outer` (the same 12 facets per head as openWall's), its inner
- * face looks into the opening; the feet on the sill line have no faces.
+ * face looks into the opening, and its feet on the sill line look down, so a section cut through a jamb shows a closed solid (src/viewer/cap-pass.ts).
  */
 export function holeLining(outer: Hole, inner: Hole, depth: number): BufferGeometry {
   const sill = outer.y ?? 0;
@@ -167,11 +167,11 @@ export function holeLining(outer: Hole, inner: Hole, depth: number): BufferGeome
     const b = new MeshBuilder();
     b.planar(outline, [], new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
     b.planar(outline.map(([u, v]) => [-u, v] as const), [], new Vector3(0, 0, -depth), new Vector3(-1, 0, 0), new Vector3(0, 1, 0));
-    // Each edge's face looks out of the band (right of travel): into the opening on the inner outline, onto the reveal on the outer.
+    // Each edge's face looks out of the band (right of travel): into the opening on the inner outline, onto the reveal on the outer, down at the feet.
     for (let k = 0; k < outline.length; k++) {
       const p = outline[k];
       const q = outline[(k + 1) % outline.length];
-      if (p === undefined || q === undefined || (p[1] === sill && q[1] === sill)) continue;
+      if (p === undefined || q === undefined) continue;
       b.polygon([new Vector3(p[0], p[1], -depth), new Vector3(q[0], q[1], -depth), new Vector3(q[0], q[1], 0), new Vector3(p[0], p[1], 0)]);
     }
     return b.build();

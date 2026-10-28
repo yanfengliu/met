@@ -33,8 +33,9 @@ Read each source at its native size: the court photographs #33 and #35 (`interio
 - [x] Model: `src/model/core/weston-facade.ts` (rect hole, `surround` architrave and a stone frieze in place of the voussoir ring, the reveals lined in stone over a threshold, `doorUnit` rect without fanlight, `PORCH_TOP` named), `src/model/core/arches.ts` (the hole option `facets` removed, as before M2b), the 528/529 comment in `src/model/core/galleries.ts`.
 - [x] Checks: the named gates and the controls; the shots compared.
 - [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): no blocker or major finding; six accepted and repaired, the stone lining of the reveals (F1) among them.
-- [ ] Re-review of the repairs, verify, merge, gallery.
+- [x] Review 1 (Codex and Claude, `reviews/1_implementation.md`) of the repairs: no blocker or major finding; seven accepted and repaired (F6 to F12), the lining's open feet closed in `holeLining` (F12) among them.
+- [ ] Review 2 of those repairs, verify, merge, gallery.
 
 ## Outcome
 
-Pending.
+Pending. Follow-up, queued with its gate in `docs/learning/lessons.md`: a unit test that every reference image a model source cites is marked viewed in `docs/research/`, once the citations take one form and #29 and #30 are viewed; proposed to the owner as a task of its own.
