@@ -20,6 +20,8 @@ import { FACING, addBox, cylinder, placed } from './shapes.js';
 /** Foot of the walls, on the footings (constants FOOTING_Y + 1.0). */
 export const WALL_BASE_Y = LG - 0.3;
 
+// Open with the owner (exterior.md section 9): seven is an estimate; the Lehman court's photographs show five, the outer two with windows
+// (exterior-images.md #60 and #64), and the 1880 stereograph shows two large arches south of the porch (exterior-images.md #65).
 /** World X of the seven arches across the front, the entrance on the axis. */
 export const FRONT_ARCH_X = [-3, -2, -1, 0, 1, 2, 3].map((k) => k * VAUX_BAY);
 const GROUND_WIDTH = 1.6;
@@ -88,7 +90,7 @@ export function westFrontTrim(kit: Kit): void {
     // A granite transom through the wall at the springing closes the gap between window head and tympanum.
     addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, spring - VAUX_BAND, WEST_Z, x + VAUX_ARCH_SPAN / 2, spring, WEST_Z + WEST_WALL, 4);
     kit.add(ring(0), core.granite, placed(x, spring, WEST_Z, facing), 5);
-    // The dark voussoirs: grey stone, never brick, in every photograph of the front, rock-faced where one is sharp enough to show it
+    // The dark voussoirs: grey stone, never brick, in every colour photograph of the front, rock-faced where one is sharp enough to show it
     // (exterior-images.md #60, #61, #62, #63 and #64).
     kit.add(ring(1), core.graniteDark, placed(x, spring, WEST_Z, facing), 5);
     kit.add(hood, core.granite, placed(x, spring, WEST_Z, facing), 5);

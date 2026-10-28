@@ -275,8 +275,8 @@ export function vauxHall(kit: Kit): void {
 
 /**
  * Granite trim of the side and east walls: polychrome voussoirs over every 1880 arch and the floor, impost and ground-storey bands. The voussoirs
- * alternate light and dark grey granite as on the west front (vaux-front.ts): the south side's arcade and the east front's arches are banded alike
- * in 1880 (exterior-images.md #65 and #66), and one of the east arches survives at the top of the Grand Staircase in light and dark granite
+ * alternate light and dark grey granite as on the west front (vaux-front.ts): the hall's arcade on the south side and the east front's arches are
+ * banded alike in 1880 (exterior-images.md #65 and #66), and one of the east arches survives at the top of the Grand Staircase in light and dark granite
  * (exterior-images.md #67).
  */
 export function vauxSideTrim(kit: Kit): void {
@@ -289,6 +289,8 @@ export function vauxSideTrim(kit: Kit): void {
     [-A_HALF, FACING.south, -1],
     [A_HALF, FACING.north, 1],
   ] as const) {
+    // Open with the owner (exterior.md section 9): in 1880 only the hall's six bays had banded pointed arches; the end blocks' bays had
+    // round-headed windows with plain brick heads (exterior-images.md #65).
     for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
       const z = ((SIDE_LINES[i] ?? 0) + (SIDE_LINES[i + 1] ?? 0)) / 2;
       kit.add(ring(0), core.granite, placed(x, spring, z, facing), i);
