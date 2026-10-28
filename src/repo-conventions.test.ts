@@ -122,18 +122,16 @@ function describeEnvRead({ path, line, text }: EnvRead): string {
   return `${path}:${String(line)} reads the build or process environment (${text}): src/ takes runtime inputs only from the page URL (docs/design/spec.md, Query contract); put the input in that contract, or read the environment in a root config outside src/.`;
 }
 
-/** Each test that reads the roots reads about 280 files (3 MB): 40 ms warm, 6.5 s on first reads in a fresh worktree under load; 30 s bounds that load. */
-const READ_TIMEOUT_MS = 30_000;
-
+// Each test that reads the roots reads about 280 files (3 MB): 40 ms warm, 6.5 s on first reads in a fresh worktree under load, inside the 10 s the suite's timeout leaves it under the headroom check (`vitest.config.ts`).
 describe('repository conventions', () => {
   it('keeps every file under src/, scripts/ and tests/ within 500 lines', () => {
     const files = LINE_ROOTS.flatMap((root) => loadRoot(root));
     expect(lineOffenders(files).map(describeLineOffender)).toEqual([]);
-  }, READ_TIMEOUT_MS);
+  });
 
   it('reads no build or process environment under src/', () => {
     expect(envReads(loadRoot('src')).map(describeEnvRead)).toEqual([]);
-  }, READ_TIMEOUT_MS);
+  });
 });
 
 describe('repository convention detectors', () => {

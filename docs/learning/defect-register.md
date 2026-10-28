@@ -2,6 +2,22 @@
 
 Defects the owner reported, each with the symptom as they saw it, what the investigation found, the cause, and the check that covers the defect's class from now on. An entry stays after its gate lands: this is the list of what the gates could not see, which is where the next defect comes from.
 
+## The Pages build times out a unit test (2026-10-28)
+
+**Reported symptom:** Relayed at the owner's request by the session closing work unit 4: "main's CI is red: one test in src/model/closure.test.ts times out on the GitHub runner, so Pages is not deploying." The test, "stand every upright face of a solid by its inside: a part with no top and no bottom has none and reads as outside", failed with "Test timed out in 5000ms" on `1413777` (run 40726497630) and `bfb7699` (run 40746772742), and the deploy job was skipped.
+
+**Investigation:** The job logs of the three Pages runs since the test landed list every test over 300 ms. The test took 3157 ms at `a4af999`, which passed, 5631 ms at `1413777` and 6391 ms at `bfb7699`. Two runs of the whole suite on the local machine took 2265 and 2784 ms for it. So the runner ran it up to 2.8 times slower than the local machine, and the crossing query and the Dendur pool walk up to 2.3 times (3256 against 1427 ms, 3956 against 1752 ms). The runner's own speed varied about twice over between runs: 3157 to 6391 ms for this test, and 22.4 to 41.5 s for `src/model/reach.test.ts`. On the runs that failed, the pool walk took up to 79% of the 5 s default and the crossing query up to 65%.
+
+**Cause:** Every unit test but the repo conventions' reads (30 s) ran on Vitest's 5 s default, and nothing compared a test's time with its timeout on the local machine. The upright-face test came in with work unit 6 (`dc1a7dc`) and took under half the default here, so `npm run verify` passed. The Pages run at `a4af999` passed at 3.2 s, and `1413777` changed docs only, so its run was not waited on (R9); that run was the first to fail.
+
+**Correction:** Every test now has 60 s (`vitest.config.ts`), the repo conventions' reads included. The runner's slowest test, 6.4 s, has nine times that.
+
+**Check:** `scripts/test-headroom.ts`, a Vitest reporter that `vitest.config.ts` adds off GitHub's runner (`CI` not `true`), fails the run when a passed test takes over a sixth of its timeout, or when Vitest gives no time or timeout for one. It names each test with its time, its timeout and a timeout that would pass it. A sixth leaves room for both measurements: a test within it here takes under half its timeout on the slowest run measured there. It covers the class "a unit test passes here and times out on GitHub's runner" within its bound: each test's own time, measured where it runs, against the ratio measured on 2026-10-28. It reads no hook's or module collection's time: `src/model/reach.test.ts` fills in a `beforeAll` under its own 300 s, and the file took up to 41.5 s there. `scripts/test-headroom.test.ts` holds the rule.
+
+**Gate proof:** With Vitest's 5 s default back (no `testTimeout`, the conventions' 30 s kept), `npx vitest run` exited 1 and named 6 of 650 tests: the upright faces (2784 ms), the Dendur pool walk (1863), the crossing query (1609), random history 11 (1335), the Grand Staircase built under a walker (1053) and the window parts (853). With `CI=true` the same run exited 0 with no report. With the 60 s timeout it exits 0.
+
+**What it says about other checks:** A bound that only the slower machine enforces fails after every local gate has passed, so a check of time on the local machine needs headroom measured on the slower one. A docs-only push is not waited on (R9), yet its run tests the code again: `1413777`'s red run stood unseen until the next push failed the same way.
+
 ## The Weston door's head is round (2026-10-28)
 
 **Reported symptom:** "the 1888 Weston entrance door into the Petrie Court may have the wrong head shape": the model built it arched, with a voussoir ring and a fanlight, and work unit 2's doors worker had noted that photograph #33 shows it square-headed.
