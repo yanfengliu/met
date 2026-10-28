@@ -13,7 +13,7 @@ import type { Kit } from '../../build/types.js';
 import { doorTag } from '../doors.js';
 import { column, doorUnit, moulding, surround, voussoirs, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { openWall, type Hole } from './arches.js';
+import { holeLining, openWall, type Hole } from './arches.js';
 import { B_SOUTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, L1, L2, LG, OUTER_WALL, PARAPET_Y, WESTON_ARCH_SPAN, WESTON_ARCH_SPRING, WESTON_BAY, WESTON_DADO, WESTON_LOWER_HEAD, WESTON_PAVILION_HALF, WEST_Z } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, placed } from './shapes.js';
@@ -42,11 +42,12 @@ const PORCH_TOP = 5.0;
  * building only (interior.md, Weston's 1888 door). Every source that shows the head shows it square, in a moulded stone architrave under the porch's
  * entablature: the Petrie Court photographs (interior-images.md #33 at full size; Heckscher fig. 110, 1995), the porch's drawing of April 1888 and the
  * approved elevation of 1885 (Heckscher figs. 29 and 28). #33 shows the east leaf a quarter turn open into wing B, the gap at its hinge side lit and
- * crossed by its hinges.
- * The opening is the 1888 drawing's, 3.29 × 4.91 m, scaled by 0.86 with the porch (its order 5.81 m to the capitals' top there, PORCH_TOP here), so its
- * head stands under the capitals as drawn; the architrave is 0.19 m wide, and a plain stone frieze fills the wall from it up to the entablature.
+ * crossed by its hinges, and #33 and fig. 110 show stone in the reveals. The drawing's opening, 3.29 × 4.91 m, and its architrave, 0.22 m, are scaled by
+ * 5.0 / 5.81 (0.861) with the porch, its order 5.81 m to the capitals' top there and PORCH_TOP here, so the head stands under the capitals as drawn.
+ * A plain stone frieze fills the wall from the architrave up to the entablature. The reveals and the head's soffit are lined in stone `lining` thick
+ * through the wall, over a stone threshold `threshold` deep, as the gallery 600 doorway is (vaux-shell.ts).
  */
-const DOOR = { width: 2.83, height: 4.23, trim: 0.19 } as const;
+const DOOR = { width: 2.83, height: 4.23, trim: 0.19, lining: 0.15, threshold: 0.03 } as const;
 /** The 1888 entrance door into the Petrie Court: the plane of its frame (X), its middle (Z) and its width, for what must keep clear of it and its swing. */
 export const WESTON_DOOR = { x: B_SOUTH_X + 0.3, z: CENTRE_Z, width: DOOR.width } as const;
 
@@ -63,7 +64,7 @@ function pavilion(): BufferGeometry {
   const w = PAVILION_WINDOW;
   const holes: Hole[] = [
     ...[-3.6, 3.6].map((x): Hole => ({ head: 'segmental', x, y: GROUND_WINDOW.sill - WALL_BASE_Y, width: GROUND_WINDOW.width, height: GROUND_WINDOW.height, rise: GROUND_WINDOW.rise })),
-    { y: L1 - WALL_BASE_Y, width: DOOR.width, height: DOOR.height },
+    { y: L1 - WALL_BASE_Y - DOOR.threshold, width: DOOR.width + 2 * DOOR.lining, height: DOOR.height + DOOR.lining + DOOR.threshold },
     ...[-3.6, 3.6].map((x): Hole => ({ x, y: MAIN_WINDOW.sill - WALL_BASE_Y, width: MAIN_WINDOW.width, height: MAIN_WINDOW.height })),
     { head: 'round', y: L2 + w.sill - WALL_BASE_Y, width: w.width, height: w.spring - w.sill + w.width / 2 },
     ...[-4.6, 4.6].map((x): Hole => ({ head: 'round', x, y: L2 + 1.0 - WALL_BASE_Y, width: 0.9, height: 2.6, depth: 0.2 })),
@@ -136,6 +137,10 @@ export function westonTrim(kit: Kit): void {
   kit.add(bigRing, stone, placed(B_SOUTH_X, L2 + w.spring, CENTRE_Z, FACING.south), 7);
   kit.add(architrave, stone, placed(B_SOUTH_X, L1, CENTRE_Z, FACING.south), 4);
   elevationBox(kit, e, stone, door0, door1, L1 + DOOR.height + DOOR.trim, L1 + PORCH_TOP, 0.06, 0, 4);
+  // The door's reveals and soffit, lined through the wall inside the architrave, on its threshold: the pavilion's hole is cut to the lining's outside.
+  const lined: Hole = { y: L1 - WALL_BASE_Y, width: DOOR.width + 2 * DOOR.lining, height: DOOR.height + DOOR.lining };
+  kit.add(holeLining(lined, { y: L1 - WALL_BASE_Y, width: DOOR.width, height: DOOR.height }, OUTER_WALL), stone, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 4);
+  addBox(kit, stone, B_SOUTH_X, L1 - DOOR.threshold, CENTRE_Z - lined.width / 2, B_SOUTH_X + OUTER_WALL, L1, CENTRE_Z + lined.width / 2, 4);
   for (const x of [-3.6, 3.6]) {
     kit.add(disc, stone, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 1.25, 0.12), 8);
     kit.add(disc, palette.brick, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 0.85, 0.16), 8);

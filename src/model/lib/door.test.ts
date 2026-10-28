@@ -34,7 +34,7 @@ function turnedBox(g: BufferGeometry, hinge: DoorHinge, angle: number): Box3 {
 
 /** The fixtures, and the model's units: Weston's (as the first), the links', the Bank's and the Fifth Avenue entrance's. */
 const UNITS: readonly (readonly [string, DoorParams])[] = [
-  ['panelled pair, arched, opening toward the back only (Weston)', { width: 2.6, height: 5, shape: 'arch', swing: 'back' }],
+  ['panelled pair, no fanlight, opening toward the back only (Weston)', { width: 2.83, height: 4.23, fanlight: false, swing: 'back' }],
   ['panelled pair, transom (the links)', { width: 2, height: 3.4, leaves: 2, panels: 4 }],
   ['panelled pair, arched (the Bank)', { width: 1.9, height: 5.5, shape: 'arch', leaves: 2, panels: 3 }],
   ['glazed pair, no fanlight', { width: 1.8, height: 4.5, leaves: 2, glazed: true, lights: 3, fanlight: false, frame: 0.09, bar: 0.05, depth: 0.14 }],

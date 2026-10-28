@@ -17,22 +17,23 @@ Excluded: the porch, which is smaller than the real one and of another form (fou
 
 ## Approach
 
-Read each source at its native size: the court photographs #33 and #35 (`interior-images.md`), Heckscher's 1995 photograph (fig. 110) and Weston's drawings (figs. 26 to 29), the King's Handbook engraving and the Detroit Publishing photograph (`exterior-images.md`), Heckscher fig. 35, and the floor map's door. All that show the head show it square, in a moulded architrave, with no fanlight, so the door becomes square-headed. Its size comes from the one scaled source, the April 1888 porch drawing (fig. 29: the opening 3.29 × 4.91 m under capitals 5.81 m up), scaled with the model's porch (columns 5.0 m to their capitals' top) so the head keeps its place under the capitals: 2.83 × 4.23 m. A drawing-size opening (3.29 × 4.91 m) would push its architrave into the model's porch entablature; rebuilding the porch is outside this task.
+Read each source at its native size: the court photographs #33 and #35 (`interior-images.md`), Heckscher's 1995 photograph (fig. 110) and Weston's drawings (figs. 26 to 29), the King's Handbook engraving and the Detroit Publishing photograph (`exterior-images.md`), Heckscher fig. 35, and the floor map's door. All that show the head show it square, in a moulded architrave, with no fanlight, so the door becomes square-headed. Its size comes from the one scaled source, the April 1888 porch drawing (fig. 29: the opening 3.29 × 4.91 m under capitals 5.81 m up), scaled with the model's porch (columns 5.0 m to their capitals' top) so the head keeps its place under the capitals: 2.83 × 4.23 m. A drawing-size opening (3.29 × 4.91 m) would push its architrave into the model's porch entablature; rebuilding the porch is outside this task. The reveals and the head's soffit are lined in stone over a stone threshold, as #33 and fig. 110 show them (review 0, F1).
 
 ## Acceptance criteria
 
 - [x] Every source in `docs/research/` that shows the Weston door checked at its native size and its reading recorded there (`interior.md`, Weston's 1888 door; `interior-images.md` #33 and #43; `exterior-images.md`; `history.md`).
 - [x] The opening, its hole, the stone round it, the fanlight and the door unit square-headed, the leaves rising to the head, the door opening into wing B only.
-- [x] The door-fit test, the window-parts gate, the collection's clearances and the reachability gate green, and `src/model/core/weston-door.test.ts`; the door-fit test red with the hole 2 cm narrower or lower than the frame and with the 528/529 wall left in the doorway.
+- [x] The door-fit test, the window-parts gate, the collection's clearances and the reachability gate green, and `src/model/core/weston-door.test.ts`; the door-fit test red with the stone lining's opening 2 cm narrower or lower than the frame and with the 528/529 wall left in the doorway.
 - [x] The standard shot set before (`0defda0`) and after compared, and every changed image read at native resolution.
 - [ ] `npm run verify` green on the final revision, an independent review with its findings resolved, merged to main and pushed, and the owner's render gallery rebuilt from main's shots (`docs/policies/local-rules.md`).
 
 ## Implementation steps
 
 - [x] Research: the sources read, the head decided square, the opening measured on the 1888 drawing (`docs/research/interior.md`).
-- [x] Model: `src/model/core/weston-facade.ts` (rect hole, `surround` architrave and a stone frieze in place of the voussoir ring, `doorUnit` rect without fanlight, `PORCH_TOP` named), `src/model/core/arches.ts` (the hole option `facets` removed, as before M2b), the 528/529 comment in `src/model/core/galleries.ts`.
+- [x] Model: `src/model/core/weston-facade.ts` (rect hole, `surround` architrave and a stone frieze in place of the voussoir ring, the reveals lined in stone over a threshold, `doorUnit` rect without fanlight, `PORCH_TOP` named), `src/model/core/arches.ts` (the hole option `facets` removed, as before M2b), the 528/529 comment in `src/model/core/galleries.ts`.
 - [x] Checks: the named gates and the controls; the shots compared.
-- [ ] Verify, review, merge, gallery.
+- [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): no blocker or major finding; six accepted and repaired, the stone lining of the reveals (F1) among them.
+- [ ] Re-review of the repairs, verify, merge, gallery.
 
 ## Outcome
 
