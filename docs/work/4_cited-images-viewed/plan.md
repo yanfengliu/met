@@ -1,6 +1,6 @@
 # Every image a model source cites is marked viewed
 
-Status: active
+Status: complete
 Owner: Gate session (claude/nostalgic-noyce-f69e6b)
 Created: 2026-10-28
 Updated: 2026-10-28
@@ -24,7 +24,7 @@ One citation form, `<index> #<ID>` with IDs joined by `, `, ` and ` or ` or `, w
 - [x] Every citation of either index under `src/model/` in the one form, and the test's header naming the forms it reads and its blind spots.
 - [x] Every cited entry viewed at full size and recorded with what it shows (interior #12, #13, #16, #29, #30 and the new #44; exterior #44, #49 and the new #60), each compared with the model that cites it, and every mismatch reported to the owner as a finding. Also #14, which `interior.md` relied on.
 - [x] `src/cited-images.test.ts` green in `npm test`, red with #33 put back to "Not viewed", with a citation of an unviewed entry added, with an ID behind initials or without its `#`, and on the base revision's sources and indexes; the proof in `docs/learning/gate-proofs.md` and the lesson and its evidence deleted in the same commit (`1ce5977`).
-- [ ] `npm run verify` green on the final revision, an independent review with its findings resolved, merged to main and pushed.
+- [x] `npm run verify` green on the final revision, an independent review with its findings resolved, merged to main and pushed.
 
 ## Implementation steps
 
@@ -36,7 +36,7 @@ One citation form, `<index> #<ID>` with IDs joined by `, `, ` and ` or ` or `, w
 - [x] Review 1 (Codex and Claude, `reviews/1_implementation.md`) of `4042ce4`: one major and five lesser findings, all accepted and repaired in `586fcfc`.
 - [x] Review 2 (Codex and Claude, `reviews/2_implementation.md`) of `586fcfc`: Codex none; Claude one major, older than that diff, and four lesser findings, all accepted and repaired in `91c63c8`.
 - [x] Review 3 (Codex and Claude, `reviews/3_implementation.md`) of `91c63c8`: Codex none; Claude one minor and three nits, all accepted and repaired as Claude's own scratch copy had checked them.
-- [ ] Verify the repairs, review them, merge.
+- [x] Verify the repairs, review them, merge.
 
 ## Findings for the owner
 
@@ -48,4 +48,10 @@ One citation form, `<index> #<ID>` with IDs joined by `, `, ` and ` or ` or `, w
 
 ## Outcome
 
-Pending: verification of the repairs, their review and the merge.
+Complete. `src/cited-images.test.ts` runs in `npm test` and is green: every citation of `interior-images.md` and `exterior-images.md` under `src/model/` (42) takes one form, `interior-images.md #33`, and names entries marked viewed. It went red with #33 put back to "Not viewed", with a citation of an unviewed entry added, with an ID behind initials, without its `#`, at a line's end or behind an inner parenthesis, and on the base revision's sources and indexes (24 problems), as `docs/learning/gate-proofs.md` records. The lesson and its evidence are deleted. Every cited photograph the indexes left unviewed was viewed at full size and recorded with what it shows (interior #12, #13, #16, #29 and #30, and #14 and #38's rope for `interior.md`; exterior #44 and #49), and two cited but missing ones were added (interior #44, the Met's ES4661; exterior #60, Untapped New York's 2026 view of the 1880 west front).
+
+The code was last verified at `aaf5c29`: there `npm test` passed 608 tests, and typecheck, lint and build passed. `npm run verify`'s e2e passed all 88 on `91c63c8`, whose app code `aaf5c29` leaves unchanged (it changes the gate's test file and docs only). The model changes comments only, so no render changed and the owner's render gallery needs no rebuild. Reviews 0 to 3 (Codex and Claude) found no blocker; their 25 findings, F0 to F24, are all accepted and repaired. Fast-forwarded onto `origin/main` from `53a981c` at the owner's choice (2026-10-28): the shared local `main` holds work unit 2's unpushed integration walk (`795956f`, its plan still active), which its owner lands, merging `origin/main` in and resolving one AGENTS.md gate-list conflict with this unit.
+
+Limitations: the gate reads only citations that name an index; author-and-year and file-name citations of viewed entries (the primaries, Schneider 2019 and others) stay outside it, as its header says. One e2e test, `doors.spec.ts:379`, failed under machine load during this work, and on the unchanged base too (3 of 3), before passing on every later full run.
+
+Follow-ups for the owner: F-owner-1 (the choir screen's tiers and cresting against #29) and F-owner-4 (the west front's voussoirs against #60), each noted beside its code.
