@@ -177,14 +177,15 @@ test.describe('walk routes both ways through real input', () => {
     expect(off(between(outward, STAIR_MID_BACK_Z + 1.4, STAIR_MID_FRONT_Z - 0.5), STAIR_LANDING_Y + EYE, 0.05), `${r5back}: eyes off the landing`).toEqual([]);
     expect(off(between(outward, HALL_WEST_Z, nave[1] + 0.5), MAIN_FLOOR_Y + EYE, 0.05), `${r5back}: eyes off the Great Hall's floor from the stair's foot to the nave's west side`).toEqual([]);
     expectInTheHall(bay, r5back);
-    // The door, shut behind on the way in, before the walker as it came up the nave: "E Open", and E swings it out toward the plaza, away from the walker.
-    if ((await doorFacts(page, MIDDLE_DOOR))?.state !== 'open') {
-      await looksAt(page, MIDDLE_DOOR, 'E Open');
-      const going = promptOnApproach(await screensSince(page, fromHall), plan, 'back', 'E Open');
-      expect(going.apart.slice(0, 5), `frames walking up the nave at the closed door with no "E Open" (${String(going.apart.length)} of ${String(going.near)})`).toEqual([]);
-      await page.keyboard.press('KeyE');
-      expect((await doorIs(page, MIDDLE_DOOR, 'open')).angle, 'a quarter turn out toward the plaza, away from the walker inside').toBe(-90);
-    }
+    // The door, shut behind on the way in, still shut before the walker as it came up the nave: "E Open" from 1.9 m out, and E, every time, swings it
+    // out toward the plaza, away from the walker (review 20, F54: a door found open was taken as it stood).
+    expect(await doorFacts(page, MIDDLE_DOOR), 'still shut as the walker comes back to it').toMatchObject({ state: 'closed', angle: 0 });
+    await looksAt(page, MIDDLE_DOOR, 'E Open');
+    const going = promptOnApproach(await screensSince(page, fromHall), plan, 'back', 'E Open');
+    expect(going.near, 'frames walking up the nave at the closed door within 1.9 m of its leaves').toBeGreaterThan(5);
+    expect(going.apart.slice(0, 5), `frames walking up the nave at the closed door with no "E Open" (${String(going.apart.length)} of ${String(going.near)})`).toEqual([]);
+    await page.keyboard.press('KeyE');
+    expect((await doorIs(page, MIDDLE_DOOR, 'open')).angle, 'a quarter turn out toward the plaza, away from the walker inside').toBe(-90);
     // Out through the doorway to before it, clear of the leaves' sweep; turned back onto the open right leaf: "E Close", and E shuts it behind.
     await face(page, Math.PI);
     const outside = await walk(page, 'R1 back through the doorway', legs([[0, bay.eye[2]], standOff(plan, 'front')], PLUS_Z), outward);
@@ -278,7 +279,7 @@ test.describe('walk routes both ways through real input', () => {
     expect(Math.abs(end6.eye[1] - (ROUTE_R6.endY + EYE)), `${r6}: on the court's floor`).toBeLessThan(0.03);
     samples.push(...out6);
     // Ruth Gleaning, 8 m east of R6's end: approached until its card shows, and turned away from, facing west; then back to R6's end.
-    await approach(page, RUTH, 0, 'the Engelhard Court');
+    await approach(page, RUTH, 0, 'the Engelhard Court', samples);
     await walk(page, 'back to R6’s end', legs([lineUp(await walking(page), R6_END), R6_END], MINUS_Z), samples);
     // R6 back, facing east, and on the way R3 and R6 share back to the Great Hall spawn.
     await face(page, Math.PI);
@@ -412,7 +413,7 @@ async function dendurHall(page: Page, samples: Sample[]): Promise<void> {
   await face(page, 0);
   const onto = await walk(page, 'up onto the platform', legs([[WALKWAY_X, (await walking(page)).eye[2]], [WALKWAY_X, FLIGHT_Z], [STRIP_X, FLIGHT_Z]], MINUS_Z), samples);
   expect(Math.abs(onto.eye[1] - (PLATFORM_Y + EYE)), `on the platform at ${fmt(onto.eye)}`).toBeLessThan(0.03);
-  await approach(page, SPHINX, Math.PI / 2, 'the Temple of Dendur hall');
+  await approach(page, SPHINX, Math.PI / 2, 'the Temple of Dendur hall', samples);
   const dais: Sample[] = [];
   const terrace: XZ = [STRIP_X, TERRACE_Z];
   const northHead: XZ = [NORTH_FLIGHT_X, FORECOURT_Z];

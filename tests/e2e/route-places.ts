@@ -19,7 +19,7 @@ import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
 import { BODY } from '../../src/walk/walker.js';
 import { throttleRate } from './helpers.js';
 import { artworkBounds } from './labels-helpers.js';
-import { face, fmt, still, toward, wrap, yawOf } from './route-walk.js';
+import { airborne, face, fmt, record, still, toward, wrap, yawOf } from './route-walk.js';
 import type { Facing, Sample, XZ } from './route-walk.js';
 import { finishedTimeline } from './surface.js';
 
@@ -264,13 +264,15 @@ const CARD_REACH = 6;
  * farther from it than an artwork's 6 m reach (CARD_REACH), aimed at its box's middle by drags, and walked toward it at a walk with W held until its
  * card shows, watched in the page at every frame; then turned by drags to `away` (a yaw) until the card goes. At every frame recorded the card follows the
  * look target (`cardApart`), and no frame shows it while the eye stands farther than 6 m from the artwork's box. Fails unless the card showed before the
- * eye came within NEAR of the box, and went once the walker turned away. It records its own frames (`watchScreens`) and ends the record when done.
- * Returns the first frame with the card.
+ * eye came within NEAR of the box, and went once the walker turned away. It records its own frames (`watchScreens`) and ends the record when done; the
+ * walk's own frames (./route-walk.ts `record`), from before the aim to after the turn, go into `samples`, and none may be off the ground (review 20, F55:
+ * the next walk dropped them, so the airborne check never saw this walk). Returns the first frame with the card.
  */
-export async function approach(page: Page, id: number, away: number, where: string): Promise<Screen> {
+export async function approach(page: Page, id: number, away: number, where: string, samples: Sample[]): Promise<Screen> {
   const box = artworkBounds().get(id);
   if (box === undefined) throw new Error(`${where}: no artwork ${String(id)} among the collection's placements (src/model/collection/spaces-a.ts, spaces-b.ts).`);
   const reach = CARD_REACH;
+  samples.push(...(await record(page)));
   const start = await still(page);
   const from = boxDistance(start.eye, box);
   if (from <= reach + 0.5) throw new Error(`${where}: the eye at ${fmt(start.eye)} stands ${from.toFixed(2)} m from artwork ${String(id)}, inside or near its ${String(reach)} m reach; an approach starts farther off.`);
@@ -315,5 +317,8 @@ export async function approach(page: Page, id: number, away: number, where: stri
   const turn = await screens(page, true);
   expect(cardApart(turn), `${where}: frames of the turn away where the card did not follow the look target`).toEqual([]);
   expect(turn.at(-1)?.card, `${where}: the card gone once turned away to yaw ${away.toFixed(2)} (facing ${yawOf((await still(page)).look).toFixed(2)})`).toBe(false);
+  const walked = await record(page);
+  expect(airborne(walked), `${report}: eyes where the walker was off the ground on the way to the artwork and turning away`).toEqual([]);
+  samples.push(...walked);
   return first;
 }
