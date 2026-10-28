@@ -10,7 +10,7 @@
  * src/model/core/weston-door.test.ts.
  * Bound: the walker walks at the middle of each door, facing it square on, at 60 frames a second; positions are the feet's.
  */
-import { Box3, Layers, Matrix4, Vector3 } from 'three';
+import { Box3, Layers, Matrix4, Ray, Vector3 } from 'three';
 import type { InstancedMesh } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -101,8 +101,9 @@ describe('the model’s doors', () => {
     expect([...drawnBy].sort()).toEqual([['hunt-entrance-middle', 4], ['hunt-entrance-north', 4], ['hunt-entrance-south', 4], ['weston', 2]]);
     const timelineMeshes = new Set([...meshesOf.values()].flat()).size;
     // The layer's meshes: its stand-ins, each a draw, and the doorways' one mesh, which the picker reads and no camera draws.
-    expect(layer.pickMeshes.length, 'the stand-ins and the doorways').toBe(layer.meshes.length + 1);
-    expect(timelineMeshes + layer.pickMeshes.length, `door meshes (${String(timelineMeshes)}) and the layer's (${String(layer.pickMeshes.length)})`).toBeLessThanOrEqual(DOOR_DRAWS);
+    expect(layer.doorwayMeshes, 'the doorways, one mesh').toHaveLength(1);
+    const own = layer.meshes.length + layer.doorwayMeshes.length;
+    expect(timelineMeshes + own, `door meshes (${String(timelineMeshes)}) and the layer's (${String(own)})`).toBeLessThanOrEqual(DOOR_DRAWS);
     for (const id of ['mmw-north-link', 'mmw-south-link', 'bank']) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.layers.mask, `${id} is never hidden`).toBe(1);
   });
 
@@ -190,7 +191,7 @@ describe('the model’s doors', () => {
     const world = walkWorld(timeline.steps, timeline.n, own, bvhs);
     // The page's hit query (src/main.ts): the timeline's pieces, and the door layer's stand-ins and doorways registered with their tags.
     const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
-    picker.register(own.pickMeshes, (mesh, i) => own.tagOf(mesh, i));
+    own.registerWith(picker);
     const hit: HitFn = (ray, query) => picker.hit(ray, query);
     const target = (walker: Walker): string => {
       const found = lookTarget(hit, walker.eye(), walker.look());
@@ -212,6 +213,11 @@ describe('the model’s doors', () => {
         expect(walker.feet.z - middle.z, where).toBeLessThan(1.3);
         expect(Math.abs(walker.feet.x) + Math.abs(walker.look().x), `${where}: on the axis, looking along it, so between the leaves`).toBeLessThan(1e-9);
         expect(target(walker), where).toBe('door hunt-entrance-middle: E Open');
+        // The zoom's pick, on the same ray, passes the seam where nothing is drawn, on into the hall (red with the doorways in both queries, as at 1f3d7c9,
+        // which stopped it at the box 1.3 m off; review 18, F50).
+        const ray = new Ray(walker.eye(), walker.look());
+        const toLeaves = (ray.origin.z - middle.z) / -ray.direction.z;
+        expect(picker.distance(ray) ?? Number.POSITIVE_INFINITY, `${where}: the zoom passes the seam, ${toLeaves.toFixed(2)} m off`).toBeGreaterThan(toLeaves + 1);
       }
     }
     // Each locked door, walked at on its axis from 2.5 m and let go 1.2 m before its leaves: the crosshair on their meeting line (red at 0defda0), and then

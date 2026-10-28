@@ -299,19 +299,18 @@ describe('the door layer', () => {
     }
   });
 
-  it('stands a closed door’s doorway for the picker alone, over its leaves and the gaps round them, and takes it away while the door opens (review 17, F46)', () => {
+  it('stands a closed door’s doorway for the hit query alone, over its leaves and the gaps round them, which the zoom passes, and takes it away while the door opens (review 17, F46; review 18, F50)', () => {
     const { timeline, layer } = fixture();
-    const doorways = layer.pickMeshes.filter((m) => !layer.meshes.includes(m));
-    expect(doorways, 'one mesh beside the stand-ins').toHaveLength(1);
-    const [doorway] = doorways;
-    if (doorway === undefined) throw new Error('No doorway mesh.');
+    const [doorway, ...others] = layer.doorwayMeshes;
+    if (doorway === undefined || others.length > 0) throw new Error('The layer has no doorway mesh, or more than one.');
     const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), -1, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
-    picker.register(layer.pickMeshes, (mesh, i) => layer.tagOf(mesh, i));
+    layer.registerWith(picker);
     const doorQuery = { accept: (t: PieceTag | null): boolean => t?.kind === 'door', throughTransparent: true };
-    /** Along −Z at height 1.5 m from 3 m out: what the hit query and the zoom meet at X `x`. */
-    const meets = (x: number): [string | null, number | null] => {
+    /** Along −Z at height 1.5 m from 3 m out at X `x`: the door the hit query meets, how far, and how far the zoom goes. */
+    const meets = (x: number): [string | null, number | null, number | null] => {
       const ray = new Ray(new Vector3(x, 1.5, 3), new Vector3(0, 0, -1));
-      return [picker.hit(ray, doorQuery)?.tag?.id ?? null, picker.distance(ray)];
+      const hit = picker.hit(ray, doorQuery);
+      return [hit?.tag?.id ?? null, hit?.distance ?? null, picker.distance(ray)];
     };
     // The front door's leaves meet 8 mm apart at X 0 and keep 4 mm off its jambs (X ±W): rays there pass between them.
     const gaps = [0, W - 0.002, -10];
@@ -321,21 +320,26 @@ describe('the door layer', () => {
     expect(doorway.parent, 'in no scene: no camera draws it').toBeNull();
     expect(layer.root.children).not.toContain(doorway);
     expect(layer.meshes, 'nor is it a stand-in, for the cap pass').not.toContain(doorway);
-    // Closed: the meeting line and a jamb's gap meet the doorway at the leaves' front face, and so does the locked door's meeting line at X −10.
+    // Closed: the meeting line and a jamb's gap meet the doorway in the hit query at the leaves' front face, and so does the locked door's meeting line at
+    // X −10; the zoom passes the seam where nothing is drawn, to the wall 3 m behind the front door and to open sky behind the locked one (red with the
+    // doorways in both queries, as at 1f3d7c9: the zoom stopped at the box; review 18, F50).
     const faceZ = (g: typeof glazed): number => {
       if (g.leaf.boundingBox === null) g.leaf.computeBoundingBox();
       return g.leaf.boundingBox?.max.z ?? Number.NaN;
     };
-    for (const x of gaps) expect(meets(x), `closed, at X ${String(x)}`).toEqual([x === -10 ? 'shut' : 'front', expect.closeTo(3 - faceZ(x === -10 ? panelled : glazed), 6)]);
+    for (const x of gaps) {
+      const shut = x === -10;
+      expect(meets(x), `closed, at X ${String(x)}`).toEqual([shut ? 'shut' : 'front', expect.closeTo(3 - faceZ(shut ? panelled : glazed), 6), shut ? null : expect.closeTo(3 + 3 - 0.1, 6)]);
+    }
     // A frame's face beside the jamb stops both, as before: the doorway covers the opening, not the frame.
-    expect(meets(W + 0.01)).toEqual([null, expect.closeTo(3, 6)]);
+    expect(meets(W + 0.01)).toEqual([null, null, expect.closeTo(3, 6)]);
     // Opening, it goes at the first turn of the leaves: the eye looks through the doorway a door opened. Closed again, it is back.
     layer.use('front', new Vector3(0, 1.6, 3));
     at(timeline, layer, BUILT, SWING_SECONDS / 20);
     expect(facts(layer, 'front')?.state).toBe('opening');
-    expect(meets(0), 'opening').toEqual([null, expect.closeTo(3 + 3 - 0.1, 6)]);
+    expect(meets(0), 'opening').toEqual([null, null, expect.closeTo(3 + 3 - 0.1, 6)]);
     at(timeline, layer, BUILT, SWING_SECONDS);
-    expect(meets(0), 'open').toEqual([null, expect.closeTo(3 + 3 - 0.1, 6)]);
+    expect(meets(0), 'open').toEqual([null, null, expect.closeTo(3 + 3 - 0.1, 6)]);
     expect(meets(-10)[0], 'the locked door’s stands').toBe('shut');
     layer.use('front', new Vector3(0, 1.6, 3));
     at(timeline, layer, BUILT, SWING_SECONDS);

@@ -212,7 +212,7 @@ beforeAll(() => {
   // Bounds as the renderer's culling leaves them after a frame, which the picker trusts; at t = N every piece is at rest, so they are exact.
   for (const mesh of all) mesh.computeBoundingSphere();
   const picker = new ModelPicker(all, bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
-  picker.register(layer.pickMeshes, (mesh, i) => layer.tagOf(mesh, i));
+  layer.registerWith(picker);
   hit = (ray, query) => picker.hit(ray, query);
   targets = [...artworkTargets(), ...placeTargets()];
   unmet = new Set(targets);

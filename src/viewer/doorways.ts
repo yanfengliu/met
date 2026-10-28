@@ -4,7 +4,8 @@
  * spawn, walked straight at the middle door, it looked through the meeting line and found no door. Each door has a box over its closed leaves and those
  * gaps, in its unit's frame, which stands while the door is built and closed where it stands (a locked door whenever it is built) and is gone while it
  * opens, stands open or closes, so the eye looks through the doorway a door opened. The boxes are one InstancedMesh for the page to register with the
- * picker (src/viewer/pick.ts `register`), tagged with their doors; it is in no scene, so no camera draws it, and nothing else reads it: no shadow, no cap
+ * hit query alone (src/viewer/pick.ts `register` with `zoom: false`; src/viewer/doors.ts `registerWith`), tagged with their doors: it is in no scene, so
+ * no camera draws it, and the zoom's pick passes it, heading only for what is drawn (work unit 2, review 18, F50); nothing else reads it: no shadow, no cap
  * pass, no collision. Walls in front still hide a box, as they hide the leaves, and the section cut passes through it above the cut, as through them.
  * Bound: a box covers its door's closed pieces' boxes, which for a door unit's leaves is the opening its frame leaves them; it holds a door's pieces
  * placed at one matrix, as a door unit's are, or at matrices that move each other's boxes rigidly.

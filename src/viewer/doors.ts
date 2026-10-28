@@ -8,8 +8,9 @@
  * door cannot be used, but it keeps its state, which it shows again at once when the step completes; when the timeline takes the step away (f = 0) its
  * state resets. A locked door is never hidden and never opens, whatever is asked (`doors=` included).
  * The stand-ins share the timeline's geometry and materials (so the section cut clips them as it clips the closed leaves), hold bounds over every pose
- * of their leaves, and are for the page to register with the hit query, the zoom's pick (`tagOf`) and the cap pass; with them it registers each closed
- * door's doorway, a box over its leaves and the gaps round them that no camera draws (./doorways.ts, `pickMeshes`). A swing takes SWING_SECONDS for a
+ * of their leaves, and are for the page to register with the hit query, the zoom's pick (`tagOf`) and the cap pass; with the hit query alone it registers
+ * each closed door's doorway, a box over its leaves and the gaps round them that no camera draws (./doorways.ts, `registerWith`), which the zoom's pick
+ * passes, meeting only what is drawn. A swing takes SWING_SECONDS for a
  * full opening, eased, away from the walker; a door turned back mid-swing goes back from where it stands. Each sync says what the page draws again:
  * the frame, and the shadows too only when a door that changed has a mesh that casts one.
  * Walking, the walk's collision (src/walk/door-world.ts) holds every door's leaves as solids where they stand (`parts`, `partMatrix`: a door that opens
@@ -28,6 +29,7 @@ import { castsShadow } from '../build/batch.js';
 import type { BuiltStep, RestingPiece } from '../build/timeline.js';
 import type { PieceTag } from '../build/types.js';
 import type { SwingingPart } from '../model/lib/window.js';
+import type { ModelPicker } from './pick.js';
 import { SWING_SECONDS, ease, hingeTurn } from './door-swing.js';
 import { Doorways } from './doorways.js';
 import type { DoorChange, DoorDef, DoorDrawn, DoorFacts, DoorPrompt, DoorState, LeavesOf } from './door-swing.js';
@@ -91,8 +93,8 @@ export class DoorLayer {
   readonly root = new Group();
   /** The stand-in meshes: the page registers them with the hit query, the zoom's pick and the cap pass. */
   readonly meshes: readonly InstancedMesh[];
-  /** What the page registers with the hit query and the zoom's pick: the stand-ins and the closed doors' doorways (./doorways.ts), which no camera draws. */
-  readonly pickMeshes: readonly InstancedMesh[];
+  /** The closed doors' doorways (./doorways.ts), which no camera draws: the page registers them with the hit query alone (`registerWith`). */
+  readonly doorwayMeshes: readonly InstancedMesh[];
   /** The timeline meshes of every door's leaves, the locked doors' too: the walk's static world leaves them out, its door world holds them (src/walk/door-world.ts). */
   readonly leafMeshes: ReadonlySet<InstancedMesh>;
   /** Each part of every door's leaves, for the walk's collision: a leaf's metal or panels and its glass for a door that opens, a locked door's closed pieces. */
@@ -180,7 +182,7 @@ export class DoorLayer {
     }
     this.meshes = meshes;
     this.doorways = new Doorways(this.doors.map((d) => ({ tag: d.tag, pieces: closed.get(d) ?? [] })));
-    this.pickMeshes = [...meshes, this.doorways.mesh];
+    this.doorwayMeshes = [this.doorways.mesh];
     for (const door of this.doors) door.casts = door.sources.some((m) => m.castShadow) || door.leaves.some((l) => l.standIn.mesh.castShadow);
     this.leafMeshes = new Set(this.doors.flatMap((d) => d.sources));
     const turning = this.doors.flatMap((d) => d.leaves.map((leaf) => ({ door: d, leaf, base: leaf.base, geometry: leaf.standIn.mesh.geometry })));
@@ -189,7 +191,17 @@ export class DoorLayer {
     this.parts = parts.map(({ door, geometry }) => Object.freeze({ door: door.def.id, geometry }));
   }
 
-  /** The tag of the leaf drawn in slot `instance` of stand-in `mesh`, or of the doorway there (`pickMeshes`); null for a mesh not the layer's or an empty slot. */
+  /**
+   * Registers the layer's meshes with `picker` as the page does (src/main.ts): the stand-ins with both its queries, the doorways with the hit query alone,
+   * so the look target meets a closed door between its leaves and the zoom's pick passes the seam where nothing is drawn (review 18, F50).
+   */
+  registerWith(picker: Pick<ModelPicker, 'register'>): void {
+    const tagOf = (mesh: InstancedMesh, instance: number): PieceTag | null => this.tagOf(mesh, instance);
+    picker.register(this.meshes, tagOf);
+    picker.register(this.doorwayMeshes, tagOf, { zoom: false });
+  }
+
+  /** The tag of the leaf drawn in slot `instance` of stand-in `mesh`, or of the doorway there (`doorwayMeshes`); null for a mesh not the layer's or an empty slot. */
   tagOf(mesh: InstancedMesh, instance: number): PieceTag | null {
     if (mesh === this.doorways.mesh) return this.doorways.tagOf(instance);
     return this.standIns.get(mesh)?.drawn[instance]?.door.tag ?? null;

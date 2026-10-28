@@ -4,7 +4,7 @@
  * `walkWorld`: the static world without the doors' leaves, and the leaves where the layer stands them), with the walk mode's own walker
  * (src/walk/walker.ts) stepped at 60 frames a second. From the Petrie Court on the door's axis the closed door stops the walker against its leaves;
  * turned onto a leaf 0.15 m off their meeting line, the eye finds the door as the page's look target (src/walk/look.ts, through the page's picker with the
- * layer's stand-ins and doorways registered), whose prompt says "E Open"; opened as E opens it (`DoorLayer.use` on the look target, from the walker's
+ * layer's stand-ins and doorways registered as the page registers them), whose prompt says "E Open"; opened as E opens it (`DoorLayer.use` on the look target, from the walker's
  * eye; red with the layer's meshes left out of the picker, which met nothing there; work unit 2, review 17, F48), it swings a quarter turn into wing B, and the walker walks through the doorway into gallery 529 and back out into
  * the court, on the main floor's level all the way but for the door frame's 8 cm sill.
  * Bound: the walker walks on the door's axis, square to the facade; positions are the feet's; "no leaf inside the body" is read where the walker stops
@@ -57,7 +57,7 @@ beforeAll(() => {
   world = walkWorld(timeline.steps, timeline.n, layer, bvhs);
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
   const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
-  picker.register(layer.pickMeshes, (mesh, i) => layer.tagOf(mesh, i));
+  layer.registerWith(picker);
   hit = (ray, query) => picker.hit(ray, query);
   const fronts: number[] = [];
   for (const step of timeline.steps) {
