@@ -14,10 +14,11 @@
  * near each corner), each meeting its piece at that face an even number of times. The faces' winding on the same lines: as many look up as look down,
  * so a face wound the wrong way or doubled fails, though a part wound wholly inside out does not; and where parts of one piece overlap, which the
  * parity rule reads as outside, no line runs through them for as long as settle's span (BODY.height less STANDING), read on the shape's first walked
- * piece and scaled to its walked piece that stretches the lines most, so a walker built into a piece is found. And each upright face's inside: at
- * seven points of every upright face of every shape (the lines' four and one near the middle of each edge), BEHIND to one side or the other, the faces
- * above wind to an inside, so a part with no top and no bottom, whose open rims cancel along vertical lines, fails, unless the face lies back to back on
- * another, one side of a two-sided membrane, which has no inside to lose. A face stands upright when lines along vertical see it less than BEHIND wide.
+ * piece and scaled to its walked piece that stretches the lines most, so a walker built into a piece is found, but on a line the crossing rule reads
+ * once (its bound, src/walk/collision.ts). And each upright face's inside: at seven points of every upright face of every shape (the lines' four and
+ * one near the middle of each edge), BEHIND to one side or the other, the faces above wind to an inside, so a part with no top and no bottom, whose
+ * open rims cancel along vertical lines, fails, unless the face lies back to back on another, one side of a two-sided membrane, which has no inside to
+ * lose. A face stands upright when lines along vertical see it less than BEHIND wide, its area in plan over its longest edge in plan, in its frame.
  * Open findings the spec names, which these readings pass: the Arms and Armor Court's gables are wound wholly inside out, and two coffered soffits'
  * coffers are deeper than their shells, so each stands 4 cm out of the vault, a pocket whose faces look in.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
@@ -25,7 +26,7 @@
  * shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside turned up
  * (src/model/lib/fittings.ts: 169 lines unbalanced), with the medieval piers' half shafts made whole cylinders, half in the core (3.9 m of overlap), with
  * one Hunt medallion of each pair three times as tall (2.27 m, which the piece measured reads as 0.76 m), with the piers' core left with no top and no
- * bottom (30 points of upright faces with no inside), with the moon gate panel's foot, top and ends left out (288), with the Great Hall pendentives'
+ * bottom (38 points of upright faces with no inside), with the moon gate panel's foot, top and ends left out (504), with the Great Hall pendentives'
  * spandrels on their old points, apart from the curved faces' (8), with UNIT_TILE no sheet (2,008 shapes open, 7 SHEETS counts off) and with the
  * window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off).
  * Bound: `openAlong` joins ends nearer than 0.1 mm and leaves out open boundary under 1 mm in all, each in the geometry's own frame, so an opening
@@ -198,10 +199,17 @@ function worldTriangles(geometry: BufferGeometry, world: Matrix4): Float64Array 
 /** How far either side of an upright face its inside is looked for, and how narrow across vertical lines an upright face is, in its geometry's frame. */
 const BEHIND = 1e-4;
 
-/** Whether the face at `a`, `b`, `c` stands upright: lines along `vertical`, a unit direction in its frame, see it less than BEHIND wide. */
+/**
+ * Whether the face at `a`, `b`, `c` stands upright: lines along `vertical`, a unit direction in its frame, see it less than BEHIND wide, its area in
+ * plan over its longest edge in plan. A face that is a point or a segment in plan is upright.
+ */
 function upright(a: Vector3, b: Vector3, c: Vector3, vertical: Vector3): boolean {
-  const twice = new Vector3().subVectors(b, a).cross(new Vector3().subVectors(c, a)).dot(vertical);
-  return Math.abs(twice) < BEHIND * Math.max(a.distanceTo(b), b.distanceTo(c), c.distanceTo(a));
+  const twice = Math.abs(new Vector3().subVectors(b, a).cross(new Vector3().subVectors(c, a)).dot(vertical));
+  const plan = (p: Vector3, q: Vector3): number => {
+    const d = new Vector3().subVectors(q, p);
+    return d.addScaledVector(vertical, -d.dot(vertical)).length();
+  };
+  return twice <= BEHIND * Math.max(plan(a, b), plan(b, c), plan(c, a));
 }
 
 /** Whether some face of `geometry` crosses lines along `vertical`, a unit direction in its frame: a face that does not stand upright. */
@@ -325,6 +333,15 @@ describe('the pieces the walk and the section cut read', () => {
       }
     }
     expect(open, 'pieces open along vertical lines: close them, or declare a true sheet with sheet() (src/model/lib/sheet.ts)').toEqual([]);
+  });
+
+  it('call a face upright when vertical lines see it less than BEHIND wide, a point or a segment in plan among them', () => {
+    const [up, at] = [new Vector3(0, 1, 0), (x: number, y: number, z: number): Vector3 => new Vector3(x, y, z)];
+    expect(upright(at(1, 2, 3), at(1, 2, 3), at(1, 2, 3), up), 'a point').toBe(true);
+    expect(upright(at(0, 0, 0), at(1, 0, 0), at(0, 5, 0), up), 'standing in a vertical plane').toBe(true);
+    expect(upright(at(0, 0, 0), at(5e-5, 20, 0), at(0, 0, 1), up), 'leaning 0.05 mm out over a 1 m edge in plan').toBe(true);
+    expect(upright(at(0, 0, 0), at(0.001, 20, 0), at(0, 0, 1), up), '1 mm wide in plan, though 20 m tall').toBe(false);
+    expect(upright(at(0, 0, 0), at(1, 0, 0), at(0, 0, 1), up), 'level').toBe(false);
   });
 
   it('declare every surface standing upright a sheet: a shape all of whose faces are vertical has no inside along any vertical line', () => {

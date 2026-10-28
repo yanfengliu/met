@@ -264,6 +264,10 @@ function wallSpec(params: WallParams): WallSpec {
           stop: r.stop ?? height - (r.course ?? 0.6) / 2,
         };
   if (rustication !== null) require(part, rustication.depth < thickness, `rustication.depth ${String(rustication.depth)} must be less than the thickness ${String(thickness)}.`);
+  if (rustication !== null) {
+    const [low, high] = [rustication.start - rustication.joint / 2, rustication.stop + rustication.joint / 2];
+    require(part, low >= -1e-9 && high <= height + 1e-9, `rustication's channels run from ${String(low)} to ${String(high)} m; keep them within the wall's height, 0 to ${String(height)} m (start, stop and joint).`);
+  }
   return { width, height, thickness, openings, rustication, detail: checkDetail(part, params.detail ?? 'medium') };
 }
 
@@ -315,7 +319,7 @@ function buildWall(spec: WallSpec): THREE.BufferGeometry {
   if (r !== null) {
     // The end's outline in (depth into the wall, height), down its front edge round each channel.
     const end: V2[] = [[0, 0], [T, 0], [T, H], [0, H]];
-    for (const j of [...joints].reverse()) end.push([0, Math.min(H, j + r.joint / 2)], [r.depth, Math.min(H, j + r.joint / 2)], [r.depth, Math.max(0, j - r.joint / 2)], [0, Math.max(0, j - r.joint / 2)]);
+    for (const j of [...joints].reverse()) end.push([0, j + r.joint / 2], [r.depth, j + r.joint / 2], [r.depth, j - r.joint / 2], [0, j - r.joint / 2]);
     const outline = end.filter((p, k) => k === 0 || p[0] !== end[k - 1]?.[0] || p[1] !== end[k - 1]?.[1]);
     // Depth runs along −Z at both ends; the axes turn so each end faces out, +X or −X.
     for (const s of [-1, 1]) b.planar(outline.map(([d, y]) => [s * d, y] as const), [], new THREE.Vector3(s * W, 0, 0), new THREE.Vector3(0, 0, -s), new THREE.Vector3(0, 1, 0));
