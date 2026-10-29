@@ -1,8 +1,8 @@
 /**
  * Piece tags (docs/design/spec.md, Build-step API: `Kit.addTagged`): the timeline keeps each tagged piece's tag with the instance it landed in
  * (`Timeline.tagOf`, `BuiltStep.tags`); a door's pieces get meshes of their own, one door per mesh, shared with no other door and no untagged piece,
- * while an artwork's pieces batch as untagged pieces do; tags change nothing the timeline shows at any t, whatever the history; a malformed tag fails
- * with a message naming the step, the piece and the fix.
+ * while an artwork's pieces batch as untagged pieces do; tags change nothing the timeline shows at any t, whatever the history; a malformed tag is
+ * refused: it fails with a message naming the step, the piece and the fix.
  * Bound: fixture steps of boxes; tags on the real sequence are checked by the milestones that add them (doors, artworks).
  */
 import { BoxGeometry, InstancedMesh, Matrix4, MeshStandardMaterial } from 'three';

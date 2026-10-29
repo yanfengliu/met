@@ -180,4 +180,8 @@ F66 was left open at the close. The browser walks of every route took about 10 m
   - The arrival in gallery 600: the short walk stops in the doorway's passage once the card shows, and the headless R5 walks into the gallery.
   - The front steps walked down to the plaza at 4×: `stairs.spec` walks them both ways at 1×.
 - **Left as it was.** `doors.spec` and `door-look.spec` still walk with `route-walk.ts`'s corner settle and `route-keys.ts`'s release-lag learning, so both stay.
-- **Result.** __RESULT__
+- **Result.** The work is `324ad87`, merged with origin/main and pushed to it.
+  - routes.spec takes 94 s unthrottled, inside `npm run verify` (95 e2e in 8.7 min, against 84 in 14.6 min at `3860384`). At 4× it took 109, 111 and 106 s in three runs in a row with walk.spec, against about 10 min.
+  - All 14 red proofs are red on the new checks.
+  - Reviews 23 to 27: Codex and Claude, then four focused Codex checks. F67 to F83 are closed, the last check accepting.
+  - F66 is resolved.

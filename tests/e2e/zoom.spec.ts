@@ -8,7 +8,8 @@
  *   the bound: ZOOM.stop before that surface or, if sooner, where the ray comes down to the camera floor (CAMERA_FLOOR over the workspace ground);
  *   the bound comes within 120 notches, and the camera stops there within 1 mm;
  * - at that bound a notch in moves nothing, and every one of 8 notches out moves at least ZOOM.minStep;
- * - from aerial-ne, notches out reach the far bound (the target ZOOM.maxDistance away), where a notch out moves nothing and a notch in moves again;
+ * - from aerial-ne, notches out reach the far bound (the target ZOOM.maxDistance, 6 km, away), where a notch out moves nothing and a notch in moves
+ *   again, so every notch back out moves again and the far bound gives way to zooming in;
  * - lowered onto the camera floor by Q held: from the far bound looking down (both bounds at once), a notch in moves nothing and a notch out moves,
  *   and from there the zoom holds as above; looking up, a notch out moves nothing (the floor), a notch in moves, and the next notch out comes back
  *   onto the floor on the ray and stops there;

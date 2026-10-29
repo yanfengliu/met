@@ -2,7 +2,9 @@
  * The door unit's leaves apart (src/model/lib/window.ts `doorUnit`, docs/design/spec.md, Doors): each leaf's geometry, hinge and swing; the closed
  * leaves (`leaf`, `leafGlass`) are exactly the leaves appended; `doorLeavesOf` finds them; a leaf turns about its hinge-side edge at the face it opens
  * round, toward the back for a positive turn, and stands 4 mm off its jamb a quarter turn open; and through its whole swing, either way, no leaf meets a
- * fixed part of its unit (its frame with the transom bar, its fanlight glass): review 5, F22, where the leaves passed 41 mm into the transom bar.
+ * fixed part of its unit (its frame with the transom bar, its fanlight glass): review 5, F22, red at d4d716d, where the entrance's leaves met the
+ * frame in all 146 sampled poses, 41 mm into the transom bar; red too with only the mid-plane pivot put back, its hinge corner sweeping into the
+ * jamb.
  * Bound: panelled and glazed units of one and two leaves, rectangular and arched, the model's door units among them; the swing is sampled every 2.5° by
  * exact triangle-triangle tests (three-mesh-bvh `intersectsGeometry`), so a graze shorter than a step between samples is not seen; positions to 1e-6 m.
  */

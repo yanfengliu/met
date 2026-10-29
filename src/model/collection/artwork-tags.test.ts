@@ -1,9 +1,10 @@
 /**
  * The artworks' piece tags (docs/design/spec.md, Collection: Labels; Build-step API: Piece tags) on the real sequence's collection steps: every piece of
- * every placeholder (its object, plinth, vitrine base and glass, frame) carries its own object's tag, kind artwork with its Met object ID; at t = N every
- * instance a collection step's meshes draw holds the tag of the piece kit.addTagged put at its matrix; and the tags change nothing else: built with every
- * piece untagged instead, each step makes the same meshes (geometry, material, instance count, in the same order), the same triangles and pieces, and
- * the same scene byte for byte at every t sampled, because src/build/batch.ts keeps only doors apart.
+ * every one of the 94 placeholders (its object, plinth, vitrine base and glass, frame) is tagged with its own object's ID (kind artwork, with its Met
+ * object ID); at t = N every instance a collection step's meshes draw holds the tag of the piece kit.addTagged put at its matrix; no mesh split, and
+ * the tags change nothing else, the same scene as untagged: built with every piece untagged instead, each step makes the same meshes (geometry,
+ * material, instance count, in the same order), the same triangles and pieces, and the same scene byte for byte at every t sampled, because
+ * src/build/batch.ts keeps only doors apart.
  * Bound: the ten collection steps on a timeline of their own, as the tags touch no other step; the whole model's counts are src/build/sequence.test.ts's.
  */
 import type { InstancedMesh, Material } from 'three';

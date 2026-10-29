@@ -1,5 +1,6 @@
 /**
  * Walls with openings and rustication, arch elements, windows, doors and surrounds.
+ * `wall` refuses channels that reach the wall's foot or top, bounded by the joints it builds, or that overlap, each red with its refusal removed.
  * Bound: geometry arrays only; that openings read as cut through is also checked on gallery captures.
  */
 import * as THREE from 'three';

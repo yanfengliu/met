@@ -19,8 +19,11 @@
  * so a solid goes unseen where neither its piece nor one of its parts closes along that line (a solid of parts that share no vertex, its piece holding
  * other surfaces on the line); a part open only off the line (a box with no end) reads as closed. Other doors' leaves are tried closed only. A fixed part
  * is tried 1 mm inside its box on every side, so it may touch a face it stands against (the floor, the lintel, a pier) but not pass through it, and it is
- * not tried for lying inside a piece; a door whose step merges its frame into another piece (the Branch Bank's) has no fixed part to try. Controls keep
- * both containments and the partner test red: a block round a doorway and its swing, a cube in a leaf, a leaf moved 12 mm into its partner.
+ * not tried for lying inside a piece; a door whose step merges its frame into another piece (the Branch Bank's) has no fixed part to try. Red at
+ * 7b7fe94: four entrance leaves through the screen columns' plinths in all 73 poses, the frames through the plinths, the shafts' feet and the
+ * capitals. Controls keep both containments and the partner test red: a block round a doorway and its swing, a 1 cm cube in a leaf, a leaf moved
+ * 12 mm into its partner, which the check of 6198d1a passed. With Weston's door tagged, red with its stone lining's opening 2 cm narrower or 2 cm
+ * lower than its square-headed frame or the 528/529 wall in its doorway.
  */
 import { Box3, BoxGeometry, DoubleSide, Matrix4, Ray, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';

@@ -13,6 +13,8 @@
 import { Vector3 } from 'three';
 import type { PerspectiveCamera } from 'three';
 
+import type { Hear } from './pointer-arbiter.js';
+
 export const ZOOM = Object.freeze({
   /** The closest the zoom brings the camera to the surface under the pointer, along the ray, metres. */
   stop: 0.5,
@@ -104,9 +106,10 @@ export function wheelFactor(event: Pick<WheelEvent, 'deltaY' | 'deltaMode' | 'ct
  * Wheel, two-finger pinch and middle-button drag on `element`, each reported as `zoom(clientX, clientY, factor)` at the point it zooms toward.
  * `active()` false (walk mode) ignores them. The orbit controls' own zoom is off (src/viewer/camera-rig.ts), so these are the only zoom inputs.
  * A press on `element` is followed on the document to its end, wherever its moves, its release or its cancel land: once its capture is lost they
- * may land on another element, and a finger left behind made one finger's drag a pinch (review 11, F37).
+ * may land on another element, and a finger left behind made one finger's drag a pinch (review 11, F37). Every pointer listener goes through
+ * `hear`, the rig's arbiter (src/viewer/pointer-arbiter.ts), so the zoom hears only the pointers that hold the camera.
  */
-export function bindZoomInput(element: HTMLElement, zoom: (clientX: number, clientY: number, factor: number) => void, active: () => boolean): void {
+export function bindZoomInput(element: HTMLElement, zoom: (clientX: number, clientY: number, factor: number) => void, active: () => boolean, hear: Hear): void {
   element.addEventListener(
     'wheel',
     (event) => {
@@ -126,16 +129,16 @@ export function bindZoomInput(element: HTMLElement, zoom: (clientX: number, clie
     if (a === undefined || b === undefined) return null;
     return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   };
-  element.addEventListener('pointerdown', (event) => {
+  element.addEventListener('pointerdown', hear((event) => {
     if (!active()) return;
     if (event.pointerType === 'touch') touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
     else if (event.button === 1) {
       event.preventDefault();
       middle = { id: event.pointerId, x: event.clientX, y: event.clientY, last: event.clientY };
     }
-  });
+  }));
   const doc = element.ownerDocument;
-  doc.addEventListener('pointermove', (event) => {
+  doc.addEventListener('pointermove', hear((event) => {
     if (event.pointerType === 'touch' && touches.has(event.pointerId)) {
       const before = spread();
       touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -152,11 +155,11 @@ export function bindZoomInput(element: HTMLElement, zoom: (clientX: number, clie
       // Dragging up zooms in, 100 pixels a notch.
       if (dy !== 0 && active()) zoom(middle.x, middle.y, Math.pow(1 - ZOOM.notch, -dy / 100));
     }
-  });
-  const end = (event: PointerEvent): void => {
+  }));
+  const end = hear((event) => {
     touches.delete(event.pointerId);
     if (middle?.id === event.pointerId) middle = null;
-  };
+  });
   doc.addEventListener('pointerup', end);
   doc.addEventListener('pointercancel', end);
 }

@@ -2,9 +2,9 @@
  * The page fetches nothing from the network but its own origin (docs/design/spec.md, Collection; AGENTS.md non-goals: no runtime network assets): the
  * collection's records and colours are in the bundle (src/model/collection/catalogue.ts), never fetched from The Met's API or images, or from any other
  * host, and never read from the ignored research cache.
- * Each page is loaded at the finished building, where every collection step stands, and again in a collection space's view, and every request it makes
- * is recorded from navigation until it is shot-ready and a second later; each must be the page's own origin (or a data: or blob: URL), and none under
- * /research/. Bound: requests made only after that window, or only through input, are not seen.
+ * The viewer is loaded at the finished building, where every collection step stands, and again in a collection space's view, as is parts.html; every
+ * request a page makes is recorded from navigation until it is shot-ready and a second later; each must be the page's own origin (or a data: or blob:
+ * URL), and none under /research/. Bound: requests made only after that window, or only through input, are not seen.
  * Through input, with an artwork's card shown and its link to metmuseum.org followed, ./labels.spec.ts checks that the page itself asks nothing of
  * metmuseum.org.
  */

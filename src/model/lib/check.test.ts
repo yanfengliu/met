@@ -1,6 +1,10 @@
 /**
  * The closure check (`openAlong`, ./check.ts) on fixtures whose open boundary is worked out by hand: closed solids, the same solids with a face left out,
  * faces along the lines, sheets, ends split on another edge's inside (a T-junction), rounding far from the origin and lines turned off the frame's Y.
+ * `openAlong` takes the edges an odd number of triangles share, projected across the lines and split at one another's ends, and finds the parity even
+ * everywhere when they cover every stretch an even number of times; it joins ends nearer than 0.1 mm and leaves out open boundary under 1 mm in all.
+ * On fixtures it finds closed solids closed and a box with no bottom open by its footprint, 14 m; it goes red without its joining of ends 30 µm apart
+ * or its splitting of edges.
  * Bound: fixtures only; src/model/closure.test.ts runs it over the finished model.
  */
 import { BoxGeometry, CylinderGeometry, Matrix4, PlaneGeometry, SphereGeometry, Vector3 } from 'three';

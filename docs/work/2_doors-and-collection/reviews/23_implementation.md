@@ -131,7 +131,9 @@ I didn't run any tests, as instructed. One thing found while reading: `test-resu
 
 ## Verification
 
-__VERIFICATION__
+- Red proofs: 14 defects planted on the work's tree and undone, each turning the tests named red (`docs/learning/gate-proofs.md`, under `tests/e2e/routes.spec.ts`); plants 5, 6 and 13 run again on the split Weston tests.
+- `npm run verify` on `324ad87`, through the gate lock: 685 unit tests in 76 files and 95 e2e in 8.7 min, 575 s in all (`tmp/gates/verify-2.log`, ignored). routes.spec 94 s of it, 14 tests.
+- Three runs in a row of `MET_CPU_THROTTLE=4 npx playwright test tests/e2e/routes.spec.ts tests/e2e/walk.spec.ts`, through the gate lock, on `324ad87` merged with origin/main `05bdfee` (`tmp/gates/load3.log`, ignored): 137.5, 139.1 and 133.3 s; routes.spec 109.2, 110.8 and 106.3 s, 12 passed and its 2 frame budgets skipped; walk.spec 25.3, 24.6 and 24.2 s, 9 passed.
 
 ## Round outcome
 

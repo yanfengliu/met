@@ -4,8 +4,10 @@
  * - A press of the primary button, a pen or one finger released after travelling less than CLICK_SLOP pixels, summed over its moves as walk mode sums
  *   them, is a click at its release point; one that travels CLICK_SLOP or more is a drag and never a click, whatever way it comes back; so is a press of
  *   another button, one that a second pointer joins, one the browser cancels, and one pressed or released while walking.
- * - A click's moves never reach a listener after the click's own. A drag's latest held move goes on once, as the move or the release that passes the
- *   slop arrives, then every move after it; a second pointer landing sends the first's held move on before its own press.
+ * - On a stand-in canvas, a click's moves are held from the document's later listeners: they never reach a listener after the click's own. A drag's
+ *   latest held move is sent on once, as the move or the release that passes the slop arrives, then every move after it; a second pointer landing
+ *   sends the first's held move on before its own press, and so does a release while walking, which is no click (red with the click of 8a6a0c2,
+ *   which dropped the held move there as a click's).
  * - One table of presses on the real CameraRig (OrbitControls and the zoom's input): a tap, a drag, a sub-slop pinch, a drag then a pinch, a pinch
  *   with one finger lifted then a tap, an out-and-back drag, the right-button pan, a pen, two buttons pressed and let go in turn, a mouse click while a
  *   finger whose capture was lost is down, and a finger's drag after one whose capture was lost was released over another element. Each makes the
@@ -13,10 +15,11 @@
  *   less a click's own moves; it reports a user move (which turns the follow camera off and clears the preset in view) only where it moves the view,
  *   and none from a click's press to its release.
  *   Red with the gate of 86bdf0c (the taps and the pen turned the camera 0.37 to 0.59 m and reported user moves, review 6, F25), of e06cc70 (the
- *   sub-slop pinch's first factor 44/39 for 40/39, review 7, F29) and of 1fd3a50 (the drag then a pinch zoomed first by 136/39 for 40/39, the camera
- *   75 m off: the move held before the drag passed the slop went on again as the second finger landed, review 10, F36); red too with the right
- *   button counted (the pan a click) and with the travel taken from the press point (the out-and-back drag a click). Red with the gate and the zoom
- *   of 42722e9 (review 11): the two buttons a click (F38), the mouse a click while the finger was down, and the finger's drag a pinch (F37).
+ *   sub-slop pinch's first factor 44/39 (1.128) for 40/39 (1.026), review 7, F29) and of 1fd3a50 (the drag then a pinch zoomed first by 136/39
+ *   (3.487) for 40/39, the camera 75 m off: the move held before the drag passed the slop went on again as the second finger landed, review 10, F36);
+ *   red too with the right button counted (the pan a click) and with the travel taken from the press point (the out-and-back drag a click). Red with
+ *   the gate and the zoom of 42722e9 (review 11): the two buttons pressed and let go in turn a click (F38), the mouse a click while the finger was
+ *   down, and the finger's drag a pinch (F37).
  * Random sequences of the same input are in src/viewer/click-random.test.ts.
  * Bound: the stand-in page's (src/viewer/pointer-testing.ts); the rig runs undamped, a frame after each event.
  */
@@ -311,7 +314,7 @@ describe('the orbit view’s click', () => {
     expect(order).toEqual(['down 1', 'move 1 at 604', 'down 2', 'move 1 at 605']);
   });
 
-  it('is never one while walking, pressed or released then, and holds no move while walking', () => {
+  it('is never one while walking, pressed or released then, holds no move while walking, and sends a held move on at a release while walking', () => {
     const c = clicking();
     c.walking(true);
     press(c.page, [[10, 10], [11, 10], [11, 10]]);
@@ -321,6 +324,15 @@ describe('the orbit view’s click', () => {
     fire(c.page, 'pointerdown', 20, 20);
     c.walking(true);
     fire(c.page, 'pointerup', 20, 20);
+    // Pressed in the orbit view, its move held, released after walk mode began: no click, and the held move goes on as a drag's (work unit 10).
+    c.walking(false);
+    c.heard.length = 0;
+    fire(c.page, 'pointerdown', 40, 40);
+    fire(c.page, 'pointermove', 41, 40);
+    expect(c.heard, 'the move held').toEqual([]);
+    c.walking(true);
+    fire(c.page, 'pointerup', 41, 40);
+    expect(c.heard, 'the held move, sent on at the release').toEqual([[41, 40]]);
     c.walking(false);
     press(c.page, [[30, 30]]);
     expect(c.clicks).toEqual([[30, 30]]);

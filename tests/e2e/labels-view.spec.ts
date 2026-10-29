@@ -1,6 +1,6 @@
 /**
- * The orbit view's card against the view's own controls, through real input at gallery 600's preset on the finished building (docs/design/spec.md,
- * Collection: Labels; review 6 of work unit 2, F25 to F27):
+ * The orbit view's card against the view's own controls, through real input at gallery 600's preset (`int-european-paintings-600`) on the finished
+ * building (docs/design/spec.md, Collection: Labels; review 6 of work unit 2, F25 to F27):
  * - F25: a 2 px click on the Triumph of Marius shows its card and moves nothing, at the preset (which stays in view) and with the follow camera on
  *   (which stays on): the camera is where it was, to 0.1 mm;
  * - F26: a camera preset chosen from the view menu hides the card, Esc never pressed;
