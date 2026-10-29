@@ -17,13 +17,14 @@
  * as long as settle's span (BODY.height less STANDING), read on the shape's first walked piece and scaled to its walked piece that stretches the lines
  * most, so a walker built into a piece is found, but on a line the crossing rule reads once (its bound, src/walk/collision.ts). And each upright face's
  * inside: at seven points of every upright face of every shape (the lines' four and one near the middle of each edge), BEHIND behind it and in front of
- * it, the faces above wind to more inside behind it than in front, or to the same inside on both sides, as within an overlap, so a part with no top and
- * no bottom, whose open rims cancel along vertical lines, fails, and so does a face wound in, unless the face lies back to back on another, one side of a
- * two-sided membrane, which has no inside to lose. A face stands upright when lines along vertical see it at most BEHIND wide, twice its area in plan
- * over its longest edge in plan, in its frame. And each closed part's facing as drawn: its volume read along vertical by its faces
- * (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one, signed by its piece's matrix, which an
- * instanced mesh does not turn back; no pocket on a grid of GRID lines a side over each shape and each door's leaves (`inwardAlong`), which reads a part
- * whose open ends line up along vertical lines, as `openAlong` reads such a part closed; and no piece of the model mirrored.
+ * it, the faces above wind to more inside behind it than in front, or to the same inside on both sides, as within an overlap or where it lies face to
+ * face on another part of its piece, so a part with no top and no bottom, whose open rims cancel along vertical lines, fails, and so does a face wound
+ * in, unless the face lies back to back on another, one side of a two-sided membrane, which has no inside to lose. A face stands upright when lines along
+ * vertical see it at most BEHIND wide, twice its area in plan over its longest edge in plan, in its frame. And each closed part's facing as drawn: its
+ * volume read along vertical by its faces (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one, signed
+ * by its piece's matrix, which an instanced mesh does not turn back; no pocket on a grid of GRID lines a side over each shape and each door's leaves, nor
+ * on two lines beside each of their open edges (`inwardAlong`), which read a part whose open ends line up along vertical lines, as `openAlong` reads such
+ * a part closed; and no piece of the model mirrored.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
  * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage), with main's crossing rule, which counted hits within 1 µm once (206
  * shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside turned up
@@ -35,15 +36,17 @@
  * point read as not upright), with `extrudeOutline` taking the armour court gables' clockwise outline as given (src/model/mmw/facade-parts.ts: 2 parts
  * facing in, 48 lines through pockets), with the Dendur rolls' ends reversed (src/model/roche-north/temple.ts: 2 pieces mirrored, facing in), with the
  * Hunt arches' and Great Hall arches' soffits back on their 0.06 and 0.08 m shells and `barrelVault`'s refusal off (58 lines), with the acanthus
- * leaves' quads split along one diagonal (src/model/lib/acanthus.ts: 2 lines), with Diana's bow left open (src/model/roche-north/figures.ts: 1 line of
- * the grid, 0.72 m long) and with `prism`'s side walls wound in (src/model/roche-south/shapes.ts `sideQuads`: upright faces in 22 shapes).
+ * leaves' quads split along one diagonal (src/model/lib/acanthus.ts: 2 lines, and 3 shapes on the grid), with Diana's bow left open
+ * (src/model/roche-north/figures.ts: 9 lines, 0.74 m long) and with `prism`'s side walls wound in (src/model/roche-south/shapes.ts `sideQuads`: upright
+ * faces in 22 shapes).
  * Bound: `openAlong` joins ends nearer than 0.1 mm and leaves out open boundary under 1 mm in all, each in the geometry's own frame, so an opening
  * narrower or with less boundary is not seen; a piece its matrix scales up sees both larger (up to 99 times, the Hunt foundations' unit boxes). The
  * other readings try up to FACES faces a shape, spread evenly over those that are not vertical, on its first walked piece, and seven points of each
  * upright face; they see an opening, a wrong winding, an overlap, a pocket or a missing inside only under one of their lines or at one of their points.
  * The overlap is read from the winding, so an overlap with a part wound inside out is not seen, and the facing reading finds none. That reading sees a
  * part's sign in all, so one wound inside out among the outward parts it closes only together with can pass (its own bound). The grid sees a pocket only
- * under one of its lines, so one narrower than its cells can be missed: Diana's open bow showed on 1 of the shape's 4,096.
+ * under one of its lines, so one narrower than its cells that no open edge borders can be missed (Diana's open bow showed on 1 of the grid's 4,096
+ * lines, and on 8 beside its open edges). The upright reading passes a face wound in that lies face to face on another part of its piece.
  */
 import { Matrix3, Matrix4, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';
@@ -255,7 +258,7 @@ describe('the pieces the walk and the section cut read', () => {
         const length = n.length();
         if (length < 1e-12 || !upright(a, b, c, vertical)) continue;
         n.divideScalar(length);
-        // At the face's points; a part wound inside out has its inside in front of its faces, so either side will do.
+        // At the face's points, behind it and in front. A part wound wholly inside out reads −1 in front against 0 behind and passes; the facing test finds it.
         for (const [wa, wb, wc] of UPRIGHT_POINTS) {
           p.set(0, 0, 0).addScaledVector(a, wa).addScaledVector(b, wb).addScaledVector(c, wc);
           // A face looking out has more inside behind it than in front; one with the same inside on both sides stands within an overlap.

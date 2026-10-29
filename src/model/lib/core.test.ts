@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { along } from './along.js';
 import { MeshBuilder } from './builder.js';
+import type { GridOptions } from './builder.js';
 import { cached, canonical } from './cache.js';
 import { attributeProblems, boxOf, boxProblems, invertedFraction, triangles } from './check.js';
 import { ProfilePen, ringOf } from './profile.js';
@@ -87,6 +88,45 @@ describe('mesh builder', () => {
     const target = new MeshBuilder();
     target.append(source.build(), new THREE.Matrix4().makeScale(-1, 1, 1));
     expect(invertedFraction(target.build())).toBe(0);
+  });
+});
+
+describe('mesh builder grid', () => {
+  // The diagonal two triangles of a one-quad grid share, by its ends' positions: from its first corner to its third, or from its second to its fourth.
+  const diagonal = (rows: THREE.Vector3[][], options: GridOptions): string => {
+    const builder = new MeshBuilder();
+    builder.grid(rows, options);
+    const geometry = builder.build();
+    const position = geometry.getAttribute('position');
+    const index = geometry.getIndex();
+    const key = (k: number): string => {
+      const v = new THREE.Vector3().fromBufferAttribute(position, index?.getX(k) ?? k);
+      return v.toArray().map((x) => x.toFixed(3)).join(',');
+    };
+    const seen = new Map<string, number>();
+    for (let t = 0; t + 2 < (index?.count ?? position.count); t += 3) {
+      for (const [p, q] of [[t, t + 1], [t + 1, t + 2], [t + 2, t]]) {
+        const edge = [key(p ?? 0), key(q ?? 0)].sort().join(' ');
+        seen.set(edge, (seen.get(edge) ?? 0) + 1);
+      }
+    }
+    const shared = [...seen].filter(([, n]) => n === 2).map(([edge]) => edge);
+    const [a, b, c, d] = [rows[0]?.[0], rows[0]?.[1], rows[1]?.[1], rows[1]?.[0]].map((v) => v?.toArray().map((x) => x.toFixed(3)).join(',') ?? '');
+    return shared.length === 1 && shared[0] === [a, c].sort().join(' ') ? 'ac' : shared.length === 1 && shared[0] === [b, d].sort().join(' ') ? 'bd' : `none of them: ${shared.join('; ')}`;
+  };
+
+  it('splits each quad along the diagonal that folds it least when asked, smooth or flat, either way round, and as before when not', () => {
+    const [a, b, d] = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)];
+    // Its third corner raised, a quad folds least from its second corner to its fourth; its second corner raised, from its first to its third.
+    const raisedC = [[a, b], [d, new THREE.Vector3(1, 1, 1)]];
+    const raisedB = [[a, new THREE.Vector3(1, 0, 1)], [d, new THREE.Vector3(1, 1, 0)]];
+    for (const flip of [false, true]) {
+      for (const flat of [false, true]) {
+        expect(diagonal(raisedC, { flip, flat }), `flip ${String(flip)}, flat ${String(flat)}`).toBe(flat && flip ? 'bd' : 'ac');
+        expect(diagonal(raisedC, { flip, flat, flattest: true }), `flattest, flip ${String(flip)}, flat ${String(flat)}`).toBe('bd');
+        expect(diagonal(raisedB, { flip, flat, flattest: true }), `flattest, flip ${String(flip)}, flat ${String(flat)}`).toBe('ac');
+      }
+    }
   });
 });
 

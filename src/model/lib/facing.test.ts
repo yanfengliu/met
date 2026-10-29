@@ -5,7 +5,7 @@
  * slab and deeper, whose floor then stands out under it as a pocket.
  * Bound: fixtures only; src/model/closure.test.ts reads the finished model's parts, and the part tests read their own parts' pockets.
  */
-import { Matrix4, Vector3 } from 'three';
+import { Matrix4, TorusGeometry, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { MeshBuilder } from './builder.js';
@@ -94,6 +94,16 @@ describe('partVolumes', () => {
     expect(Math.abs(part?.volume ?? Infinity)).toBeLessThanOrEqual(part?.noise ?? 0);
   });
 
+  it('reads a level membrane as no volume within its noise, its heights levelled before they are averaged (review 1)', () => {
+    const [a, b, c] = [new Vector3(5, 15, 16), new Vector3(9, 7, 23), new Vector3(21, 33, 16)];
+    const membrane = new MeshBuilder();
+    membrane.polygon([a, b, c]);
+    membrane.polygon([a, c, b]);
+    const [part] = partVolumes(membrane.build(), new Vector3().subVectors(b, a).cross(new Vector3().subVectors(c, a)).normalize());
+    expect(part).toBeDefined();
+    expect(Math.abs(part?.volume ?? Infinity)).toBeLessThanOrEqual(part?.noise ?? 0);
+  });
+
   it('reads the same volume along a turned direction, the box closed along it too', () => {
     const turned = new Vector3(1, 2, -0.5).normalize();
     expect(volumes(box(), turned)).toEqual([24]);
@@ -142,6 +152,22 @@ describe('inwardAlong', () => {
     b.box([0, 0, 0], [1, 2, 1]);
     b.box([0, -2, 0], [1, -1, 1]);
     expect(inwardAlong(b.build(), UP, 10)).toEqual({ lines: 0, worst: 0, at: null });
+  });
+
+  it('finds nothing in two boxes read along a direction that puts a line on an edge shared by two triangles, the line cast again aside (review 1)', () => {
+    const b = new MeshBuilder();
+    b.box([0, 1, 0], [1, 2, 1]);
+    b.box([0, -2, 0], [1, -1, 1]);
+    expect(inwardAlong(b.build(), new Vector3(0.0015990724361849436, 1, 0).normalize(), 64)).toEqual({ lines: 0, worst: 0, at: null });
+  });
+
+  it("finds an open tube whose open ends line up along the lines by the lines beside its open edges, where the grid's lines miss it", () => {
+    // Diana's bow as it was: an arc of a torus with open ends, turned so that its two ends stand on one vertical line.
+    const bow = new MeshBuilder();
+    bow.append(new TorusGeometry(0.3, 0.008, 4, 16, Math.PI * 0.8), new Matrix4().makeRotationZ(Math.PI * 0.6));
+    const found = inwardAlong(bow.build(), UP, 4);
+    expect(found.lines).toBeGreaterThan(0);
+    expect(found.worst).toBeGreaterThan(0.2);
   });
 
   it('finds nothing in a slab whose recess stays inside it, and the pocket of one deeper than the slab, under the recess only', () => {

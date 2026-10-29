@@ -223,27 +223,38 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     detail: checkDetail('barrelVault', params.detail ?? 'medium'),
   };
   if (full.coffers !== null) {
-    // Each coffer's floor must stay inside the shell. Its corners, the floor's points farthest out, must lie inside the chords of the outer face's facets
-    // above them, as buildVault divides that face and insets each floor by 1.6 half-ribs; a corner under a facet's middle has the least room.
+    // Each coffer must stay inside the shell, whose outer face runs along the chords of its facets as buildVault divides it. A coffer's points farthest
+    // out are the corners of its opening, half a rib in from its cell on the inner face, and of its floor, 1.6 half-ribs in and `depth` out; a corner
+    // under a facet's middle has the least room.
     const { across, depth, rib } = full.coffers;
     const radius = (span * span) / (8 * rise) + rise / 2;
     const arc = 2 * Math.asin(Math.min(1, span / 2 / radius));
     const facets = across * Math.max(1, Math.ceil(byDetail(full.detail, [8, 16, 32]) / across));
     const facet = arc / facets;
-    const inset = (1.6 * rib) / 2 / radius;
-    // The least, over the corners, of how much farther out a facet's chord lies than the shell's outer radius times this share.
-    let share = Infinity;
+    // How far out the chord above a point at angle `at` from the face's first edge lies, as a share of the outer radius.
+    const chord = (at: number): number => Math.cos(facet / 2) / Math.cos(at - (Math.min(facets - 1, Math.max(0, Math.floor(at / facet))) + 0.5) * facet);
+    // The thickness each kind of corner needs, and the depth the floors may have in this shell.
+    const need = { openings: 0, floors: 0 };
+    let room = Infinity;
     for (let i = 0; i < across; i += 1) {
-      for (const at of [(arc * i) / across + inset, (arc * (i + 1)) / across - inset]) {
-        const middle = (Math.min(facets - 1, Math.max(0, Math.floor(at / facet))) + 0.5) * facet;
-        share = Math.min(share, Math.cos(facet / 2) / Math.cos(at - middle));
+      for (const [kind, inset, out] of [
+        ['openings', rib / 2 / radius, 0],
+        ['floors', (1.6 * rib) / 2 / radius, depth],
+      ] as const) {
+        for (const at of [(arc * i) / across + inset, (arc * (i + 1)) / across - inset]) {
+          need[kind] = Math.max(need[kind], (radius + out) / chord(at) - radius);
+          if (kind === 'floors') room = Math.min(room, (radius + full.thickness) * chord(at) - radius);
+        }
       }
     }
-    const room = (radius + full.thickness) * share - radius;
+    const kind = need.openings >= full.thickness ? 'openings' : 'floors';
+    // Rounded so that following the advice passes: the thickness up, the depth down.
+    const thick = Math.ceil(Math.max(need.openings, need.floors) * 1e4 + 1e-6) / 1e4;
+    const deep = Math.floor(room * 1e4 - 1e-6) / 1e4;
     require(
       'barrelVault',
-      full.coffers.depth < room,
-      `coffers.depth ${String(depth)} leaves no shell behind the coffers' floors: a shell ${String(full.thickness)} thick keeps ${room.toFixed(4)} m inside its outer face where their corners lie, so each floor would stand out of it as a pocket wound inside out; make the shell thicker than ${((radius + depth) / share - radius).toFixed(4)} m or the coffers shallower than ${room.toFixed(4)} m.`,
+      Math.max(need.openings, need.floors) < full.thickness,
+      `a shell ${String(full.thickness)} thick lets the coffers' ${kind} stand out of its outer face, which runs along the chords of its facets, as pockets wound inside out (coffers.depth ${String(depth)}, coffers.rib ${String(rib)}); make the shell at least ${thick.toFixed(4)} m thick${kind === 'floors' && deep > 0 ? ` or the coffers at most ${deep.toFixed(4)} m deep` : ''}.`,
     );
   }
   return cached('barrelVault', full, () => buildVault(full));

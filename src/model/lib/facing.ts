@@ -16,14 +16,14 @@ import type { BufferGeometry } from 'three';
 const WELD = 1e-6;
 /** The share of a part's area across v that its faces looking up and looking down may leave unmatched and still close it along v. */
 const OPEN_SHARE = 1e-6;
-/** The share of a part's volume terms, summed unsigned, that rounding may leave in their signed sum. */
+/** The share of a part's volume terms and of its faces' heights times their areas, summed unsigned, that rounding may leave in the volume. */
 const ROUNDING = 1e-9;
 
 /** A part, or the parts that close only together, with its volume read along v. */
 export interface PartVolume {
   /** Its volume, signed: negative for a part wound inside out, in the geometry's own units cubed. */
   readonly volume: number;
-  /** The most rounding can put the volume out by: its unmatched area across v times its height along v, and a part in a billion of its terms' sum. */
+  /** The most rounding can put the volume out by: its unmatched area across v times its height along v, and a billionth of its terms and of its faces' heights times their areas, unsigned. */
   readonly noise: number;
   /** How many welded parts it is: 1, or more for the parts that close only together. */
   readonly parts: number;
@@ -31,7 +31,7 @@ export interface PartVolume {
   readonly at: Vector3;
 }
 
-/** One part's sums: its signed area across v, that area unsigned, its volume with heights from its lowest corner, that volume's terms unsigned, and its lowest and highest corner. */
+/** One part's sums: its signed area across v, that area unsigned, its volume with heights from its lowest corner, what rounding grows with, and its lowest and highest corner. */
 interface Tally {
   across: number;
   total: number;
@@ -94,9 +94,11 @@ export function partVolumes(geometry: BufferGeometry, vertical: Vector3): PartVo
     const across = ab.subVectors(b, a).cross(ac.subVectors(c, a)).dot(vertical) / 2;
     tally.across += across;
     tally.total += Math.abs(across);
-    const term = ((a.dot(vertical) + b.dot(vertical) + c.dot(vertical)) / 3 - tally.low) * across;
+    // Each corner's height from the part's lowest before they are averaged, so a level membrane's terms vanish; their rounding grows with the heights.
+    const [ha, hb, hc] = [a.dot(vertical), b.dot(vertical), c.dot(vertical)];
+    const term = ((ha - tally.low + (hb - tally.low) + (hc - tally.low)) / 3) * across;
     tally.volume += term;
-    tally.terms += Math.abs(term);
+    tally.terms += Math.abs(term) + ((Math.abs(ha) + Math.abs(hb) + Math.abs(hc)) / 3) * Math.abs(across);
   }
   const closes = (across: number, total: number): boolean => Math.abs(across) <= OPEN_SHARE * total;
   // Summing terms that cancel, as a membrane's two sides do, leaves a remainder that grows with the terms, not with what is left unmatched.
@@ -122,12 +124,19 @@ export function partVolumes(geometry: BufferGeometry, vertical: Vector3): PartVo
 }
 
 /**
- * Where in its cell each of `inwardAlong`'s lines stands, across u and across w: irrational shares whose sum and difference are no simple fraction
+ * Where in its cell each of `inwardAlong`'s grid lines stands, across u and across w: irrational shares whose sum and difference are no simple fraction
  * either, so the lines miss a cell's edges and both its diagonals (shares summing to 1 put ten of a hundred lines on the diagonals boxes are split along).
  */
 const OFF = [0.5 + 1 / (4 * Math.PI), 0.5 - 1 / (2 * Math.E)] as const;
+/** How far beside an open edge, in the geometry's own units, and how far along it, as a share of its length, the lines read there stand. */
+const BESIDE = 1e-4;
+const ALONG = 0.5 - 1 / (2 * Math.E);
+/** A crossing this near its triangle's edge, by barycentric weight, may or may not be met by the triangle beside it too, so the line is cast again aside. */
+const EDGE = 1e-9;
+/** How far aside, in the geometry's own units, each next try of such a line stands, at an angle of no simple fraction. */
+const ASIDE = [1e-6, 1e-6 / Math.PI] as const;
 
-/** What a grid of lines finds wound inside out: how many lines cross a stretch of it, the longest stretch, and the top of that stretch. */
+/** What lines find wound inside out: how many cross a stretch of it, the longest stretch, and the top of that stretch. */
 export interface InwardStretch {
   readonly lines: number;
   /** In the geometry's own units. */
@@ -137,12 +146,12 @@ export interface InwardStretch {
 }
 
 /**
- * Where `geometry` is wound inside out along `vertical` (a unit direction in its frame): on a grid of `cells` × `cells` lines along it, spread over the
- * geometry's bounds across it, each stretch of a line where more of its faces look down than up above it, as in a pocket whose surface folds through
- * itself. Each line stands off its cell's centre by an irrational share of the cell (OFF), so no line runs along an edge of a model laid out in round
- * measures, where it would meet both triangles sharing the edge; hits at one height are read together.
- * Bound: it sees a stretch only under one of its lines, so a fold narrower across the lines than a cell can be missed; a line that meets an edge after all
- * counts both triangles there.
+ * Where `geometry` is wound inside out along `vertical` (a unit direction in its frame): each stretch of a line along it where more of its faces look
+ * down than up above it, as in a pocket whose surface folds through itself, on two sets of lines. A grid of `cells` × `cells` lines over the geometry's
+ * bounds across the lines (OFF), and two lines BESIDE each open edge, one either side, ALONG it: an edge borne by an odd number of triangles, corners
+ * joined by position to a micrometre, as where a part's open ends line up along the lines and the closure check reads it closed. Hits at one height are
+ * read together, and a line with a hit on an edge of its triangle is cast again a hair aside (ASIDE), so that it meets each surface there once.
+ * Bound: a pocket narrower than a cell that no open edge borders can be missed; a line still on an edge after its fourth try counts what it meets.
  */
 export function inwardAlong(geometry: BufferGeometry, vertical: Vector3, cells: number): InwardStretch {
   const position = geometry.getAttribute('position');
@@ -160,47 +169,98 @@ export function inwardAlong(geometry: BufferGeometry, vertical: Vector3, cells: 
     coords.set([pu, p.dot(vertical), pw], k * 3);
     [u0, u1, w0, w1] = [Math.min(u0, pu), Math.max(u1, pu), Math.min(w0, pw), Math.max(w1, pw)];
   }
-  const [du, dw] = [(u1 - u0) / cells, (w1 - w0) / cells];
-  const hits: { h: number; facing: number }[][] = Array.from({ length: cells * cells }, () => []);
-  const span = (lo: number, hi: number, origin: number, step: number, off: number): [number, number] => [Math.max(0, Math.ceil((lo - origin) / step - off)), Math.min(cells - 1, Math.floor((hi - origin) / step - off))];
-  const line = (i: number, j: number): [number, number] => [u0 + (i + OFF[0]) * du, w0 + (j + OFF[1]) * dw];
+  const [du, dw] = [Math.max((u1 - u0) / cells, 1e-12), Math.max((w1 - w0) / cells, 1e-12)];
+  const cell = (x: number, origin: number, step: number): number => Math.min(cells - 1, Math.max(0, Math.floor((x - origin) / step)));
+  // Each cell's triangles, as offsets into coords: those whose bounds across the lines overlap it, so a line anywhere in it meets only them.
+  const members: number[][] = Array.from({ length: cells * cells }, () => []);
   for (let o = 0; o + 8 < coords.length; o += 9) {
-    const [au, ah, aw, bu, bh, bw, cu, ch, cw] = Array.from(coords.subarray(o, o + 9));
-    if (au === undefined || ah === undefined || aw === undefined || bu === undefined || bh === undefined || bw === undefined || cu === undefined || ch === undefined || cw === undefined) continue;
-    const d = (bw - aw) * (cu - au) - (bu - au) * (cw - aw);
-    if (Math.abs(d) < 1e-14) continue;
-    const [i0, i1] = span(Math.min(au, bu, cu), Math.max(au, bu, cu), u0, du, OFF[0]);
-    const [j0, j1] = span(Math.min(aw, bw, cw), Math.max(aw, bw, cw), w0, dw, OFF[1]);
-    for (let i = i0; i <= i1; i += 1) {
-      for (let j = j0; j <= j1; j += 1) {
-        const [x, z] = line(i, j);
-        const s = ((bw - aw) * (x - au) - (bu - au) * (z - aw)) / d;
-        const r = ((x - au) * (cw - aw) - (z - aw) * (cu - au)) / -d;
+    const [au = 0, , aw = 0, bu = 0, , bw = 0, cu = 0, , cw = 0] = coords.subarray(o, o + 9);
+    const [i0, i1] = [cell(Math.min(au, bu, cu), u0, du), cell(Math.max(au, bu, cu), u0, du)];
+    const [j0, j1] = [cell(Math.min(aw, bw, cw), w0, dw), cell(Math.max(aw, bw, cw), w0, dw)];
+    for (let i = i0; i <= i1; i += 1) for (let j = j0; j <= j1; j += 1) members[i * cells + j]?.push(o);
+  }
+  // The line through (x, z): its longest stretch wound inside out, that stretch's top and where the line stood.
+  const read = (x: number, z: number): { stretch: number; top: number; x: number; z: number } => {
+    let met: [number, number][] = [];
+    let [px, pz] = [x, z];
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      [px, pz] = [x + attempt * ASIDE[0], z + attempt * ASIDE[1]];
+      met = [];
+      let edge = false;
+      for (const o of members[cell(px, u0, du) * cells + cell(pz, w0, dw)] ?? []) {
+        const [au = 0, ah = 0, aw = 0, bu = 0, bh = 0, bw = 0, cu = 0, ch = 0, cw = 0] = coords.subarray(o, o + 9);
+        const d = (bw - aw) * (cu - au) - (bu - au) * (cw - aw);
+        if (Math.abs(d) < 1e-14) continue;
+        const s = ((bw - aw) * (px - au) - (bu - au) * (pz - aw)) / d;
+        const r = ((px - au) * (cw - aw) - (pz - aw) * (cu - au)) / -d;
         if (r < -1e-12 || s < -1e-12 || r + s > 1 + 1e-12) continue;
-        hits[i * cells + j]?.push({ h: ah + r * (bh - ah) + s * (ch - ah), facing: Math.sign(d) });
+        if (Math.min(r, s, 1 - r - s) < EDGE) edge = true;
+        met.push([ah + r * (bh - ah) + s * (ch - ah), Math.sign(d)]);
       }
+      if (!edge) break;
+    }
+    met.sort((m, q) => q[0] - m[0]);
+    let [winding, stretch, top] = [0, 0, 0];
+    for (let k = 0; k < met.length; ) {
+      const level = met[k]?.[0] ?? 0;
+      for (; k < met.length && level - (met[k]?.[0] ?? 0) < 1e-6; k += 1) winding += met[k]?.[1] ?? 0;
+      const next = met[k]?.[0];
+      if (next !== undefined && winding < 0 && level - next > stretch) [stretch, top] = [level - next, level];
+    }
+    return { stretch, top, x: px, z: pz };
+  };
+  const lines: [number, number][] = [];
+  for (let i = 0; i < cells; i += 1) for (let j = 0; j < cells; j += 1) lines.push([u0 + (i + OFF[0]) * du, w0 + (j + OFF[1]) * dw]);
+  for (const [[pu, pw], [qu, qw]] of openEdges(coords)) {
+    const length = Math.hypot(qu - pu, qw - pw);
+    if (length < 1e-9) continue;
+    const [nu, nw, mu, mw] = [-(qw - pw) / length, (qu - pu) / length, pu + ALONG * (qu - pu), pw + ALONG * (qw - pw)];
+    lines.push([mu + BESIDE * nu, mw + BESIDE * nw], [mu - BESIDE * nu, mw - BESIDE * nw]);
+  }
+  let [found, worst] = [0, 0];
+  let at: Vector3 | null = null;
+  for (const [x, z] of lines) {
+    const line = read(x, z);
+    if (line.stretch <= 0) continue;
+    found += 1;
+    if (line.stretch <= worst) continue;
+    worst = line.stretch;
+    at = u.clone().multiplyScalar(line.x).addScaledVector(w, line.z).addScaledVector(vertical, line.top);
+  }
+  return { lines: found, worst, at };
+}
+
+/** The edges borne by an odd number of the triangles in `coords` (nine numbers each, in (u, height, w)), corners joined by position to a micrometre, across the lines. */
+function openEdges(coords: Float64Array): [[number, number], [number, number]][] {
+  const ids = new Map<string, number>();
+  const place: [number, number][] = [];
+  const id = (o: number): number => {
+    const key = [o, o + 1, o + 2].map((k) => String(Math.round((coords[k] ?? 0) / WELD))).join(',');
+    let n = ids.get(key);
+    if (n === undefined) {
+      ids.set(key, (n = ids.size));
+      place.push([coords[o] ?? 0, coords[o + 2] ?? 0]);
+    }
+    return n;
+  };
+  const borne = new Map<string, [number, number, number]>();
+  for (let o = 0; o + 8 < coords.length; o += 9) {
+    const [a, b, c] = [id(o), id(o + 3), id(o + 6)];
+    for (const [p, q] of [
+      [a, b],
+      [b, c],
+      [c, a],
+    ] as const) {
+      const key = p < q ? `${String(p)} ${String(q)}` : `${String(q)} ${String(p)}`;
+      const edge = borne.get(key);
+      if (edge === undefined) borne.set(key, [p, q, 1]);
+      else edge[2] += 1;
     }
   }
-  let [lines, worst] = [0, 0];
-  let at: Vector3 | null = null;
-  hits.forEach((met, cell) => {
-    met.sort((m, q) => q.h - m.h);
-    let [winding, inward, top] = [0, 0, 0];
-    for (let k = 0; k < met.length; ) {
-      const level = met[k]?.h ?? 0;
-      for (; k < met.length && level - (met[k]?.h ?? 0) < 1e-6; k += 1) winding += met[k]?.facing ?? 0;
-      const next = met[k]?.h;
-      if (next !== undefined && winding < 0) {
-        if (level - next > inward) top = level;
-        inward = Math.max(inward, level - next);
-      }
-    }
-    if (inward <= 0) return;
-    lines += 1;
-    if (inward <= worst) return;
-    worst = inward;
-    const [x, z] = line(Math.floor(cell / cells), cell % cells);
-    at = u.clone().multiplyScalar(x).addScaledVector(w, z).addScaledVector(vertical, top);
-  });
-  return { lines, worst, at };
+  const out: [[number, number], [number, number]][] = [];
+  for (const [p, q, n] of borne.values()) {
+    const [pp, qq] = [place[p], place[q]];
+    if (n % 2 === 1 && pp !== undefined && qq !== undefined) out.push([pp, qq]);
+  }
+  return out;
 }
