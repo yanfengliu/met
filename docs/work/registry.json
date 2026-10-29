@@ -28,6 +28,10 @@
     {
       "id": 6,
       "theme": "closed-solids"
+    },
+    {
+      "id": 8,
+      "theme": "vaux-voussoirs"
     }
   ]
 }

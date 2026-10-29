@@ -1,10 +1,10 @@
-# Review 6: implementation
+# Review 0: implementation
 
-This round belongs to work unit 4's follow-up on F-owner-4, the 1880 fronts' voussoirs (plan.md, "Follow-up: F-owner-4 acted on"); it is that follow-up's round 0. Its findings were numbered F0 to F29 while the follow-up waited for a work-unit ID, and the reviewers' reports keep those numbers; within work unit 4 they are F40 to F69 (add 40), after the choir screen's F25 to F39.
+Moved here from work unit 4's folder (its review 6) on 2026-10-28, once the fleet allocator accepted met's reserved ID gap (fleet `162da10`); the round's findings keep their numbers, F0 to F29 across this unit's rounds 0 to 3.
 
 ## Target
 
-The uncommitted working-tree change of the worktree `adoring-lamarr-f5704f` (branch `claude/adoring-lamarr-f5704f`) against its base `bfb7699` (main), 2026-10-28 13:19: the patch `snapshots/6_target.patch.txt` (`git diff bfb7699`, 204 lines, sha256 a4d96cbe0c6ff3f42566b8354ae193d478cb6d00da2b2a63e9d7ee9ec6a031a1). Scope: `src/model/core/materials.ts`, `vaux-front.ts`, `vaux-shell.ts`, `vaux.ts`; `docs/research/exterior-images.md`, `exterior.md`, `history.md`, `interior.md`; `docs/devlog/summary.md`. The author edited the tree at 13:42 during the round (Codex's repairs); both reports judge the patch.
+The uncommitted working-tree change of the worktree `adoring-lamarr-f5704f` (branch `claude/adoring-lamarr-f5704f`) against its base `bfb7699` (main), 2026-10-28 13:19: the patch `snapshots/0_target.patch.txt` (`git diff bfb7699`, 204 lines, sha256 a4d96cbe0c6ff3f42566b8354ae193d478cb6d00da2b2a63e9d7ee9ec6a031a1). Scope: `src/model/core/materials.ts`, `vaux-front.ts`, `vaux-shell.ts`, `vaux.ts`; `docs/research/exterior-images.md`, `exterior.md`, `history.md`, `interior.md`; `docs/devlog/summary.md`. The author edited the tree at 13:42 during the round (Codex's repairs); both reports judge the patch.
 
 ## Reviewers and coverage
 

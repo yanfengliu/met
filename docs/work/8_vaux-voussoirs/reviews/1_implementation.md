@@ -1,14 +1,14 @@
-# Review 7: implementation
+# Review 1: implementation
 
-This round belongs to work unit 4's follow-up on F-owner-4, the 1880 fronts' voussoirs (plan.md, "Follow-up: F-owner-4 acted on"); it is that follow-up's round 1. Its findings were numbered F0 to F29 while the follow-up waited for a work-unit ID, and the reviewers' reports keep those numbers; within work unit 4 they are F40 to F69 (add 40), after the choir screen's F25 to F39.
+Moved here from work unit 4's folder (its review 7) on 2026-10-28, once the fleet allocator accepted met's reserved ID gap (fleet `162da10`); the round's findings keep their numbers, F0 to F29 across this unit's rounds 0 to 3.
 
 ## Target
 
-The integrated change `git diff 00eeee7 2308ed8` in the worktree `adoring-lamarr-f5704f`: commit `5adc4ab` (round 0's repaired patch) merged with main `00eeee7` as `2308ed8`, whose diff against main is this follow-up's ten files (its diff's sha256 30d016a39df5593f9f6c320f94175e13d8250c1ec35f533157c8f99f744cdd1c). Both reviewers read round 0's record (review 6).
+The integrated change `git diff 00eeee7 2308ed8` in the worktree `adoring-lamarr-f5704f`: commit `5adc4ab` (round 0's repaired patch) merged with main `00eeee7` as `2308ed8`, whose diff against main is this follow-up's ten files (its diff's sha256 30d016a39df5593f9f6c320f94175e13d8250c1ec35f533157c8f99f744cdd1c). Both reviewers read round 0's record.
 
 ## Reviewers and coverage
 
-- Codex: `gpt-6-astra`, `xhigh`, `--sandbox read-only`, codex-cli 0.163.0. It read the code and docs (batch.ts:41, core.test.ts:55, closure.test.ts:152, testing.ts:90, cited-images.test.ts:159 outside the diff), ran read-only probes and the gate's parser in memory (50 citations, no problem), and did not view the photographs. Its log has one match for `STATUS_DLL_INIT_FAILED`: its read of round 0's record (review 6), which quotes the marker; 21 commands succeeded and no sandbox failure occurred.
+- Codex: `gpt-6-astra`, `xhigh`, `--sandbox read-only`, codex-cli 0.163.0. It read the code and docs (batch.ts:41, core.test.ts:55, closure.test.ts:152, testing.ts:90, cited-images.test.ts:159 outside the diff), ran read-only probes and the gate's parser in memory (50 citations, no problem), and did not view the photographs. Its log has one match for `STATUS_DLL_INIT_FAILED`: its read of round 0's record, which quotes the marker; 21 commands succeeded and no sandbox failure occurred.
 - Claude: `claude-opus-5-5[1m]`, `--effort max`, claude 2.1.308, no subagents (Task and Agent disallowed), tools Read, Glob, Grep and git diff, log and show. Its `modelUsage` holds only the pin, so the lane is kept. It read the code and docs, viewed the photographs and renders, and ran the citation, core, closure, sequence, section-cut, conventions, Weston-door, timeline and cap-pass tests (85 passed); its runs overlapped e2e tests 22 and 23 of the author's verify, which passed. It asked to have its derived crops deleted from its own scratchpad.
 
 ## Reports
@@ -152,6 +152,8 @@ I found no blocker. There is one major finding, three minor and five nits. Round
 | F18 | The renders cover only the west front; the side and east rings changed too (Claude nit 5) | Accepted | The 1880 chapter's end aerial and every standard shot that differs is read at native resolution when main's shots are taken for the gallery |
 
 Correction (2026-10-28, after round 3): F10's records did land in the repo, in work unit 4's folder as its follow-up on F-owner-4 (plan.md and reviews 6 to 9), as the choir screen's follow-up on F-owner-1 had landed there (reviews 4 and 5); the allocator's refusal stands.
+
+Correction (2026-10-28, later): once the fleet allocator accepted met's reserved ID gap (fleet `162da10`), the records moved from work unit 4 into this unit of their own, work unit 8.
 
 ## Verification
 
