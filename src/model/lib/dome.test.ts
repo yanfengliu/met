@@ -214,15 +214,25 @@ describe('barrel vault', () => {
     );
     expect(refusal(() => barrelVault({ span: 4, length: 3, thickness: 0.3, coffers: { across: 2, along: 10, depth: 0.05, rib: 0.18749999999999 } }))).toMatch(/less than 1 mm of floor/);
     expect(refusal(() => barrelVault({ span: 8, length: 12, coffers: { across: 45, along: 8 } }))).toMatch(/^barrelVault: coffers\.rib 0\.2 m \(span \/ 40, the default\) leaves .*; make coffers\.rib at most 0\.1739 m\.$/);
-    for (const [length, along, way] of [
-      [0.0008, 1, 'longer, with a longer vault'],
-      [0.008, 10, 'longer, with fewer coffers.along or a longer vault'],
+    // Cells under 1 mm long or wide, or both, with the least coffers along or across and with more (review 2, F21).
+    for (const [vault, way] of [
+      [{ span: 4, length: 0.0008, coffers: { across: 2, along: 1 } }, 'longer, with a longer vault'],
+      [{ span: 4, length: 0.008, coffers: { across: 2, along: 10 } }, 'longer, with fewer coffers.along or a longer vault'],
+      [{ span: 0.001, length: 3, coffers: { across: 2, along: 1 } }, 'wider, with a larger span'],
+      [{ span: 0.001, length: 3, coffers: { across: 3, along: 1 } }, 'wider, with fewer coffers.across or a larger span'],
+      [{ span: 0.001, length: 0.0005, coffers: { across: 3, along: 2 } }, 'wider, with fewer coffers.across or a larger span, and longer, with fewer coffers.along or a longer vault'],
     ] as const) {
-      expect(refusal(() => barrelVault({ span: 4, length, thickness: 0.3, coffers: { across: 2, along, depth: 0.05, rib: 0.01 } }))).toMatch(
-        new RegExp(`0\\.0008 m long, .*; no rib leaves cells that small a floor; make them ${way.replaceAll('.', '\\.')}\\.$`),
+      expect(refusal(() => barrelVault(vault))).toMatch(new RegExp(`; no rib leaves cells that small a floor; make them ${way.replaceAll('.', '\\.')}\\.$`));
+    }
+    // The depth named is kept below the room where rounding down loses its 1e-6 (F20): floors 2097152 m out in a shell as thick.
+    const deep = { span: 4, rise: 1e-8, length: 3, thickness: 2097152, coffers: { across: 2, along: 1, depth: 2097152, rib: 0.01 } };
+    expect(refusal(() => barrelVault(deep))).toMatch(/; make thickness at least 2097152\.0001 m or coffers\.depth at most 2097151\.9999 m\.$/);
+    expect(refusal(() => barrelVault({ ...deep, coffers: { ...deep.coffers, depth: 2097151.9999 } }))).toBe('');
+    // A rise so small for its span that the radius overflows is refused where the radius is read, naming both, with coffers or without (F18).
+    for (const coffers of [{ across: 2, along: 1 }, false as const]) {
+      expect(refusal(() => barrelVault({ span: 4, rise: 1e-310, length: 3, coffers }))).toBe(
+        'barrelVault: span 4 m over rise 1e-310 m gives the inner face a radius too large for a number, span² / (8 · rise) + rise / 2; make rise larger or span smaller.',
       );
     }
-    // A rise so small that the radius overflows leaves a cell no size to read, which this refusal refuses too (review 1, Claude's last note).
-    expect(refusal(() => barrelVault({ span: 4, rise: 1e-310, length: 3, coffers: { across: 2, along: 1 } }))).toMatch(/^barrelVault: coffers\.rib .* NaN m wide on the inner face and 3 m long, .*; make them larger\.$/);
   });
 });

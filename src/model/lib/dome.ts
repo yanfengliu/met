@@ -232,6 +232,9 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
   const span = positive('barrelVault', 'span', params.span);
   const rise = positive('barrelVault', 'rise', params.rise ?? span / 2);
   require('barrelVault', rise <= span / 2 + 1e-9, `rise ${String(rise)} is more than half the span ${String(span)}.`);
+  // The inner face's radius, which a rise too small for its span makes too large for a number.
+  const radius = (span * span) / (8 * rise) + rise / 2;
+  require('barrelVault', Number.isFinite(radius), `span ${String(span)} m over rise ${String(rise)} m gives the inner face a radius too large for a number, span² / (8 · rise) + rise / 2; make rise larger or span smaller.`);
   const c = params.coffers === undefined || params.coffers === false ? null : params.coffers;
   const full = {
     span,
@@ -243,7 +246,6 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
   };
   if (full.coffers !== null) {
     const { across, along, depth, rib } = full.coffers;
-    const radius = (span * span) / (8 * rise) + rise / 2;
     const arc = 2 * Math.asin(Math.min(1, span / 2 / radius));
     // Each coffer must stay inside the shell, whose outer face runs along the chords of its facets as buildVault divides it. A coffer's points farthest
     // out are the corners of its opening, half a rib in from its cell on the inner face, and of its floor, FLOOR_INSET half-ribs in and `depth` out; a
@@ -278,15 +280,14 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     // faces away from the axis.
     const cell = { width: (radius * arc) / across, length: full.length / along };
     const least = Math.min(cell.width, cell.length);
-    // A cell whose size reads NaN is refused too.
-    if (!(least - FLOOR_INSET * rib >= FLOOR_LEAST)) {
+    if (least - FLOOR_INSET * rib < FLOOR_LEAST) {
       const most = (least - FLOOR_LEAST) / FLOOR_INSET;
       // Cells of FLOOR_LEAST or less leave no rib a floor: they grow by fewer coffers, where there are more than the least, or by a larger vault.
       const grow = [
         cell.width <= FLOOR_LEAST ? `wider, with ${across > 2 ? 'fewer coffers.across or ' : ''}a larger span` : '',
         cell.length <= FLOOR_LEAST ? `longer, with ${along > 1 ? 'fewer coffers.along or ' : ''}a longer vault` : '',
       ].filter((way) => way !== '');
-      let advice = `no rib leaves cells that small a floor; make them ${grow.length > 0 ? grow.join(' and ') : 'larger'}`;
+      let advice = `no rib leaves cells that small a floor; make them ${grow.join(', and ')}`;
       if (most > 0) {
         // The rib named passes this refusal, and so does every narrower one. A corner needs the most shell under a facet's middle, which it first reaches
         // at a rib of facet · radius for an opening and that over FLOOR_INSET for a floor; short of that its need grows with the rib. So the shell is read
@@ -310,8 +311,9 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     }
     const need = shell(rib);
     const kind = need.openings >= full.thickness ? 'openings' : 'floors';
-    // Rounded so that following the advice passes: the thickness up, the depth down.
-    const deep = Math.floor(need.room * 1e4 - 1e-6) / 1e4;
+    // Rounded so that following the advice passes: the thickness up, the depth down and kept below the room, for a room under about 1e11 m.
+    const floored = Math.floor(need.room * 1e4 - 1e-6) / 1e4;
+    const deep = Number(floored.toFixed(4)) < need.room ? floored : floored - 1e-4;
     require(
       'barrelVault',
       Math.max(need.openings, need.floors) < full.thickness,

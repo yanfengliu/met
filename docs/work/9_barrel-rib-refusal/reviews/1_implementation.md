@@ -161,7 +161,9 @@ I found nothing blocking or should-fix, and eight nits. Every repair answers its
 | F16 | The no-rib advice offers fewer coffers where the count is at its least, as in its own fixture with one coffer along (Claude N7, nit, R26) | Accepted | It names the side that binds, wider or longer, and offers fewer coffers only above the least; cells 0.8 mm long with one coffer along and with ten are fixtures; red with fewer coffers always offered (review 2) |
 | F17 | Review 0's outcome counts F1 by its higher rating and F4 by its lower (Claude N8, nit) | Accepted | Corrected in review 0's record, labelled |
 
-Claude's closing note, that a rise under about 1e-308 makes a cell's width NaN and the new comparison let it through to the thickness refusal, was raised as no finding. The comparison now reads `!(least − 1.6 · rib ≥ 1 mm)`, so such a cell is refused by the rib refusal, as at `1e3b272`; a fixture holds it, red with `ecb6db6`'s comparison.
+Claude's closing note, that a rise under about 1e-308 makes a cell's width NaN and the new comparison let it through to the thickness refusal, was raised as no finding. The comparison now reads `!(least − 1.6 · rib ≥ 1 mm)`, so such a cell is refused by the rib refusal, as at `1e3b272`; a fixture holds it, red with `ecb6db6`'s comparison. (Review 2, F18, replaced this with a check of the radius itself.)
+
+This round also recounted review 0's Claude lane from its stream-json: 13 reads, 22 searches (20 `Grep`, 2 `Glob`) and two `git` calls, where review 0's coverage line had said 20 searches; that line now says so, labelled. (Added in review 2's round, F23.)
 
 ## Verification
 
