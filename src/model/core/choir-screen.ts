@@ -1,7 +1,7 @@
 /**
  * The choir screen from Valladolid Cathedral, about 1763, attributed to Rafael Amezúa (Met 56.234.1, object 201926): wrought iron, gilded and
  * painted, on a limestone base, 15.85 m high and 12.80 m wide (interior.md), set up in the Medieval Sculpture Hall in 1956. After the photographs
- * interior-images.md #P8, #29 and #44 (Met,_cancellata.JPG and the Met's MM29152 and ES4661): three tiers of iron balusters, the lowest with an arched gate, each tier
+ * interior-images.md #P8, #29 and #44 (Met,_cancellata.JPG and the Met's MM29152 and ES4661): three tiers of iron balusters, the lowest with an arched gate standing open, each tier
  * capped by a gilded frieze, and a gilded cresting a third of the screen's height: three medallions on dark plinths, the middle one round under a crown, an
  * urn and a rayed cross, the side ones oval under broken pediments and sunbursts, with urn finials between them and urns on slabs on legs at the ends.
  */
@@ -36,13 +36,40 @@ const CORNICE: readonly [number, number] = [0.48, 0.87];
 const BAR_SPACING = 0.16;
 /**
  * The gate's posts stand 1.3 m either side of the axis, and its iron arch springs at 3.7 m and rises to meet the frieze, without the gilt scrollwork
- * the photographs show in its spandrels. Open with the owner (2026-10-28):
- * interior-images.md #P8 and #29 show the gate standing open, the base broken under it in the second, where here the balusters and the base run on
- * across it and the walker cannot pass.
+ * the photographs show in its spandrels. It stands open, as interior-images.md #29 and #P8 show it (the owner's calls, 2026-10-28), framed as
+ * interior-images.md #29 shows at 2× (x from the gate's centre there): no balusters between the posts, and the base broken under it, its die and coping
+ * stopping at the posts' inner faces and its plinth, `BASE_PLINTH` high, running on to `GATE_PLINTH` from the axis (1.07 and 1.10 m there), so the
+ * floor runs through. On each plinth step an iron jamb rises to the coping's level, its inner face `GATE_CLEAR` from the axis (about 1.03 m there), the
+ * edge of the opening; from it two bars, `JAMB_BARS` out, rise to a head piece under the arch's springing (`JAMB_HEAD`, about 3.62 m there).
+ * Simplified: the jamb is a plate where the photograph shows scrolls.
  */
 const GATE = 1.3;
+const GATE_PLINTH = 1.09;
+const BASE_PLINTH = 0.45;
+export const GATE_CLEAR = 1.03;
+const JAMB_BARS = [1.07, 1.19] as const;
+const JAMB_HEAD: readonly [number, number] = [3.62, 3.67];
 const GATE_SPRING = 3.7;
 const GATE_BAND = 0.14;
+/**
+ * The gate's leaves, folded back against the screen's west face beside its posts, as interior-images.md #29 and #P8 show them: the first, looking west,
+ * shows them behind the fixed balusters, and the second among them, though not which face. Each is four bars standing on the base, `u` out from its
+ * post's axis, under a top rail that curves up to them from the post's corner and runs on to a short stub, both read on interior-images.md #29
+ * ([u, height]; the rail levels off 0.15 m under the frieze). The north leaf has a rail at 1.6 m, which both photographs show, with a lock box hanging
+ * from it, which interior-images.md #29 shows; the south one has none. Simplified: the rail stops at the post's corner, 3.96 m up in that photograph,
+ * where it runs on behind the post and down to about 3.8 m by the springing, through what here is the gate arch's ring.
+ */
+const LEAF_TOP: readonly (readonly [number, number])[] = [
+  [0.08, 3.97],
+  [0.15, 4.04],
+  [0.29, 4.16],
+  [0.42, 4.23],
+  [0.53, 4.26],
+];
+const LEAF_STUB = 0.6;
+/** How far the leaves stand off the screen's plane, clear of the posts' faces (0.08 m). */
+const LEAF_OFF = 0.1;
+const LEAF_RAIL = 1.6;
 /**
  * The cresting, measured as TIERS: x from the axis (mirrored), heights above the floor. Dark plinths 0.14 m high carry its groups ([x0, x1]). The middle
  * medallion's gilt ring is 1.05 m across, centred at 12.15 m, under a crown from 13.28 to 13.54 m, a dark urn to 14.13 m, a dark spire to 14.4 m and the
@@ -99,9 +126,9 @@ function disc(x: number, y: number, w: number, t: number, dz = 0, h = w): Matrix
   return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z + dz).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(w, t, h)).multiply(new Matrix4().makeTranslation(0, -0.5, 0));
 }
 
-/** A bar `len` long, `w` across and `d` deep rising from (x, y) in the screen's plane, leaning `lean` radians from upright toward +X. */
-function slant(x: number, y: number, len: number, lean: number, w = 0.035, d = 0.04): Matrix4 {
-  return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z).multiply(new Matrix4().makeRotationZ(-lean)).multiply(new Matrix4().makeScale(w, len, d));
+/** A bar `len` long, `w` across and `d` deep rising from (x, y), `dz` off the screen's plane, leaning `lean` radians from upright toward +X. */
+function slant(x: number, y: number, len: number, lean: number, w = 0.035, d = 0.04, dz = 0): Matrix4 {
+  return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z + dz).multiply(new Matrix4().makeRotationZ(-lean)).multiply(new Matrix4().makeScale(w, len, d));
 }
 
 /** A unit half-ring (a round arch band of span 1) placed at (x, y), turned `turn` radians about the screen's normal and scaled. */
@@ -115,15 +142,20 @@ export function choirScreen(kit: Kit): void {
   const z0 = SCREEN_Z;
   const y = (v: number): number => L1 + v;
   const foot0 = TIERS[0]?.[0] ?? 0.98;
-  // The base runs the screen's width; 0.25 m either side of its plane keeps it 2 cm clear of the middle piers' plinths (medieval-hall.ts).
-  addBox(kit, palette.limestone, -W - 0.08, L1, z0 - 0.25, W + 0.08, y(foot0), z0 + 0.25, 0);
+  // The base runs the screen's width but for the gate, its plinth on to `GATE_PLINTH`; 0.25 m either side of its plane keeps it 2 cm clear of the
+  // middle piers' plinths (medieval-hall.ts).
+  const die = GATE - 0.08;
+  for (const s of [-1, 1]) {
+    addBox(kit, palette.limestone, s * die, L1, z0 - 0.25, s * (W + 0.08), y(foot0), z0 + 0.25, 0);
+    addBox(kit, palette.limestone, s * GATE_PLINTH, L1, z0 - 0.25, s * die, y(BASE_PLINTH), z0 + 0.25, 0);
+  }
   const bar = cylinder(6);
   const round = cylinder(20);
   TIERS.forEach(([b, t, top], tier) => {
     const tierPosts = tier === 0 ? [-W, -3.2, -GATE, GATE, 3.2, W] : [-W, -3.2, 0, 3.2, W];
     for (const px of tierPosts) addBox(kit, iron, px - 0.08, y(b), z0 - 0.08, px + 0.08, y(t), z0 + 0.08, 2 + tier * 3);
     for (let x = -W + BAR_SPACING; x < W - BAR_SPACING / 2; x += BAR_SPACING) {
-      if (tierPosts.some((p) => Math.abs(p - x) < 0.1)) continue;
+      if (tierPosts.some((p) => Math.abs(p - x) < 0.1) || (tier === 0 && Math.abs(x) < GATE)) continue;
       kit.add(bar, iron, placed(x, y(b), z0, 0, [0.045, t - b, 0.045]), 2 + tier * 3);
     }
     // Frieze: a dark band over a gilt moulding and under a gilt cornice and a dark bar, studded with gilt bosses.
@@ -145,7 +177,44 @@ export function choirScreen(kit: Kit): void {
   const arch = voussoirRing({ head: 'segmental', span: 2 * GATE, rise, band: GATE_BAND, count: 11, projection: 0.06, parity: 'all', back: true });
   kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 + 0.08), 2);
   kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 - 0.08, Math.PI), 2);
+  gateFrame(kit, foot0);
+  leaves(kit, foot0);
   cresting(kit, TIERS[2]?.[2] ?? 11.15);
+}
+
+/** The gate's jambs on the plinth's steps, up to the coping's level `foot` above the floor, and the two bars and head piece over each. */
+function gateFrame(kit: Kit, foot: number): void {
+  const iron = core.screenIron;
+  const bar = cylinder(6);
+  const [z0, die] = [SCREEN_Z, GATE - 0.08];
+  const [head0, head1] = JAMB_HEAD;
+  for (const s of [-1, 1]) {
+    addBox(kit, iron, s * GATE_CLEAR, L1 + BASE_PLINTH, z0 - 0.02, s * die, L1 + foot, z0 + 0.02, 2);
+    for (const bx of JAMB_BARS) kit.add(bar, iron, placed(s * bx, L1 + foot, z0, 0, [0.045, head0 - foot, 0.045]), 2);
+    addBox(kit, iron, s * GATE_CLEAR, L1 + head0, z0 - 0.03, s * die, L1 + head1, z0 + 0.03, 2);
+  }
+}
+
+/** The gate's two leaves folded back against the west face (`LEAF_TOP`), standing on the base, whose top is `foot` above the floor. */
+function leaves(kit: Kit, foot: number): void {
+  const iron = core.screenIron;
+  const bar = cylinder(6);
+  const z = SCREEN_Z - LEAF_OFF;
+  const [inner, outer] = [LEAF_TOP[0]?.[0] ?? 0.08, LEAF_TOP[LEAF_TOP.length - 1] ?? [0.53, 4.26]];
+  for (const s of [-1, 1]) {
+    const x = (u: number): number => s * (GATE + u);
+    LEAF_TOP.forEach(([u, top], k) => {
+      if (k > 0) kit.add(bar, iron, placed(x(u), L1 + foot, z, 0, [0.035, top - foot, 0.035]), 2);
+      const [u1, top1] = LEAF_TOP[k + 1] ?? [u, top];
+      if (u1 > u) kit.add(UNIT_BOX, iron, slant(x(u), top, Math.hypot(u1 - u, top1 - top) + 0.01, Math.atan2(s * (u1 - u), top1 - top), 0.035, 0.04, -LEAF_OFF), 2);
+    });
+    // The stub the top rail runs on to past the last bar, level.
+    addBox(kit, iron, x(outer[0]), L1 + outer[1] - 0.0175, z - 0.02, x(LEAF_STUB), L1 + outer[1] + 0.0175, z + 0.02, 2);
+    addBox(kit, iron, x(inner), L1 + foot, z - 0.02, x(outer[0] + 0.02), L1 + foot + 0.04, z + 0.02, 2);
+    if (s < 0) continue;
+    addBox(kit, iron, x(inner), L1 + LEAF_RAIL - 0.02, z - 0.02, x(outer[0] + 0.02), L1 + LEAF_RAIL + 0.02, z + 0.02, 2);
+    addBox(kit, iron, x(0.4), L1 + LEAF_RAIL - 0.22, z - 0.035, x(0.5), L1 + LEAF_RAIL - 0.02, z + 0.035, 2);
+  }
 }
 
 /** The cresting on the top frieze, whose top is `foot` above the floor. */

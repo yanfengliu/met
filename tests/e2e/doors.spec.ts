@@ -75,7 +75,11 @@ async function expectPromptInBand(page: Page): Promise<void> {
   expect(clipped, `${where}: its text unclipped`).toBe(false);
 }
 
-/** Walks from the plaza spawn, by the Walk toggle and held keys, up the front steps to stand on the axis 1.3 m before the doors. */
+/**
+ * Walks from the plaza spawn, by the Walk toggle and held keys, up the front steps to stand on the axis 1.3 m before the doors: the middle of where the
+ * open right leaf, looked at 0.3 m behind the doors, lies within a door's 2 m reach (up to 1.62 m out) and the ray through the closed leaf's place at
+ * X 0.35 passes the open leaf (from 1.08 m out; nearer, it meets the leaf 1.76 m off and the door stays the look target).
+ */
 async function toTheEntrance(page: Page): Promise<Sample> {
   await press(page, 'walk-toggle');
   await walking(page);
@@ -219,6 +223,8 @@ async function scrubTo(page: Page, t: number, n: number): Promise<void> {
 
 test.describe('the doors', () => {
   test('the entrance: E Open, E swings it into the building; E Close on an open leaf, a locked click closes it; the scrubber shows the closed leaf, then the door as it was', async ({ page }) => {
+    // 10 to 12 s here (three full runs, 2026-10-27; 15.4 s in one that took 20.5 min for 13.6); four times the slowest of those for a loaded machine.
+    test.setTimeout(60_000);
     const errors = watchErrors(page);
     const f = await open(page, '');
     expect((await facts(page)).doors.map((d) => [d.id, d.state, d.built])).toEqual(expect.arrayContaining([[MIDDLE, 'closed', true]]));
@@ -278,6 +284,9 @@ test.describe('the doors', () => {
   });
 
   test('a link door says Locked and stays shut by E and by a locked click', async ({ page }) => {
+    // About 22 s here (21.4 to 22.6 s in three full runs, 2026-10-27), most of it the 94 m walk along the plaza to the link door; it passed 30 s in a full
+    // run that took 20.5 min for 13.6 (verify, 795956f). Four times the slowest green run for a loaded machine.
+    test.setTimeout(90_000);
     const errors = watchErrors(page);
     await open(page, '');
     await press(page, 'walk-toggle');

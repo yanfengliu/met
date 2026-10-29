@@ -1,9 +1,9 @@
 # Doors, a better walk, and the collection on view
 
-Status: active
+Status: complete
 Owner: Coordinator (Claude Code desktop session, 2026-10-14)
 Created: 2026-10-25
-Updated: 2026-10-26
+Updated: 2026-10-28
 
 ## Problem and outcome
 
@@ -83,14 +83,14 @@ While building its door check (F30), M3b's worker found the Engelhard Court unre
 
 ## Acceptance criteria
 
-- [ ] The eye never drops while climbing: checked every frame on the front steps and the Grand Staircase, both ways, walking and running, red before the fix.
-- [ ] Walk mode shows a crosshair and hides what it does not need; the drag, click, speed and sensitivity choices are in the spec; checked at 1280×720 and 390×844.
-- [ ] No trap and no dead end: the pool cannot trap a walker, the dais is crossed where the real building allows it, and a route from the top of the Grand Staircase into gallery 600 is walked by e2e through real keys.
-- [ ] M2a: the Hunt central entrance's three doors open and close with E or a click while looked at within 2 m, with a prompt; the link and Bank doors say Locked and stay solid; `doors=` and the shot contract hold; the assertions of `src/build/timeline.test.ts` hold unchanged (its recording Kit may gain `addTagged`), and its snapshots hold with the door layer attached and doors operated; the slowest frame of a swing stays under 16.7 ms.
-- [ ] M2b: collision follows each leaf, swept both ways, a closing leaf stops before the walker and a door shut on one opens; the Weston door works as the Hunt doors do; R1 opens a door with E in e2e; the slowest walking frame of a door cycle stays under 16.7 ms.
-- [ ] `src/model/collection/catalogue.ts` comes from `scripts/met-catalogue.ts` and The Met's API, checked offline; placeholders of real objects stand in at least eight of the spaces above, at real size, by kind, coloured from their samples, built in their spaces' chapters; meshes stay under 900 and triangles under 3M; the 4 s build budget holds; e2e sees no request to any metmuseum.org host.
-- [ ] Looking at an artwork within 6 m, or clicking one in the orbit view, shows its label; checked through real input.
-- [ ] Each milestone: `npm run verify` green (and both audits if a dependency changes), the standard shot set inspected against the last merged one, an independent review, merged to main, deployed and checked live. AGENTS.md's non-goals and `docs/research/` record the owner's decision and the data's source and licence.
+- [x] The eye never drops while climbing: checked every frame on the front steps and the Grand Staircase, both ways, walking and running, red before the fix.
+- [x] Walk mode shows a crosshair and hides what it does not need; the drag, click, speed and sensitivity choices are in the spec; checked at 1280×720 and 390×844.
+- [x] No trap and no dead end: the pool cannot trap a walker, the dais is crossed where the real building allows it, and a route from the top of the Grand Staircase into gallery 600 is walked by e2e through real keys.
+- [x] M2a: the Hunt central entrance's three doors open and close with E or a click while looked at within 2 m, with a prompt; the link and Bank doors say Locked and stay solid; `doors=` and the shot contract hold; the assertions of `src/build/timeline.test.ts` hold unchanged (its recording Kit may gain `addTagged`), and its snapshots hold with the door layer attached and doors operated; the slowest frame of a swing stays under 16.7 ms.
+- [x] M2b: collision follows each leaf, swept both ways, a closing leaf stops before the walker and a door shut on one opens; the Weston door works as the Hunt doors do; R1 opens a door with E in e2e; the slowest walking frame of a door cycle stays under 16.7 ms.
+- [x] `src/model/collection/catalogue.ts` comes from `scripts/met-catalogue.ts` and The Met's API, checked offline; placeholders of real objects stand in at least eight of the spaces above, at real size, by kind, coloured from their samples, built in their spaces' chapters; meshes stay under 900 and triangles under 3M; the 4 s build budget holds; e2e sees no request to any metmuseum.org host.
+- [x] Looking at an artwork within 6 m, or clicking one in the orbit view, shows its label; checked through real input.
+- [x] Each milestone: `npm run verify` green (and both audits if a dependency changes), the standard shot set inspected against the last merged one, an independent review, merged to main, deployed and checked live. AGENTS.md's non-goals and `docs/research/` record the owner's decision and the data's source and licence.
 
 ## Implementation steps
 
@@ -101,8 +101,63 @@ While building its door check (F30), M3b's worker found the Engelhard Court unre
 - [x] M2b doors that are solid (worker `doors2`, merged `43887b2`, reviews 15 and 16): the door leaves solid in a dynamic part of the walk collision, swept against the walker both ways; a blocked closing leaf waits, and E turns it back; a door built round the walker opens; the Weston door works; R1 opens the entrance door with E; the door-fit test finds containment and partner clashes (review 9's F34 and F35).
 - [x] M3b labels (worker `labels`, merged `4e16588`, reviews 6, 7, 10, 11 and 13): a card for each placeholder looked at within 6 m or clicked in the orbit view; the orbit click gate as a state machine with a randomized check; F39 (a crash on mixed mouse and touch inside OrbitControls, older than M3b) filed as a follow-up.
 - [x] M4 every space reachable (worker `reach`, merged `61b5c80`, reviews 12 and 14): a reachability gate walks the real walker over 0.5 m cells from the Great Hall to every space holding artworks and every preset and route end, and walks each found path again from the spawn. The Engelhard Court and the Petrie Court, each sealed by a McKim, Mead & White party wall, are opened by the floor map's corridors from gallery 374 and from Exhibition Gallery 199. Route R6 walks into the Engelhard Court. The model is at 746 meshes and 1,579,520 triangles.
-- [ ] Integration, review, deploy, outcome.
+- [x] Integration, review, deploy, outcome (worker `integrate`, merged `3860384`; the final two-lane review 17, its repairs by worker `final` in reviews 18 and 19, and the integration walk in review 20).
 
 ## Outcome
 
-Pending.
+Complete on 2026-10-28. Main is at `3860384`. Pages deployed it (run 40829907296), and it was checked live. The owner's three requests are met:
+- **First person works well.**
+  - The eye no longer dips at a stair's risers.
+  - Walking shows a crosshair and a quiet screen, at 2 m/s walking and 5 m/s running.
+  - There is no trap at the Dendur pool or gate.
+  - A doorway at the top of the Grand Staircase opens into gallery 600.
+  - Every space holding artworks can be walked to: corridors from the floor map now open the Engelhard and Petrie courts, which party walls had sealed, and a gate proves it.
+- **The doors are interactable.**
+  - The Hunt entrance's three doorways and the Weston door open and close by E or a click, with a prompt.
+  - The entrance leaves stand behind the columns, as the real ones do.
+  - The doors are solid, swept against the walker both ways. A closing door that meets someone waits, and E turns it back.
+  - The McKim, Mead & White link doors and the Bank door say "Locked" and stay solid.
+- **Placeholder artworks are real things from The Met's API.**
+  - 94 objects in ten spaces come from a committed catalogue of CC0 records, fetched by hand at one request a second.
+  - Each stands at its real size, by kind, coloured from samples of its public-domain image.
+  - Each has a label card: title, maker, date, medium, gallery, size, link and credit.
+  - The page asks nothing of The Met at runtime.
+
+Acceptance criteria and their evidence:
+- **The eye on stairs:** `stairs.spec` and `src/walk/stairs.test.ts`, red at `db4cc47` (review 3, then 4: the drawn camera).
+- **The walking screen:** `walk-screen.spec` at both sizes, and the spec's walk section.
+- **No trap or dead end:**
+  - `src/model/roche-north/walk.test.ts`;
+  - route R5;
+  - M4's reachability gate (`src/model/reach.test.ts`), red at `691b8f7`;
+  - every route walked both ways by real keys, resting where each leg means to under load (reviews 20 to 22).
+- **M2a:** `doors.spec`, `door-look.spec`, `src/viewer/doors.test.ts` with the snapshots with the door layer attached, and `door-fit.test.ts` (reviews 5, 8, 9 and 17–19).
+- **M2b:**
+  - `src/walk/door-world.test.ts`;
+  - `door-settle.test.ts`;
+  - R1 opening the door with E, straight on (reviews 15, 16 and 20);
+  - the slowest walking frame through door cycles: 5.7 ms.
+- **The collection:**
+  - `scripts/met-catalogue.test.ts`, `catalogue.test.ts`, `placement.test.ts` and `network.spec` (reviews 1 and 2);
+  - 746 meshes and 1,579,576 triangles;
+  - ready 2.5–2.9 s cold.
+- **Labels:** `labels.spec` and `labels-view.spec` through real input; the card with the door prompt read every frame on R1 (reviews 6, 7, 10, 11, 13 and 20).
+- **Each milestone:**
+  - `verify` was green at each merge;
+  - the shot sets were read against main's;
+  - 23 review rounds are recorded (reviews 0–22);
+  - each merge was deployed by `pages.yml` and checked live;
+  - AGENTS.md's non-goals and `docs/research/collection.md` record the owner's decision and the data's licence.
+
+Live checks (review 17's F49): live at `a4af999` and again at `3860384` (Pages run 40829907296). The default page, gallery 600's view and `doors=open` each loaded with no console error and no request off `yanfengliu.github.io`. There are 746 meshes and 27,205 pieces, and 7 doors, of which `doors=open` opens the four that open and leaves the three locked doors shut. Ready in 2.8 s cold. Earlier checks: `c2b6f44`/`7f1946d` (M1), `691b8f7` (M2a), `cd8a934` (M3b), `d84bba0` (M4) and `0defda0` (M2b), each with no console error and no request off the site's own host.
+
+Left open, outside this unit:
+- F39, a crash on mixed mouse and touch inside three's OrbitControls, older than this unit;
+- F42, listener teardown, for a rig the page never disposes;
+- F66, the long route walks' corner settle at the Dendur pool step at 4× CPU throttle: the owner chose to land with it recorded and to replace the long walks with fixed-position checks, pictures and one short real-key walk.
+
+The first is filed as a follow-up task. The Weston doorway's head, against photo #33, was resolved in its own session as work unit 3 (`53a981c`).
+
+For the owner: walk mode moves by keys only, so on a phone it shows the view but cannot walk or use a door. Touch controls were not asked for.
+
+The owner keeps a render gallery of main (`docs/policies/local-rules.md`).
