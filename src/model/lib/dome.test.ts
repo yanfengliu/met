@@ -176,35 +176,53 @@ describe('barrel vault', () => {
       expect(short[side], name).toBeLessThan(0.0012);
       const message = refusal(() => floors(least + 1e-4));
       expect(message, name).toMatch(/^barrelVault: coffers\.rib [\d.]+ m leaves the coffers less than 1 mm of floor across or along: .*; make coffers\.rib at most [\d.]+ m\.$/);
-      // The rib it names builds every floor, facing the axis, within 0.2 mm of the least (review 0, F2).
+      // The rib it names builds every floor, facing the axis, 1 to 1.2 mm across or along (review 0, F2; review 1, F14).
       const named = floors(Number(/at most ([\d.]+) m\.$/.exec(message)?.[1]));
       expect([named.faces, named.away], name).toEqual([2 * across * along, 0]);
       expect(named[side], name).toBeGreaterThan(0.001);
-      expect(named[side], name).toBeLessThan(0.0014);
+      expect(named[side], name).toBeLessThan(0.0012);
     }
   });
 
-  it('names a rib that builds: with the thickness it needs, before the shell is read, and none where no rib can (work unit 9, review 0)', () => {
-    // The rib named would leave these shells too thin, so the thickness it needs is named too (F1). The second is too thin at its own rib as well, and
-    // the rib is named first.
-    for (const vault of [
-      { span: 4, length: 3, thickness: 0.055, coffers: { across: 2, along: 10, depth: 0.05, rib: 0.5 } },
-      { span: 4, length: 3, thickness: 0.055, coffers: { across: 20, along: 1, depth: 0.05, rib: 0.25 } },
+  it('names a rib that builds, with the thickness enough for any rib up to it, before the shell is read, and none where no rib can (work unit 9)', () => {
+    // A shell that some rib up to the one named would leave too thin gets the thickness enough for all of them (review 0, F1; review 1, F9), worked by
+    // hand (F13). The first two need it at the rib named: 2.05 · cos(0.023455) / cos(π/32) − 2 = 0.05935 m and 2.05 / cos(π/40) − 2 = 0.05634 m. The
+    // second is too thin at its own rib as well, and hears of the rib first. The third fits the rib named but not 0.25 m, whose floors' corners stand
+    // under a facet's middle: 2.05 / cos(π/32) − 2 = 0.05992 m.
+    for (const { vault, named } of [
+      { vault: { span: 4, length: 3, thickness: 0.055, coffers: { across: 2, along: 10, depth: 0.05, rib: 0.5 } }, named: ['0.1868', '0.0594'] },
+      { vault: { span: 4, length: 3, thickness: 0.055, coffers: { across: 20, along: 1, depth: 0.05, rib: 0.25 } }, named: ['0.1957', '0.0564'] },
+      { vault: { span: 4, length: 3, thickness: 0.057, coffers: { across: 2, along: 1, depth: 0.05, rib: 2 } }, named: ['1.874', '0.0600'] },
     ]) {
       const message = refusal(() => barrelVault(vault));
-      const [, rib, thickness] = /; make coffers\.rib at most ([\d.]+) m, and thickness at least ([\d.]+) m, which coffers of that rib need\.$/.exec(message) ?? [];
-      expect([rib, thickness], message).not.toContain(undefined);
-      const built = barrelVault({ ...vault, thickness: Number(thickness), coffers: { ...vault.coffers, rib: Number(rib) } });
-      expect(floorsOf(built, 2, 0.05)).toMatchObject({ faces: 2 * vault.coffers.across * vault.coffers.along, away: 0 });
+      expect(/; make coffers\.rib at most ([\d.]+) m, and thickness at least ([\d.]+) m, enough for any rib up to that\.$/.exec(message)?.slice(1), message).toEqual(named);
+      // Every rib up to the one named, 5 mm apart, builds in the shell named, its floors facing the axis.
+      for (let rib = Number(named[0]); rib > 0; rib -= 0.005) {
+        const built = barrelVault({ ...vault, thickness: Number(named[1]), coffers: { ...vault.coffers, rib } });
+        expect(floorsOf(built, 2, 0.05), `rib ${String(rib)}`).toMatchObject({ faces: 2 * vault.coffers.across * vault.coffers.along, away: 0 });
+      }
     }
-    // Unit 7's F39 vault, whole; a floor 1.6e-14 m long, which the builder would leave out (F0); a rib left at its default (F7); cells under 1 mm (F3).
+    // A need so large that rounding it up loses its 1e-6 still gets a thickness above it (F10): 2097152 m of coffer in a shell of radius 2e8 m.
+    const huge = { span: 4, rise: 1e-8, length: 3, thickness: 0.055, coffers: { across: 2, along: 10, depth: 2097152, rib: 0.5 } };
+    const [, rib, thickness] = /at most ([\d.]+) m, and thickness at least ([\d.]+) m/.exec(refusal(() => barrelVault(huge))) ?? [];
+    expect(thickness).toBe('2097152.0001');
+    expect(refusal(() => barrelVault({ ...huge, thickness: Number(thickness), coffers: { ...huge.coffers, rib: Number(rib) } }))).toBe('');
+    // Unit 7's F39 vault, whole; a floor 1.6e-14 m long, which the builder would leave out (review 0, F0); a rib left at its default (F7); and cells
+    // under 1 mm, told which way to grow, fewer coffers only where there are more than the least (F3; review 1, F16).
     expect(refusal(() => barrelVault({ span: 4, length: 3, thickness: 0.3, coffers: { across: 10, along: 1, depth: 0.05, rib: 0.5 } }))).toBe(
       'barrelVault: coffers.rib 0.5 m leaves the coffers less than 1 mm of floor across or along: a floor stands 0.8 ribs in from each side of its cell, which is 0.6283 m wide on the inner face and 3 m long, and its sides cross where 1.6 ribs reach either; make coffers.rib at most 0.392 m.',
     );
     expect(refusal(() => barrelVault({ span: 4, length: 3, thickness: 0.3, coffers: { across: 2, along: 10, depth: 0.05, rib: 0.18749999999999 } }))).toMatch(/less than 1 mm of floor/);
     expect(refusal(() => barrelVault({ span: 8, length: 12, coffers: { across: 45, along: 8 } }))).toMatch(/^barrelVault: coffers\.rib 0\.2 m \(span \/ 40, the default\) leaves .*; make coffers\.rib at most 0\.1739 m\.$/);
-    expect(refusal(() => barrelVault({ span: 4, length: 0.0008, thickness: 0.3, coffers: { across: 2, along: 1, depth: 0.05, rib: 0.01 } }))).toMatch(
-      /0\.0008 m long, .*; no rib leaves cells that small a floor; make them larger, with fewer coffers or a larger vault\.$/,
-    );
+    for (const [length, along, way] of [
+      [0.0008, 1, 'longer, with a longer vault'],
+      [0.008, 10, 'longer, with fewer coffers.along or a longer vault'],
+    ] as const) {
+      expect(refusal(() => barrelVault({ span: 4, length, thickness: 0.3, coffers: { across: 2, along, depth: 0.05, rib: 0.01 } }))).toMatch(
+        new RegExp(`0\\.0008 m long, .*; no rib leaves cells that small a floor; make them ${way.replaceAll('.', '\\.')}\\.$`),
+      );
+    }
+    // A rise so small that the radius overflows leaves a cell no size to read, which this refusal refuses too (review 1, Claude's last note).
+    expect(refusal(() => barrelVault({ span: 4, rise: 1e-310, length: 3, coffers: { across: 2, along: 1 } }))).toMatch(/^barrelVault: coffers\.rib .* NaN m wide on the inner face and 3 m long, .*; make them larger\.$/);
   });
 });
