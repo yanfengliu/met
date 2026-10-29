@@ -1,10 +1,11 @@
 /**
  * The Vaux and Mould west front of 1880 (history.md section 2; exterior.md [K7]): red brick with grey-white granite bands, seven pointed arches on
- * the main floor with alternating granite and brick voussoirs and striped tympana (the central one the original entrance), segmental windows on the
- * ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman Wing (seen in
- * int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch) and the view of the west front from the
- * Lehman court (Untapped New York, 2026), exterior-images.md #49 and #60. Trim may project up to 1.5 m into the Lehman
- * court (coordinator, 2026-10-11); walls do not.
+ * the main floor (five in the photographs, open with the owner: exterior.md section 9) whose voussoirs alternate light and dark grey granite ([C7]), striped tympana (the central one the original entrance),
+ * segmental windows on the ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman
+ * Wing (seen in int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch), the 1880 stereograph from the
+ * southwest and the views of the front from the Lehman Wing (Untapped New York, 2026 and 2012; Forgotten New York, 2023; Heckscher 1995, figs. 105
+ * and 107), exterior-images.md #49, #65, #60, #61, #62, #63 and #64. Trim may project up to 1.5 m into the Lehman court (coordinator, 2026-10-11);
+ * walls do not.
  */
 import { Matrix4 } from 'three';
 
@@ -19,6 +20,8 @@ import { FACING, addBox, cylinder, placed } from './shapes.js';
 /** Foot of the walls, on the footings (constants FOOTING_Y + 1.0). */
 export const WALL_BASE_Y = LG - 0.3;
 
+// Open with the owner (exterior.md section 9): seven is an estimate; the Lehman court's photographs show five, the outer two with windows
+// (exterior-images.md #60 and #64), and in 1880 two large arches stood either side of the central porch (exterior-images.md #49 and #65).
 /** World X of the seven arches across the front, the entrance on the axis. */
 export const FRONT_ARCH_X = [-3, -2, -1, 0, 1, 2, 3].map((k) => k * VAUX_BAY);
 const GROUND_WIDTH = 1.6;
@@ -26,6 +29,8 @@ const GROUND_RISE = 0.4;
 const DOOR_WIDTH = 2.2;
 const PROUD = 0.08;
 
+// Open with the owner (exterior.md section 9): several of these arches are open to the floor as doorways today, not windows over sills
+// (exterior-images.md #61, #62 and #63).
 function frontHoles(): Hole[] {
   const holes: Hole[] = [];
   for (const x of FRONT_ARCH_X) {
@@ -41,6 +46,7 @@ function frontHoles(): Hole[] {
 /** The front's brick wall, 29 m across and 1.5 m thick, outer face on Z −138.3, from the footings to the parapet. */
 export function westFrontWall(kit: Kit): void {
   const geometry = openWall({ width: 2 * A_HALF, height: PARAPET_Y - WALL_BASE_Y, thickness: WEST_WALL, holes: frontHoles() });
+  // Open with the owner (exterior.md section 9): the photographs read this brick duller than the palette's brick renders (exterior-images.md #60 and #64).
   kit.add(geometry, palette.brick, placed(0, WALL_BASE_Y, WEST_Z, FACING.west));
 }
 
@@ -64,6 +70,8 @@ export function westFrontTrim(kit: Kit): void {
   band(kit, L2 + 1.2, L2 + 1.2 + VAUX_BAND, 6);
   band(kit, L2 + 3.6, L2 + 3.6 + VAUX_BAND, 7);
   const ring = (parity: 0 | 1) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.42, count: 15, projection: 0.06, parity });
+  // Open with the owner (exterior.md section 9): the front's photographs show no hood round the voussoirs (exterior-images.md #60, #63 and #64); they
+  // show a smooth light ring inside them, which this front lacks (exterior-images.md #61, #63 and #64).
   const hood = voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.09, count: 15, projection: 0.1, parity: 'all', inset: 0.42 });
   const ground = voussoirRing({ head: 'segmental', span: GROUND_WIDTH, rise: GROUND_RISE, band: 0.3, count: 9, projection: 0.05, parity: 'all' });
   const door = voussoirRing({ head: 'segmental', span: DOOR_WIDTH, rise: 0.5, band: 0.34, count: 11, projection: 0.05, parity: 'all' });
@@ -82,8 +90,9 @@ export function westFrontTrim(kit: Kit): void {
     // A granite transom through the wall at the springing closes the gap between window head and tympanum.
     addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, spring - VAUX_BAND, WEST_Z, x + VAUX_ARCH_SPAN / 2, spring, WEST_Z + WEST_WALL, 4);
     kit.add(ring(0), core.granite, placed(x, spring, WEST_Z, facing), 5);
-    // Open with the owner (work unit 4, F-owner-4): exterior-images.md #60 shows these voussoirs in dark grey stone, not brick.
-    kit.add(ring(1), palette.brick, placed(x, spring, WEST_Z, facing), 5);
+    // The dark voussoirs: grey stone, never brick, in every colour photograph of the front, rock-faced where one is sharp enough to show it
+    // (exterior-images.md #60, #61, #62, #63 and #64).
+    kit.add(ring(1), core.graniteDark, placed(x, spring, WEST_Z, facing), 5);
     kit.add(hood, core.granite, placed(x, spring, WEST_Z, facing), 5);
     kit.add(panel, palette.brick, placed(x, spring, WEST_Z + 0.32, facing), 5);
     kit.add(stripes, core.granite, placed(x, spring, WEST_Z + 0.32, facing), 5);

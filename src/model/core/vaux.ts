@@ -36,7 +36,7 @@ export const vauxSteps: readonly StepDef[] = [
     id: 'vaux-west-front',
     chapter: CHAPTER,
     title: 'Build the west front and its entrance',
-    detail: 'The park front: seven pointed arches with granite and brick voussoirs, the entrance on the axis, granite bands and the cornice. It survives inside the Lehman Wing.',
+    detail: 'The park front: seven pointed arches with light and dark granite voussoirs, the entrance on the axis, granite bands and the cornice. It survives inside the Lehman Wing.',
     motion: { kind: 'grow' },
     stagger: 'order',
     weight: 1.3,
@@ -59,7 +59,7 @@ export const vauxSteps: readonly StepDef[] = [
     id: 'vaux-openings',
     chapter: CHAPTER,
     title: 'Glaze the windows and set the granite trim',
-    detail: 'Windows fill the west arches and the ground storey; granite and brick voussoirs and bands finish the side and east walls.',
+    detail: 'Windows fill the west arches and the ground storey; light and dark granite voussoirs and bands finish the side and east walls.',
     motion: { kind: 'pop' },
     stagger: 'z',
     build(kit) {
