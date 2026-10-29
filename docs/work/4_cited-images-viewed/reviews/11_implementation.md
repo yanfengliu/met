@@ -2,7 +2,7 @@
 
 ## Target
 
-The met repository, branch `claude/determined-rosalind-b5bcfb`, commit `ed2aa8a` ("Answer review 10 of the choir gate: the frame #29 shows, rails to the posts, the joints gate"): the repairs of F40 to F49, `git diff db1e297 ed2aa8a`, piped to both lanes, which also read the committed tree and review 10's record. The renders of the repaired tree were in `.shots/gate-r1/`, beside review 10's and the base's, and the photograph captures as in review 10.
+The met repository, branch `claude/determined-rosalind-b5bcfb`, commit `ed2aa8a` ("Answer review 10 of the choir gate: the frame #29 shows, rails to the posts, the joints gate"): the repairs of F70 to F79, `git diff db1e297 ed2aa8a`, piped to both lanes, which also read the committed tree and review 10's record. The renders of the repaired tree were in `.shots/gate-r1/`, beside review 10's and the base's, and the photograph captures as in review 10.
 
 ## Reviewers and coverage
 
@@ -12,7 +12,7 @@ The met repository, branch `claude/determined-rosalind-b5bcfb`, commit `ed2aa8a`
 
 ## Reports
 
-The reports as each lane wrote them; nothing was redacted.
+The reports as each lane wrote them; nothing was redacted. They keep the finding IDs they were written with, F40 to F56; in this unit those are F70 to F86, the voussoir follow-up holding F40 to F69 here.
 
 ### Codex
 
@@ -125,19 +125,19 @@ Files and lines read outside the diff, besides those above:
 
 | ID | Finding | Disposition and reason | Repair or follow-up |
 |---|---|---|---|
-| F51 | #29's entry put the rail's 3.88 m "at the post's corner", where #29 shows it meeting the post's outer edge at about 3.96 m, passing behind the post (about 3.88 m at its axis) and running down to about 3.8 m by the springing bracket; the model's 3.97 m at the corner follows the photograph, and the run behind the post was recorded nowhere (Claude S1, minor) | Accepted | #29's entry describes the rail as Claude read it; the leaves' comment says the rail stops at the post's corner, where the photograph runs it on behind the post through what in the model is the gate arch's ring |
-| F52 | Finding IDs F40 to F50 collided with the voussoir follow-up's F40 to F69 in work unit 4's plan, and the order of the two branches' landing was recorded nowhere (Claude S2, minor) | Accepted, and settled by the landing: the voussoir records moved to their own work unit 8, with their own finding numbers, before this branch merged, and this follow-up's rounds are numbered after that merge | The rounds and IDs as they stand on main after the merge |
-| F53 | The walk test's side lanes were reckoned from `GATE_CLEAR`, the module's own constant, so a narrower opening would move the lanes with it and pass (Claude S3, nit) | Accepted | The lanes are numbers, ±0.63 m, 5 cm inside the jambs at 1.03 m; the header says why |
-| F54 | Bare IDs remained in the gate's and the leaves' comments after their citations' clauses (Claude S4, nit) | Accepted | Each sentence that names a photograph cites it with its index's name, or names it as "the first" or "the photograph" after the citation |
-| F55 | `JAMB_BARS` put the inner bar at 1.08 m, where #29's entry and F40 say 1.07; the devlog called the model's 1.09 m a reading of #29, and said `settle` sets the feet in the joint (Claude S5, nit) | Accepted | The inner bar at 1.07 m; the devlog gives #29's 1.07 and 1.10 m and the model's 1.09 m, and says `settle` keeps a walker the floor is built round there |
-| F56 | F50's hand-off to "the closure gate's owner" reaches no one, work unit 6 being complete, and this change moves the counts again (Claude S6, nit) | Accepted | AGENTS.md labels the closure inventory's figures with the revisions they were counted at (`dc1a7dc`, `3165aa5`), so they stay true as the model grows |
+| F81 | #29's entry put the rail's 3.88 m "at the post's corner", where #29 shows it meeting the post's outer edge at about 3.96 m, passing behind the post (about 3.88 m at its axis) and running down to about 3.8 m by the springing bracket; the model's 3.97 m at the corner follows the photograph, and the run behind the post was recorded nowhere (Claude S1, minor) | Accepted | #29's entry describes the rail as Claude read it; the leaves' comment says the rail stops at the post's corner, where the photograph runs it on behind the post through what in the model is the gate arch's ring |
+| F82 | Finding IDs F40 to F50, as this follow-up first numbered them, collided with the voussoir follow-up's F40 to F69 in work unit 4's plan, and the order of the two branches' landing was recorded nowhere (Claude S2, minor) | Accepted, and settled at the landing: merged after the voussoir follow-up, which holds this unit's rounds 6 to 9 and F40 to F69, this follow-up's rounds are 10 and 11 and its findings F70 to F86 | The rounds and IDs as they stand on main after the merge |
+| F83 | The walk test's side lanes were reckoned from `GATE_CLEAR`, the module's own constant, so a narrower opening would move the lanes with it and pass (Claude S3, nit) | Accepted | The lanes are numbers, ±0.63 m, 5 cm inside the jambs at 1.03 m; the header says why |
+| F84 | Bare IDs remained in the gate's and the leaves' comments after their citations' clauses (Claude S4, nit) | Accepted | Each sentence that names a photograph cites it with its index's name, or names it as "the first" or "the photograph" after the citation |
+| F85 | `JAMB_BARS` put the inner bar at 1.08 m, where #29's entry and F70 say 1.07; the devlog called the model's 1.09 m a reading of #29, and said `settle` sets the feet in the joint (Claude S5, nit) | Accepted | The inner bar at 1.07 m; the devlog gives #29's 1.07 and 1.10 m and the model's 1.09 m, and says `settle` keeps a walker the floor is built round there |
+| F86 | F80's hand-off to "the closure gate's owner" reaches no one, work unit 6 being complete, and this change moves the counts again (Claude S6, nit) | Accepted | AGENTS.md labels the closure inventory's figures with the revisions they were counted at (`dc1a7dc`, `3165aa5`), so they stay true as the model grows |
 
 ## Verification
 
 - `ed2aa8a`'s tree: `npm run verify` (MET_PORT 5371) passed: 654 unit tests, typecheck, lint, build and 84 e2e (`tmp/gate/verify-2.log`). It ran outside the gate lock (`tmp/gate.sh`) while another session's throttled run held it; stopped by hand to free the machine, its Playwright run had gone on in the background and finished green.
-- The repairs of F51 to F56 move two bars 1 cm and change comments, a test's lines and docs: the unit tests, typecheck, lint and build passed under the gate lock before they were committed, and `npm run verify` on the tree merged with `origin/main` before the landing.
+- The repairs of F81 to F86 move two bars 1 cm and change comments, a test's lines and docs: the unit tests, typecheck, lint and build passed under the gate lock before they were committed, and `npm run verify` on the tree merged with `origin/main` before the landing.
 - The connectivity gate, the walk test and the collection's zone pass on the repairs; the walk test's lines, now numbers, are the same 0.02 and ±0.63 m.
 
 ## Round outcome
 
-Codex found nothing; Claude found two minor findings and four nits, F51 to F56, all accepted and repaired. None changes the gate's frame beyond a bar moved 1 cm, so the follow-up's review closes here.
+Codex found nothing; Claude found two minor findings and four nits, F81 to F86, all accepted and repaired. None changes the gate's frame beyond a bar moved 1 cm, so the follow-up's review closes here.
