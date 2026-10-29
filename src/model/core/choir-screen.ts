@@ -1,36 +1,139 @@
 /**
  * The choir screen from Valladolid Cathedral, about 1763, attributed to Rafael Amezúa (Met 56.234.1, object 201926): wrought iron, gilded and
  * painted, on a limestone base, 15.85 m high and 12.80 m wide (interior.md), set up in the Medieval Sculpture Hall in 1956. After the photographs
- * interior-images.md #P8, #29 and #44 (Met,_cancellata.JPG and the Met's MM29152 and ES4661): three tiers of iron balusters, the lowest with an arched gate, each tier
- * capped by a gilded frieze, and a gilded cresting of three medallions and finials, the middle one with a cross.
+ * interior-images.md #P8, #29 and #44 (Met,_cancellata.JPG and the Met's MM29152 and ES4661): three tiers of iron balusters, the lowest with an arched gate standing open, each tier
+ * capped by a gilded frieze, and a gilded cresting a third of the screen's height: three medallions on dark plinths, the middle one round under a crown, an
+ * urn and a rayed cross, the side ones oval under broken pediments and sunbursts, with urn finials between them and urns on slabs on legs at the ends.
  */
 import { Matrix4 } from 'three';
+import type { Material } from 'three';
 
 import type { Kit } from '../../build/types.js';
 import { palette } from '../palette.js';
 import { voussoirRing } from './arches.js';
 import { L1, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_Z } from './constants.js';
 import { core } from './materials.js';
-import { addBox, cylinder, placed } from './shapes.js';
+import { addBox, cylinder, placed, UNIT_BOX } from './shapes.js';
 
 const W = SCREEN_WIDTH / 2;
 /**
- * Tier bounds above the hall floor: [bottom, top] of the balusters; a gilded frieze sits on each. Open with the owner (work unit 4, F-owner-1): the
- * level view interior-images.md #29, scaled by the screen's width, puts the friezes' tops at about 5.1, 8.5 and 11.2 m and the cresting at 4.7 m,
- * against 5.9, 9.9 and 13.0 m and 2.85 m here.
+ * Heights above the hall floor, measured on interior-images.md #29 at full size: a level, square-on view, read row by row, its slight upward tilt taken
+ * out by the balusters' convergence (0.8% of the width over 1,000 px of height) and scaled by the floor-to-cross height of 15.85 m, 2,790 px (the width
+ * then reads 12.9 to 13.0 m against the Met's 12.80 m). Each tier: the foot of its balusters, the foot of its frieze and the frieze's top, on which the
+ * next tier or the cresting stands. The limestone base, its coping under the balusters' feet, rises to the lowest tier's foot.
  */
-const TIERS: readonly (readonly [number, number])[] = [
-  [0.7, 5.4],
-  [5.9, 9.4],
-  [9.85, 12.5],
+const TIERS: readonly (readonly [number, number, number])[] = [
+  [0.98, 4.41, 5.09],
+  [5.09, 7.71, 8.38],
+  [8.38, 10.59, 11.15],
 ];
-const FRIEZE = 0.5;
+/**
+ * A frieze from its foot, in fractions of its height, as the same photograph shows each: a gilt moulding, a dark band set with gilt bosses, a gilt
+ * cornice and a dark bar.
+ */
+const MOULDING = 0.22;
+const CORNICE: readonly [number, number] = [0.48, 0.87];
 const BAR_SPACING = 0.16;
-const GATE = 1.7;
+/**
+ * The gate's posts stand 1.3 m either side of the axis, and its iron arch springs at 3.7 m and rises to meet the frieze, without the gilt scrollwork
+ * the photographs show in its spandrels. It stands open, as interior-images.md #29 and #P8 show it (the owner's calls, 2026-10-28), framed as
+ * interior-images.md #29 shows at 2× (x from the gate's centre there): no balusters between the posts, and the base broken under it, its die and coping
+ * stopping at the posts' inner faces and its plinth, `BASE_PLINTH` high, running on to `GATE_PLINTH` from the axis (1.07 and 1.10 m there), so the
+ * floor runs through. On each plinth step an iron jamb rises to the coping's level, its inner face `GATE_CLEAR` from the axis (about 1.03 m there), the
+ * edge of the opening; from it two bars, `JAMB_BARS` out, rise to a head piece under the arch's springing (`JAMB_HEAD`, about 3.62 m there).
+ * Simplified: the jamb is a plate where the photograph shows scrolls.
+ */
+const GATE = 1.3;
+const GATE_PLINTH = 1.09;
+const BASE_PLINTH = 0.45;
+export const GATE_CLEAR = 1.03;
+const JAMB_BARS = [1.07, 1.19] as const;
+const JAMB_HEAD: readonly [number, number] = [3.62, 3.67];
+const GATE_SPRING = 3.7;
+const GATE_BAND = 0.14;
+/**
+ * The gate's leaves, folded back against the screen's west face beside its posts, as interior-images.md #29 and #P8 show them: the first, looking west,
+ * shows them behind the fixed balusters, and the second among them, though not which face. Each is four bars standing on the base, `u` out from its
+ * post's axis, under a top rail that curves up to them from the post's corner and runs on to a short stub, both read on interior-images.md #29
+ * ([u, height]; the rail levels off 0.15 m under the frieze). The north leaf has a rail at 1.6 m, which both photographs show, with a lock box hanging
+ * from it, which interior-images.md #29 shows; the south one has none. Simplified: the rail stops at the post's corner, 3.96 m up in that photograph,
+ * where it runs on behind the post and down to about 3.8 m by the springing, through what here is the gate arch's ring.
+ */
+const LEAF_TOP: readonly (readonly [number, number])[] = [
+  [0.08, 3.97],
+  [0.15, 4.04],
+  [0.29, 4.16],
+  [0.42, 4.23],
+  [0.53, 4.26],
+];
+const LEAF_STUB = 0.6;
+/** How far the leaves stand off the screen's plane, clear of the posts' faces (0.08 m). */
+const LEAF_OFF = 0.1;
+const LEAF_RAIL = 1.6;
+/**
+ * The cresting, measured as TIERS: x from the axis (mirrored), heights above the floor. Dark plinths 0.14 m high carry its groups ([x0, x1]). The middle
+ * medallion's gilt ring is 1.05 m across, centred at 12.15 m, under a crown from 13.28 to 13.54 m, a dark urn to 14.13 m, a dark spire to 14.4 m and the
+ * cross, whose arms cross at 15.18 m and span 1.3 m. The side medallions are gilt ovals 0.75 by 1.0 m centred at 12.4 m, under broken pediments from
+ * 13.31 to 13.69 m rising at about 42°, joined by a gilt bar under sunbursts of seven rays, 0.63 m across at their tips and reaching 14.28 m. Urn
+ * finials on pedestals stand between the groups, and at the ends urns on slabs carried by legs, each with a gilt spray of flowers rising to `top`.
+ * Simplified: each medallion's tracery is eight spokes, its frame a whole ring where the photographs show C-scrolls, and the urns and the tapering
+ * spire are stacked drums.
+ * Behind the middle medallion the photograph shows a round window of the hall's end wall, its glazing bars and grey reveal, a window like the one
+ * interior-images.md #P8 shows in the hall's east wall: the screen has no lattice there.
+ */
+const PLINTH = 0.14;
+const PLINTHS: readonly (readonly [number, number])[] = [
+  [-1.45, 1.45],
+  [2.35, 4.65],
+  [5.15, 6.4],
+];
+const SIDE_X = 3.5;
+interface Finial {
+  readonly x: number;
+  /** The pedestal's (or the end urn's slab's) foot and top. */
+  readonly pedestal: readonly [number, number];
+  /** The pedestal's width. */
+  readonly width: number;
+  /** One stem down to the plinth, or two legs 0.3 m either side of the urn's axis. */
+  readonly legs: 1 | 2;
+  /** The urn's height on the pedestal, to its lip. */
+  readonly urn: number;
+  readonly top: number;
+}
+const FINIALS: readonly Finial[] = [
+  { x: 1.3, pedestal: [11.64, 11.77], width: 0.3, legs: 1, urn: 0.56, top: 13.05 },
+  { x: 2.5, pedestal: [11.85, 12.02], width: 0.3, legs: 1, urn: 0.54, top: 12.91 },
+  { x: 4.5, pedestal: [11.85, 12.02], width: 0.3, legs: 1, urn: 0.54, top: 12.91 },
+  { x: 6.0, pedestal: [12.22, 12.33], width: 0.86, legs: 2, urn: 0.69, top: 13.63 },
+];
+/**
+ * An urn, stacked from four drums of the screen's own cylinder (the core area's meshes are at their budget, so the cresting adds no shape): its foot,
+ * stem, bowl and lip, each [bottom, top, width] as shares of the urn's height. Sprays and the cross rise from inside the lip, at `URN_MOUTH`.
+ */
+const URN: readonly (readonly [number, number, number])[] = [
+  [0, 0.12, 0.38],
+  [0.12, 0.3, 0.2],
+  [0.3, 0.8, 0.6],
+  [0.8, 1, 0.7],
+];
+const URN_MOUTH = 0.86;
+/** The half-ring every medallion's ring, rim and scrolls and the middle urn's branches are scaled from: a round arch band of span 1, `HALF_OUT` across outside. */
+const HALF_BAND = 0.07;
+const HALF_OUT = 1 + 2 * HALF_BAND;
 
-/** A disc `d` across and `t` thick facing ±Z, centred at (x, y) in the screen's plane. */
-function disc(x: number, y: number, d: number, t: number, dz = 0): Matrix4 {
-  return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z + dz).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(d, t, d)).multiply(new Matrix4().makeTranslation(0, -0.5, 0));
+/** A disc `w` across, `h` high and `t` thick facing ±Z, centred at (x, y) in the screen's plane: round when `h` is left out. */
+function disc(x: number, y: number, w: number, t: number, dz = 0, h = w): Matrix4 {
+  return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z + dz).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(w, t, h)).multiply(new Matrix4().makeTranslation(0, -0.5, 0));
+}
+
+/** A bar `len` long, `w` across and `d` deep rising from (x, y), `dz` off the screen's plane, leaning `lean` radians from upright toward +X. */
+function slant(x: number, y: number, len: number, lean: number, w = 0.035, d = 0.04, dz = 0): Matrix4 {
+  return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z + dz).multiply(new Matrix4().makeRotationZ(-lean)).multiply(new Matrix4().makeScale(w, len, d));
+}
+
+/** A unit half-ring (a round arch band of span 1) placed at (x, y), turned `turn` radians about the screen's normal and scaled. */
+function ringAt(x: number, y: number, turn: number, sx: number, sy: number): Matrix4 {
+  return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z - 0.05).multiply(new Matrix4().makeRotationZ(turn)).multiply(new Matrix4().makeScale(sx, sy, 1));
 }
 
 export function choirScreen(kit: Kit): void {
@@ -38,59 +141,163 @@ export function choirScreen(kit: Kit): void {
   const gilt = core.gilt;
   const z0 = SCREEN_Z;
   const y = (v: number): number => L1 + v;
-  addBox(kit, palette.limestone, -W + 0.2, L1, z0 - 0.45, W - 0.2, y(0.55), z0 + 0.45, 0);
-  addBox(kit, iron, -W, y(0.55), z0 - 0.08, W, y(0.7), z0 + 0.08, 1);
+  const foot0 = TIERS[0]?.[0] ?? 0.98;
+  // The base runs the screen's width but for the gate, its plinth on to `GATE_PLINTH`; 0.25 m either side of its plane keeps it 2 cm clear of the
+  // middle piers' plinths (medieval-hall.ts).
+  const die = GATE - 0.08;
+  for (const s of [-1, 1]) {
+    addBox(kit, palette.limestone, s * die, L1, z0 - 0.25, s * (W + 0.08), y(foot0), z0 + 0.25, 0);
+    addBox(kit, palette.limestone, s * GATE_PLINTH, L1, z0 - 0.25, s * die, y(BASE_PLINTH), z0 + 0.25, 0);
+  }
   const bar = cylinder(6);
-  TIERS.forEach(([b, t], tier) => {
+  const round = cylinder(20);
+  TIERS.forEach(([b, t, top], tier) => {
     const tierPosts = tier === 0 ? [-W, -3.2, -GATE, GATE, 3.2, W] : [-W, -3.2, 0, 3.2, W];
     for (const px of tierPosts) addBox(kit, iron, px - 0.08, y(b), z0 - 0.08, px + 0.08, y(t), z0 + 0.08, 2 + tier * 3);
     for (let x = -W + BAR_SPACING; x < W - BAR_SPACING / 2; x += BAR_SPACING) {
-      if (tierPosts.some((p) => Math.abs(p - x) < 0.1)) continue;
+      if (tierPosts.some((p) => Math.abs(p - x) < 0.1) || (tier === 0 && Math.abs(x) < GATE)) continue;
       kit.add(bar, iron, placed(x, y(b), z0, 0, [0.045, t - b, 0.045]), 2 + tier * 3);
     }
-    // Frieze: a dark band edged with gilt mouldings and studded with gilt bosses.
-    addBox(kit, iron, -W - 0.05, y(t), z0 - 0.13, W + 0.05, y(t + FRIEZE), z0 + 0.13, 3 + tier * 3);
+    // Frieze: a dark band over a gilt moulding and under a gilt cornice and a dark bar, studded with gilt bosses.
+    const h = top - t;
+    addBox(kit, iron, -W - 0.05, y(t), z0 - 0.13, W + 0.05, y(top), z0 + 0.13, 3 + tier * 3);
     for (const [a, b2] of [
-      [t, t + 0.08],
-      [t + FRIEZE - 0.08, t + FRIEZE],
+      [0, MOULDING],
+      CORNICE,
     ] as const) {
-      addBox(kit, gilt, -W - 0.07, y(a), z0 - 0.16, W + 0.07, y(b2), z0 + 0.16, 3 + tier * 3);
+      addBox(kit, gilt, -W - 0.07, y(t + a * h), z0 - 0.16, W + 0.07, y(t + b2 * h), z0 + 0.16, 3 + tier * 3);
     }
+    const boss = t + ((MOULDING + CORNICE[0]) / 2) * h;
     for (let x = -W + 0.4; x < W - 0.2; x += 0.8) {
-      for (const side of [-1, 1]) kit.add(cylinder(20), gilt, disc(x, t + FRIEZE / 2, 0.2, 0.06, side * 0.14), 3 + tier * 3);
+      for (const side of [-1, 1]) kit.add(round, gilt, disc(x, boss, 0.12, 0.06, side * 0.14), 3 + tier * 3);
     }
   });
-  // The gate's arched head in the lowest tier, gilded on both faces.
-  const arch = voussoirRing({ head: 'segmental', span: 2 * GATE, rise: 0.9, band: 0.14, count: 11, projection: 0.06, parity: 'all' });
-  kit.add(arch, gilt, placed(0, y(4.1), z0 + 0.08), 2);
-  kit.add(arch, gilt, placed(0, y(4.1), z0 - 0.08, Math.PI), 2);
-  // Cresting: three medallions (gilt rims, iron fields, gilt bosses), finials and the cross.
+  // The gate's arched head in the lowest tier, iron on both faces, its crown 5 mm into the frieze, past the 0.5 mm its facets lose at the crown.
+  const rise = (TIERS[0]?.[1] ?? 4.41) - GATE_SPRING - GATE_BAND + 0.005;
+  const arch = voussoirRing({ head: 'segmental', span: 2 * GATE, rise, band: GATE_BAND, count: 11, projection: 0.06, parity: 'all', back: true });
+  kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 + 0.08), 2);
+  kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 - 0.08, Math.PI), 2);
+  gateFrame(kit, foot0);
+  leaves(kit, foot0);
+  cresting(kit, TIERS[2]?.[2] ?? 11.15);
+}
+
+/** The gate's jambs on the plinth's steps, up to the coping's level `foot` above the floor, and the two bars and head piece over each. */
+function gateFrame(kit: Kit, foot: number): void {
+  const iron = core.screenIron;
+  const bar = cylinder(6);
+  const [z0, die] = [SCREEN_Z, GATE - 0.08];
+  const [head0, head1] = JAMB_HEAD;
+  for (const s of [-1, 1]) {
+    addBox(kit, iron, s * GATE_CLEAR, L1 + BASE_PLINTH, z0 - 0.02, s * die, L1 + foot, z0 + 0.02, 2);
+    for (const bx of JAMB_BARS) kit.add(bar, iron, placed(s * bx, L1 + foot, z0, 0, [0.045, head0 - foot, 0.045]), 2);
+    addBox(kit, iron, s * GATE_CLEAR, L1 + head0, z0 - 0.03, s * die, L1 + head1, z0 + 0.03, 2);
+  }
+}
+
+/** The gate's two leaves folded back against the west face (`LEAF_TOP`), standing on the base, whose top is `foot` above the floor. */
+function leaves(kit: Kit, foot: number): void {
+  const iron = core.screenIron;
+  const bar = cylinder(6);
+  const z = SCREEN_Z - LEAF_OFF;
+  const [inner, outer] = [LEAF_TOP[0]?.[0] ?? 0.08, LEAF_TOP[LEAF_TOP.length - 1] ?? [0.53, 4.26]];
+  for (const s of [-1, 1]) {
+    const x = (u: number): number => s * (GATE + u);
+    LEAF_TOP.forEach(([u, top], k) => {
+      if (k > 0) kit.add(bar, iron, placed(x(u), L1 + foot, z, 0, [0.035, top - foot, 0.035]), 2);
+      const [u1, top1] = LEAF_TOP[k + 1] ?? [u, top];
+      if (u1 > u) kit.add(UNIT_BOX, iron, slant(x(u), top, Math.hypot(u1 - u, top1 - top) + 0.01, Math.atan2(s * (u1 - u), top1 - top), 0.035, 0.04, -LEAF_OFF), 2);
+    });
+    // The stub the top rail runs on to past the last bar, level.
+    addBox(kit, iron, x(outer[0]), L1 + outer[1] - 0.0175, z - 0.02, x(LEAF_STUB), L1 + outer[1] + 0.0175, z + 0.02, 2);
+    addBox(kit, iron, x(inner), L1 + foot, z - 0.02, x(outer[0] + 0.02), L1 + foot + 0.04, z + 0.02, 2);
+    if (s < 0) continue;
+    addBox(kit, iron, x(inner), L1 + LEAF_RAIL - 0.02, z - 0.02, x(outer[0] + 0.02), L1 + LEAF_RAIL + 0.02, z + 0.02, 2);
+    addBox(kit, iron, x(0.4), L1 + LEAF_RAIL - 0.22, z - 0.035, x(0.5), L1 + LEAF_RAIL - 0.02, z + 0.035, 2);
+  }
+}
+
+/** The cresting on the top frieze, whose top is `foot` above the floor. */
+function cresting(kit: Kit, foot: number): void {
+  const iron = core.screenIron;
+  const gilt = core.gilt;
+  const z0 = SCREEN_Z;
+  const y = (v: number): number => L1 + v;
   const round = cylinder(20);
-  const top = TIERS[2]?.[1] ?? 12.5;
-  const base = top + FRIEZE;
-  const half = voussoirRing({ head: 'round', span: 1, band: 0.07, count: 9, projection: 0.1, parity: 'all', back: true });
-  for (const [x, cy, d] of [
-    [0, base + 1.15, 1.5],
-    [-4.0, base + 0.9, 1.15],
-    [4.0, base + 0.9, 1.15],
+  const bar = cylinder(6);
+  const half = voussoirRing({ head: 'round', span: 1, band: HALF_BAND, count: 9, projection: 0.1, parity: 'all', back: true });
+  const base = foot + PLINTH;
+  const vase = (x: number, at: number, h: number, material: Material, order: number): void => {
+    for (const [b, t, w] of URN) kit.add(round, material, placed(x, y(at + b * h), z0, 0, [w * h, (t - b) * h, w * h]), order);
+  };
+  for (const [x0, x1] of PLINTHS) {
+    for (const s of x0 < 0 ? [1] : [-1, 1]) addBox(kit, iron, s * x0, y(foot), z0 - 0.1, s * x1, y(base), z0 + 0.1, 12);
+  }
+  // The medallions: openwork, as both photographs show them against the wall behind: a gilt ring `w` by `h` with eight gilt spokes to a gilt boss, a
+  // gilt rim round it, a stem down to the plinth and two scrolls springing from the plinth, `offset` either side, their feet on it.
+  const medallion = (x: number, cy: number, w: number, h: number, rim: readonly [number, number], scroll: readonly [number, number, number]): void => {
+    for (const turn of [0, Math.PI]) kit.add(half, gilt, ringAt(x, cy, turn, w / HALF_OUT, h / HALF_OUT), 12);
+    const [a, b] = [w / (2 * HALF_OUT), h / (2 * HALF_OUT)];
+    for (let k = 0; k < 8; k++) {
+      const lean = (k * Math.PI) / 4;
+      kit.add(UNIT_BOX, gilt, slant(x, cy, 1 / Math.hypot(Math.sin(lean) / a, Math.cos(lean) / b), lean, 0.03, 0.03), 12);
+    }
+    kit.add(round, gilt, disc(x, cy, w * 0.28, 0.12), 12);
+    addBox(kit, gilt, x - 0.06, y(base), z0 - 0.05, x + 0.06, y(cy - h / 2), z0 + 0.05, 12);
+    for (const turn of [0, Math.PI]) kit.add(half, gilt, ringAt(x, cy, turn, rim[0], rim[1]), 12);
+    const [offset, sw, sh] = scroll;
+    for (const sx of [-1, 1]) kit.add(half, gilt, ringAt(x + sx * offset, base, 0, sw, sh), 12);
+  };
+  // The middle group: the round medallion, a stem up to the crown, a dark urn with scrolled branches either side, a dark spire and the rayed cross.
+  medallion(0, 12.15, 1.05, 1.05, [1.6, 1.6], [0.93, 0.9, 1.3]);
+  addBox(kit, gilt, -0.06, y(12.95), z0 - 0.05, 0.06, y(13.28), z0 + 0.05, 14);
+  kit.add(round, iron, placed(0, y(13.28), z0, 0, [1.0, 0.26, 0.36]), 14);
+  for (const at of [13.28, 13.5]) kit.add(round, gilt, placed(0, y(at), z0, 0, [1.04, 0.04, 0.4]), 14);
+  const crownTop = 13.54;
+  const urnHeight = 0.59;
+  vase(0, crownTop, urnHeight, iron, 14);
+  for (const s of [-1, 1]) kit.add(half, gilt, ringAt(s * 0.32, crownTop + 0.3, s * (-Math.PI / 2), 0.6, 0.6), 14);
+  const [mouth, spire, cross] = [crownTop + URN_MOUTH * urnHeight, 14.4, 15.18];
+  for (const [b, t, w] of [
+    [mouth, 14.22, 0.2],
+    [14.22, spire, 0.08],
   ] as const) {
-    kit.add(round, gilt, disc(x, cy, d, 0.08), 12);
-    kit.add(round, iron, disc(x, cy, d * 0.72, 0.12), 12);
-    kit.add(round, gilt, disc(x, cy, d * 0.28, 0.18), 12);
-    addBox(kit, gilt, x - 0.06, y(base), z0 - 0.05, x + 0.06, y(cy - d / 2), z0 + 0.05, 12);
-    // A gilt rim round the medallion and scrolls springing from the frieze on both sides (rings scaled from a unit half-ring).
-    const s1 = d + 0.3;
-    for (const turn of [0, Math.PI]) kit.add(half, gilt, new Matrix4().makeTranslation(x, y(cy), z0 - 0.05).multiply(new Matrix4().makeRotationZ(turn)).multiply(new Matrix4().makeScale(s1, s1, 1)), 12);
-    for (const sx of [-1, 1]) {
-      const s2 = d * 0.9;
-      kit.add(half, gilt, new Matrix4().makeTranslation(x + sx * (d * 0.75), y(base), z0 - 0.05).multiply(new Matrix4().makeScale(s2, s2 * 1.2, 1)), 12);
+    kit.add(round, iron, placed(0, y(b), z0, 0, [w, t - b, w]), 14);
+  }
+  addBox(kit, gilt, -0.05, y(spire - 0.04), z0 - 0.05, 0.05, y(SCREEN_HEIGHT), z0 + 0.05, 14);
+  addBox(kit, gilt, -0.65, y(cross - 0.05), z0 - 0.05, 0.65, y(cross + 0.05), z0 + 0.05, 14);
+  kit.add(round, gilt, disc(0, cross, 0.26, 0.1), 14);
+  for (const lean of [1, 3, 5, 7]) kit.add(UNIT_BOX, gilt, slant(0, cross, 0.4, (lean * Math.PI) / 4), 14);
+  // The side groups: an oval medallion; a stem up to a gilt bar joining the halves of a broken pediment, whose outer ends rest on C-scrolls rising from
+  // the medallion's rim; and a sunburst of seven rays, the outer ones shorter, rising from the bar.
+  for (const s of [-1, 1]) {
+    const x = s * SIDE_X;
+    medallion(x, 12.4, 0.75, 1.0, [0.95, 1.2], [0.63, 0.9, 1.1]);
+    addBox(kit, gilt, x - 0.04, y(12.95), z0 - 0.04, x + 0.04, y(13.6), z0 + 0.04, 13);
+    addBox(kit, gilt, x - 0.17, y(13.6), z0 - 0.05, x + 0.17, y(13.66), z0 + 0.05, 13);
+    for (const side of [-1, 1]) {
+      kit.add(UNIT_BOX, iron, slant(x + side * 0.52, 13.33, 0.48, -side * 0.84, 0.1, 0.12), 13);
+      kit.add(half, gilt, ringAt(x + side * 0.5, 12.875, -side * (Math.PI / 2), 0.85, 0.5), 13);
+    }
+    for (let k = -3; k <= 3; k++) kit.add(UNIT_BOX, gilt, slant(x, 13.63, 0.65 - 0.038 * Math.abs(k), (k * Math.PI) / 15, 0.03, 0.04), 13);
+  }
+  // The finials and the end urns: a pedestal on a stem (on two legs at the ends), an iron urn and a gilt spray of three flowers.
+  for (const f of FINIALS) {
+    const [p0, p1] = f.pedestal;
+    const rim = p1 + f.urn;
+    for (const s of [-1, 1]) {
+      const x = s * f.x;
+      const legs = f.legs === 2 ? [x - 0.3, x + 0.3] : [x];
+      for (const lx of legs) kit.add(bar, gilt, placed(lx, y(base), z0, 0, [0.07, p0 - base, 0.07]), 13);
+      addBox(kit, iron, x - f.width / 2, y(p0), z0 - 0.1, x + f.width / 2, y(p1), z0 + 0.1, 13);
+      vase(x, p1, f.urn, iron, 13);
+      const stem = f.top - rim;
+      const from = p1 + URN_MOUTH * f.urn;
+      for (const lean of [-0.45, 0, 0.45]) {
+        const len = lean === 0 ? f.top - from - 0.05 : 0.8 * stem;
+        kit.add(UNIT_BOX, gilt, slant(x, from, len, lean, 0.025, 0.03), 13);
+        kit.add(round, gilt, disc(x + len * Math.sin(lean), from + len * Math.cos(lean), 0.11, 0.05), 13);
+      }
     }
   }
-  for (const x of [-5.9, -2.0, 2.0, 5.9]) {
-    kit.add(bar, gilt, placed(x, y(base), z0, 0, [0.09, 1.7, 0.09]), 13);
-    kit.add(round, gilt, disc(x, base + 1.0, 0.32, 0.32), 13);
-  }
-  const crossFoot = base + 1.15 + 0.75;
-  addBox(kit, gilt, -0.06, y(crossFoot), z0 - 0.06, 0.06, y(SCREEN_HEIGHT), z0 + 0.06, 14);
-  addBox(kit, gilt, -0.32, y(SCREEN_HEIGHT - 0.42), z0 - 0.06, 0.32, y(SCREEN_HEIGHT - 0.3), z0 + 0.06, 14);
 }

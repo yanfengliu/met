@@ -1,0 +1,204 @@
+diff --git a/docs/devlog/summary.md b/docs/devlog/summary.md
+index 7655ba4..1495286 100644
+--- a/docs/devlog/summary.md
++++ b/docs/devlog/summary.md
+@@ -2,6 +2,8 @@
+ 
+ Newest first. One dated line per behaviour-changing session; `detailed/` holds anything a later session could trip over.
+ 
++- 2026-10-28 (voussoirs): **The 1880 fronts' dark voussoirs are dark grey granite, as every photograph shows them** — work unit 4 found exterior #60 showing the west front's dark voussoirs grey where the model had red brick (F-owner-4). Five more photographs of the front (Untapped 2012, Forgotten New York 2023, Heckscher's 1995 figs. 105 and 107 and his 1880 stereograph) and the surviving east-front arch at the top of the Grand Staircase all show light and dark grey granite, the dark stones rock-faced, never brick; Heckscher calls that arch banded granite (exterior #61 to #67, `exterior.md` [C7]). The dark ring of every 1880 arch, on the west front and on the shell's side and east walls, is now `core.graniteDark` (#85827A), which renders at 0.62 of the light granite from the Lehman court, as the photographs read it (0.61 on average). The model's hood ring, brick colour, east-front arch count and west-front openings disagree with the same photographs and went to the owner as findings. This unit's plan and reviews wait for a work-unit ID, which the fleet's allocator still refuses.
++
+ - 2026-10-28 (work unit 4): **A model source can cite a reference photograph only if its index marks it viewed** — `src/cited-images.test.ts` reads every citation of `interior-images.md` and `exterior-images.md` under `src/model/`, now in one form (`interior-images.md #33`), and fails on an entry not marked viewed. On the base revision it was red with 24 problems, #29 cited and "Not viewed" among them, and it goes red again with #33 marked "Not viewed". Every cited photograph left unviewed was viewed at full size and recorded: interior #12, #13, #16, #29 and #30 (and #14, which `interior.md` relied on), exterior #44 and #49, and two cited but missing from the indexes, the Met's ES4661 (now interior #44) and Untapped New York's 2026 view of the 1880 west front (exterior #60). #29 puts the choir screen's friezes at about 5.1, 8.5 and 11.2 m and its cresting at 4.7 m; the model has 5.9, 9.9 and 13.0 m and 2.85 m. Exterior #60 shows the 1880 west front's dark voussoirs in grey stone, where the model has red brick. Both findings went to the owner and the model is unchanged. The lesson is retired, its proof in `docs/learning/gate-proofs.md` (work unit 4).
+ 
+ - 2026-10-28 (work unit 6): **Every piece the walk and the section cut read is a closed solid or a declared sheet** — work unit 5 had found 2,370 of the 2,980 shapes the walk or the cut reads open along vertical lines, so the build left a walker inside them and a cut showed through them; none is open now. Glass, paving, roads, paths, the terrain and surfaces standing upright are declared sheets (10,028 pieces), which the walk reads no inside in and the cap pass leaves out. Builders in 37 model files were closed or declared, 16 of them in the shared parts library: column shafts and bases, pilasters, capitals, dentils, balusters, urns, surrounds, pendentives and the rusticated wall. Work unit 5's gate now reads every piece, not three builders: 870 shapes of 16,766 pieces at t = N, by the mesh's own parity, by the walk's crossing query on 56,168 lines, by those lines' winding and overlaps, and by an inside behind every upright face. That last reading found a part with no top and no bottom, the Astor Court's moon gate panel, whose doorway read as solid, and the Great Hall pendentives' spandrels, which left a sliver of window showing beside each arch. The walk's crossing query had counted two faces back to back as one crossing, so a closed piece of two parts read as open above the joint (206 shapes misread). 55 of the 64 standard shots changed: the shadows closed pieces now cast, the Hunt hall roof's slabs and lead fascia, the Grand Staircase roof's shell, the Lehman roof made whole, the pendentives closed, and cut sections, where closed pieces now show the cut colour and sheets no longer do. Still open: the armor court's gables are wound inside out, and two coffered soffits' coffers are deeper than their shells. This unit's plan and reviews wait for a work-unit ID, which the fleet's allocator refuses while main's registry history skips ID 4.
+diff --git a/docs/research/exterior-images.md b/docs/research/exterior-images.md
+index 46687d7..a8f4824 100644
+--- a/docs/research/exterior-images.md
++++ b/docs/research/exterior-images.md
+@@ -181,7 +181,19 @@ Measured at 1:1 by the `mmw` worker, each photograph viewed on the date its entr
+ 
+ ### The 1880 west front today (added by work unit 4, 2026-10-28)
+ 
+-60. https://www.untappedcities.com/the-met-original-building-museum/ — Nicole Saraniero, Untapped New York, "The Met's Original Building is Still Hiding Inside the Museum", 2026-04-17: its photograph captioned "The former west facade as seen from the Robert Lehman Wing" (1260×840; reference only, not freely licensed). Viewed at full size 2026-10-28: from the Lehman court's floor looking east and up, the glazed pyramid with its short ridge over the court's cream limestone walls, and through three tall openings in them the 1880 west front, in red brick: pointed arches of alternating light and dark grey voussoirs over striped tympana and lit windows, a light stone band at the windows' heads, and a light cornice at the wall's top; a balcony with a rail stands in the middle opening. The article's text says the 1888 wing moved the main entrance from Fifth Avenue (east) to the park (south); `history.md` has the 1880 entrance facing the park (west). Informs: the west front's arches and materials.
++60. https://www.untappedcities.com/the-met-original-building-museum/ — Nicole Saraniero, Untapped New York, "The Met's Original Building is Still Hiding Inside the Museum", 2026-04-17: its photograph captioned "The former west facade as seen from the Robert Lehman Wing" (1260×840; reference only, not freely licensed). Viewed at full size 2026-10-28: from the Lehman court's floor looking east and up, the glazed pyramid with its short ridge over the court's cream limestone walls, and through three tall openings in them the 1880 west front, in red brick: pointed arches of alternating light and dark grey voussoirs over striped tympana and lit windows, a light stone band at the windows' heads, and a light cornice at the wall's top; a balcony with a rail stands in the middle opening. The article's text says the 1888 wing moved the main entrance from Fifth Avenue (east) to the park (south); `history.md` has the 1880 entrance facing the park (west). Sampled on the middle arch (2026-10-28, means of patches inside single stones): the crown's dark voussoir (104, 103, 104), a light one (162, 160, 158), the brick above (110 to 116, 75 to 83, 75 to 82). Informs: the west front's arches and materials.
++
++### The 1880 fronts' voussoirs (added 2026-10-28)
++
++What the 1880 arches' dark voussoirs are made of, after #60 showed them grey where the model had them in brick (work unit 4, F-owner-4). Each photograph was sampled with means of patches inside single stones; the conclusion is in `exterior.md` [C7].
++
++61. https://untappedcities.com/2022/11/02/top-secrets-metropolitan-museum-of-art/2/ — Untapped Cities, "Top Secrets of the Metropolitan Museum of Art" (2022-11-02), section 2: its photograph of the west front, uploaded 2012-09 and marked "© Untapped Cities by Michelle Young" (https://storage.ghost.io/c/3e/3b/3e3b259f-e5a2-4287-97e8-4888d22daaef/content/images/wp-content/uploads/2012/09/secrets-of-metropolitan-museum_new-york-city_untapped-cities-2.jpg, 640×426; reference only, not freely licensed). Viewed at full size 2026-10-28: from the Lehman Wing's main floor, looking along the front at an angle, four pointed arches in red brick, their voussoirs alternating white and blue-grey stone round tympana striped orange-red and cream, a smooth light ring lining each arch inside its voussoirs, three arches open to the floor as doorways and the fourth holding a window over a light stone apron. Sampled on the right arch: a dark voussoir (95, 96, 90), a light one (170, 179, 181), the brick beside it (155, 96, 78). Informs: the voussoirs' material and colour.
++62. https://forgotten-ny.com/2023/07/the-forgotten-met/ — Sergey Kadinsky, Forgotten New York, "The Forgotten Met", 2023-07-30: its photograph of the lobby between the old building and the Lehman Wing (https://forgotten-ny.com/wp-content/uploads/2023/07/lehman-lobby.jpg, 720×542; reference only, not freely licensed). Viewed at full size 2026-10-28: on the Lehman Wing's main floor under its glazed roof, looking along the west front, pointed arches over open doorways in red brick on light granite bases, their voussoirs alternating smooth white stone with coarse, speckled mid-grey stone, over tympana striped red and cream. The brick reads (138, 84, 71); at this size each dark voussoir's patch takes in some of its light neighbours, so it gives no ratio, but every one reads grey, red within 7 of blue. Informs: the voussoirs' material.
++63. Heckscher (`history.md`, Sources) fig. 105, p. 73: the Robert Lehman Wing in 1995, looking south toward part of the west front (The Met; reference only, not freely licensed; 1281×1622 as embedded in the Bulletin's PDF). Viewed at full size 2026-10-28: from the Lehman Wing's main floor beside a stair down to the court, looking along the front, pointed arches in red brick whose voussoirs alternate smooth light grey stone with rock-faced darker grey stone, over tympana striped red and white; the middle arch is a doorway into a gallery and a window fills the one at the left; light granite jambs, imposts and base. Informs: the voussoirs' material and finish.
++64. Heckscher (`history.md`, Sources) fig. 107, p. 74: the Robert Lehman Wing in 1995, looking east toward the arches of the west front (The Met; reference only, not freely licensed; 2292×1871 as embedded). Viewed at full size 2026-10-28: from the court floor through the inner ring's three openings, as #60 looks, five of the front's arches: each ring alternates smooth light grey voussoirs with rock-faced dark grey ones, a dark one at the crown, and meets the brick with no hood moulding round it; a smooth light ring lines each arch inside its voussoirs; the tympana are striped red and white; the middle arch is a doorway with a balcony rail and the outer two hold windows. Sampled on the middle arch (a warm print): dark voussoirs (113 to 123, 100 to 108, 96 to 105), light ones (158 to 170, 137 to 141, 128), the brick (112 to 129, 81 to 91, 83 to 90). Informs: the voussoirs' material, finish and colour; the hood moulding the model adds.
++65. Heckscher (`history.md`, Sources) fig. 8, p. 11: the Museum building from the southwest, 1880, a stereograph (The Met, 1995.114.1, gift of Herbert Mitchell; public domain; 2175×1096 as embedded). Viewed at full size 2026-10-28: a sepia print of the building, at the left the west front's canopied porch and stair beside two large pointed arches, then a taller brick block, and at the right the long south side's arcade of pointed windows, every arch's voussoirs alternating light and dark. On the two arches beside the porch the dark voussoirs read 1.3 to 1.7 times the values of the brick round them, (97 to 129, 75 to 101, 69 to 89) against (72 to 77, 56 to 59, 53 to 58), while the tympana's dark stripes, red in every later photograph, read as dark as the brick; the light voussoirs read about (200, 178, 165). An inference: the plates of 1880 were blind to red, so red brick prints darker than a grey stone that looks as light, and the dark voussoirs are not of the wall's brick. Informs: the voussoirs' material in 1880.
++66. Heckscher (`history.md`, Sources) fig. 19, p. 18: the Museum from Fifth Avenue, 1880, a stereograph (The Met, 1995.114.2, gift of Herbert Mitchell; public domain; 2244×1404 as embedded). Viewed at full size 2026-10-28: the east front over the trees of Fifth Avenue, four large pointed arches on the main floor, two on either side of the temporary wooden stair in the middle, each over a roundel, their voussoirs alternating light and dark; too small to read the stones. Informs: the east front's arches, one of which survives in #67.
++67. https://www.untappedcities.com/the-met-original-building-museum/ — the article of #60: its photograph of the arch at the entrance of the Robert Wood Johnson Jr. Gallery, at the top of the Grand Staircase (https://storage.ghost.io/c/3e/3b/3e3b259f-e5a2-4287-97e8-4888d22daaef/content/images/2026/04/1880s-remnants-met-museum-untapped-new-york--7-.jpg, 1260×840; reference only, not freely licensed). Viewed at full size 2026-10-28: close up under warm gallery light, the head of one of the 1880 east front's windows, the arch of "banded granite" round a blind roundel that Heckscher describes (p. 18): voussoirs alternating fine-grained light grey granite with coarse, rough-dressed dark grey granite, a dark one at the crown, inside an outer ring of dark granite blocks, over a moulded light granite inner arch round a roundel filled with red brick. Sampled: dark voussoirs (89 to 122, 77 to 107, 68 to 95), light ones (183 to 205, 168 to 191, 154 to 177), the brick (69 to 109, 36 to 56, 26 to 37). Informs: the voussoirs' material on the east front.
+ 
+ ## Gaps
+ 
+diff --git a/docs/research/exterior.md b/docs/research/exterior.md
+index 11de5d0..12e9060 100644
+--- a/docs/research/exterior.md
++++ b/docs/research/exterior.md
+@@ -144,7 +144,7 @@ Colours are means of 17×17 px patches read from the image file in the browser,
+ - [C4] Door glazing and bronze frames, dark: #3B4346 (S8). Lunette grilles read near-black (#2E3338 by eye). **M**/**E**.
+ - [C5] Sidewalk concrete #787878, asphalt #67757B (S8). **M** (photo).
+ - [C6] Roofs: brownish membrane or lead roofs about #8A7867, skylight glass blue-grey about #6F8FA8, park-side glass walls blue-grey about #7A93A6. **E** by eye from S5.
+-- [C7] Red brick of the 1880 west front about #9A4B3A with grey-white granite bands about #B9B4AA. **E** (no sample in this run).
++- [C7] Red brick of the 1880 west front about #9A4B3A with grey-white granite bands about #B9B4AA. **E** (no sample in this run). Its arches' voussoirs alternate smooth light grey granite with rock-faced dark grey granite, never brick (checked 2026-10-28 against `exterior-images.md` #60 to #67 and Heckscher pp. 18 and 75, who calls the surviving east-front arch banded granite and the Lehman court's arches red brick and gray granite). In the four photographs that show single stones clearly (#60, #61, #64, #67) the dark voussoirs read 0.41 to 0.82 of the light ones a channel, 0.61 on average, and their red over blue (0.99 to 1.32) stays near the light ones' (0.94 to 1.28), well under the brick's (1.35 to 2.94). **M** (photos). The model's dark granite is the light granite's #B9B4AA times 0.72, #85827A: its renders from the Lehman court (`cam=0,-0.84,-158,0,13,-138.3` and `cam=-6,5.7,-146,0,9,-138.3`) read it at 0.62 to 0.64 of the light granite, where 0.61 times #B9B4AA (#716E68) read 0.48, the renderer's tone curve darkening the darker stone. **D**.
+ - Note (integration worker, 2026-10-13): matched patches (17×17 px means) of the columns, wall faces and spandrels of the central bays read (172, 162, 146) in S7 (Schneider 2019, `ref-front-axis`) and (208, 203, 193) in S8 (Haklai 2012, `ref-front-street`), against (213, 209, 203) in the renders of those presets; the attic band read (207, 200, 188) and (222, 218, 212); a limestone north wall in shade in King of Hearts 2013 (`ref-park-northwest`) read (148, 147, 142) against (165, 163, 159) rendered. The palette's limestone, limestoneDark and granite were scaled by the same linear factors (0.80, 0.78, 0.74), so the front now renders (203, 197, 188) and the shaded wall (149, 145, 138). Both front photographs show the facade in shade or overcast light, the render a sunlit one, so the match is of overall tone, not of lighting.
+ 
+ ## 9. Conflicts and open questions
+diff --git a/docs/research/history.md b/docs/research/history.md
+index e1e14f5..12c00b9 100644
+--- a/docs/research/history.md
++++ b/docs/research/history.md
+@@ -14,15 +14,17 @@ Tags: **(r)** read in the full source; **(s)** from search-result snippets only;
+ - [HY] Hyperallergic, Met breaks ground on the new modern and contemporary wing, 15 September 2026: https://hyperallergic.com/met-museum-breaks-ground-on-new-modern-and-contemporary-wing/ (r)
+ - [HDC] Historic Districts Council, Kevin Roche and the Met: https://hdc.org/kevin-roche-metropolitan-museum-of-art/ (r)
+ - [MC] The Met, "The Museum, Constructed", 2010: https://www.metmuseum.org/perspectives/the-museum-constructed (r)
++- [TM] The Met, Anna Bernhard, "Today in Met History: March 20", 20 March 2012: https://www.metmuseum.org/perspectives/today-in-met-history-march-20 (r)
+ - [K26] The Met, "Today in Met history: April 6" (s); [BL] diannedurantewriter.com, brief history of the building (s); [PZ] The Met, plaza opening press release 2014 (s); [OL] OLIN project page (s); [BR] Britannica (s); [TAN] The Art Newspaper, 15 September 2026 (s).
+ - Read in part for Weston's 1888 door (work unit 3, 2026-10-28; `interior.md`): pp. 21–25 with figs. 26–29, fig. 35 (p. 28), fig. 110 (p. 76) and the 1995 plan (p. 78) of M. H. Heckscher, "The Metropolitan Museum of Art: An Architectural History", MMA Bulletin 53:1, Summer 1995 (PDF over 10 MB): https://resources.metmuseum.org/resources/metpublications/pdf/The_Metropolitan_Museum_of_Art_An_Architectural_History_The_Metropolitan_Museum_of_Art_Bulletin_v_53_no_1_Summer_1995.pdf
++- Read in part for the 1880 fronts' voussoirs (2026-10-28; `exterior.md` [C7]): pp. 11–12 and 18 with figs. 8 and 19, and pp. 73–75 with figs. 105 and 107 (`exterior-images.md` #63 to #66), of the same Bulletin, from the copy the Met's publication page links (https://cdn.sanity.io/files/cctd4ker/production/3df1adccc0771a5ad8c4181489cd12252b9b0d08.pdf, 39.8 MB); the address above answered a script with a bot check.
+ 
+ ## Chronology
+ 
+ | Years | Part (block id) | Architect | Plan position | Exterior | Status 2026 | Sources |
+ |---|---|---|---|---|---|---|
+ | 1871–72 | Land granted: Central Park between East Drive, Fifth Avenue and the 79th and 85th Street transverse roads | — | site | — | — | W5, WM |
+-| ground broken 1874; built 1877–80; opened 30 Mar 1880 | Original building, "Wing A" (core-1880-a) | Calvert Vaux and Jacob Wrey Mould; iron and steel frame by Edward C. and George K. Radford | centre of today's mass, entrance facing the park (west) | red brick and stone, High Victorian (Ruskinian) Gothic | enclosed; west front visible inside the Robert Lehman Wing; a banded-granite pointed arch survives at the top of the Grand Staircase | L77, NHL, W5, MC |
++| ground broken 1874; built 1877–80; opened 30 Mar 1880 | Original building, "Wing A" (core-1880-a) | Calvert Vaux and Jacob Wrey Mould; iron and steel frame by Edward C. and George K. Radford | centre of today's mass, entrance facing the park (west) | red brick and stone, High Victorian (Ruskinian) Gothic; brick in place of the pink granite first planned (TM); pointed arches whose voussoirs alternate light and dark grey granite (Heckscher pp. 18, 75; `exterior.md` [C7]) | enclosed; west front visible inside the Robert Lehman Wing; a banded-granite pointed arch survives at the top of the Grand Staircase | L77, NHL, W5, MC, TM |
+ | 1884–88 | South wing, "Wing B" (core-1888-b) | Theodore Weston (a trustee), with Arthur L. Tuckerman | south of the 1880 building, facing the park; main door moved to its south side | red brick, stone base, trim and cornice, steep slate roof | enclosed; its whole south facade is a wall of the Petrie European Sculpture Court | L77, L67, NHL, MC |
+ | 1889–94 | North wing, "Wing C" (core-1894-c) | Weston with Tuckerman (L77); Tuckerman alone (NHL) | north of the 1880 building | as Wing B | enclosed; no visible facade found | L77, L67, NHL |
+ | act 16 Apr 1895; Hunt died 31 Jul 1895; excavation 1897; above grade 1898; structure complete end 1901; opened 22 Dec 1902 | Fifth Avenue central wing, "Wing D": facade, Great Hall, Grand Staircase (hunt-d) | Richard Morris Hunt (design), Richard Howland Hunt (completion and interiors), George B. Post (consulting) | Fifth Avenue centre opposite 82nd Street, east of the older buildings | limestone ("warm-toned Indiana limestone" in the Great Hall, L77); three arches, four pairs of Corinthian columns carrying blocks meant for sculpture; Karl Bitter's six medallions, four caryatids and stair angels | visible; exterior landmark 1967, interior 1977 | L77, L67, W5 |
+diff --git a/docs/research/interior.md b/docs/research/interior.md
+index a4ab102..6e34b8a 100644
+--- a/docs/research/interior.md
++++ b/docs/research/interior.md
+@@ -246,7 +246,7 @@ Sourced facts:
+ - Vaux facade, measured: at the main-floor level Vaux's entire west facade forms the Lehman Wing's entrance wall (Heckscher p. 18; photographs looking south and east toward it, figs. 105 and 107). Conflict on level: Heckscher says main floor, Wikipedia says the collection is on the ground floor and the basement level; the map shows both, with galleries on the main floor around a court sunk to the ground floor.
+ - Not found: the court's size from a source, the pyramid's base, height, sides and glazing, the facade's height, width and bay count, and the number of steps down to the court.
+ 
+-Elements (P9): a glazed hipped pyramid over the court with a short ridge at the top, glazed in a diagonal grid on light grey steel; cream walls with clipped corners at its base. Estimate: the pyramid rises about 6 to 8 m over the court (P9, low). Correction (roche-south modeller, 2026-10-11): fitting P9's camera from its EXIF lens gives a rise of about 11.1 m above an eave at +16.3, apex +27.4 (`LEHMAN_PYRAMID_APEX_Y`). Colours by eye (P9): steel #cfd2d4, walls #e2d6bf; Vaux brick red and granite grey not photographed here. Confidence medium. Lighting: daylight through the pyramid.
++Elements (P9): a glazed hipped pyramid over the court with a short ridge at the top, glazed in a diagonal grid on light grey steel; cream walls with clipped corners at its base. Estimate: the pyramid rises about 6 to 8 m over the court (P9, low). Correction (roche-south modeller, 2026-10-11): fitting P9's camera from its EXIF lens gives a rise of about 11.1 m above an eave at +16.3, apex +27.4 (`LEHMAN_PYRAMID_APEX_Y`). Colours by eye (P9): steel #cfd2d4, walls #e2d6bf; the Vaux front's brick and its light and dark granite are not in P9, but in `exterior-images.md` #60 to #64 (`exterior.md` [C7]). Confidence medium. Lighting: daylight through the pyramid.
+ 
+ ## Second-floor European Paintings galleries
+ 
+diff --git a/src/model/core/materials.ts b/src/model/core/materials.ts
+index 73cd0ca..e18c77b 100644
+--- a/src/model/core/materials.ts
++++ b/src/model/core/materials.ts
+@@ -1,8 +1,8 @@
+ /**
+  * Materials the core area needs beyond src/model/palette.ts, each created once and shared (docs/design/spec.md, Batching).
+- * Colours: exterior.md [C7] (the Vaux front's granite bands about #B9B4AA), interior.md "The Medieval Sculpture Hall" (iron #1e1c1a, gilding #b08a3e,
+- * walls and vault #dcd8d0), the Petrie Court photo (interior-images.md #33: Weston's light grey stone trim) and Heckscher's black-and-white
+- * marble floor with red-slate borders (interior.md). Everything else comes from the palette.
++ * Colours: exterior.md [C7] (the Vaux front's granite bands about #B9B4AA and its dark voussoirs), interior.md "The Medieval Sculpture Hall" (iron
++ * #1e1c1a, gilding #b08a3e, walls and vault #dcd8d0), the Petrie Court photo (interior-images.md #33: Weston's light grey stone trim) and Heckscher's
++ * black-and-white marble floor with red-slate borders (interior.md). Everything else comes from the palette.
+  */
+ import { Color, DoubleSide, MeshStandardMaterial } from 'three';
+ import type { Material } from 'three';
+@@ -31,6 +31,11 @@ function shadowless<T extends Material>(material: T): T {
+ export const core = Object.freeze({
+   /** The Vaux front's grey-white granite bands, voussoirs and trim ([C7] about #B9B4AA). */
+   granite: standard('core.granite', '#b9b4aa', 0.72),
++  /**
++   * The rock-faced dark grey granite of the Vaux voussoirs that alternate with the light ones ([C7]): the light granite's colour times 0.72, which
++   * renders at 0.62 of the light granite seen from the Lehman court, as four photographs read the dark stones against the light, 0.61 on average.
++   */
++  graniteDark: standard('core.graniteDark', '#85827a', 0.85),
+   /** Weston's light grey stone base, piers, arches and cornice (Petrie Court photo). */
+   westonStone: standard('core.westonStone', '#c4c0b7', 0.78),
+   /** The Medieval Sculpture Hall's plaster walls and vault (interior.md #dcd8d0). */
+diff --git a/src/model/core/vaux-front.ts b/src/model/core/vaux-front.ts
+index 78ab42a..34be7a1 100644
+--- a/src/model/core/vaux-front.ts
++++ b/src/model/core/vaux-front.ts
+@@ -1,10 +1,11 @@
+ /**
+  * The Vaux and Mould west front of 1880 (history.md section 2; exterior.md [K7]): red brick with grey-white granite bands, seven pointed arches on
+- * the main floor with alternating granite and brick voussoirs and striped tympana (the central one the original entrance), segmental windows on the
+- * ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman Wing (seen in
+- * int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch) and the view of the west front from the
+- * Lehman court (Untapped New York, 2026), exterior-images.md #49 and #60. Trim may project up to 1.5 m into the Lehman
+- * court (coordinator, 2026-10-11); walls do not.
++ * the main floor whose voussoirs alternate light and dark grey granite (exterior.md [C7]), striped tympana (the central one the original entrance),
++ * segmental windows on the ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman
++ * Wing (seen in int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch), the 1880 stereograph from the
++ * southwest and the views of the front from the Lehman Wing (Untapped New York, 2026 and 2012; Forgotten New York, 2023; Heckscher 1995, figs. 105
++ * and 107), exterior-images.md #49, #65, #60, #61, #62, #63 and #64. Trim may project up to 1.5 m into the Lehman court (coordinator, 2026-10-11);
++ * walls do not.
+  */
+ import { Matrix4 } from 'three';
+ 
+@@ -82,8 +83,8 @@ export function westFrontTrim(kit: Kit): void {
+     // A granite transom through the wall at the springing closes the gap between window head and tympanum.
+     addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, spring - VAUX_BAND, WEST_Z, x + VAUX_ARCH_SPAN / 2, spring, WEST_Z + WEST_WALL, 4);
+     kit.add(ring(0), core.granite, placed(x, spring, WEST_Z, facing), 5);
+-    // Open with the owner (work unit 4, F-owner-4): exterior-images.md #60 shows these voussoirs in dark grey stone, not brick.
+-    kit.add(ring(1), palette.brick, placed(x, spring, WEST_Z, facing), 5);
++    // The dark voussoirs are rock-faced grey granite, never brick, in every photograph of the front (exterior-images.md #60, #61, #62, #63 and #64).
++    kit.add(ring(1), core.graniteDark, placed(x, spring, WEST_Z, facing), 5);
+     kit.add(hood, core.granite, placed(x, spring, WEST_Z, facing), 5);
+     kit.add(panel, palette.brick, placed(x, spring, WEST_Z + 0.32, facing), 5);
+     kit.add(stripes, core.granite, placed(x, spring, WEST_Z + 0.32, facing), 5);
+diff --git a/src/model/core/vaux-shell.ts b/src/model/core/vaux-shell.ts
+index 2adf05e..27f0428 100644
+--- a/src/model/core/vaux-shell.ts
++++ b/src/model/core/vaux-shell.ts
+@@ -273,7 +273,11 @@ export function vauxHall(kit: Kit): void {
+   }
+ }
+ 
+-/** Granite trim of the side and east walls: polychrome voussoirs over every 1880 arch and the floor, impost and ground-storey bands. */
++/**
++ * Granite trim of the side and east walls: polychrome voussoirs over every 1880 arch and the floor, impost and ground-storey bands. The voussoirs
++ * alternate light and dark grey granite as on the west front (vaux-front.ts): the east front's arches are banded alike in 1880, and one of them
++ * survives at the top of the Grand Staircase in light and dark granite (exterior-images.md #66 and #67).
++ */
+ export function vauxSideTrim(kit: Kit): void {
+   const spring = L1 + VAUX_ARCH_SPRING;
+   const ring = (parity: 0 | 1, rise = VAUX_ARCH_RISE) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise, band: 0.42, count: 15, projection: 0.06, parity });
+@@ -287,7 +291,7 @@ export function vauxSideTrim(kit: Kit): void {
+     for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
+       const z = ((SIDE_LINES[i] ?? 0) + (SIDE_LINES[i + 1] ?? 0)) / 2;
+       kit.add(ring(0), core.granite, placed(x, spring, z, facing), i);
+-      kit.add(ring(1), palette.brick, placed(x, spring, z, facing), i);
++      kit.add(ring(1), core.graniteDark, placed(x, spring, z, facing), i);
+       kit.add(hood, core.granite, placed(x, spring, z, facing), i);
+     }
+     const face = x + out * proud;
+@@ -302,7 +306,7 @@ export function vauxSideTrim(kit: Kit): void {
+   for (const k of [-3, -2, -1, 0, 1, 2, 3]) {
+     const rise = eastRise(k);
+     kit.add(ring(0, rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+-    kit.add(ring(1, rise), palette.brick, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
++    kit.add(ring(1, rise), core.graniteDark, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+     kit.add(hoodOf(rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+   }
+   addBox(kit, core.granite, -A_HALF, spring - VAUX_BAND, EAST_Z, A_HALF, spring, EAST_Z + proud, 12);
+diff --git a/src/model/core/vaux.ts b/src/model/core/vaux.ts
+index cebae8f..e249792 100644
+--- a/src/model/core/vaux.ts
++++ b/src/model/core/vaux.ts
+@@ -36,7 +36,7 @@ export const vauxSteps: readonly StepDef[] = [
+     id: 'vaux-west-front',
+     chapter: CHAPTER,
+     title: 'Build the west front and its entrance',
+-    detail: 'The park front: seven pointed arches with granite and brick voussoirs, the entrance on the axis, granite bands and the cornice. It survives inside the Lehman Wing.',
++    detail: 'The park front: seven pointed arches with light and dark granite voussoirs, the entrance on the axis, granite bands and the cornice. It survives inside the Lehman Wing.',
+     motion: { kind: 'grow' },
+     stagger: 'order',
+     weight: 1.3,
+@@ -59,7 +59,7 @@ export const vauxSteps: readonly StepDef[] = [
+     id: 'vaux-openings',
+     chapter: CHAPTER,
+     title: 'Glaze the windows and set the granite trim',
+-    detail: 'Windows fill the west arches and the ground storey; granite and brick voussoirs and bands finish the side and east walls.',
++    detail: 'Windows fill the west arches and the ground storey; light and dark granite voussoirs and bands finish the side and east walls.',
+     motion: { kind: 'pop' },
+     stagger: 'z',
+     build(kit) {
