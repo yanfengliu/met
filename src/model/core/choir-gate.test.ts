@@ -2,13 +2,14 @@
  * The Valladolid choir screen's open gate against the walker (src/model/core/choir-screen.ts; the owner's call, 2026-10-28), headless, through the
  * page's path on the real sequence at t = N: the whole sequence's Timeline, the page's door layer over it (src/viewer/doors.ts) and the walk's world as
  * walk mode builds it (src/walk/door-world.ts `walkWorld`), with the walk mode's own walker (src/walk/walker.ts) stepped at 60 frames a second. From
- * 4 m west of the screen the walker walks east through the gate to more than 3 m past it and back, 2 cm off the hall's axis and 0.63 m either side of
+ * 4 m west of the screen the walker walks east through the gate to more than 3 m past it and back, on the hall's axis and 0.63 m either side of
  * it, a body's radius and 5 cm inside the gate's jambs at 1.03 m (`GATE_CLEAR`, the opening the owner chose), on the hall's floor all the way. The
  * lines are numbers, not reckoned from `GATE_CLEAR`, so the walk reads the opening's width rather than agreeing with the constant.
- * Red with the gate closed as at 44ea7b7: all three stopped at Z −100.00, the base's west face less the body's radius.
+ * Red with the gate closed as at 44ea7b7: all three stopped at Z −100.00, the base's west face less the body's radius. The axis lies on an 8 mm
+ * joint of the floor's tiles: red with the walker of 897a4b4, which read only the line under the body's centre there, set the feet on the slab in
+ * the joint, 6 cm down, and kept them there walking along it (work unit 4's F-owner-8; work unit 13).
  * Bound: three lines square to the screen, whose bodies together span ±0.98 m of the opening's ±1.03 m; walking, not running, at 60 frames a second;
- * nothing over the body's 1.75 m is read; positions are the feet's. The axis itself is not walked: it lies on an 8 mm joint of the floor's tiles, where
- * `Walker.place` would set the feet 6 cm down (work unit 4's F-owner-8).
+ * nothing over the body's 1.75 m is read; positions are the feet's.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -30,13 +31,9 @@ const W: WalkInput = { forward: 1, right: 0, run: false };
 /** Yaw facing +Z, east through the screen, and −Z, back west (src/walk/walker.ts: yaw 0 faces −Z and grows turning left). */
 const EAST = Math.PI;
 const WEST = 0;
-/**
- * The walks' lines: by the axis, and either side of it a body's radius and 5 cm inside the jambs. The first runs 2 cm off the axis, which lies on an
- * 8 mm joint of the floor's tiles: `place` reads the line under the body's centre and would set the feet in the joint, 6 cm down, where the side
- * probes that bridge a groove narrower than the body (src/walk/walker.ts `support`) never run, the centre finding ground at the feet's level.
- */
+/** The walks' lines: the axis, on a joint of the floor's tiles, and either side of it a body's radius and 5 cm inside the jambs. */
 const LANES = [
-  { name: 'by the axis', x: 0.02 },
+  { name: 'on the axis', x: 0 },
   { name: 'north of the axis by the jamb', x: 0.63 },
   { name: 'south of the axis by the jamb', x: -0.63 },
 ] as const;

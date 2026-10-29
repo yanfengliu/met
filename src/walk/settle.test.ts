@@ -8,8 +8,14 @@
  * 1.2 m wall built through it, onto a desk built in a room rather than the roof, past a surface with too little room, lost in a piece with no
  * walkable top, the nearest spawn, and on the real sequence Weston's facade built through a walker in its pavilion's brick, which lifts it onto the
  * coping: red with `openWall`'s bottom face left out, the walker kept in the brick.
- * Bound: fixtures are closed boxes. Every piece of the model is closed along vertical lines or a declared sheet (src/model/closure.test.ts); a sheet has
- * no inside, so the build does not lift a walker out of one, which src/walk/crossings.test.ts checks.
+ * A floor's joint under the centre (work unit 4's F-owner-8, work unit 13): tiles 6 cm deep on a slab with 8 mm joints, as the Medieval Sculpture Hall's,
+ * where the walker is set down on a joint and where two cross, on the tiles, and walks 9 m or more along a joint on them; is lifted onto the tiles laid
+ * round it on the slab, and onto them when the whole floor is built over it; and, a control, still steps down into a channel 1.2 m wide, set down,
+ * settled or walking. Red with the walker of 897a4b4, which read only the line under the body's centre: set down on the slab 6 cm down, on the joint
+ * and where two cross; walked 9.9 m along the joint on the slab; "kept" on the slab when the tiles were laid round it; moved onto the slab, not the
+ * tiles, when the floor was built over it. The control is green with both.
+ * Bound: fixtures are closed boxes, their joints along X and Z, as the hall's. Every piece of the model is closed along vertical lines or a declared
+ * sheet (src/model/closure.test.ts); a sheet has no inside, so the build does not lift a walker out of one, which src/walk/crossings.test.ts checks.
  * Walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.
  */
 import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
@@ -181,5 +187,72 @@ describe('the walker when the build moves under it', () => {
     const plaza = SPAWNS.find((s) => s.id === 'plaza');
     if (plaza === undefined) throw new Error('No plaza spawn.');
     expect(nearestSpawn(plaza.feet[0] + 3, plaza.feet[1] - 5, plaza.feet[2] + 2).id).toBe('plaza');
+  });
+});
+
+/**
+ * A floor's tiles 6 cm deep on a slab, 1.4 m square with 8 mm joints, as the Medieval Sculpture Hall's (src/model/core/medieval-hall.ts `hallFloor`):
+ * columns X −2.8..0 and 0..2.8 either side of a joint on X 0, rows from Z −7 to 7, then a channel 1.2 m wide with no tiles, X 2.8..4.0, wider than the body.
+ */
+const JOINT = 0.008;
+const slab = step('slab', (kit) => { block(kit, [-20, -0.26, -20], [20, -0.06, 20]); });
+const tiles = step('tiles', (kit) => {
+  for (const x of [-2.8, -1.4, 0, 1.4, 4]) for (let z = -7; z < 7 - 1e-9; z += 1.4) block(kit, [x + JOINT / 2, -0.06, z + JOINT / 2], [x + 1.4 - JOINT / 2, 0, z + 1.4 - JOINT / 2]);
+});
+const W = { forward: 1, right: 0, run: false } as const;
+
+/** Walks `seconds` forward at 60 frames a second; returns the lowest and highest the feet stood. */
+function along(walker: Walker, seconds: number): [number, number] {
+  let [low, high] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+  for (let i = 0; i < Math.round(seconds * 60); i += 1) {
+    walker.update(1 / 60, W);
+    [low, high] = [Math.min(low, walker.feet.y), Math.max(high, walker.feet.y)];
+  }
+  return [low, high];
+}
+
+describe("a floor's joint under the walker's centre (work unit 13, F-owner-8)", () => {
+  // Yaw π faces +Z, along the joint on X 0.
+  const ALONG = Math.PI;
+
+  it('sets the walker down on the tiles either side of the joint, not on the slab 6 cm down in it, and walks it along the joint on the tiles', () => {
+    const { walker } = site([slab, tiles], 2);
+    for (const [x, z, what] of [[0, -6.3, 'on the joint'], [0, -5.6, 'where two joints cross'], [0.2, -6.3, 'on a tile']] as const) {
+      walker.place(x, 0, z, ALONG);
+      expect(walker.feet.y, `set down ${what} at X ${String(x)}, Z ${String(z)}`).toBeCloseTo(0, 6);
+    }
+    walker.place(0, 0, -6.3, ALONG);
+    const [low, high] = along(walker, 5);
+    expect(walker.feet.z, 'walked 9 m or more along the joint').toBeGreaterThan(2.7);
+    expect([low, high], 'on the tiles all the way, over the joints across it').toEqual([expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+  });
+
+  it('lifts a walker that stood on the slab onto the tiles laid round it on their joint, and one the whole floor is built over', () => {
+    const laid = site([slab, tiles], 1);
+    laid.walker.place(0, -0.06, -6.3, ALONG);
+    expect(laid.walker.feet.y, 'on the slab before the tiles').toBeCloseTo(-0.06, 6);
+    expect(laid.to(2), 'the tiles laid round it').toBe('moved');
+    expect(laid.walker.feet.y, 'on the tiles').toBeCloseTo(0, 6);
+    expect(along(laid.walker, 2), 'and on them walking along the joint').toEqual([expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+    const built = site([slab, tiles], 0);
+    built.walker.place(0, 0, -6.3, ALONG);
+    expect(built.walker.feet.y, 'on the workspace ground').toBe(FLOOR_Y);
+    expect(built.to(2), 'the floor built over it').toBe('moved');
+    expect(built.walker.feet.y, 'on the tiles').toBeCloseTo(0, 6);
+  });
+
+  it('still drops a walker into a channel wider than its body, set down, settled or walking, as soon as its centre passes the edge', () => {
+    const { walker, to } = site([slab, tiles], 1);
+    walker.place(3.4, -0.06, -6.3, ALONG);
+    expect(to(2), 'the tiles laid either side of the 1.2 m channel').toBe('kept');
+    expect(walker.feet.y, 'on the slab in the channel').toBeCloseTo(-0.06, 6);
+    for (const x of [3.4, 2.9]) {
+      walker.place(x, 0, -6.3, ALONG);
+      expect(walker.feet.y, `set down in the channel at X ${String(x)}, its centre 0.1 m or more past its edge at X 2.796`).toBeCloseTo(-0.06, 6);
+    }
+    // Yaw −π/2 faces +X: east off the tiles into the channel.
+    walker.place(2.4, 0, -6.3, -Math.PI / 2);
+    for (let i = 0; i < 120 && walker.feet.x < 3.3; i += 1) walker.update(1 / 60, W);
+    expect([walker.feet.x, walker.feet.y], 'walked into the channel, 0.5 m past its edge').toEqual([expect.closeTo(3.3, 1), expect.closeTo(-0.06, 6)]);
   });
 });
