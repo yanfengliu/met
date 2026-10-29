@@ -35,6 +35,8 @@ export interface GridOptions {
   flat?: boolean;
   /** Reverse the winding (the grid's front is the other side). */
   flip?: boolean;
+  /** Split each quad along the diagonal that folds it least, not always along one: a strongly curved patch then folds no quad through itself. Flat grids too. */
+  flattest?: boolean;
 }
 
 export class MeshBuilder {
@@ -135,11 +137,25 @@ export class MeshBuilder {
       if (p === undefined) throw new Error(`MeshBuilder.grid: row ${String(j)} is shorter than row 0 (${String(nu)} points); every row needs the same count.`);
       return p;
     };
+    // Each quad's diagonal: from its first corner to its third, or from its second to its fourth where `flattest` finds that folds it less.
+    const across = (i: number, j: number): boolean => {
+      if (options.flattest !== true) return false;
+      const [a, b, c, d] = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];
+      const bend = (p: THREE.Vector3, q: THREE.Vector3, r: THREE.Vector3, s: THREE.Vector3, t: THREE.Vector3, u: THREE.Vector3): number => {
+        const m = new THREE.Vector3().subVectors(q, p).cross(new THREE.Vector3().subVectors(r, p));
+        const n = new THREE.Vector3().subVectors(t, s).cross(new THREE.Vector3().subVectors(u, s));
+        return m.dot(n) / Math.max(1e-30, m.length() * n.length());
+      };
+      return bend(b, c, d, b, d, a) > bend(a, b, c, a, c, d);
+    };
     if (options.flat === true) {
       for (let j = 0; j < nv - 1; j++) {
         for (let i = 0; i < cells; i++) {
-          const quad = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];
-          this.polygon(flip ? quad.reverse() : quad);
+          const [a, b, c, d] = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];
+          // A polygon fans from its first corner, so it splits along the diagonal from there; flipped, a quad has always split from b to d.
+          if (options.flattest !== true) this.polygon(flip ? [d, c, b, a] : [a, b, c, d]);
+          else if (across(i, j)) this.polygon(flip ? [d, c, b, a] : [b, c, d, a]);
+          else this.polygon(flip ? [c, b, a, d] : [a, b, c, d]);
         }
       }
       return;
@@ -160,18 +176,25 @@ export class MeshBuilder {
         sums[k + 2] = (sums[k + 2] ?? 0) + scratchA.z;
       }
     };
+    const splits: boolean[] = [];
     for (let j = 0; j < nv - 1; j++) {
       for (let i = 0; i < cells; i++) {
-        addFace([
+        const bd = across(i, j);
+        splits.push(bd);
+        const corners: [number, number][] = [
           [i, j],
           [i + 1, j],
           [i + 1, j + 1],
-        ]);
-        addFace([
-          [i, j],
-          [i + 1, j + 1],
           [i, j + 1],
-        ]);
+        ];
+        const [p, q, r, t] = corners as [[number, number], [number, number], [number, number], [number, number]];
+        if (bd) {
+          addFace([p, q, t]);
+          addFace([q, r, t]);
+        } else {
+          addFace([p, q, r]);
+          addFace([p, r, t]);
+        }
       }
     }
     const base = this.vertexCount;
@@ -193,7 +216,9 @@ export class MeshBuilder {
         const b = base + j * nu + i1;
         const c = base + (j + 1) * nu + i1;
         const d = base + (j + 1) * nu + i;
-        if (flip) this.quad(a, d, c, b);
+        // Split from b to d: (a, b, d) and (b, c, d), wound the other way when flipped.
+        if (splits[j * cells + i] === true) this.indices.push(...(flip ? [a, d, b, d, c, b] : [a, b, d, b, c, d]));
+        else if (flip) this.quad(a, d, c, b);
         else this.quad(a, b, c, d);
       }
     }

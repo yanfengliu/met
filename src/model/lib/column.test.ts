@@ -2,10 +2,12 @@
  * Columns, pilasters and their pieces: sound attributes, outward winding, bounds that match the parameters, cache identity and triangle budgets.
  * Bound: checks geometry arrays only; whether a capital reads as Corinthian is judged on the gallery captures against photographs.
  */
+import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { attributeProblems, boxOf, boxProblems, centredProblems, invertedFraction, triangles } from './check.js';
 import { atticBase, column, columnParts, pedestal, shaft } from './column.js';
+import { inwardAlong } from './facing.js';
 import { pilaster, pilasterParts } from './pilaster.js';
 
 /** The Met's facade columns at street distance: the brief caps a Corinthian column with capital at about 12,000 triangles. */
@@ -117,5 +119,14 @@ describe('pilaster', () => {
     }
     expect(pilasterParts({ width: 1 })).toBe(parts);
     expect(pilaster({ width: 1, order: 'ionic' })).not.toBe(pilaster({ width: 1 }));
+  });
+});
+
+describe('Corinthian capitals', () => {
+  // The acanthus tips curl down past level, and split along one diagonal a tip's edge folded through itself: at medium detail, 29 lines here through the round capital and 40 through the flat one.
+  it.each(['low', 'medium', 'high'] as const)('fold nowhere at %s detail, round and flat: no line along vertical crosses a pocket wound inside out', (detail) => {
+    for (const capital of [columnParts({ order: 'corinthian', detail }).capital, pilasterParts({ order: 'corinthian', width: 1, detail }).capital]) {
+      expect(inwardAlong(capital, new Vector3(0, 1, 0), 240)).toEqual({ lines: 0, worst: 0, at: null });
+    }
   });
 });

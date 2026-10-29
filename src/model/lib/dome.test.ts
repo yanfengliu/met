@@ -2,11 +2,13 @@
  * Domes, drums, pendentives and barrel vaults.
  * Bound: geometry arrays only; whether a saucer dome reads like the Great Hall's is judged on captures.
  */
+import { Vector3 } from 'three';
 import type * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { attributeProblems, backfaceFraction, boxOf, boxProblems, centredProblems, invertedFraction, triangles } from './check.js';
 import { barrelVault, dome, drum, pendentives } from './dome.js';
+import { inwardAlong } from './facing.js';
 
 /** A 14 m saucer dome at medium detail: smooth enough at interior distances without dominating a step's budget. */
 const DOME_BUDGET = 6_000;
@@ -95,5 +97,27 @@ describe('barrel vault', () => {
       expect(triangles(geometry)).toBeLessThanOrEqual(VAULT_BUDGET);
     }
     expect(() => barrelVault({ span: 4, length: 3, rise: 3 })).toThrow(/more than half the span/);
+  });
+
+  it("refuses coffers whose floors or openings would stand out of the shell as pockets wound inside out, naming numbers that pass (review 0, F16; review 1)", () => {
+    // The Hunt arches' soffit, 8.14 m across: its 0.1 m coffers in the 0.06 m shell it had stood 4 cm out of it.
+    const hunt = { span: 8.14, length: 0.8, coffers: { across: 11, along: 1, depth: 0.1, rib: 0.16 } };
+    expect(() => barrelVault({ ...hunt, thickness: 0.06 })).toThrow(
+      /^barrelVault: thickness 0\.06 m lets the coffers' floors stand out of the shell's outer face, which runs along the chords of its facets, as pockets wound inside out \(coffers\.depth 0\.1 m, coffers\.rib 0\.16 m\); make thickness at least 0\.1074 m or coffers\.depth at most 0\.0527 m\.$/,
+    );
+    // A shell as thick as its coffers are deep is refused too, its facets' chords dipping toward the floors' corners; the numbers named both pass.
+    expect(() => barrelVault({ ...hunt, thickness: 0.1 })).toThrow(/thickness at least 0\.1074 m/);
+    // Each holds its coffers, read on lines along vertical apart from the refusal (review 2).
+    for (const held of [barrelVault({ ...hunt, thickness: 0.1074 }), barrelVault({ ...hunt, thickness: 0.06, coffers: { ...hunt.coffers, depth: 0.0527 } })]) {
+      expect(inwardAlong(held, new Vector3(0, 1, 0), 160)).toEqual({ lines: 0, worst: 0, at: null });
+    }
+    expect(inwardAlong(barrelVault({ ...hunt, thickness: 0.14 }), new Vector3(0, 1, 0), 160)).toEqual({ lines: 0, worst: 0, at: null });
+    // Coffers whose floors' corners clear the facets above them by 18 mm build, though a corner under a facet's middle would not.
+    const fits = barrelVault({ span: 4, length: 3, thickness: 0.1, detail: 'low', coffers: { across: 2, along: 1, depth: 0.08, rib: 0.01 } });
+    expect(inwardAlong(fits, new Vector3(0, 1, 0), 200)).toEqual({ lines: 0, worst: 0, at: null });
+    // Openings standing out of a shell thinner than its facets' sag (review 1): no depth helps, so the thickness alone is named.
+    expect(() => barrelVault({ span: 4, length: 3, thickness: 0.03, detail: 'low', coffers: { across: 2, along: 1, depth: 0.001, rib: 0.8 } })).toThrow(
+      /^barrelVault: thickness 0\.03 m lets the coffers' openings stand out .* make thickness at least 0\.0392 m\.$/,
+    );
   });
 });

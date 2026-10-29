@@ -30,6 +30,10 @@
       "theme": "closed-solids"
     },
     {
+      "id": 7,
+      "theme": "faces-out"
+    },
+    {
       "id": 8,
       "theme": "vaux-voussoirs"
     }
