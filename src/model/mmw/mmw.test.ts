@@ -6,6 +6,7 @@
  * faces (the fronts' runs in facade-layout.ts); walls never. The pieces the rule covers are those buildFrontCornices and buildFrontOrders add (cornices, entablature,
  * water table, cresting, and the pilasters' moulded bases and capitals), collected below by geometry.
  * Budget (coordinator): at most 500,000 triangles counting instances, 160 instanced meshes and 1 step light over all four exports.
+ * `extrudeOutline` (./facade-parts.ts) extrudes an outline both ways round, as the armour court gables' clockwise one is (src/model/closure.test.ts).
  * Bound: geometry is built in Node without WebGL; the check is on vertex positions, so a face between two in-bounds vertices is not checked separately.
  */
 import { Box3, Matrix4, Vector3 } from 'three';

@@ -1,9 +1,10 @@
 /**
  * Page layout at 1280x720 and 390x844, on the default page and with the build replay open, by the Build menu and by a query (docs/design/spec.md, Page:
- * Build replay): every control the spec requires in that state is on the page once and visible (checked by data-testid before any geometry, so a hidden
- * control fails rather than drops out), inside the viewport, unclipped and clear of every other control, with each menu open and closed, and on the
- * default page every timeline control and the follow-camera toggle are out of view; open panels stay above the timeline bar, whole or the Walk toggle's
- * strip, and each of their controls can be scrolled into them. Also the build-time budget (docs/design/spec.md, Budgets: all geometry in under 4 s).
+ * Build replay): every control the spec requires in that state, the floor picker among them, is on the page once and visible (checked by data-testid
+ * before any geometry, so a hidden control fails rather than drops out), inside the viewport, unclipped and clear of every other control, with each
+ * menu open and closed, and on the default page every timeline control and the follow-camera toggle are out of view; open panels stay above the
+ * timeline bar, whole or the Walk toggle's strip, and each of their controls can be scrolled into them. Also the build-time budget
+ * (docs/design/spec.md, Budgets: all geometry in under 4 s).
  * Bound: boxes are compared as rectangles from layout, so a control hidden under a translucent sibling with no overlap of boxes is not caught.
  * Bound of the build budget: it times the whole interval from navigation start to `window.__shotReady` (perf.readyMs) on the Vite dev server in
  * headless Chrome on this machine, so it covers loading the modules (with every geometry they build on import), the timeline build, starting the

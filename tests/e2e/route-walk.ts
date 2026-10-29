@@ -5,6 +5,8 @@
  * one; drags turn the walker. The doors on the way (docs/design/spec.md, Doors) are read from the read-only `window.__met.doors` and used by E, as a
  * visitor uses them. A leg lets go where the walker, going on for the release lag a key takes to reach the page under load, ends at its end (./route-keys.ts),
  * and at a corner it walks onto the corner until it rests within 0.25 m of it along the axis it stops on, or fails. See routes.spec.ts for the bounds.
+ * Each walk checks the eye's level through every doorway, passage, seam wall and landing, on the forecourt and in the pool, and that the walker never
+ * leaves the ground.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';

@@ -1,6 +1,10 @@
 # Gate proofs
 
-The record that each gate which retired a lesson of [lessons.md](lessons.md) was made to go red by reintroducing the defect it claims to prevent. Each such entry names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back. Since 2026-10-29 the file also holds the red proofs of gates whose AGENTS.md line is kept to one short line, by the coordinator's direction of that day; those entries name the gate, the mutations and the failures, and retire no lesson.
+The record that each gate was made to go red by reintroducing the defect it claims to prevent, or by planting a fault it must catch. A gate whose test header lists its red proofs keeps them there; this file holds the rest.
+
+The first entries are the gates that retired a lesson of [lessons.md](lessons.md). Each names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
+
+Under [Red proofs by gate](#red-proofs-by-gate), each gate's other red proofs are filed under its test. Most came from AGENTS.md's Gates section, where each work unit wrote them until work unit 12 moved them here; a gate's new red proofs go there too, or in its test's header. Each names the mutation, and the failure and the commit it was red at where the record gives them. Their review rounds and finding IDs (review 17, F46) are work unit 2's, in `docs/work/2_doors-and-collection/reviews/`.
 
 ## A cited reference photograph must be recorded as viewed
 
@@ -38,19 +42,96 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 
 **Evidence:** `git show db1e297:docs/learning/lessons-evidence.md` reads the lesson's evidence back, and `git show db1e297:docs/learning/lessons.md` its line.
 
-## The walking screen is read after the frame that applies it
+## Red proofs by gate
 
-**Gate:** `tests/e2e/walk-screen.spec.ts` reads each state of the walking screen once the page's next frame has applied it, which the Timeline button's `aria-expanded` and the Walk toggle's `aria-pressed` report (and, since work unit 11, the Build replay item's `aria-checked`).
+### `src/repo-conventions.test.ts`
 
-**Proved red (at `acc0e0a`; moved here from AGENTS.md by work unit 11):** with the page's animation frames held 60 ms by a timer, the fold read failed in 5 of 6 runs and the leave read in 1. With the waits, it was still red when the bar never folded again or the orbit view's bar stayed folded. These runs predate the Build replay item. Its `aria-checked` read goes red on a wrong state (work unit 11's entry below: the item checked before it is chosen, or the bar never showing), but no run with delayed frames covers its wait, and the `toBeVisible` wait on the Play button after it would likely hold such a run green.
+- AGENTS.md within 30,000 bytes (work unit 12, 2026-10-29): with `8a6a0c2`'s AGENTS.md put back, the last before work unit 12, red: "AGENTS.md holds 69357 bytes with CRLF line endings, 39357 over the 30000-byte bound, and Codex reads only its first 32 KiB: …" (69,223 bytes with LF endings, 134 lines); with work unit 12's, green. Its detector test passes 30,000 bytes of synthetic text and fails 30,001, read with LF endings or CRLF.
 
-## The timeline shows only in the build replay
+### `tests/e2e/walk-screen.spec.ts`
 
-**Gate:** `tests/e2e/replay.spec.ts` (work unit 11), with the replay's checks in `controls`, `layout`, `menus`, `walk-screen`, `walk-build`, `labels` and `camera`, and the unit tests `src/viewer/query.test.ts` (the replay at load and the `replay=0` warning) and `src/ui/timeline-bar.test.ts` (the bar's shape). It covers the default page with no timeline, the Build menu's Build replay item, the bar's close button, the timeline keys, the queries that open the replay, and the framing either way.
+- Each state read once the page's next frame has applied it: red at `acc0e0a` with the page's animation frames held 60 ms by a timer: the fold read failed in 5 of 6 runs, the leave read in 1; with the waits, still red when the bar never folds again or the orbit view's bar stays folded.
+- The Build replay item's `aria-checked` read (work unit 11), which `acc0e0a`'s runs predate: red on a wrong state, with the replay open from load or the bar left folded (`tests/e2e/replay.spec.ts` below). No run with delayed frames covers its wait, and the `toBeVisible` wait on the Play button after it would likely hold such a run green.
 
-**Proved red (2026-10-29):** each mutation was made on the work after review 0's repairs and undone (`tmp/red-proofs.sh`, ignored). Each run took the tests named, at both sizes where they run at both.
+### `tests/e2e/stairs.spec.ts`
 
-- The old default put back, the replay open from load (`let replay = start.replay || true`): 24 of 28 tests red. `controls`' first load and autoplay tests, `layout`'s default page and Build menu tests, `menus`' Build menu test, all four `replay.spec` tests, both `walk-screen` tests, `walk-build`'s first test and `labels`' walking test all fail at the first check that reads the closed replay ("the build replay at load", or the Build replay item checked before it is chosen). Green, as they should be: `layout`'s two tests of the replay that `t=` opens, which open it under either default, the build budget and the follow camera during autoplay.
+- The rendered eye on a flight, never dropping climbing nor rising descending, and drawn from the walker's eye: red with the eye of `db4cc47`: drops of 6.5 to 14.4 cm climbing, rises of 5.9 to 13.3 cm descending; red with a dip added in `setWalkView`, which left `walk.eye` alone: frames drawn 3.1 cm from the eye.
+- The eye at rest on the plaza, 1.6 m over the surface under it: red with the published eye 3 cm high on the plaza, which the spawn-height check it replaced passed; with the key held 0.4 s past its stop that old check read 3.15 cm out and this one stayed green.
+
+### `src/model/hunt/routes.test.ts`
+
+- R5 through the cross hall's doorway into gallery 600: red with the doorway walled up: stalled at the back wall, 6.06 m short.
+- R7 from gallery 153 through its south wall's door: red with R7 led through gallery 153's south wall: stalled at it, 44.48 m short.
+
+### `tests/e2e/routes.spec.ts`
+
+- Every corner rested on within 0.25 m along its stopping axis: red with the walk of `795956f` under a 300 ms delay planted before each key goes up: it rested 0.62 m past its corner in the entrance bay, the open leaf 2.13 m off, out of reach.
+- R1 at the closed central door, its prompt "E Open" at every frame from 1.9 m out: red at `0defda0`, final review F46: in 69 of 150 frames none, the eye's ray passing between the pair's leaves.
+- The walker held a body's radius before the closed central door's leaves: red when the leaves never stop it: it walked on to Z −14.2.
+- The central door opened by E and walked through: red when the collision stays closed while the leaves swing: stuck in the doorway.
+- The central door still shut when R1 comes back to it: review 20, F54: red with it planted to swing open by itself toward the plaza, found open at −90°.
+- The card and the door prompt never both shown at a frame drawn, the check `labels-doors.spec` held until this walk took it over (review 7, F30): red with the prompt left showing once a door has shown it: 243 frames with both.
+- R3 back through the pool's north arm, resting on its floor: red with the 0.6 m pool: stuck in it, 1.71 m short.
+- Weston's door, closed and solid, holding the walker before its leaves: red with its leaves out of the door world: it ran 12.6 m on into wing B.
+- An approached artwork's card never shown with the eye more than the spec's 6 m from it: red with the page's reach at 8 m: first shown 7.99 m off.
+- The walk toward an artwork and the turn away keeping the walker on the ground: review 20, F55: red with a hop planted on the way to Ruth Gleaning, 81 frames off the ground, which the next walk used to drop unread.
+
+### `src/model/roche-north/walk.test.ts`
+
+- No trap at Dendur, from every start 2 m apart over the pool's water: red with the 0.6 m pool: 89 starts trapped.
+- On the gate's axis from the terrace the walker stops at the rail, and from the forecourt it walks into the passage on the forecourt's level and back: red with the passage unfilled and no rail: it walks into the passage from the terrace and drops off the forecourt's level.
+
+### `tests/e2e/zoom.spec.ts`
+
+- Every wheel notch within 1 cm of the ray under the pointer, until it stops 0.5 m before the first surface there or at the camera floor: a picker returning the camera-to-target distance, a ray biased 1.5 mrad, or a zoom without the camera floor as a bound turns it red.
+- On the camera floor, looking down from the far bound a notch out still moves, and looking up a notch out stays on the floor while a notch in moves: both red with the zoom of `8a5f651`.
+- Under a footing on the floor, a right-drag that pans the camera under the floor and a wheel notch sent at once leave the view as it was: red at `29c93d3`: turned 7.0°.
+
+### `tests/e2e/network.spec.ts`
+
+- No request but to the page's own host: red with a planted fetch of a Collection API record.
+
+### `tests/e2e/labels-view.spec.ts`
+
+- A 2 px click on the painting shows its card and moves nothing, the preset staying in view and the follow camera on: red at `86bdf0c`, where the camera moved 0.514 m (review 6, F25).
+
+### `tests/e2e/doors.spec.ts`
+
+- `doors=open` and `doors=closed` under `shot=1`, the doors set before the walker is placed and both before the first frame drawn: red with the set-up moved after the placement, after the first frame, marked at load but done after the first frame, or done after the first render in the same callback, which the probe of `7b7fe94`, reading the doors' state at the callback's end, passed.
+- The slowest frame of each swing under 16.7 ms of work: the walked cycles red at 147.8 ms with 12 ms planted in each swing check while walking; red with 40 µs of work planted for each object drawn on a swing's frames: 30.3 ms facing in, which the gate of `d4d716d`, facing out only, passed at 11.5 ms.
+
+### `src/build/window-parts.test.ts`
+
+- Every role of a door, each leaf apart among them, placed with the rest: red with a leaf left out of the closed leaves.
+
+### `src/walk/door-world.test.ts`
+
+- A closing door held by a walker between its leaves, turned back open on the side it stands: review 15, F43, red at `7b054d7`: held at ±66.4°, "opening", into the walker.
+- The leaves against the walker, through stalled frames of 0.25 s and 2 s: red with only each step's end pose tried, with no hold, with the leaves out of the walls, and with the swing moved once a frame: held at 90° after the stalls against 66.4°.
+
+### `src/walk/door-settle.test.ts`
+
+- A door's step completing with the walker in its doorway opens the door away at once, the walker's feet on the floor and no leaf in it: red with no release after the check: shut on it; and with the leaves in the static world: moved 25 cm by `settle`.
+
+### `src/viewer/doors.test.ts`
+
+- The timeline's state byte for byte a timeline's without the door layer, the layer hiding by layer masks only: red when it hides by `visible`.
+- A door's piece that the step's resting pieces leave out, a locked door's included, refused naming the door and the piece: red with the silent skip of `0defda0` (review 17, F47).
+
+### `src/viewer/pick.test.ts` and `src/walk/look.test.ts`
+
+- A tagged glass piece found when accepted and stopping the ray when not, as a glazed door out of reach does: red at `a9f6f5a`, which passed a glass door out of reach; in the look target, the glass door red at `a9f6f5a` too.
+
+### `src/model/lib/dome.test.ts`
+
+- The Great Hall pendentives' seams, read at every detail: red with the spandrels on their old points, apart from the curved faces', with 48, 96 and 160 edges borne by an odd number of faces.
+- `barrelVault` refusing coffers whose openings' or floors' corners would stand out of the chords of its outer face's facets above them: red with the refusal off, with one share for every corner, or with the openings unread.
+
+### `tests/e2e/replay.spec.ts`
+
+The build replay (work unit 11, 2026-10-29), with its checks in `controls`, `layout`, `menus`, `walk-screen`, `walk-build`, `labels` and `camera`: each mutation made on the work after review 0's repairs and undone (`tmp/red-proofs.sh`, ignored), each run over the tests named, at both sizes where they run at both.
+
+- The old default put back, the replay open from load (`let replay = start.replay || true`): 24 of 28 tests red. `controls`' first load and autoplay tests, `layout`'s default page and Build menu tests, `menus`' Build menu test, all four `replay.spec` tests, both `walk-screen` tests, `walk-build`'s first test and `labels`' walking test fail at the first check that reads the closed replay ("the build replay at load", or the Build replay item checked before it is chosen). Green, as they should be: `layout`'s two tests of the replay that `t=` opens, which open it under either default, the build budget and the follow camera during autoplay.
 - Closing the replay leaves t where it was: 3 of 3 red, `replay.spec`'s first test at both sizes ("replay, t and mode once closed while playing") and `walk-build`'s first.
 - Nothing fitted again when the view changes shape: 3 of 5 red, `replay.spec`'s preset and floor tests at 390×844 and `camera.spec`'s resize test (corners at 2.41 of the view). At 1280×720 the preset's and the floor's fits are limited by the view's height, so they stand where they stood, and those two tests stay green.
 - A timeline key or a chapter that does not open the replay: 3 of 3 red, `replay.spec`'s key test at both sizes and `menus`' Build menu test ("the replay after choosing koch-plaza-2014").
@@ -58,7 +139,8 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 - The follow-camera toggle shown with the replay closed: 4 of 6 red, `layout`'s and `replay.spec`'s default-page tests at both sizes. The key tests, which do not read the toggle, stay green.
 - The default page framed above a bar it does not show: 2 of 2 red ("the default page frames the whole canvas": aspect 1.92 for 1.78 at 1280×720).
 - The close button keeping keyboard focus as the bar hides it (review 0, F0): 2 of 2 red ("focus after the close button, by the keyboard").
-- The `replay=0` warning naming only the parameter that set the position, round 1's defect: `query.test.ts`'s warning test red, at `?replay=0&step=2&t=1`.
-- The bar's shape ignoring a closed replay: `timeline-bar.test.ts`'s first test red ("walking false, unfolded false: expected 'whole' to be 'strip'").
 
-With the work as committed, every one of these tests passes.
+### `src/viewer/query.test.ts` and `src/ui/timeline-bar.test.ts`
+
+- The `replay=0` warning naming only the parameter that set the position, round 1's defect of work unit 11: the warning test red, at `?replay=0&step=2&t=1`.
+- The bar's shape ignoring a closed replay: `timeline-bar.test.ts`'s first test red ("walking false, unfolded false: expected 'whole' to be 'strip'").

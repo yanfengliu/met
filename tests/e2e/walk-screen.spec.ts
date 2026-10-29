@@ -2,17 +2,18 @@
  * The screen while walking (docs/design/spec.md, Walk mode: The screen; Page: Build replay), through real input at 1280×720 and 390×844, with the build
  * replay closed and open:
  * - closed, as the page opens: entering by the Walk toggle shows the view whole, a crosshair at its centre (where the projection is centred: the
- *   camera's aspect is the whole canvas's), the Build and View buttons and at the bottom right the Walk toggle alone; the timeline and the floor picker
- *   are hidden; the status line's hint shows until the walker first walks; the Build menu's Build replay opens the replay with the whole bar, whose
- *   controls then work and step the build while walking, the view still the whole canvas; its Timeline button folds it and unfolds it; its close button
- *   closes the replay at the finished building, the Walk toggle alone again; the Walk toggle leaves, giving the orbit view no timeline and no
- *   crosshair; F enters again, the Walk toggle alone;
+ *   camera's aspect is the whole canvas's), the Build and View buttons and at the bottom right the Walk toggle alone; the label, scrubber, transport,
+ *   speeds and floor picker are hidden; the status line's hint shows until the walker first walks; the Build menu's Build replay opens the replay with
+ *   the whole bar, whose controls then work and step the build while walking, the view still the whole canvas; its Timeline button folds it and
+ *   unfolds it; its close button closes the replay at the finished building, the Walk toggle alone again; the Walk toggle leaves, giving the orbit view
+ *   no timeline and no crosshair; F enters again, the Walk toggle alone;
  * - open, by the Build menu in the orbit view: entering by the Walk toggle shows only the Timeline and Walk buttons at the bottom right; Timeline brings
  *   the whole bar back, whose controls work while walking, and folds it again; the Walk toggle leaves, giving the orbit view its whole bar and no
  *   crosshair; F enters again with the bar folded.
  * Every control in view is inside the viewport, unclipped and apart from the others and from the crosshair, in each state.
- * A click takes effect on the page's next frame (src/main.ts `frame`), so a read of the screen after one waits for the attribute that frame sets: the
- * Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed`, the Build replay item's `aria-checked`.
+ * A click takes effect on the page's next frame (src/main.ts `frame`), so each state is read once the page's next frame has applied it, waiting for
+ * the attribute that frame sets, which reports it: the Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed`, the Build replay item's
+ * `aria-checked`.
  * Bound: pointer lock is not available headless, so Esc and the locked look are not driven here; walk.spec drives the drag and the click.
  */
 import { expect, test } from '@playwright/test';

@@ -1,8 +1,8 @@
 /**
  * The look target's one hook (src/walk/walk-mode.ts, `onLookTarget`), on walk mode over a stand-in page: a canvas, a document and a camera rig as far
  * as walk mode reads them, no WebGL, and a scripted hit query. A listener hears the target when its kind or id changes as walking frames find it,
- * not when only its distance does and not on a fresh read; it hears null when walk mode is left, and nothing once it stops listening. A read of the walk
- * facts finds the target afresh and writes nothing, the last frame's target standing until the next frame (review 17, F45).
+ * not when only its distance does and not on a fresh read; it hears null on leaving walk mode, and nothing once it has stopped listening. A read of
+ * the walk facts finds the target afresh and writes nothing, the last frame's target standing until the next frame (review 17, F45).
  * Bound: what the eye meets is scripted, not cast (src/walk/look.test.ts casts it); the walk itself is the walker's (src/walk/walker.test.ts).
  */
 import { BoxGeometry, InstancedMesh, MeshBasicMaterial, PerspectiveCamera } from 'three';

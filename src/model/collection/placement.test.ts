@@ -7,7 +7,8 @@
  * - it stands at t = N: its step is complete, every mesh of it drawn in full, every drawn instance one piece, and the pieces those the placements give;
  * - a standing artwork's floor, under its footprint's middle and corners, is the level its placement names, within 12 mm (no float, no sinking);
  * - a hung one has a wall behind its back, within 4 cm, at its middle and corners;
- * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides, a sheet having none: `meets`);
+ * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides, a sheet having none:
+ *   `meets`, which reads no inside in a sheet, on a fixture too);
  * - it is 1 m clear of the walking routes R1–R7 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court, R7 into the Petrie Court) beyond the walker's
  *   radius, of the Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into
  *   gallery 600 (hunt/stair.ts), of the Dendur gate's threshold and rail (roche-north/plan.ts), of the Dendur pool, and of the passages into the
@@ -15,6 +16,11 @@
  *   their wall or screen, beyond the walker's radius;
  * - each drawn object finds its own artwork in its material's table (material.ts): its entry is where the object stands, every other 5 cm or more away;
  * - the placeholders take at most 110 meshes and 600,000 triangles of the model's budgets.
+ * R6 runs from the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court, and
+ * R7 through Exhibition Gallery 199 and the corridor from it into the Petrie Court; src/model/hunt/routes.test.ts and tests/e2e/routes.spec.ts walk
+ * both of them both ways, and the collection keeps 1 m clear of them and of both passages. Red with a figure on a column, a statue on R4, a sculpture
+ * in the Weston passage, a statue 3 m before the choir screen's gate, a painting 10 cm off its wall, a floor 5 cm out, or every artwork piece lifted
+ * 10 cm as its step gives it to `kit.addTagged`, which turns the binding, the floor and the solid checks red.
  * Bound: lines 0.1 m apart miss a solid thinner than that between them; a footprint is its pieces' boxes, not their curves; routes and door swings are
  * plan shapes on their floor, compared with artworks within 1 m of that floor.
  */

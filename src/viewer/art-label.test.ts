@@ -1,11 +1,12 @@
 /**
- * Which artwork's card shows (src/viewer/art-label.ts; docs/design/spec.md, Collection: Labels), on fixture steps built by the real timeline and found
- * by the page's hit query (src/viewer/pick.ts) and look target (src/walk/look.ts):
+ * Which artwork's card shows, the show and hide rules (src/viewer/art-label.ts; docs/design/spec.md, Collection: Labels), on fixture steps built by
+ * the real timeline and found by the page's hit query (src/viewer/pick.ts) and look target (src/walk/look.ts):
  * - the orbit view's click query finds an artwork through untagged glass and its own vitrine glass, at any distance, and never through a wall or a door;
- * - a click on an artwork shows its card, a click on anything else hides it, and so do Esc and a camera preset (`dismiss`, review 6, F26);
- * - it hides once the camera draws none of the artwork's pieces: the build takes them away (at t = 0, or before its own instance arrives; a later t does
- *   not bring it back), the section cut, a floor view's included, lies under every piece, or they are on no layer the camera draws; a cut through the
- *   object, or through its plinth alone, keeps it, as the picker still meets the artwork there (F27);
+ * - a click on an artwork shows its card, a click on anything else hides it, and so do Esc and a camera preset (their dismissal, `dismiss`, review 6,
+ *   F26);
+ * - it hides once none of the artwork's pieces is drawn by the camera: the build takes them away (at t = 0, or before its own instance arrives; a
+ *   later t does not bring it back), the section cut, a floor view's included, lies under every piece, or they are on no layer the camera draws; a
+ *   cut through the object, or through its plinth alone, keeps it, as the picker still meets the artwork there (F27);
  * - walking, the card is the look target's artwork, none for a door or nothing, clicks and Esc change nothing, and leaving walk mode hides the card,
  *   while entering it replaces an orbit click's card with the look target's.
  * Bound: boxes on a straight ray down −Z from an eye 1.6 m up; the click's own input is src/viewer/click.test.ts's, the page's wiring the browser's.

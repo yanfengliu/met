@@ -3,6 +3,8 @@
  * while the orbit controls are still coasting from a drag, or in walk mode, which it leaves first; the follow camera stays on through a press without movement and goes off with a drag;
  * a fit preset is fitted again when the window changes shape; an unknown view= starts the page as no view would.
  * Facts come from `window.__met`; presets are named only where the query needs one.
+ * Also: walking again and leaving keeps the camera at the eye through a resize; during playback the follow camera's position, target and fov close on
+ * each step's framing; and a nested write to `window.__met` cannot reach the follow camera.
  * Bound: cameras are compared by position and target within 1 mm, read from `window.__met.camera`; "in frame" projects the model's bounding box with
  * that camera's fov and aspect in Node; what the canvas shows is not checked here.
  */

@@ -1,7 +1,10 @@
 /**
- * The catalogue script, offline (docs/research/collection.md): its rules against committed records of The Met's Collection API (scripts/fixtures/met-api/,
- * CC0 metadata as the API returned it on 2026-10-25) with expected values worked out by hand from each record, its colour statistics on synthetic bins,
- * the fetcher's pace, cache and stop on a block with a fake clock and network, and the run's all-or-nothing write with recorders in place of the disk.
+ * The catalogue script, offline (docs/research/collection.md): its rules on eleven committed records of The Met's Collection API
+ * (scripts/fixtures/met-api/, CC0 metadata as the API returned it on 2026-10-25) against values worked out by hand from each record (superseded
+ * measurements left out and confirmed ones preferred, the dimensions text filling only the axes the measurements lack), its colour rule on the bins
+ * of synthetic images, the fetcher's pace, cache and stop after one request on any 403 or 429 whatever its Retry-After holds, read as seconds or an
+ * HTTP-date (an RFC 850 year by the rolling 50 years), with a fake clock and network, and the run's all-or-nothing write with recorders in place of
+ * the disk.
  * Bound: no network and no browser; the decoding of real images in Chrome (scripts/met-catalogue.ts, `sample`) is not run here.
  */
 import { readFileSync } from 'node:fs';

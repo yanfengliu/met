@@ -5,6 +5,7 @@
  * 4 m west of the screen the walker walks east through the gate to more than 3 m past it and back, 2 cm off the hall's axis and 0.63 m either side of
  * it, a body's radius and 5 cm inside the gate's jambs at 1.03 m (`GATE_CLEAR`, the opening the owner chose), on the hall's floor all the way. The
  * lines are numbers, not reckoned from `GATE_CLEAR`, so the walk reads the opening's width rather than agreeing with the constant.
+ * Red with the gate closed as at 44ea7b7: all three stopped at Z −100.00, the base's west face less the body's radius.
  * Bound: three lines square to the screen, whose bodies together span ±0.98 m of the opening's ±1.03 m; walking, not running, at 60 frames a second;
  * nothing over the body's 1.75 m is read; positions are the feet's. The axis itself is not walked: it lies on an 8 mm joint of the floor's tiles, where
  * `Walker.place` would set the feet 6 cm down (work unit 4's F-owner-8).

@@ -4,6 +4,8 @@
  * button, speed, the scrubber by mouse drag, and every keyboard shortcut of the orbit view, each test but autoplay=1's opening the replay by the Build menu
  * as a person does (./replay.spec.ts drives the replay's opening and closing, its framing and the timeline keys on the default page).
  * Each test checks the label, the scrubber value, the read-only `window.__met.t` and, where the scene must change, the canvas pixels.
+ * The first load is the finished building at t = N, paused, in the orbit view, with no timeline; once the Build menu opens the replay there, Play runs
+ * the build from the start; `autoplay=1` opens the replay and plays from t = 0.
  * Bound: pixel checks compare coarse luminance grids, so they prove that the drawing changed where the model is and not at the far corners, not that it is right.
  * The speed ratio is read against the page's own frame timestamps, not a wall clock: it proves how fast `t` runs per second of frames at each speed, and
  * needs at least one frame in each 1 s window short enough that the page does not cap its time.

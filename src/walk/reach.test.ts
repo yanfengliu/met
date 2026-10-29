@@ -4,6 +4,8 @@
  * wide over a closed floor 2 m lower, the groove centred on a line of cell centres. The walker bridges the groove; at 69cfa11 each move began with
  * `Walker.place`, which probed down from the centre over the groove and set the walker on the lower floor, and the fill kept places there (work unit 2,
  * review 12, F40). Every path the fill finds walks again from the start (`replay`).
+ * The fixtures: a doorway open, walled up and 0.65 m wide, steps up of 0.3 and 0.5 m, a 0.3 m step under a 1.7 m head, a 1 m drop, and the 0.2 m
+ * groove it bridges over a closed floor; every path walked again from the start, a place moved 0.5 m found 0.5 m off.
  * Bound: axis-aligned rooms, doorways and one groove; the real model is filled in src/model/reach.test.ts.
  */
 import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
