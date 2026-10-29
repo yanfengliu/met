@@ -7,8 +7,8 @@
  * the orbit view, a mouse a finger refused that outlives it while the next finger holds the camera, and a pinch a mouse joins. Each row names the
  * pointers that hold the camera; then a mouse drags once more. Each sequence throws nothing and leaves the camera, its target, the zoom's factors and
  * the user moves as a rig sent only the events of the pointers that hold the camera leaves them, and makes no click. The rig refuses OrbitControls it
- * cannot put through the arbiter, naming what it found. Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's
- * camera input").
+ * cannot put through the arbiter, naming what it found.
+ * Red proofs: docs/learning/gate-proofs.md, under this test's name.
  * Bound: the stand-in page's; the rig runs undamped, a frame after each event; every move of a pointer that holds the camera is 5 px or more, so the
  * click holds none of them and a row's outcome is the same with the click bound and without.
  */

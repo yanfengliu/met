@@ -3,6 +3,7 @@
  *
  * The Pages workflow runs `npm test` on GitHub's runner, which ran the heaviest unit tests up to 2.8 times slower than the local machine, its own speed varying twice over between runs (2026-10-28, `docs/learning/defect-register.md`).
  * A test of 2.3 to 2.8 s here took 3.2 to 6.4 s there and timed out at Vitest's 5 s default; within a sixth of its timeout here, a test would take under half of it on the slowest run measured there.
+ * With that default back, the check named 6 of 650 tests (2026-10-28).
  * Bound: it reads each test's own time (`TestCase.diagnostic().duration`, its hooks included, the module's collection not) on the machine that runs it, and predicts the runner by the ratio measured, not by running there; `vitest.config.ts` leaves it out on the runner, whose bound is the timeout itself.
  */
 import type { Reporter, TestCase, Vitest } from 'vitest/node';

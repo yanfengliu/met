@@ -1,16 +1,18 @@
 /**
  * The doors through real input (docs/design/spec.md, Doors): from the plaza, walked up the front steps by held keys and turned by drags to look at a leaf
  * of the entrance's middle doorway within 2 m, the prompt under the crosshair says "E Open"; E swings the doorway's leaves into the building, away from
- * the walker, in canvas pixels and in `window.__met.doors`; looking at an open leaf it says "E Close", and a click while the pointer is locked closes it;
- * the timeline's scrubber, moved into the doors' step and back, draws the closed leaf and then the door open again at once (read where the render drew
- * them, `perf.lastDrawn.doors`), and taken back before the step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
- * first frame drawn, as its render drew them, the doors set before the walker is placed and that before the first frame (the page's marks, read beside a
- * probe of the first drawn frame), and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and 390×844;
- * and with the look target on, facing into the Great Hall from the landing while the doorway opens and closes, standing and then walking to and fro
- * before it through two full open and close cycles (W and S held in turn, the eye moving), and in the hall facing out while it closes and opens, the
- * slowest frame of each swing, and of the walk, takes under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under
- * 16.7 ms (review 0, F9; review 5, F23 and F24; review 8, F32). The entrance's leaves are solid (Doors: Walking), so the walk into the hall opens the
- * door by E first, as a visitor does.
+ * the walker, in canvas pixels and in `window.__met.doors`; looking at an open leaf it says "E Close", and a click while the pointer is locked closes
+ * it (a probe makes the page see its canvas locked; the click is the real mouse's); the timeline's scrubber, moved into the doors' step and back,
+ * draws the closed leaf and then the door open again at once (read where the render drew them, `perf.lastDrawn.doors`, 90° from the stand-ins'
+ * matrices), and taken back before the step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed`
+ * under `shot=1` stand at their angle in the first frame drawn, as its render drew them, the doors set before the walker is placed and that before
+ * the first frame (the page's marks `met:doors-set` and `met:walk-placed`, read beside a probe of the first drawn frame that writes nothing), and the
+ * captures stay still after ready; `doors=ajar` warns; the prompt keeps to its band under the crosshair (x = centre ± 160 px, y = centre − 8 to +
+ * 80 px) at 1280×720 and 390×844; and with the look target on, facing into the Great Hall from the landing while the doorway opens and closes,
+ * standing and then walking to and fro before it through two full open and close cycles (W and S held in turn, the eye moving), and in the hall
+ * facing out while it closes and opens, the slowest frame of each swing, and of the walk, takes under 16.7 ms of work, and a GPU-synced render facing
+ * into the hall through the open doorway under 16.7 ms (review 0, F9; review 5, F23 and F24; review 8, F32). The entrance's leaves are solid (Doors:
+ * Walking), so the walk into the hall opens the door by E first, as a visitor does.
  * Bound: pointer lock is not available headless, so for the locked click a probe makes the page see its canvas locked (it answers
  * `document.pointerLockElement` with the canvas and sends `pointerlockchange`) and the click itself is the real mouse's. A frame's work is timed by a
  * probe that wraps `requestAnimationFrame` before the page loads and times each callback, the page's frame among them; GPU time is the page's own

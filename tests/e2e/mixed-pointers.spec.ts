@@ -5,7 +5,7 @@
  *   same mouse drag alone puts it.
  * - A mouse presses during a finger's drag, the finger drags on and lifts first, and the mouse drags and is released: none either, and the camera ends
  *   where the same finger drag alone puts it.
- * Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input").
+ * Red proofs: docs/learning/gate-proofs.md, under this spec's name.
  * Bound: 1280×720 with touch; each drag starts from the preset chosen again from the view menu; cameras compared within 1 cm once settled, where the
  * drags themselves move the camera hundreds of metres.
  */

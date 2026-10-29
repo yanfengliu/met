@@ -16,13 +16,12 @@
  *   from its press to its release, of the primary button, its buttons unchanged, its capture kept and its travel under CLICK_SLOP, at its release
  *   point; every such press a click; the camera and its target within 1 nm of where they were before its press (the controls' update rounds them by
  *   up to 1e-14 m).
- * A failure names the seed, its first problems and the events up to the first. The red proofs, and why these sequences missed F39 before work unit
- * 10, are in docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input"); the counts of each case they make, in work
- * unit 10's review 1.
- * Bound: SEEDS sequences of STEPS actions, each with the click bound and without; the stand-in page's (src/viewer/pointer-testing.ts); the controls'
- * damping off and a frame after each event; a finger pressed on another element keeps its events there, as its capture does in the browser; the mode
- * changes by the rig's `setWalking` alone, no walk mode running, so walk mode's own listeners (which take a press's capture while walking) are not
- * in the page; each kind of case made more than 20 times over the 800 runs.
+ * A failure prints the failing seed, its first problems and its events up to the first. The red proofs, and why these sequences missed F39 before
+ * work unit 10, are in docs/learning/gate-proofs.md under this test's name; the counts of each case they make, in work unit 10's review 1.
+ * Bound: SEEDS (400) sequences of STEPS (40) actions, each with the click bound and without; the stand-in page's (src/viewer/pointer-testing.ts);
+ * the controls' damping off and a frame after each event; a finger pressed on another element keeps its events there, as its capture does in the
+ * browser; the mode changes by the rig's `setWalking` alone, no walk mode running, so walk mode's own listeners (which take a press's capture while
+ * walking) are not in the page; each kind of case made more than 20 times over the 800 runs.
  */
 import { Vector3 } from 'three';
 import type * as Controls from 'three/addons/controls/OrbitControls.js';

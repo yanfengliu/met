@@ -5,11 +5,12 @@
  * the central doors into the Great Hall, R2 up the Grand Staircase to the second floor, R3 from the Great Hall through the Egyptian galleries into the
  * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, R5 up the Grand Staircase and through the cross hall's
  * doorway into gallery 600 (work unit 2, M1), R6 through the Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court (work unit
- * 2, M4), R7 through Exhibition Gallery 199 and the corridor through the party wall into gallery 549 and the Petrie Court (work unit 2, integration),
- * each both ways. The walker never leaves the ground (no drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
+ * 2, M4), R7 as R4 goes into gallery 153, then through its south wall's door, Exhibition Gallery 199, the corridor through the party wall into
+ * gallery 549 and the court wall's opening into the Petrie Court (work unit 2, integration), each both ways. The walker never leaves the ground (no
+ * drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
  * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, R5 crosses the
- * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, and R7 the
- * corridor and the court wall's opening on it.
+ * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, and R7
+ * the corridor and the court wall's opening on it.
  * Bound: steering turns the walker directly (the e2e walks steer by real keys and drags, tests/e2e/routes.spec.ts); a stall is less than 5 cm of
  * progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts and ends within
  * one frame's two physics steps is not seen.

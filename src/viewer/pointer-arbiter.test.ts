@@ -8,7 +8,7 @@
  * - each consumer hears a passed pointer's press, moves and end once, and nothing of a pointer it never heard press (pressed elsewhere, or hovering);
  * - a press is decided once, by the first consumer that hears it, so every consumer hears the same presses whatever the order of their listeners.
  * The arbiter on the real rig, mixed input that threw inside OrbitControls among it, is src/viewer/mixed-pointers.test.ts.
- * Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input").
+ * Red proofs: docs/learning/gate-proofs.md, under this test's name.
  * Bound: the arbiter's own rules, with no DOM: each listener called with the event, as a dispatch would call it.
  */
 import { describe, expect, it } from 'vitest';

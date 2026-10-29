@@ -6,7 +6,8 @@
  * has not seen); it decodes each image in the system Chrome (createImageBitmap and canvas getImageData, no image library) into 64 × 64 bins, builds one
  * entry per object by the rules of scripts/met-catalogue-rules.ts, and writes src/model/collection/catalogue.ts at once, through a temporary file: a block,
  * a malformed record, a gallery mismatch or a missing size stops the run before the file is touched, so the previous catalogue stands.
- * Exit codes: 0 written, 1 a problem with a record or pick (each one listed), 2 blocked by the API (HTTP 403 or 429; the message says when to retry).
+ * It writes all or nothing, and exits 0 written, 1 listing every problem with a record or pick, 2 on a block by the API (HTTP 403 or 429), the message
+ * saying when to retry (docs/research/collection.md).
  * Bound: the API's answer is taken as given; the script checks a record's shape and its gallery, not that the object is on view today.
  */
 import { createHash } from 'node:crypto';

@@ -4,14 +4,14 @@
  *
  *   1. Citations. Every text file under `src/model/` is read. A citation is an image index's name, `interior-images.md` or `exterior-images.md`, with or
  *      without `docs/research/` before it, then a space and the entries' IDs, each written `#<ID>` and joined by `, `, ` and ` or ` or `:
- *      `interior-images.md #33`, `interior-images.md #33 and #35`, `docs/research/exterior-images.md #E39, #E40 and #E41`.
+ *      `interior-images.md #33`, `interior-images.md #33 and #35`, `docs/research/exterior-images.md #E39, #E40 and #E41`, `exterior-images.md #E43`.
  *      An ID is one to three digits, or a capital letter and one to three digits (`#P6`, `#E43`).
  *      - Every mention of either name must be a citation: a mention without an ID after it fails, so a citation cannot fall back into prose.
  *      - A line break is read through when the next line goes on with a `*` or `//` comment marker, so a comment may break between the name and its IDs.
  *        Runs of whitespace other than a line break read as one space.
  *      - Straight after the list, no joiner may be followed by a number, `#` or not: `,` with or without a space, ` and `, ` or `, ` to `, `/`, any dash
  *        or `..` (` and 42`, `, 7`, `,17`, ` or 14`, ` to 17`, `/17`, `–40`, `−40`, `..40`). Write every ID as `#<ID>` in the list, a range as every ID
- *        in it, and set off a measurement or any other number after the list with a colon (`#16: 3 to 4 m deep`).
+ *        in it, and set off a measurement or any other number after the list with a colon (`#16: 3 m`, `#16: 3 to 4 m deep`).
  *      - The rest of the citation's clause may hold no `#<ID>` that its list lacks: write the IDs together. The clause runs to the first `)` that closes
  *        no parenthesis opened inside it (the one closing the parenthesis the citation stands in, or a stray one such as `a)`), a `;`, the next mention,
  *        a line that does not go on as a comment, or a sentence's end: a full stop after two letters, a digit or a `)`, then a capital. Inside a

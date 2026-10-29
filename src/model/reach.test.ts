@@ -3,15 +3,16 @@
  * walks to every space of the finished model that holds artworks, near enough to look at each artwork, to the place of every interior camera preset, to
  * every walk spawn and to both ends of every route of src/model/hunt/routes.ts. The world is the page's: the whole sequence's Timeline at t = N, its solid
  * pieces (`collisionMeshes`) in a `CollisionWorld` over three-mesh-bvh; the fill (src/walk/reach.ts) moves the real walker from place to place, and the
- * path to each place that meets a target is walked again from the spawn (`replay`), so a target counts only when that path walks end to end.
+ * path to each place that meets a target is walked again from the spawn (`replay`), so a target counts only when that path walks end to end; a path
+ * that strays from the fill's places does not count, and the fill stops once all are met.
  * Bound:
  * - Doors: the Hunt central arch's three doors (src/model/doors.ts) count as open, their leaves' meshes left out of the world, as a visitor opens them by
  *   E. Every other door counts as closed, its closed leaves in the world whether their material is solid or not: the locked doors (the links', the
  *   Bank's), and Weston's 1888 door into the Petrie Court, which opens (work unit 2, M2b) but is counted shut. So the Petrie Court must be reached without
  *   Weston's door, by the corridor from gallery 199.
  * - Grid: one place per 0.5 m cell and 0.3 m band of height; moves of one cell toward each of four neighbours' centres, at a run, each on from the
- *   walker's exact state at the place before (never set down again), never off the ground and never a jump. A passage the walker passes only on some
- *   other line can be missed; a place the fill reaches, the walker reaches, as the replay shows.
+ *   walker's exact state at the place before (`Walker.save` and `restore`, never set down again), never off the ground and never a jump. A passage
+ *   the walker passes only on some other line can be missed; a place the fill reaches, the walker reaches, as the replay shows.
  * - Where: inside the building's outline (src/model/site/footprint.ts) and the strip of the front steps and plaza on the axis (|X| ≤ 23.47 m, from the
  *   facade to 0.5 m short of the curb), so the fill walks neither the park nor the avenue.
  * - Met: an artwork when, from a place the fill reaches, the walker let go of the keys there comes to rest on the artwork's floor (feet within 0.6 m of its
@@ -19,33 +20,36 @@
  *   walker's ±85° of pitch, is that artwork: the walking eye's own query (src/walk/look.ts `lookTarget`, so within its 6 m reach and through untagged glass
  *   only) on the page's hit query (src/viewer/pick.ts), over the timeline's pieces and the door layer's stand-ins and doorways registered as the page
  *   registers them, the doors as the fill counts them. At rest it moves under 1 mm a second with its eye within 1 mm of where it settles, 1.6 m over its
- *   feet, within 2 s of physics and on the ground at every step on the way; a walker that leaves the ground or does not rest is refused there. The check
- *   is made again, with the same helper, from the replay's walker at that place, in the state that walk left it in. The aims are the middle of each of its pieces' own boxes, its object's first, then five more points of the object's: a quarter and three
- *   quarters up, toward the front and either side. A preset is met when an eye stands within 1 m of its camera; a spawn or a route's end when feet stand
- *   within 0.5 m of it in plan and 0.3 m of its level.
+ *   feet, within 2 s of physics and on the ground at every step on the way; a walker that leaves the ground, as in a fall, or does not rest is
+ *   refused there. The check is made again, with the same helper, from the replay's walker at that place, in the state that walk left it in. The aims
+ *   are the middle of each of its pieces' own boxes, its object's first, then five more points of the object's: a quarter and three quarters up,
+ *   toward the front and either side. A preset is met when an eye stands within 1 m of its camera; a spawn or a route's end when feet stand within
+ *   0.5 m of it in plan and 0.3 m of its level.
  * - Each space with artworks is stood in at the place of the preset its collection step frames, which stands inside it, so a space seen only through
  *   an opening from another is not passed.
  * - The fill takes up places nearest an unmet target first and stops once every target is met. Short of that it fills all it can, and each unmet target
  *   names the nearest place reached.
  * Red with the model of 691b8f7, before src/model/mmw/party-walls.ts opened ENGELHARD_PASSAGE and PETRIE_PASSAGE: both courts as spaces, the Engelhard
  * Court's 8 artworks, the Petrie Court's 10, the int-engelhard-north and int-petrie-court presets and R6's end, each artwork's nearest place across the wall
- * it sat behind (156,533 places in 22.5 s, every other target met). Red again with ENGELHARD_PASSAGE alone walled up (the court, its 8, its preset, R6's
- * end; 166,500 places) and with PETRIE_PASSAGE alone (the court, its 10, its preset; 172,282 places). Green, it stops at about 62,500 places in about 16 s
- * (9 s with the box rule below, on the same machine), and walks the 123 targets' paths again and looks again from them in 0.8 s.
+ * it sat behind (156,533 places in 22.5 s, every other target met). Red again with ENGELHARD_PASSAGE, the passage from gallery 374, alone walled up
+ * (the court, its 8, its preset, R6's end; 166,500 places) and with PETRIE_PASSAGE, the one from Exhibition Gallery 199, alone (the court, its 10,
+ * its preset; 172,282 places). Green, it stops at about 62,500 places in about 16 s (17 s at 670f8cc; 9 s with the box rule below, on the same
+ * machine), and walks the 123 targets' paths again and looks again from them in 0.8 s.
  * Review 12 of work unit 2 found two holes in the gate of 69cfa11, each given its regression: each move began with `Walker.place`, which over a gap
  * the walker had bridged set it on the floor below with no fall (F40; src/walk/reach.test.ts, the groove: 288 places on the closed floor at 69cfa11); and
  * the sight line was a 2 cm capsule taken as clear when nothing pushed it, so a line through the middle of a wall, whose faces pushed it opposite ways and
  * whose crossing the triangle distance does not see, read clear (F41; that sight line, src/walk/sight.ts, went with the box rule in review 17).
- * Review 17 found the gate of 0defda0 measuring distance and sight to an artwork's combined box, which can hold empty space: it took object 458998 as seen
- * from an eye whose nearest tagged surface was 6.368 m away (F44). An artwork is now met only where the look target finds it; the fixture at the end, an L
- * of two slabs whose box's corner lies 0.99 m from the eye and each slab 10.5 m off, is met by the old rule and not by this one.
- * Review 18 found that gate casting from feet + 1.6 m, an eye the walker never has where it moves: `Walker.eye()` lags a physics step behind the feet and
- * eases out of stair snaps, and from the recorded states of nine of the places it accepted, the look missed (bowl 44745's nearest surface 6.00012 m from
- * the real eye; F51). An artwork is now looked at from where the walker comes to rest; the second fixture, a walker running away from a slab that is 5.8 m
- * off at the place and 6.1 m off where it stops, is met by the eye at feet + 1.6 m and not by the one it rests with.
- * Review 19 found that helper taking rest as a speed under 1 mm a second alone: a wall that stopped a walker just after a stair snap left its eye easing,
- * 22.7 cm under where it settles (F52), and a walker let go before a drop fell, landed and was taken as resting (F53). The last two fixtures, a step
- * before a parapet under a beam and an edge over a floor 0.6 m down, are met by that helper and not by this one.
+ * Review 17 found the gate of 0defda0 measuring distance and sight to an artwork's combined box (its box within 6 m and a clear line to it), which
+ * can hold empty space: it took object 458998 as seen from an eye whose nearest tagged surface was 6.368 m away (F44). An artwork is now met only
+ * where the look target finds it; the fixture at the end, an L of two slabs whose box's corner lies 0.99 m from the eye and each slab 10.5 m off, is
+ * met by the old rule and not by this one.
+ * Review 18 found that gate, as at 1f3d7c9, casting from feet + 1.6 m, an eye the walker never has where it moves: `Walker.eye()` lags a physics step
+ * behind the feet and eases out of stair snaps, and from the recorded states of nine of the places it accepted, the look missed (bowl 44745's nearest
+ * surface 6.00012 m from the real eye; F51). An artwork is now looked at from where the walker comes to rest; the second fixture, a walker running
+ * away from a slab that is 5.8 m off at the place and 6.1 m off where it stops, is met by the eye at feet + 1.6 m and not by the one it rests with.
+ * Review 19 found that helper, as at 2600751, taking rest as a speed under 1 mm a second alone: a wall that stopped a walker just after a stair snap
+ * left its eye easing, 22.7 cm under where it settles (F52), and a walker let go before a drop fell, landed and was taken as resting (F53). The last
+ * two fixtures, a 0.3 m step before a parapet under a beam and an edge over a floor 0.6 m down, are met by that helper and not by this one.
  */
 import { Box3, BoxGeometry, Layers, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh } from 'three';
