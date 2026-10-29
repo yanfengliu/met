@@ -17,7 +17,7 @@ import { ENTRANCE_DOOR_Z, entranceDoor } from '../../src/model/hunt/arches.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { BODY, MOTION } from '../../src/walk/walker.js';
 import { open, openMenu, press, throttle, throttleRate } from './helpers.js';
-import { Keys, lag, learnLag, startKeyLog, travel, watch, WATCH_MS } from './route-keys.js';
+import { bounded, Keys, lag, learnLag, startKeyLog, travel, watch, WATCH_MS } from './route-keys.js';
 import type { Stop, Watched } from './route-keys.js';
 
 export type { Stop } from './route-keys.js';
@@ -94,7 +94,10 @@ export async function walkFromGreatHall(page: Page): Promise<{ start: Sample; sp
   await throttle(page);
   await openMenu(page, 'view-menu');
   await press(page, 'walk-spawn-great-hall');
-  await page.waitForFunction(() => window.__met?.walk.spawn === 'great-hall');
+  const ms = 15_000 * throttleRate();
+  await page.waitForFunction(() => window.__met?.walk.spawn === 'great-hall', undefined, { timeout: ms }).catch(async () => {
+    throw new Error(`The view menu's "Walk from the Great Hall" never put the walker at its spawn within ${String(ms)} ms: window.__met.walk.spawn is ${String(await page.evaluate(() => window.__met?.walk.spawn).catch(() => 'unread'))}.`);
+  });
   const start = await walking(page);
   const spawn = spawnById('great-hall');
   if (spawn === undefined) throw new Error('No great-hall spawn in src/walk/spawns.ts.');
@@ -196,7 +199,7 @@ export function legs(points: readonly XZ[], facing: Facing, pace: 'run' | 'walk'
 
 /** Why a watch on `leg` of `route` ended without its line: walk mode left, or no end within its ceiling; with the eye last seen. */
 const lost = (route: string, leg: string, seen: Watched): Error =>
-  new Error(`${route}: on the leg ${leg}, ${seen.kind === 'gone' ? 'walk mode was left' : `no end came within ${String(WATCH_MS)} ms times the throttle`}; the eye last seen at ${seen.eye === null ? 'none' : fmt(seen.eye)}.`);
+  new Error(`${route}: on the leg ${leg}, ${seen.kind === 'gone' ? 'walk mode was left' : `no end came within ${String(seen.t)} ms (at most ${String(WATCH_MS)} ms times the throttle, less the test's margin)`}; the eye last seen at ${seen.eye === null ? 'none' : fmt(seen.eye)}.`);
 
 /** How near its corner a walk brings the walker to rest before the next leg, metres along the corner's axis; the walks onto it it may take; and the run-up a walk onto it starts from, to come up to speed (95% in 0.29 m). */
 const CORNER = 0.25;
@@ -242,8 +245,11 @@ export async function walk(page: Page, route: string, list: readonly Leg[], samp
       const dir: 1 | -1 = near || error > 0 ? -1 : 1;
       await keys.hold([dir === 1 ? c.on : c.back]);
       const seen = await watch(page, c.axis, near ? at - go - RUN_UP : at - dir * go, dir);
+      if (seen.kind === 'gone' || seen.kind === 'late') {
+        await bounded(keys.hold([]));
+        throw lost(route, `${label}, walking onto its corner`, seen);
+      }
       await keys.hold([]);
-      if (seen.kind === 'gone' || seen.kind === 'late') throw lost(route, `${label}, walking onto its corner`, seen);
       if (seen.kind === 'line') await learnLag(page, seen.t);
       await take();
       if (seen.kind === 'stuck' && !near) throw new Error(`${route}: after the leg ${label}, walking onto its corner ${fmt(c.end)}, the walker stuck at ${seen.eye === null ? 'none' : fmt(seen.eye)}, ${error.toFixed(2)} m past it at the start.`);
@@ -265,7 +271,7 @@ export async function walk(page: Page, route: string, list: readonly Leg[], samp
         break;
       }
       if (seen.kind === 'gone' || seen.kind === 'late') {
-        await keys.hold([]);
+        await bounded(keys.hold([]));
         throw lost(route, leg.label, seen);
       }
       if (seen.kind === 'stuck' && seen.eye !== null) {

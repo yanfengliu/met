@@ -24,10 +24,13 @@ export function watchErrors(page: Page): { expectClean: () => void } {
   };
 }
 
-/** Opens the page with `query` (by default the page's own default: the finished building, paused) and waits for the capture contract's ready flag. */
+/** Opens the page with `query` (by default the page's own default: the finished building, paused) and waits for the capture contract's ready flag, at most 20 s times the CPU throttle. */
 export async function open(page: Page, query = 'autoplay=0'): Promise<Facts> {
   await page.goto(`/?${query}`);
-  await page.waitForFunction(() => window.__shotReady === true);
+  const ms = 20_000 * throttleRate();
+  await page.waitForFunction(() => window.__shotReady === true, undefined, { timeout: ms }).catch(() => {
+    throw new Error(`The page /?${query} never set window.__shotReady within ${String(ms)} ms (src/main.ts sets it once the requested state has drawn 5 frames).`);
+  });
   return facts(page);
 }
 

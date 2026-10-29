@@ -7,6 +7,7 @@
  * releases (the walk's time, frames capped at 0.1 s as src/main.ts caps them, from the frame that crossed a line to the next key event) and half a frame.
  * The page's frame times and key events are logged by a requestAnimationFrame loop and passive listeners beside the page's own, which write nothing of it.
  */
+import { test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import type { Vec3 } from '../../src/build/types.js';
@@ -35,6 +36,25 @@ export interface Watched {
 
 /** The longest any watch waits, milliseconds times the CPU throttle: a 100 m leg at a run takes 20 s, at a walk 50 s, so a watch past it is lost. */
 export const WATCH_MS = 60_000;
+/** What a watch leaves of its test's time, milliseconds times the throttle, for its own failure to be the one reported; and its diagnostic read's bound. */
+const MARGIN_MS = 15_000;
+const READ_MS = 2000;
+
+/** `work`'s result, or null once READ_MS pass first: what a failing watch still asks of a page that may be frozen (a read, letting go of the keys). */
+export const bounded = <T>(work: Promise<T>): Promise<T | null> =>
+  Promise.race([work.catch(() => null), new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, READ_MS))]);
+/** When each test's first watch began (Playwright's TestInfo gives no start), which its page load comes before, within MARGIN_MS. */
+const FIRST = new Map<string, number>();
+
+/** A watch's ceiling: WATCH_MS times the throttle, or less, so it ends MARGIN_MS times the throttle before its test's timeout from the test's first watch. */
+function ceiling(): number {
+  const info = test.info();
+  const now = Date.now();
+  const first = FIRST.get(info.testId) ?? now;
+  FIRST.set(info.testId, first);
+  const left = info.timeout === 0 ? Number.POSITIVE_INFINITY : info.timeout - (now - first) - MARGIN_MS * throttleRate();
+  return Math.max(1000, Math.min(WATCH_MS * throttleRate(), left));
+}
 /** How long a watch waits for the eye to come 5 cm nearer its line before it ends as stuck, milliseconds of the page's clock. */
 const STALL_MS = 1500;
 /** The release lags learnt on each page, seconds of the walk's time. */
@@ -101,13 +121,14 @@ export async function learnLag(page: Page, t: number): Promise<number | null> {
 
 /**
  * Waits in the page, checking every frame, until the eye's place along the level `axis` passes `line` going `dir` (1 up, −1 down), or it enters one of
- * `stops`' boxes, or it has come no 5 cm nearer the line for STALL_MS, or walk mode is left, or WATCH_MS (times the throttle) pass. One watch, so a key can
- * change a round trip after the frame that asked for it.
+ * `stops`' boxes, or it has come no 5 cm nearer the line for STALL_MS, or walk mode is left, or its `ceiling` passes, after which the eye last seen is read
+ * for at most READ_MS, so a frozen page cannot hold it. One watch, so a key can change a round trip after the frame that asked for it.
  */
 export async function watch(page: Page, axis: Facing, line: number, dir: 1 | -1, stops: readonly Stop[] = []): Promise<Watched> {
   const boxes = stops.map((s) => [s.x?.[0] ?? null, s.x?.[1] ?? null, s.z?.[0] ?? null, s.z?.[1] ?? null] as const);
   const id = Math.random();
-  return page
+  const ms = ceiling();
+  const polled = page
     .waitForFunction(
       ([ax, az, at, sense, bs, stall, key]) => {
         const w = window as unknown as { lineWatch?: { id: number; best: number; since: number; last: number[] | null } };
@@ -131,18 +152,19 @@ export async function watch(page: Page, axis: Facing, line: number, dir: 1 | -1,
         return now - seen.since > stall ? { kind: 'stuck', stop: -1, eye: [...eye], t } : false;
       },
       [axis[0], axis[1], line, dir, boxes, STALL_MS, id] as const,
-      { polling: 'raf', timeout: WATCH_MS * throttleRate() },
+      { polling: 'raf', timeout: ms + READ_MS },
     )
-    .then(
-      async (handle) => (await handle.jsonValue()) as unknown as Watched,
-      async (): Promise<Watched> => {
-        const last = await page.evaluate((key) => {
-          const w = window as unknown as { lineWatch?: { id: number; last: number[] | null } };
-          return w.lineWatch?.id === key ? w.lineWatch.last : null;
-        }, id);
-        return { kind: 'late', stop: -1, eye: last === null ? null : [last[0] ?? Number.NaN, last[1] ?? Number.NaN, last[2] ?? Number.NaN], t: Number.NaN };
-      },
-    );
+    .then(async (handle) => (await handle.jsonValue()) as unknown as Watched);
+  // Playwright's own timeout does not fire while the page's main thread is frozen, so a timer in the test's process bounds the watch.
+  const seen = await Promise.race([polled.catch(() => null), new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, ms))]);
+  if (seen !== null) return seen;
+  const last = await bounded(
+    page.evaluate((key) => {
+      const w = window as unknown as { lineWatch?: { id: number; last: number[] | null } };
+      return w.lineWatch?.id === key ? w.lineWatch.last : null;
+    }, id),
+  );
+  return { kind: 'late', stop: -1, eye: last === null ? null : [last[0] ?? Number.NaN, last[1] ?? Number.NaN, last[2] ?? Number.NaN], t: ms };
 }
 
 /** The keys a walk holds: `hold` lets go of the others first, the movement keys before Shift, so a run stops at once, then presses the new ones. */
