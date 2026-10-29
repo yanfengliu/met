@@ -1,0 +1,324 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index d05f184..1c89fe2 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -92,8 +92,9 @@ Node 24 (`.nvmrc`), npm, Vite, strict TypeScript, Vitest, ESLint and Playwright
+ - `network.spec`: the page at the finished building, the page in a collection space's view and `parts.html` ask nothing of any host but their own (data: and blob: aside), nothing of metmuseum.org and nothing under `/research/` (red with a planted fetch of a Collection API record).
+ - `labels.spec`, at 1280×720 and 390×844: from the view menu's top-of-the-stair spawn, turned by drags and walked with W into gallery 600 until Tiepolo's Triumph of Marius is the look target within 6 m, the card shows its catalogue fields and a plain link (new tab, `noopener noreferrer`, no prefetch hint), above the folded bar at the bottom left or across the narrow screen, clear of every control, the crosshair and the door prompt's band, and above the unfolded bar, which on a narrow screen it may share with the band (the spec's one exception, resting on the card and the prompt following one look target, which `routes.spec` checks on its walk of R1 and R5); at every frame drawn the card shows exactly when the crosshair's one look target is an artwork; looking down hides it and looking back shows it; a card clicked in the orbit view goes when walk mode begins and stays gone after; at 1280×720, walking with it showing, the median work a frame and the mean GPU-synced render stay under 16.7 ms and the median frame interval under 18.37 ms (16.7 ms plus 10%; `expectWalkingBudget`), and the link opens the object page in a new tab, its request stopped in the test's browser; in the orbit view at `int-european-paintings-600` a drag from the painting shows no card, a click on it (or a press travelling 4 px) shows it moving neither camera nor preset, a click on a wall and Esc hide it, both pixels checked by a cast through the finished model in the test process; the page asks nothing of metmuseum.org.
+ - `labels-view.spec`, at `int-european-paintings-600`: a 2 px click on the painting shows its card and moves nothing, the preset staying in view and the follow camera on (review 6, F25, red at `86bdf0c`); a preset chosen from the view menu hides the card, Esc never pressed (F26); the cut slider dragged under the painting and the main floor's view hide its card, a cut through it does not (F27); a real two-finger pinch by touch (CDP `Input.dispatchTouchEvent`) whose first finger moved 4 px before the second landed zooms by 40/39, not 44/39 (review 7, F29, red at `e06cc70`).
+-- `mixed-pointers.spec`, at `aerial-ne` with touch, through the browser's own mouse and touch input (CDP): a finger landing during a mouse drag, moving and lifting while the mouse drags on, and a mouse pressed during a finger's drag that lifts first, log no uncaught exception or console error, and each leaves the camera within 1 cm of where the drag of the pointer that holds the camera alone puts it (red at `8a6a0c2`: OrbitControls threw `Cannot read properties of undefined (reading 'x')` three times, as the finger landed and as it lifted).
+-- Labels (unit): every piece of the 94 placeholders tagged with its object's ID, every drawn instance holding its piece's tag, no mesh split and the same scene as untagged (`src/model/collection/artwork-tags.test.ts`); each artwork the look target and the click query's answer from 1.5 m before it in the finished model (`src/model/collection/labels.test.ts`); the card's content for every entry as plain one-line text (three titles carry markup or line breaks), the maker's fallback and the estimated sizes (`src/ui/art-card.test.ts`); the show and hide rules, a preset's and Esc's dismissal, and the cut or layers leaving none of an artwork's pieces drawn (`src/viewer/art-label.test.ts`); the click against a drag on a stand-in canvas, a click's moves held from the document's later listeners and a drag's held move sent on once, as is a sub-slop press's released while walking, which is no click (red at `8a6a0c2`, which dropped it as a click's); and one table of presses on the real CameraRig (a tap, a drag, a sub-slop pinch, a drag then a pinch, a pinch with one finger lifted then a tap, an out-and-back drag, the right-button pan, a pen), each making the clicks worked out by hand and ending with the zoom's factors, the camera and its target where a rig with no click bound ends, sent the same events less a click's own moves, with no user move within a click: red with the gate of `86bdf0c` (the taps and the pen turned the camera 0.37 to 0.59 m), of `e06cc70` (the sub-slop pinch's first factor 1.128 for 1.026) and of `1fd3a50` (the drag then a pinch's 3.487 for 1.026, the camera 75 m off; review 10, F36), and with the right button counted or the travel taken from the press point, and three rows red with the gate and zoom of `42722e9` (review 11: two buttons pressed and let go in turn a click, F38; a mouse click while a finger whose capture was lost is down, and a finger's drag a pinch after one whose capture was lost was released over another element, F37) (`src/viewer/click.test.ts`); and 400 seeded random sequences of 40 actions on the real rig, each with the click bound and without, of a mouse with three chorded buttons, two pens and fingers mixed in any order, pressing on the canvas or another element, moving, hovering, changing buttons, losing capture and ending on the canvas or over another element, while walk mode comes and goes: no listener throws; each consumer (OrbitControls, the zoom), as its own listeners hear it, hears the press of every pointer that holds the camera once, its moves, its end once, nothing of any other pointer, in the order sent and with every other holder's latest move heard first; the zoom zooms only in the orbit view, on a pinch or a middle drag of the pointers that hold the camera; and with the click every tap and only a tap is a click, at its release point, and a click leaves the camera within 1 nm; red with the rig, zoom and click of `8a6a0c2` (237 of the 400 seeds threw inside OrbitControls, with the click and without; work unit 2, review 11, F39), with the click of `42722e9` (19 seeds), with its zoom (268 of the 800 runs), with the rig's relay of cancels left out (110 runs, none throwing, since the camera is free only once both consumers have heard an end) and with the click of `8a6a0c2` alone (3 seeds); the failing seed and its events printed (`src/viewer/click-random.test.ts`). The arbiter of mixed input alone (`src/viewer/pointer-arbiter.test.ts`): the first press holds the camera and fingers join fingers; a pointer of another type, a second mouse or pen and every press while walking are refused; a holder keeps its life through walk mode and a refused pointer stays refused to its end; nothing is heard of a pointer pressed elsewhere or hovering; each press is decided once whatever the listeners' order; and the camera is free only once every consumer has heard each end (red with it freed at the first). One table of mixed sequences on the real rig, with the click and without, each followed by a mouse drag (`src/viewer/mixed-pointers.test.ts`): a mouse drag a finger joins, a finger's drag a mouse joins with the finger lifted first, a mouse drag a pen joins, a pen's drag a second pen joins, a middle press while a finger turns the view, a finger pressed elsewhere and released during a mouse drag, a pen hovering during a mouse drag, a finger pressed while walking and released after a mouse press back in the orbit view, a mouse a finger refused outliving it while the next finger holds the camera, and a pinch a mouse joins: none throws, and each leaves the camera, its target, the zoom's factors and the user moves as the holders' events alone leave them, with no click (red at `8a6a0c2`: eight threw inside OrbitControls, the pen's hover turned the view 6.07 m and the pinch ended 6 cm off). The click's tests and the rig's run on the stand-in page of `src/viewer/pointer-testing.ts`, which passes events through the document's capture phase, the target and the document as the browser does.
++- `mixed-pointers.spec`: a finger joining a mouse drag, and a mouse joining a finger's drag, through the browser's own input, throw nothing and turn the view as the pointer that holds the camera alone does (`npx playwright test tests/e2e/mixed-pointers.spec.ts`).
++- Labels (unit): every piece of the 94 placeholders tagged with its object's ID, every drawn instance holding its piece's tag, no mesh split and the same scene as untagged (`src/model/collection/artwork-tags.test.ts`); each artwork the look target and the click query's answer from 1.5 m before it in the finished model (`src/model/collection/labels.test.ts`); the card's content for every entry as plain one-line text (three titles carry markup or line breaks), the maker's fallback and the estimated sizes (`src/ui/art-card.test.ts`); the show and hide rules, a preset's and Esc's dismissal, and the cut or layers leaving none of an artwork's pieces drawn (`src/viewer/art-label.test.ts`); the click against a drag on a stand-in canvas, a click's moves held from the document's later listeners and a drag's held move sent on once, as is a press's released while walking; and one table of presses on the real CameraRig (a tap, a drag, a sub-slop pinch, a drag then a pinch, a pinch with one finger lifted then a tap, an out-and-back drag, the right-button pan, a pen), each making the clicks worked out by hand and ending with the zoom's factors, the camera and its target where a rig with no click bound ends, sent the same events less a click's own moves, with no user move within a click: red with the gate of `86bdf0c` (the taps and the pen turned the camera 0.37 to 0.59 m), of `e06cc70` (the sub-slop pinch's first factor 1.128 for 1.026) and of `1fd3a50` (the drag then a pinch's 3.487 for 1.026, the camera 75 m off; review 10, F36), and with the right button counted or the travel taken from the press point, and three rows red with the gate and zoom of `42722e9` (review 11: two buttons pressed and let go in turn a click, F38; a mouse click while a finger whose capture was lost is down, and a finger's drag a pinch after one whose capture was lost was released over another element, F37) (`src/viewer/click.test.ts`); and 400 seeded random sequences of 40 actions on the real rig, with the click bound and without, a mouse with three chorded buttons, two pens and fingers mixed in any order, pressing, moving, hovering, changing buttons, losing capture and ending on the canvas or over another element while walk mode comes and goes: nothing throws, each consumer (OrbitControls, the zoom) hears each pointer that holds the camera once from press to end and nothing else, in the order sent and with every other holder's latest move heard first, the zoom zooms only on their pinch or middle drag, every tap and only a tap is a click, at its release point, and a click leaves the camera within 1 nm (`src/viewer/click-random.test.ts`; red proofs in `docs/learning/gate-proofs.md`); all on the stand-in page of `src/viewer/pointer-testing.ts`, which passes events through the document's capture phase, the target and the document as the browser does.
++- Mixed pointer input (unit): one kind of pointer holds the camera, by the arbiter alone and on the real rig over a table of mixed sequences with the click and without (`npx vitest run src/viewer/pointer-arbiter.test.ts src/viewer/mixed-pointers.test.ts`; red proofs in `docs/learning/gate-proofs.md`).
+ - `doors.spec`, the doors through real input: walked from the plaza up the front steps and turned by drags onto a leaf of the entrance's middle doorway within 2 m, the prompt under the crosshair says "E Open"; E swings its leaves a quarter turn into the building, away from the walker, in canvas pixels and in `window.__met.doors`; on an open leaf "E Close", and a click while the pointer is locked (a probe makes the page see its canvas locked; the click is the real mouse's) closes it; the scrubber moved into the doors' step draws the timeline's closed leaf (`perf.lastDrawn.doors` reads null) with the door's state kept, and End draws it open again at once (90° from the stand-ins' matrices); a link door says "Locked" and stays shut by E and a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the first frame drawn, as its render drew them (`perf.lastDrawn.doors`, which the page reads back from the stand-ins' matrices right after each render), read by a probe that writes nothing beside the page's marks `met:doors-set` and `met:walk-placed`, the doors set before the walker is placed and both before that frame (red with the set-up moved after the placement, after the first frame, marked at load but done after the first frame, or done after the first render in the same callback, which the probe of `7b7fe94`, reading the doors' state at the callback's end, passed), the capture still after ready, and `doors=ajar` warns; the prompt keeps to its band (x = centre ± 160 px, y = centre − 8 to + 80 px) at 1280×720 and 390×844; with the look target on, facing into the Great Hall from the landing, opening and closing, and in the hall facing out (the door opened by E first, its leaves being solid), and walking to and fro before it facing into the hall through two full cycles, the slowest frame of each swing takes under 16.7 ms of work (the walked cycles red at 147.8 ms with 12 ms planted in each swing check while walking) (a probe times every `requestAnimationFrame` callback; red with 40 µs of work planted for each object drawn on a swing's frames: 30.3 ms facing in, which the gate of `d4d716d`, facing out only, passed at 11.5 ms), and a GPU-synced render facing into the hall through the open doorway under 16.7 ms.
+ - `door-look.spec`, the prompt where the eye looks between a pair's leaves, which meet 8 mm apart, through real input: from the plaza spawn, W alone, let go 4 m and again 1.3 m before the middle doorway (the first to learn the release lag), leaves the crosshair on the leaves' meeting line, and with no drag the prompt says "E Open" and E opens the door; at the north link door, met on its axis (walked by D out along the plaza to its line, turned there by drags toward its leaves' meeting line, run at by W and Shift to about 1.3 m before them and turned onto that line again, the eye's ray crossing the leaves' whole depth within 3 mm of it, since a ray more than about 4° off the axis meets a leaf's edge inside the gap), it says "Locked" and E leaves the door shut (both red at `0defda0`, whose look target met nothing between the leaves; review 17, F46).
+ - Unit tests also guard the engine: timeline determinism over seeded random histories (fixture and the real sequence), rest positions, motion endpoints, stagger order, the player, batching, and the integrity, composition and budgets of whatever `src/build/sequence.ts` exports.
+diff --git a/docs/design/spec.md b/docs/design/spec.md
+index 5ca9821..43e3a2a 100644
+--- a/docs/design/spec.md
++++ b/docs/design/spec.md
+@@ -100,7 +100,7 @@ type Vec3 = readonly [number, number, number];
+ - **Camera framing**: presets and the follow camera frame the part of the canvas above the timeline bar; walking, the view is the whole canvas (Walk mode: The screen). A preset lands exactly where it says, even right after a drag. When the canvas changes shape, the preset in view is fitted again, as long as the camera still stands where the preset put it. The neutral workspace ground, not part of the model, lies 0.5 m below the lower of grade and the model's lowest point, so model terrain always lies on top of it.
+ - **Follow camera at load**: on unless the query sets `shot=1`, a `view=` that names a preset, `cam=`, `walk=1` or a `floor=` that names a floor. It moves the camera only while the build plays.
+ - **No WebGL 2**: if the renderer cannot start, the page says WebGL 2 is not available, gives the browser's reason and what to do, and does not report a build failure.
+-- **Camera** (orbit view): drag to orbit, right-drag to pan, and the wheel, a pinch or a middle-button drag to zoom toward the pointer (`src/viewer/zoom.ts`). A zoom step moves the camera along the ray under the pointer and keeps its view direction. In, it moves a tenth of the distance to the surface under the pointer (`src/viewer/pick.ts`: the first drawn piece, or the workspace ground; above the section cut, cut pieces are passed through, and so is the landscape a floor view hides), at least 0.25 m, and stops 0.5 m before that surface, or sooner on the ray where the ray comes down to the camera floor (0.4 m above the workspace ground), which it then heads for instead; over open sky it flies on as if a surface stood 10 m ahead. Out, it moves a tenth of the distance to the orbit target, at least 0.25 m, until the target is 6 km away, or, backing down a ray that points up, until the camera stands on the camera floor, still on the ray. Where the camera is at both bounds at once (zoomed out to 6 km, then lowered onto the floor by Q), a notch out first brings the target onto the view axis at the near bound's depth and then moves (`zoomStep`). Each step puts the orbit target on the view axis at the depth of what it heads for. Steps never shrink toward an invisible point, so every notch moves the camera until one of the two bounds, and either bound gives way at once to the other direction (`docs/learning/defect-register.md`, "The wheel stops zooming"). The camera stays 0.4 m above the workspace ground: a pan or an orbit that takes it lower is undone by lifting the camera and its target together, so the view does not turn. That lift is the last move before each frame renders, so no frame renders from under the floor; what the drag still owes carries the camera on over the next frames, each lifted again. A zoom first spends what a drag still owes and makes that lift, then takes its ray. A press on the canvas is followed to its end wherever its events land, as they may once its pointer capture is lost: the zoom hears a press's moves, release and cancel on the document, and the rig sends a cancel that lands on another element on to the canvas, not bubbling, for the orbit controls, which hear a cancel only there (review 11, F37). A middle-button drag ends when that button is let go, even while another stays down. One kind of input holds the camera at a time, the fingers on the screen, any number, or one mouse or pen (`src/viewer/pointer-arbiter.ts`; work unit 10). A press on the canvas in the orbit view takes the camera when nothing holds it, and a finger joins fingers that hold it. Every other press is refused: a pointer of another type, a second mouse or pen, and every press while walking. The orbit controls and the zoom each hear a pointer that holds the camera from its press to its end, its release or cancel, wherever its events land, and nothing of any other pointer: not a refused one, not one pressed elsewhere on the page, not a hover. A pointer keeps the camera through a change of mode until its end, and a refused one stays refused until its end, even once the camera is free. The camera is free once both have heard each holder's end, so neither ever holds two kinds of input. The orbit controls keep a finger's position but not a mouse's or a pen's, and took every pointer they heard for their own: a mouse and a finger down together threw inside them, as did a mouse and a pen, a middle button pressed while a finger turned the view and a finger lifted elsewhere during a mouse drag, and a pen hovering during a mouse drag turned the view (work unit 2, review 11, F39).
++- **Camera** (orbit view): drag to orbit, right-drag to pan, and the wheel, a pinch or a middle-button drag to zoom toward the pointer (`src/viewer/zoom.ts`). A zoom step moves the camera along the ray under the pointer and keeps its view direction. In, it moves a tenth of the distance to the surface under the pointer (`src/viewer/pick.ts`: the first drawn piece, or the workspace ground; above the section cut, cut pieces are passed through, and so is the landscape a floor view hides), at least 0.25 m, and stops 0.5 m before that surface, or sooner on the ray where the ray comes down to the camera floor (0.4 m above the workspace ground), which it then heads for instead; over open sky it flies on as if a surface stood 10 m ahead. Out, it moves a tenth of the distance to the orbit target, at least 0.25 m, until the target is 6 km away, or, backing down a ray that points up, until the camera stands on the camera floor, still on the ray. Where the camera is at both bounds at once (zoomed out to 6 km, then lowered onto the floor by Q), a notch out first brings the target onto the view axis at the near bound's depth and then moves (`zoomStep`). Each step puts the orbit target on the view axis at the depth of what it heads for. Steps never shrink toward an invisible point, so every notch moves the camera until one of the two bounds, and either bound gives way at once to the other direction (`docs/learning/defect-register.md`, "The wheel stops zooming"). The camera stays 0.4 m above the workspace ground: a pan or an orbit that takes it lower is undone by lifting the camera and its target together, so the view does not turn. That lift is the last move before each frame renders, so no frame renders from under the floor; what the drag still owes carries the camera on over the next frames, each lifted again. A zoom first spends what a drag still owes and makes that lift, then takes its ray. A press on the canvas is followed to its end wherever its events land, as they may once its pointer capture is lost: the zoom hears a press's moves, release and cancel on the document, and the rig sends a cancel that lands on another element on to the canvas, not bubbling, for the orbit controls, which hear a cancel only there (review 11, F37). A middle-button drag ends when that button is let go, even while another stays down. One kind of pointer holds the camera at a time, the fingers on the screen, any number, or one mouse or pen (`src/viewer/pointer-arbiter.ts`; work unit 10); the wheel is no pointer and zooms whatever holds it. A press on the canvas in the orbit view takes the camera when nothing holds it, and a finger joins fingers that hold it. Every other press is refused: a pointer of another type, a second pen, and every press while walking. The orbit controls and the zoom each hear a pointer that holds the camera from its press to its end, its release or cancel, wherever its events land, and nothing of any other pointer: not a refused one, not one pressed elsewhere on the page, not a hover. A pointer keeps the camera through a change of mode until its end, and a refused one stays refused until its end, even once the camera is free. The camera is free once both have heard each holder's end, so neither ever holds two kinds of pointer. Known limit: the orbit controls follow no move while walking, so a pointer that holds the camera from before walk mode, still down when the orbit view comes back, turns the view at its next move by all it travelled meanwhile. The orbit controls keep a finger's position but not a mouse's or a pen's, and took every pointer they heard for their own: a mouse and a finger down together threw inside them, as did a mouse and a pen, a middle button pressed while a finger turned the view and a finger lifted elsewhere during a mouse drag, and a pen hovering during a mouse drag turned the view (work unit 2, review 11, F39).
+ - **Keyboard**, by physical key (`event.code`), in two modes. A key takes the meaning of the mode in force when it is pressed, so a key pressed right after F, before the next frame, already belongs to the new mode. A focused button keeps Space and Enter, a focused slider other than the scrubber keeps its arrows, Home, End, Page Up and Page Down, and a text field keeps every key.
+ 
+   | Key | Orbit view | Walk mode |
+diff --git a/docs/devlog/summary.md b/docs/devlog/summary.md
+index 3939757..0611b02 100644
+--- a/docs/devlog/summary.md
++++ b/docs/devlog/summary.md
+@@ -2,7 +2,7 @@
+ 
+ Newest first. One dated line per behaviour-changing session; `detailed/` holds anything a later session could trip over.
+ 
+-- 2026-10-29 (work unit 10): **Mixed mouse, pen and touch no longer crash the orbit view** — OrbitControls keeps a finger's position but not a mouse's or a pen's and takes every pointer it hears for its own, so a finger landing during a mouse drag, a mouse pressed during a finger's drag that then lifted (work unit 2's F39), a mouse and a pen, a middle button during a finger's turn, a finger lifted elsewhere on the page during a mouse drag and a finger pressed while walking and lifted after a mouse press each threw `Cannot read properties of undefined (reading 'x')`, and a pen hovering during a mouse drag turned the view. Now one kind of input holds the camera at a time, the fingers or one mouse or pen (`src/viewer/pointer-arbiter.ts`), and the controls and the zoom each hear only its pointers, from press to end. The seeded pointer sequences had missed it because they were written around it when F39 was deferred: with only those rules lifted, 284 of their 400 seeds threw. They now mix every pointer type, press elsewhere, hover and change mode, and found one more gap, a press released while walking that dropped its held move as a click's.
++- 2026-10-29 (work unit 10): **Mixed mouse, pen and touch no longer crash the orbit view** — OrbitControls keeps a finger's position but not a mouse's or a pen's and takes every pointer it hears for its own, so a finger landing during a mouse drag, a mouse pressed during a finger's drag that then lifted (work unit 2's F39), a mouse and a pen, a middle button during a finger's turn, a finger lifted elsewhere on the page during a mouse drag and a finger pressed while walking and lifted after a mouse press each threw `Cannot read properties of undefined (reading 'x')`, and a pen hovering during a mouse drag turned the view. Now one kind of pointer holds the camera at a time, the fingers or one mouse or pen (`src/viewer/pointer-arbiter.ts`), and the controls and the zoom each hear only its pointers, from press to end. The seeded pointer sequences had missed it because they were written around it when F39 was deferred: with only those rules lifted, 284 of their 400 seeds threw. They now mix every pointer type, press elsewhere, hover and change mode, and found one more gap, a press released while walking that dropped its held move as a click's.
+ 
+ - 2026-10-28 (later): **Every closed part faces out** — the Arms and Armor Court's gables were wound inside out (`extrudeOutline` took a clockwise outline as given, and now takes either way round), two Dendur temple rolls ran down their height and were drawn mirrored, the Hunt arches' and the Great Hall arches' soffits held coffers deeper than their shells (now 0.14 and 0.16 m thick, the Hunt one set 1 cm behind the wall's face, and `barrelVault` refuses coffers whose floors would stand out of its shell), the acanthus leaves of every medium-detail Corinthian capital folded at their tips (each quad is now split along the diagonal that folds it least), and Diana's bow in the Engelhard Court was an open tube whose ends lined up so that it read closed (now capped). The closure gate now reads every closed part's facing as drawn, every upright face's inside, the pockets on its lines, on a grid over each shape and beside each open edge, and every piece's matrix, red with each defect put back. The model's triangles and pieces are unchanged but for the bow's two caps.
+ 
+diff --git a/docs/learning/gate-proofs.md b/docs/learning/gate-proofs.md
+index 6541f64..98e1d3b 100644
+--- a/docs/learning/gate-proofs.md
++++ b/docs/learning/gate-proofs.md
+@@ -37,3 +37,25 @@ With the work's indexes and citations, all 7 of the file's tests pass. Its detec
+ With the work's screen the gate is green: one group of 565 pieces, its lowest point on the floor.
+ 
+ **Evidence:** `git show db1e297:docs/learning/lessons-evidence.md` reads the lesson's evidence back, and `git show db1e297:docs/learning/lessons.md` its line.
++
++## Mixed pointer input reaches the orbit view's camera input
++
++**Lesson:** none in lessons.md; the defect is work unit 2's review 11, F39, fixed as work unit 10. OrbitControls keeps a finger's position but not a mouse's or a pen's, and takes every pointer it hears for its own: a mouse and a finger down together threw `Cannot read properties of undefined (reading 'x')` inside it (three r186, `OrbitControls.js:1323` and `:1639`), with the orbit view's click and without, and so did a mouse and a pen, a middle press during a finger's turn, a finger lifted elsewhere on the page during a mouse drag, and a finger pressed while walking and lifted after a mouse press; a pen hovering during a mouse drag turned the view.
++
++**Gates:** `src/viewer/mixed-pointers.test.ts` (a table of mixed sequences on the real rig, with the click and without), `src/viewer/pointer-arbiter.test.ts` (the arbiter alone), `src/viewer/click-random.test.ts` (the seeded random sequences, now mixing every pointer type), `src/viewer/click.test.ts` (a press released while walking) and `tests/e2e/mixed-pointers.spec.ts` (the browser's own mouse and touch). Each header names its bounds.
++
++**Proved red (2026-10-29):** each with work unit 10's tests, the named files put back and then restored; as run, where a test needed its mocks adapted to hear older files.
++
++- The rig, the zoom and the click of `8a6a0c2`, before the work, as they were: the table red in all ten rows, with the click and without, eight throwing inside OrbitControls, the pen's hover leaving the camera 6.07 m off and the pinch a mouse joined 6 cm off; `click.test.ts` red (the held move, sent on at a release while walking: none).
++- The random sequences on the same files: every run red, since the test hears the zoom through the filter that `8a6a0c2`'s zoom does not take, and the controls through listener fields that `8a6a0c2`'s rig wraps only after connecting them. With the test's OrbitControls mock made to disconnect, wrap and connect again (the zoom left unheard), 237 of the 400 seeds threw inside OrbitControls, with the click and without.
++- The e2e spec, in a worktree at `8a6a0c2` with only the spec added: three uncaught exceptions, as the finger landed during the mouse drag and as it lifted, and as the finger lifted while the mouse was down.
++- Why the random sequences of `8a6a0c2` passed there: their generator was written around F39 when review 11 deferred it, so that nothing pressed while a mouse or a pen was down, no finger ended while one was, and no middle button pressed while a finger was. That test, with only those rules lifted, threw in 284 of its 400 seeds at `8a6a0c2`.
++- The click of `8a6a0c2` alone, as it was: the random sequences red in 3 seeds (32, 130 and 139), each a sub-slop press released while walking whose held move was dropped as a click's.
++- The arbiter freeing the camera at the first consumer that hears an end, not the last: its freeing test red; with the rig's relay of cancels also left out, 110 of the random sequences' 800 runs red, 12 of them throwing inside OrbitControls (with the work's freeing rule, the same 110 red and none throwing).
++- Review 11's files of `42722e9`, on the mixed sequences: its click as it was, red in 19 seeds (a click from a press another pointer was down during, a finger whose capture was lost among them, F37, or whose buttons changed, F38, and held moves dropped at a release); its zoom, its listeners put through the arbiter's filter, red in 268 of the 800 runs (ends heard on the canvas only, F37); the rig's relay of cancels left out, red in 110 (F37).
++- Before work unit 10, on the sequences of `4e16588`, which mixed no pointer types: red with the gate, zoom and rig of `42722e9` in 308 of the 400 seeds, the gate alone 44, the zoom 250 and the rig 145 (review 11's repair, moved here from AGENTS.md).
++- The rig's guard: with its check of a connected OrbitControls left out, the table file's refusal test red ("expected [Function] to throw an error").
++
++With the work's files every gate is green.
++
++**Evidence:** `docs/work/10_mixed-pointer-input/plan.md` and its reviews; `docs/work/2_doors-and-collection/reviews/11_implementation.md` for F39 as found.
+diff --git a/docs/work/10_mixed-pointer-input/plan.md b/docs/work/10_mixed-pointer-input/plan.md
+index 69c0be4..9aa32e4 100644
+--- a/docs/work/10_mixed-pointer-input/plan.md
++++ b/docs/work/10_mixed-pointer-input/plan.md
+@@ -19,11 +19,11 @@ Excluded: walk mode's own input (`src/walk/walk-mode.ts`), which another session
+ 
+ ## Approach
+ 
+-One kind of input holds the camera at a time: the fingers on the screen, any number, or one mouse or pen. A press on the canvas in the orbit view is passed on when nothing holds the camera, or when it is a finger and fingers hold it; every other press is refused, a pointer of another type, a second mouse or pen, and every press while walking. Each consumer, OrbitControls and the zoom's input, hears a passed pointer from its press to its end wherever its events land, and nothing of any other pointer, a refused one, one pressed elsewhere, or a hover. A passed pointer keeps its life through a change of mode, and a refused one stays refused to its end, even once the camera is free. The camera is free once every consumer has heard each holder's end, so no consumer ever holds two kinds of input, even one that missed an end.
++One kind of pointer holds the camera at a time: the fingers on the screen, any number, or one mouse or pen; the wheel is no pointer. A press on the canvas in the orbit view is passed on when nothing holds the camera, or when it is a finger and fingers hold it; every other press is refused, a pointer of another type, a second pen, and every press while walking. Each consumer, OrbitControls and the zoom's input, hears a passed pointer from its press to its end wherever its events land, and nothing of any other pointer, a refused one, one pressed elsewhere, or a hover. A passed pointer keeps its life through a change of mode, and a refused one stays refused to its end, even once the camera is free. The camera is free once every consumer has heard each holder's end, so no consumer ever holds two kinds of pointer, even one that missed an end.
+ 
+ Mechanism: `PointerArbiter.consumer()` gives each consumer a filter its pointer listeners go through, with that consumer's own open pointers; a press is decided once, by the first consumer that hears it, so the listeners' order does not matter. The zoom's listeners go through its filter as `bindZoomInput` adds them. OrbitControls is built without an element, its three bound pointer listeners (`_onPointerDown`, `_onPointerMove`, `_onPointerUp`, which `connect` and its first press add, each read from the instance as it is added) are put through the filter, and then it connects to the canvas. These are private by convention, so the rig throws, naming the listener and what to change, where a release of three.js has none of them, rather than leave the controls hearing every pointer; the random sequences and the rig's table would turn red if a release kept the names but stopped using them.
+ 
+-Tradeoffs: a pointer whose end a consumer never hears holds the camera until it presses again (Pointer Events 3 gives every press an end; the rig already relays a cancel landing elsewhere to the controls, review 11, F37). Rejected: stopping refused events in the document's capture phase, which would also hide them from the timeline bar's and the menus' listeners on the window; a proxy element for OrbitControls, more surface than three bound listeners.
++Tradeoffs: a pointer whose end a consumer never hears holds the camera until the same pointer presses again, as a mouse does; a finger's id never comes back, so a lost finger's end would hold it until the page reloads, every mouse and pen refused meanwhile (review 0, F1). Pointer Events 3 gives every press an end, and on this page every end reaches the document, a cancel landing off the canvas being relayed to the controls (review 11, F37). A pointer that holds the camera from before walk mode and is still down when the orbit view comes back turns the view at its next move by all it travelled meanwhile, since the controls follow no move while disabled; this predates the work, and the spec names it as a known limit (review 0, F3). Rejected: stopping refused events in the document's capture phase, which would also hide them from the timeline bar's and the menus' listeners on the window; a proxy element for OrbitControls, more surface than three bound listeners.
+ 
+ The click gate holds a sub-slop press's moves and dropped them at its release; released while walking, the press was no click, yet its held move was dropped all the same, so the consumers heard the release without the latest move (harmless while walking, since neither acts then, but a broken stream). It now sends the held move on there, as for any press that is no click.
+ 
+@@ -31,9 +31,9 @@ Why the random sequences missed F39: they were written around it. When review 11
+ 
+ ## Acceptance criteria
+ 
+-- [ ] No mix of mouse, pen and touch throws on the real rig or moves the camera by a pointer that does not hold it, with the click gate and without: `src/viewer/mixed-pointers.test.ts`, red at `8a6a0c2` (eight of ten rows threw, the pen's hover moved the camera 6.07 m, the pinch a mouse joined ended 6 cm off).
++- [ ] No mix of mouse, pen and touch throws on the real rig or moves the camera by a pointer that does not hold it, with the click gate and without: `src/viewer/mixed-pointers.test.ts`, red at `8a6a0c2` (eight of ten rows threw, the pen's hover left the camera 6.07 m off, the pinch a mouse joined ended 6 cm off).
+ - [ ] The arbiter's rules on their own, each consumer hearing a passed pointer's whole life and nothing else: `src/viewer/pointer-arbiter.test.ts`, its freeing rule red with the camera freed at the first end heard.
+-- [ ] The seeded random sequences mix pointer types, press elsewhere, hover and change mode, with the click and without, and no listener throws: `src/viewer/click-random.test.ts`, red at `8a6a0c2` (237 of 400 seeds threw).
++- [ ] The seeded random sequences mix pointer types, press elsewhere, hover and change mode, with the click and without, and no listener throws: `src/viewer/click-random.test.ts`, red at `8a6a0c2` (every run; with the test's controls mock adapted to that rig, 237 of 400 seeds threw).
+ - [ ] A release while walking sends its held move on: `src/viewer/click.test.ts`, red at `8a6a0c2`.
+ - [ ] Through the browser's own mouse and touch, both orders of F39 log no uncaught exception and turn the view as the holder alone does: `tests/e2e/mixed-pointers.spec.ts`, red at `8a6a0c2` (three uncaught exceptions).
+ - [ ] The behaviour recorded in `docs/design/spec.md` (Page: Camera; Collection: Labels) and the Gates text in AGENTS.md.
+diff --git a/src/viewer/camera-rig.ts b/src/viewer/camera-rig.ts
+index d99ee86..637775e 100644
+--- a/src/viewer/camera-rig.ts
++++ b/src/viewer/camera-rig.ts
+@@ -1,7 +1,7 @@
+ /**
+  * Camera and OrbitControls, tuned for both a 1 km aerial view and a 3 m interior close-up, plus the follow camera's smoothing, the keyboard moves of
+  * the orbit view (`translate`), the zoom toward the pointer (src/viewer/zoom.ts; the controls' own zoom is off) and the first-person pose of walk mode.
+- * The controls and the zoom hear pointers through one arbiter (src/viewer/pointer-arbiter.ts), so one kind of input holds the camera at a time.
++ * The controls and the zoom hear pointers through one arbiter (src/viewer/pointer-arbiter.ts), so one kind of pointer holds the camera at a time.
+  * Depth precision: the near plane follows the distance to the orbit target (1%, from 3 cm to 20 m) and never exceeds half the camera's height above the
+  * workspace ground, so a 24-bit depth buffer resolves about 1 cm at 1 km from an aerial view and well under 1 mm across a hall seen from inside.
+  * The far plane is fixed beyond the haze, which hides the edge of the workspace ground.
+@@ -40,16 +40,21 @@ const CONTROLS_LISTENERS = ['_onPointerDown', '_onPointerMove', '_onPointerUp']
+ 
+ /**
+  * Puts the pointer listeners of `controls`, not yet connected to an element, through `hear`, so that once connected they hear only what the arbiter
+- * passes (src/viewer/pointer-arbiter.ts). Throws, naming the listener, where a release of three.js has no such listener, rather than leave the
+- * controls hearing every pointer.
++ * passes (src/viewer/pointer-arbiter.ts). Throws, naming what it found, where the controls are already connected or a release of three.js has no
++ * such listener, rather than leave the controls hearing every pointer.
+  */
+-function hearThrough(controls: OrbitControls, hear: Hear): void {
++export function hearThrough(controls: OrbitControls, hear: Hear): void {
++  if (controls.domElement !== null) {
++    throw new Error(
++      'OrbitControls is already connected to an element, so its pointer listeners would hear every pointer, past the arbiter (src/viewer/pointer-arbiter.ts). Build it with no element, put its listeners through the arbiter, then connect it.',
++    );
++  }
+   const own = controls as unknown as Record<string, unknown>;
+   for (const key of CONTROLS_LISTENERS) {
+     const listener = own[key];
+     if (typeof listener !== 'function') {
+       throw new Error(
+-        `three.js r${REVISION}: OrbitControls has no ${key} listener, so the camera rig cannot put its pointer input through the arbiter (src/viewer/pointer-arbiter.ts). Put the pointer listeners this release's connect() adds through it in CONTROLS_LISTENERS (src/viewer/camera-rig.ts).`,
++        `three.js r${REVISION}: OrbitControls has no ${key} listener, so the camera rig cannot put its pointer input through the arbiter (src/viewer/pointer-arbiter.ts). List in CONTROLS_LISTENERS (src/viewer/camera-rig.ts) every instance field this release adds as a pointer listener, in connect() or on a press.`,
+       );
+     }
+     own[key] = hear(listener as PointerListener);
+diff --git a/src/viewer/click-random.test.ts b/src/viewer/click-random.test.ts
+index fff42dc..3101701 100644
+--- a/src/viewer/click-random.test.ts
++++ b/src/viewer/click-random.test.ts
+@@ -16,19 +16,13 @@
+  *   from its press to its release, of the primary button, its buttons unchanged, its capture kept and its travel under CLICK_SLOP, at its release
+  *   point; every such press a click; the camera and its target within 1 nm of where they were before its press (the controls' update rounds them by
+  *   up to 1e-14 m).
+- * A failure names the seed, its first problems and the events up to the first. Red with the rig, the zoom and the click of 8a6a0c2, before the arbiter:
+- * 237 of the 400 seeds threw inside OrbitControls (`Cannot read properties of undefined (reading 'x')`), with the click bound and without. Before
+- * work unit 10 these sequences pressed nothing while a mouse or a pen was down, ended no finger while one was and pressed no middle button while a
+- * finger was, by construction, F39 being deferred; with only those rules lifted, 284 of their 400 seeds threw at 8a6a0c2. Red with the click of
+- * 42722e9 (review 11): 19 seeds, clicks from a press another pointer was down during, a finger whose capture was lost among them (F37), or whose
+- * buttons changed (F38), and held moves dropped at a release; with its zoom: 268 of the 800 runs (F37); with the rig's relay of cancels left out:
+- * 110 runs, none throwing, since the camera is free only once both consumers have heard an end (F37); with the click of 8a6a0c2 alone: 3 seeds, a
+- * press released while walking dropping its held move. Over the 800 runs the sequences made 146 clicks, 1,876 button changes, 1,156 capture losses,
+- * 1,436 ends over another element, 1,844 cancels, 208 pinch steps, 60 middle-drag steps, 4,050 presses while another pointer was down, 1,336 presses
+- * refused while another kind held the camera, 452 presses that held it while a refused pointer was down, 862 presses elsewhere, 1,538 hovers, 1,596
+- * changes of mode and 2,000 presses while walking.
++ * A failure names the seed, its first problems and the events up to the first. The red proofs, and why these sequences missed F39 before work unit
++ * 10, are in docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input"); the counts of each case they make, in work
++ * unit 10's reviews.
+  * Bound: SEEDS sequences of STEPS actions, each with the click bound and without; the stand-in page's (src/viewer/pointer-testing.ts); the controls'
+- * damping off and a frame after each event; a finger pressed on another element keeps its events there, as its capture does in the browser.
++ * damping off and a frame after each event; a finger pressed on another element keeps its events there, as its capture does in the browser; the mode
++ * changes by the rig's `setWalking` alone, no walk mode running, so walk mode's own listeners (which take a press's capture while walking) are not
++ * in the page; each kind of case made more than 20 times over the 800 runs.
+  */
+ import { Vector3 } from 'three';
+ import type * as Controls from 'three/addons/controls/OrbitControls.js';
+@@ -69,7 +63,7 @@ vi.mock('three/addons/controls/OrbitControls.js', async (importOriginal) => {
+       const own = this as unknown as Record<string, ((event: PointerEvent) => void) | undefined>;
+       for (const key of ['_onPointerDown', '_onPointerMove', '_onPointerUp']) {
+         const listener = own[key];
+-        if (listener === undefined) throw new Error(`OrbitControls has no ${key} listener to hear.`);
++        if (listener === undefined) throw new Error(`OrbitControls has no ${key} listener, so this test cannot hear what the controls hear: name here the pointer listener fields the three.js release adds, as CONTROLS_LISTENERS does (src/viewer/camera-rig.ts).`);
+         own[key] = (event) => {
+           heard.by?.('controls', event as unknown as Pointer);
+           listener(event);
+@@ -174,7 +168,7 @@ function play(seed: number, gate: boolean): Outcome {
+   const problem = (kind: string, text: string, seq = page.current): void => {
+     problems.push({ kind, text, seq });
+   };
+-  const seen: Record<string, number> = { clicks: 0, chords: 0, losses: 0, outside: 0, cancels: 0, pinches: 0, middles: 0, nested: 0, refused: 0, outlived: 0, elsewhere: 0, hovers: 0, walks: 0, walked: 0 };
++  const seen: Record<string, number> = { clicks: 0, chords: 0, losses: 0, outside: 0, cancels: 0, pinches: 0, middles: 0, nested: 0, refused: 0, second: 0, outlived: 0, elsewhere: 0, hovers: 0, walks: 0, walked: 0 };
+   const count = (what: string): void => {
+     seen[what] = (seen[what] ?? 0) + 1;
+   };
+@@ -277,7 +271,7 @@ function play(seed: number, gate: boolean): Outcome {
+     if (live.size > 0) count('nested');
+     if (elsewhere) count('elsewhere');
+     else if (walking) count('walked');
+-    else if (!holds) count('refused');
++    else if (!holds) count(holders.every((q) => q.device === device) ? 'second' : 'refused');
+     if (holds && all((q) => !q.holds && !q.elsewhere).length > 0) count('outlived');
+     const id = device === 'mouse' ? 1 : device === 'pen' ? (live.has(2) ? 3 : 2) : (nextFinger += 1);
+     // The first pointer of its type down is the primary one: a mouse always, a pen or a finger with none of its type down.
+diff --git a/src/viewer/click.test.ts b/src/viewer/click.test.ts
+index 6e1bf80..cf246b5 100644
+--- a/src/viewer/click.test.ts
++++ b/src/viewer/click.test.ts
+@@ -6,7 +6,7 @@
+  *   another button, one that a second pointer joins, one the browser cancels, and one pressed or released while walking.
+  * - A click's moves never reach a listener after the click's own. A drag's latest held move goes on once, as the move or the release that passes the
+  *   slop arrives, then every move after it; a second pointer landing sends the first's held move on before its own press, and so does a release
+- *   while walking, which is no click (red at 8a6a0c2, which dropped the held move there as a click's).
++ *   while walking, which is no click.
+  * - One table of presses on the real CameraRig (OrbitControls and the zoom's input): a tap, a drag, a sub-slop pinch, a drag then a pinch, a pinch
+  *   with one finger lifted then a tap, an out-and-back drag, the right-button pan, a pen, two buttons pressed and let go in turn, a mouse click while a
+  *   finger whose capture was lost is down, and a finger's drag after one whose capture was lost was released over another element. Each makes the
+diff --git a/src/viewer/mixed-pointers.test.ts b/src/viewer/mixed-pointers.test.ts
+index 4dbb467..ff8195c 100644
+--- a/src/viewer/mixed-pointers.test.ts
++++ b/src/viewer/mixed-pointers.test.ts
+@@ -6,17 +6,19 @@
+  * page and released while a mouse drags, a pen hovering while a mouse drags, a finger pressed while walking and released after a mouse press back in
+  * the orbit view, a mouse a finger refused that outlives it while the next finger holds the camera, and a pinch a mouse joins. Each row names the
+  * pointers that hold the camera; then a mouse drags once more. Each sequence throws nothing and leaves the camera, its target, the zoom's factors and
+- * the user moves as a rig sent only the events of the pointers that hold the camera leaves them, and makes no click.
+- * Red with the rig, the zoom and the click of 8a6a0c2: eight rows threw inside OrbitControls (`Cannot read properties of undefined (reading 'x')`),
+- * with the click bound and without; the pen's hover turned the view, the camera ending 6.07 m off; and the pinch a mouse joined ended 6 cm off.
++ * the user moves as a rig sent only the events of the pointers that hold the camera leaves them, and makes no click. The rig refuses OrbitControls it
++ * cannot put through the arbiter, naming what it found. Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's
++ * camera input").
+  * Bound: the stand-in page's; the rig runs undamped, a frame after each event; every move of a pointer that holds the camera is 5 px or more, so the
+  * click holds none of them and a row's outcome is the same with the click bound and without.
+  */
+-import { Vector3 } from 'three';
++import { PerspectiveCamera, Vector3 } from 'three';
++import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+ 
+-import { CameraRig } from './camera-rig.js';
++import { CameraRig, hearThrough } from './camera-rig.js';
+ import { bindClick } from './click.js';
++import type { Hear } from './pointer-arbiter.js';
+ import { Page, Pointer } from './pointer-testing.js';
+ import type { PointerInit } from './pointer-testing.js';
+ 
+@@ -216,4 +218,18 @@ describe('mixed pointer input on the real rig', () => {
+     }
+     expect(problems).toEqual([]);
+   });
++
++  it('refuses OrbitControls it cannot put through the arbiter, connected already or missing a listener, naming what it found and what to do', () => {
++    const page = new Page();
++    const camera = new PerspectiveCamera();
++    const pass: Hear = (listener) => listener;
++    expect(() => {
++      hearThrough(new OrbitControls(camera, page.canvas as unknown as HTMLElement), pass);
++    }).toThrow(/^OrbitControls is already connected to an element, .* Build it with no element, put its listeners through the arbiter, then connect it\.$/);
++    const bare = new OrbitControls(camera);
++    delete (bare as unknown as Record<string, unknown>)['_onPointerMove'];
++    expect(() => {
++      hearThrough(bare, pass);
++    }).toThrow(/^three\.js r\d+: OrbitControls has no _onPointerMove listener, .* List in CONTROLS_LISTENERS \(src\/viewer\/camera-rig\.ts\) every instance field/);
++  });
+ });
+diff --git a/src/viewer/pointer-arbiter.test.ts b/src/viewer/pointer-arbiter.test.ts
+index db2731a..dad793f 100644
+--- a/src/viewer/pointer-arbiter.test.ts
++++ b/src/viewer/pointer-arbiter.test.ts
+@@ -2,7 +2,7 @@
+  * The arbiter of mixed pointer input on its own (src/viewer/pointer-arbiter.ts; docs/design/spec.md, Camera), each consumer a recorder of what its
+  * listeners hear, the events plain objects:
+  * - the first press holds the camera, fingers join fingers, and every other press is refused while it is held: a pointer of another type and a second
+- *   mouse or pen; the camera is free once every consumer has heard the end of each pointer it was passed, and not before;
++ *   pen; the camera is free once every consumer has heard the end of each pointer it was passed, and not before;
+  * - every press while walking is refused, and a passed pointer keeps its whole life through walk mode; a refused pointer stays refused to its end,
+  *   once the camera is free and back in the orbit view, and holds nothing;
+  * - each consumer hears a passed pointer's press, moves and end once, and nothing of a pointer it never heard press (pressed elsewhere, or hovering);
+@@ -125,7 +125,7 @@ describe('the pointer arbiter', () => {
+     expect([a.heard, b.heard]).toEqual([['down 1'], ['down 1']]);
+   });
+ 
+-  it('frees the camera only once every consumer has heard the end of each pointer it was passed, so none ever holds two kinds of input', () => {
++  it('frees the camera only once every consumer has heard the end of each pointer it was passed, so none ever holds two kinds of pointer', () => {
+     const arbiter = new PointerArbiter(() => true);
+     const [a, b] = [consumer(arbiter.consumer()), consumer(arbiter.consumer())];
+     const both = (event: PointerEvent): void => {
+diff --git a/src/viewer/pointer-arbiter.ts b/src/viewer/pointer-arbiter.ts
+index f129d8e..90c859a 100644
+--- a/src/viewer/pointer-arbiter.ts
++++ b/src/viewer/pointer-arbiter.ts
+@@ -4,15 +4,17 @@
+  * takes every pointer it hears for one of its own. So a mouse and a finger down together threw inside it (`Cannot read properties of undefined
+  * (reading 'x')`, work unit 2, review 11, F39), and so did a mouse and a pen, a middle button pressed while a finger turned the view, and a finger
+  * released elsewhere on the page while a mouse dragged; and a pen hovering while a mouse dragged turned the view by the pen.
+- * So one kind of input holds the camera at a time, the fingers on the screen, any number, or one mouse or pen:
++ * So one kind of pointer holds the camera at a time, the fingers on the screen, any number, or one mouse or pen (the wheel is no pointer):
+  * - a press on the canvas in the orbit view is passed on when nothing holds the camera, or when it is a finger and fingers hold it;
+- * - every other press is refused: a pointer of another type, a second mouse or pen, and every press while walking;
++ * - every other press is refused: a pointer of another type, a second pen, and every press while walking;
+  * - each consumer hears a passed press, then that pointer's moves and its end (its release or cancel) wherever they land, and nothing else: nothing of
+  *   a refused pointer, nor of a pointer pressed elsewhere, nor of a hover. A passed pointer keeps its whole life in every consumer, through a change of
+  *   mode; a refused one stays refused to its end, even once the camera is free;
+- * - the camera is free again once every consumer has heard the end of every pointer it was passed, so no consumer ever holds two kinds of input.
++ * - the camera is free again once every consumer has heard the end of every pointer it was passed, so no consumer ever holds two kinds of pointer.
+  * Each press is decided once, by the first consumer that hears it, so every consumer hears the same presses whatever the order of their listeners.
+- * Bound: a pointer whose end a consumer never hears (Pointer Events 3 gives every press one) holds the camera until it presses again.
++ * Bound: a pointer whose end a consumer never hears holds the camera until the same pointer presses again, as a mouse does; a finger's id never comes
++ * back, so a lost finger's end would hold it until the page reloads, every mouse and pen refused meanwhile. Pointer Events 3 gives every press an end,
++ * and on this page every end reaches the document, a cancel landing off the canvas being relayed to the controls (src/viewer/camera-rig.ts).
+  */
+ 
+ /** A pointer listener as a consumer adds it. */
+diff --git a/tests/e2e/mixed-pointers.spec.ts b/tests/e2e/mixed-pointers.spec.ts
+index 3484174..49efcfb 100644
+--- a/tests/e2e/mixed-pointers.spec.ts
++++ b/tests/e2e/mixed-pointers.spec.ts
+@@ -2,9 +2,10 @@
+  * Mixed mouse and touch on the orbit view through the browser's own input (docs/design/spec.md, Camera; work unit 10; work unit 2, review 11, F39):
+  * the mouse by Playwright's (CDP Input.dispatchMouseEvent), the fingers by CDP Input.dispatchTouchEvent, at the aerial-ne preset.
+  * - A finger lands during a mouse drag, moves and lifts, and the mouse drags on: no uncaught exception or console error, and the camera ends where the
+- *   same mouse drag alone puts it (red at 8a6a0c2: OrbitControls threw "Cannot read properties of undefined (reading 'x')" as the finger landed).
++ *   same mouse drag alone puts it.
+  * - A mouse presses during a finger's drag, the finger drags on and lifts first, and the mouse drags and is released: none either, and the camera ends
+- *   where the same finger drag alone puts it (red at 8a6a0c2 as the finger lifted).
++ *   where the same finger drag alone puts it.
++ * Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input").
+  * Bound: 1280×720 with touch; each drag starts from the preset chosen again from the view menu; cameras compared within 1 cm once settled, where the
+  * drags themselves move the camera hundreds of metres.
+  */
