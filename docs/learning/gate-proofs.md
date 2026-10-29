@@ -37,3 +37,22 @@ With the work's indexes and citations, all 7 of the file's tests pass. Its detec
 With the work's screen the gate is green: one group of 565 pieces, its lowest point on the floor.
 
 **Evidence:** `git show db1e297:docs/learning/lessons-evidence.md` reads the lesson's evidence back, and `git show db1e297:docs/learning/lessons.md` its line.
+
+## Mixed pointer input reaches the orbit view's camera input
+
+**Lesson:** none in lessons.md; the defect is work unit 2's review 11, F39, fixed as work unit 10. OrbitControls keeps a finger's position but not a mouse's or a pen's, and takes every pointer it hears for its own: a mouse and a finger down together threw `Cannot read properties of undefined (reading 'x')` inside it (three r186, `OrbitControls.js:1323` and `:1639`), with the orbit view's click and without, and so did a mouse and a pen, a middle press during a finger's turn, a finger lifted elsewhere on the page during a mouse drag, and a finger pressed while walking and lifted after a mouse press; a pen hovering during a mouse drag turned the view.
+
+**Gates:** `src/viewer/mixed-pointers.test.ts` (a table of mixed sequences on the real rig, with the click and without), `src/viewer/pointer-arbiter.test.ts` (the arbiter alone), `src/viewer/click-random.test.ts` (the seeded random sequences, now mixing every pointer type), `src/viewer/click.test.ts` (a press released while walking) and `tests/e2e/mixed-pointers.spec.ts` (the browser's own mouse and touch). Each header names its bounds.
+
+**Proved red (2026-10-29):** each with work unit 10's tests, the named files put back and then restored.
+
+- The rig, the zoom and the click of `8a6a0c2`, before the work: the table red in all ten rows, with the click and without, eight throwing inside OrbitControls, the pen's hover leaving the camera 6.07 m off and the pinch a mouse joined 6 cm off; the random sequences red in 237 of the 400 seeds, which threw inside OrbitControls with the click and without; the e2e spec red in a worktree at `8a6a0c2` with only the spec added, three uncaught exceptions, as the finger landed and as it lifted.
+- The random sequences of `8a6a0c2` passed there because their generator was written around F39 when review 11 deferred it: nothing pressed while a mouse or a pen was down, no finger ended while one was, and no middle button pressed while a finger was. With only those rules lifted, 284 of their 400 seeds threw at `8a6a0c2`.
+- The click of `8a6a0c2` alone: `click.test.ts` red (the held move, sent on at the release: none), the random sequences red in 3 seeds (32, 130 and 139), each a sub-slop press released while walking whose held move was dropped as a click's.
+- The arbiter freeing the camera at the first consumer that hears an end, not the last: its freeing test red; with the rig's relay of cancels also left out, 110 of the random sequences' 800 runs red, 12 of them throwing inside OrbitControls (with the work's freeing rule, the same 110 red and none throwing).
+- Review 11's files of `42722e9`, on the mixed sequences: its click red in 19 seeds (a click from a press another pointer was down during, a finger whose capture was lost among them, F37, or whose buttons changed, F38, and held moves dropped at a release); its zoom, given the arbiter's filter, red in 268 of the 800 runs (ends heard on the canvas only, F37); the rig's relay of cancels left out, red in 110 (F37).
+- Before work unit 10, on the sequences of `4e16588`, which mixed no pointer types: red with the gate, zoom and rig of `42722e9` in 308 of the 400 seeds, the gate alone 44, the zoom 250 and the rig 145 (review 11's repair, moved here from AGENTS.md).
+
+With the work's files every gate is green.
+
+**Evidence:** `docs/work/10_mixed-pointer-input/plan.md` and its reviews; `docs/work/2_doors-and-collection/reviews/11_implementation.md` for F39 as found.
