@@ -20,7 +20,8 @@ import { installStyles } from './ui/styles.js';
 import { createUi } from './ui/ui.js';
 import type { UiState, WalkStatus } from './ui/ui.js';
 import { GeometryBvhs } from './walk/bvh-cache.js';
-import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
+import { SPAWNS, startOf } from './walk/spawns.js';
+import type { Spawn } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
 import { ARTWORK_QUERY, ArtLabel, artworkInstances } from './viewer/art-label.js';
 import { bindClick } from './viewer/click.js';
@@ -235,8 +236,8 @@ function boot(): void {
     const next = floorStep(floors.id, direction);
     if (next !== floors.id) chooseFloor(next);
   };
-  /** Into walk mode (at `spawn`, or as walk-mode.ts decides): the floor view ends as with All, and the follow camera and the preset in view go off, as for a move by the user. */
-  const enterWalk = (spawn: string | null): void => {
+  /** Into walk mode (at `spawn`, a spawn's id or a place, or as walk-mode.ts decides): the floor view ends as with All, and the follow camera and the preset in view go off, as for a move by the user. */
+  const enterWalk = (spawn: string | Spawn | null): void => {
     if (floors.show(null)) cutChanged();
     atFloor = false;
     follow = false;
@@ -316,14 +317,12 @@ function boot(): void {
     // The keys route by the mode now, not the mode the last frame drew: F and then Space in one frame jump rather than play.
     () => walk.active,
   );
-  // The camera frames the canvas above the bar while the bar is whole (the replay open, in the orbit view), so set the inset before the first pose. Else
-  // (noui, the replay closed, walking) the view is the whole canvas; walking, it is centred on the crosshair, so unfolding the bar never moves it.
+  // The view: the canvas above the whole bar (the replay open, orbit view), else the whole canvas, so unfolding the bar while walking never moves it.
   const fitInset = (): void => {
     viewer.setInsetBottom(query.noui || walk.active || !replay ? 0 : Math.round(ui.bar.getBoundingClientRect().height));
     needsRender = true;
   };
   fitInset();
-  /** What the inset was last fitted for: walking, the whole bar or the replay closed. */
   let insetFor = replay ? 'bar' : 'closed';
   if (query.cam !== null) {
     const [px, py, pz, tx, ty, tz] = query.cam;
@@ -341,9 +340,10 @@ function boot(): void {
   doors.sync(player.t, 0, true);
   performance.mark('met:doors-set');
   if (query.walk) {
-    const known = query.spawn === null || spawnById(query.spawn) !== undefined;
-    if (!known) warnings.push(`Query parameter spawn="${query.spawn}" names no walk spawn; use one of ${SPAWNS.map((sp) => sp.id).join(', ')}. The walk starts at ${DEFAULT_SPAWN}.`);
-    enterWalk(known ? query.spawn : null);
+    // A spawn's id, or a place of the query's own (src/walk/spawns.ts `startOf`).
+    const start = startOf(query.spawn);
+    if (start.warning !== null) warnings.push(start.warning);
+    enterWalk(start.spawn);
     // Capture mode shows the walker's view from its first frame.
     if (query.shot) walk.prepareNow(player.t);
     if (query.shot) performance.mark('met:walk-placed');
@@ -422,7 +422,7 @@ function boot(): void {
     artLabel.frame(walk.active, drawnView);
     shownArt = artLabel.id === null ? null : (cards.get(artLabel.id) ?? null);
     ui.sync(state());
-    // Into or out of walk mode, or the replay opened or closed: the inset changes with it, measured after the bar has changed, and the view is fitted again.
+    // Into or out of walk mode ('walk'), or the replay opened ('bar') or closed: the inset follows, measured after the bar has changed; the view refits.
     const inset = walk.active ? 'walk' : replay ? 'bar' : 'closed';
     if (inset !== insetFor) {
       insetFor = inset;

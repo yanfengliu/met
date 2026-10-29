@@ -1,14 +1,17 @@
 /**
  * Camera and OrbitControls, tuned for both a 1 km aerial view and a 3 m interior close-up, plus the follow camera's smoothing, the keyboard moves of
  * the orbit view (`translate`), the zoom toward the pointer (src/viewer/zoom.ts; the controls' own zoom is off) and the first-person pose of walk mode.
+ * The controls and the zoom hear pointers through one arbiter (src/viewer/pointer-arbiter.ts), so one kind of pointer holds the camera at a time.
  * Depth precision: the near plane follows the distance to the orbit target (1%, from 3 cm to 20 m) and never exceeds half the camera's height above the
  * workspace ground, so a 24-bit depth buffer resolves about 1 cm at 1 km from an aerial view and well under 1 mm across a hall seen from inside.
  * The far plane is fixed beyond the haze, which hides the edge of the workspace ground.
  */
-import { Box3, MathUtils, PerspectiveCamera, Ray, Vector3 } from 'three';
+import { Box3, MathUtils, PerspectiveCamera, Ray, REVISION, Vector3 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import type { CameraFocus } from '../build/types.js';
+import { PointerArbiter } from './pointer-arbiter.js';
+import type { Hear, PointerListener } from './pointer-arbiter.js';
 import { DEFAULT_FOV, fitBox, presetById, resolvePreset } from './presets.js';
 import type { CameraPose } from './presets.js';
 import { bindZoomInput, pointerRay, zoomStep } from './zoom.js';
@@ -29,6 +32,34 @@ const FOLLOW_MARGIN = 1.15;
 const FOLLOW_TAU = 0.9;
 const FOLLOW_ELEVATION_MIN = 14 * MathUtils.DEG2RAD;
 const FOLLOW_ELEVATION_MAX = 62 * MathUtils.DEG2RAD;
+/**
+ * The pointer listeners of three's OrbitControls (r186): `connect` adds `_onPointerDown` (presses) and `_onPointerUp` (cancels) to its element, and its
+ * first press adds `_onPointerMove` and `_onPointerUp` (releases) to the document, each read from the instance as it is added.
+ */
+const CONTROLS_LISTENERS = ['_onPointerDown', '_onPointerMove', '_onPointerUp'] as const;
+
+/**
+ * Puts the pointer listeners of `controls`, not yet connected to an element, through `hear`, so that once connected they hear only what the arbiter
+ * passes (src/viewer/pointer-arbiter.ts). Throws, naming what it found, where the controls are already connected or a release of three.js has no
+ * such listener, rather than leave the controls hearing every pointer.
+ */
+export function hearThrough(controls: OrbitControls, hear: Hear): void {
+  if (controls.domElement !== null) {
+    throw new Error(
+      'OrbitControls is already connected to an element, so its pointer listeners would hear every pointer, past the arbiter (src/viewer/pointer-arbiter.ts). Build it with no element, put its listeners through the arbiter, then connect it.',
+    );
+  }
+  const own = controls as unknown as Record<string, unknown>;
+  for (const key of CONTROLS_LISTENERS) {
+    const listener = own[key];
+    if (typeof listener !== 'function') {
+      throw new Error(
+        `three.js r${REVISION}: OrbitControls has no ${key} listener, so the camera rig cannot put its pointer input through the arbiter (src/viewer/pointer-arbiter.ts). List in CONTROLS_LISTENERS (src/viewer/camera-rig.ts) every instance field this release adds as a pointer listener, in connect() or on a press.`,
+      );
+    }
+    own[key] = hear(listener as PointerListener);
+  }
+}
 
 export class CameraRig {
   readonly camera = new PerspectiveCamera(DEFAULT_FOV, 1, 0.1, FAR);
@@ -47,14 +78,19 @@ export class CameraRig {
     private readonly element: HTMLElement,
     private readonly groundY: number,
   ) {
-    this.controls = new OrbitControls(this.camera, element);
+    // One kind of pointer holds the camera at a time (src/viewer/pointer-arbiter.ts): the controls' pointer listeners go through the arbiter before
+    // they are added to the canvas, and the zoom's as it adds them, so neither hears a refused pointer (work unit 2, review 11, F39).
+    const arbiter = new PointerArbiter(() => !this.walk && this.controls.enabled);
+    this.controls = new OrbitControls(this.camera);
+    hearThrough(this.controls, arbiter.consumer());
+    this.controls.connect(element);
     const c = this.controls;
     c.enableDamping = true;
     c.dampingFactor = 0.12;
     c.screenSpacePanning = true;
     // The wheel, a pinch and a middle drag zoom through `dolly`; the controls' own zoom shrank its steps toward the target until it stalled.
     c.enableZoom = false;
-    bindZoomInput(element, (x, y, factor) => { this.dolly(x, y, factor); }, () => !this.walk && c.enabled);
+    bindZoomInput(element, (x, y, factor) => { this.dolly(x, y, factor); }, () => !this.walk && c.enabled, arbiter.consumer());
     // The full range, so interior presets can look straight up into a dome or skylight.
     c.maxPolarAngle = Math.PI;
     c.addEventListener('start', () => {

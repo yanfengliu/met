@@ -2,8 +2,7 @@
  * Test helpers for the orbit view's pointer input (imported only by `*.test.ts`): a document with a canvas and another element on it that pass a
  * pointer event as the page does, through the document's capture listeners, the target's, then, when it bubbles, the document's others; pointer
  * capture held by the canvas, taken for a finger as it presses and let go as a pointer ends, as the browser does, with `lostpointercapture` fired
- * after the event that let it go; a stand-in for PointerEvent that copies an event as the browser's constructor does; and who added each listener,
- * for a test to read what each one heard.
+ * after the event that let it go; and a stand-in for PointerEvent that copies an event as the browser's constructor does.
  * Bound: listeners run in the order they were added within each phase, and one removed during a dispatch no longer hears it; no layout, so a pointer
  * without capture lands on whichever element the test sends it to; page and client coordinates alike, as on a page that does not scroll.
  */
@@ -12,30 +11,11 @@
 export type Handler = (event: Pointer) => void;
 type Options = boolean | { readonly capture?: boolean; readonly passive?: boolean } | undefined;
 
-/** A listener: its event type, function, phase, and who added it (`as`). */
-export interface Entry {
+/** A listener: its event type, function and phase. */
+interface Entry {
   readonly type: string;
   readonly fn: Handler;
   readonly capture: boolean;
-  readonly owner: string;
-}
-
-let owner = 'page';
-/** Runs `make` with the listeners it adds counted as `who`'s. */
-export function as<T>(who: string, make: () => T): T {
-  const before = owner;
-  owner = who;
-  try {
-    return make();
-  } finally {
-    owner = before;
-  }
-}
-
-let hear: ((entry: Entry, event: Pointer) => void) | null = null;
-/** Calls `listener` with each listener and the event, just before that listener hears it; null stops. */
-export function onHear(listener: ((entry: Entry, event: Pointer) => void) | null): void {
-  hear = listener;
 }
 
 /** The number of the input event being sent (`Page.send`): a copy made while it is dispatched, with no number of its own, carries it. */
@@ -110,11 +90,11 @@ export class Pointer {
 
 const captureOf = (options: Options): boolean => (typeof options === 'boolean' ? options : options?.capture === true);
 
-/** An event target that keeps its listeners in the order they were added, with their phase and who added them. */
+/** An event target that keeps its listeners in the order they were added, with their phase. */
 export class Target {
   readonly entries: Entry[] = [];
   addEventListener(type: string, fn: Handler, options?: Options): void {
-    this.entries.push({ type, fn, capture: captureOf(options), owner });
+    this.entries.push({ type, fn, capture: captureOf(options) });
   }
   removeEventListener(type: string, fn: Handler, options?: Options): void {
     const capture = captureOf(options);
@@ -135,7 +115,6 @@ export class PageElement extends Target {
     const run = (at: Target, keep: (e: Entry) => boolean): void => {
       for (const entry of [...at.entries]) {
         if (entry.type !== event.type || !keep(entry) || !at.entries.includes(entry)) continue;
-        hear?.(entry, event);
         entry.fn(event);
         if (event.immediate) return;
       }

@@ -1,6 +1,6 @@
 /**
  * The public routes the walk mode keeps open (plan docs/work/1_first-person-walk, milestones M2 and M2b), as plan polylines [x, z] along the walking line, each
- * with the floor level it starts and ends on. Shared by the unit walks (routes.test.ts) and the e2e walks (tests/e2e/routes.spec.ts). Every segment runs
+ * with the floor level it starts and ends on. Walked by the unit walks (routes.test.ts); tests/e2e/routes.spec.ts stands the walker at places on them. Every segment runs
  * along an axis or at 45° to one, so a walker facing along an axis walks it with W, A, S or D, or two of them together.
  * R1: from the plaza on the entrance axis up the front steps, through the central doors and into the nave, round Roche's information desk (radius 3.08 m on
  * the axis at Z −17.6, so the route passes it 4.3 m north of the axis) back to the axis on the nave's west side. R2: from there up the Grand Staircase

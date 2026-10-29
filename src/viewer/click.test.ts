@@ -6,7 +6,8 @@
  *   another button, one that a second pointer joins, one the browser cancels, and one pressed or released while walking.
  * - On a stand-in canvas, a click's moves are held from the document's later listeners: they never reach a listener after the click's own. A drag's
  *   latest held move is sent on once, as the move or the release that passes the slop arrives, then every move after it; a second pointer landing
- *   sends the first's held move on before its own press.
+ *   sends the first's held move on before its own press, and so does a release while walking, which is no click (red with the click of 8a6a0c2,
+ *   which dropped the held move there as a click's).
  * - One table of presses on the real CameraRig (OrbitControls and the zoom's input): a tap, a drag, a sub-slop pinch, a drag then a pinch, a pinch
  *   with one finger lifted then a tap, an out-and-back drag, the right-button pan, a pen, two buttons pressed and let go in turn, a mouse click while a
  *   finger whose capture was lost is down, and a finger's drag after one whose capture was lost was released over another element. Each makes the
@@ -313,7 +314,7 @@ describe('the orbit view’s click', () => {
     expect(order).toEqual(['down 1', 'move 1 at 604', 'down 2', 'move 1 at 605']);
   });
 
-  it('is never one while walking, pressed or released then, and holds no move while walking', () => {
+  it('is never one while walking, pressed or released then, holds no move while walking, and sends a held move on at a release while walking', () => {
     const c = clicking();
     c.walking(true);
     press(c.page, [[10, 10], [11, 10], [11, 10]]);
@@ -323,6 +324,15 @@ describe('the orbit view’s click', () => {
     fire(c.page, 'pointerdown', 20, 20);
     c.walking(true);
     fire(c.page, 'pointerup', 20, 20);
+    // Pressed in the orbit view, its move held, released after walk mode began: no click, and the held move goes on as a drag's (work unit 10).
+    c.walking(false);
+    c.heard.length = 0;
+    fire(c.page, 'pointerdown', 40, 40);
+    fire(c.page, 'pointermove', 41, 40);
+    expect(c.heard, 'the move held').toEqual([]);
+    c.walking(true);
+    fire(c.page, 'pointerup', 41, 40);
+    expect(c.heard, 'the held move, sent on at the release').toEqual([[41, 40]]);
     c.walking(false);
     press(c.page, [[30, 30]]);
     expect(c.clicks).toEqual([[30, 30]]);

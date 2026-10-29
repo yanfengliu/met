@@ -5,7 +5,8 @@
  * them, so the camera, the follow camera and the preset in view stay as they were. Every other press goes through as if nothing were there. The gate
  * is a small state machine over the pointers down on the canvas (review 10, F36, after F25 and F29; review 11, F37 and F38):
  * - idle, nothing down: a press of the primary button, a pen or a finger while the orbit view is on starts pressing; any other press starts passing;
- * - pressing, one pointer below the slop: its moves are held, only the latest kept; its release below the slop is a click, the held move dropped;
+ * - pressing, one pointer below the slop: its moves are held, only the latest kept; its release below the slop in the orbit view is a click, the
+ *   held move dropped (released while walking, it is none, and the held move goes on as below);
  * - the slop passed (a move, or the release, takes the travel to CLICK_SLOP), another pointer landing, a change of the pointer's buttons (a chord
  *   arrives as a move with new `buttons`) or the loss of its capture: the held move goes on once, before the event that ended the hold reaches anyone,
  *   so every listener starts from where the pointer is now; then passing;
@@ -88,12 +89,13 @@ export function bindClick(element: HTMLElement, onClick: (clientX: number, clien
       let click = false;
       if (gate.kind === 'pressing' && gate.id === event.pointerId) {
         const press = gate;
-        click = press.moved + step(press, event) < CLICK_SLOP;
+        // Released while walking, it is no click, and its held move goes on as a drag's does (work unit 10).
+        click = press.moved + step(press, event) < CLICK_SLOP && active();
         if (click) gate = { kind: 'passing' };
         else pass(press);
       }
       lift(event.pointerId);
-      if (click && active()) onClick(event.clientX, event.clientY);
+      if (click) onClick(event.clientX, event.clientY);
     },
     { capture: true },
   );
