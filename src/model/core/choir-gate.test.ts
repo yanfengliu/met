@@ -3,7 +3,8 @@
  * page's path on the real sequence at t = N: the whole sequence's Timeline, the page's door layer over it (src/viewer/doors.ts) and the walk's world as
  * walk mode builds it (src/walk/door-world.ts `walkWorld`), with the walk mode's own walker (src/walk/walker.ts) stepped at 60 frames a second. From
  * 4 m west of the screen the walker walks east through the gate to more than 3 m past it and back, 2 cm off the hall's axis and 0.63 m either side of
- * it, a body's radius and 5 cm inside the gate's jambs (`GATE_CLEAR`), on the hall's floor all the way.
+ * it, a body's radius and 5 cm inside the gate's jambs at 1.03 m (`GATE_CLEAR`, the opening the owner chose), on the hall's floor all the way. The
+ * lines are numbers, not reckoned from `GATE_CLEAR`, so the walk reads the opening's width rather than agreeing with the constant.
  * Bound: three lines square to the screen, whose bodies together span ±0.98 m of the opening's ±1.03 m; walking, not running, at 60 frames a second;
  * nothing over the body's 1.75 m is read; positions are the feet's. The axis itself is not walked: it lies on an 8 mm joint of the floor's tiles, where
  * `Walker.place` would set the feet 6 cm down (work unit 4's F-owner-8).
@@ -16,12 +17,11 @@ import { DoorLayer } from '../../viewer/doors.js';
 import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { walkWorld } from '../../walk/door-world.js';
 import type { DoorWorld } from '../../walk/door-world.js';
-import { BODY, Walker } from '../../walk/walker.js';
+import { Walker } from '../../walk/walker.js';
 import type { WalkInput } from '../../walk/walker.js';
 import { DOORS } from '../doors.js';
 import { MAIN_FLOOR_Y } from '../frame.js';
 import { doorLeavesOf } from '../lib/window.js';
-import { GATE_CLEAR } from './choir-screen.js';
 import { SCREEN_Z } from './constants.js';
 
 const FPS = 60;
@@ -36,8 +36,8 @@ const WEST = 0;
  */
 const LANES = [
   { name: 'by the axis', x: 0.02 },
-  { name: 'north of the axis by the jamb', x: GATE_CLEAR - BODY.radius - 0.05 },
-  { name: 'south of the axis by the jamb', x: -(GATE_CLEAR - BODY.radius - 0.05) },
+  { name: 'north of the axis by the jamb', x: 0.63 },
+  { name: 'south of the axis by the jamb', x: -0.63 },
 ] as const;
 
 let world: DoorWorld;

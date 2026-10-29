@@ -36,26 +36,28 @@ const CORNICE: readonly [number, number] = [0.48, 0.87];
 const BAR_SPACING = 0.16;
 /**
  * The gate's posts stand 1.3 m either side of the axis, and its iron arch springs at 3.7 m and rises to meet the frieze, without the gilt scrollwork
- * the photographs show in its spandrels. It stands open, as interior-images.md #29 and #P8 show it (the owner's calls, 2026-10-28), framed as #29 shows
- * at 2× (x from the gate's centre there): no balusters between the posts, and the base broken under it, its die and coping stopping at the posts' inner
- * faces and its plinth, `BASE_PLINTH` high, running on to `GATE_PLINTH` from the axis (#29: 1.07 and 1.10 m), so the floor runs through. On each plinth
- * step an iron jamb rises to the coping's level, its inner face `GATE_CLEAR` from the axis (#29: about 1.03 m), the edge of the opening; from it two
- * bars, `JAMB_BARS` out, rise to a head piece under the arch's springing (`JAMB_HEAD`, #29: 3.62 m). Simplified: the jamb is a plate where #29
- * shows scrolls.
+ * the photographs show in its spandrels. It stands open, as interior-images.md #29 and #P8 show it (the owner's calls, 2026-10-28), framed as
+ * interior-images.md #29 shows at 2× (x from the gate's centre there): no balusters between the posts, and the base broken under it, its die and coping
+ * stopping at the posts' inner faces and its plinth, `BASE_PLINTH` high, running on to `GATE_PLINTH` from the axis (1.07 and 1.10 m there), so the
+ * floor runs through. On each plinth step an iron jamb rises to the coping's level, its inner face `GATE_CLEAR` from the axis (about 1.03 m there), the
+ * edge of the opening; from it two bars, `JAMB_BARS` out, rise to a head piece under the arch's springing (`JAMB_HEAD`, about 3.62 m there).
+ * Simplified: the jamb is a plate where the photograph shows scrolls.
  */
 const GATE = 1.3;
 const GATE_PLINTH = 1.09;
 const BASE_PLINTH = 0.45;
 export const GATE_CLEAR = 1.03;
-const JAMB_BARS = [1.08, 1.19] as const;
+const JAMB_BARS = [1.07, 1.19] as const;
 const JAMB_HEAD: readonly [number, number] = [3.62, 3.67];
 const GATE_SPRING = 3.7;
 const GATE_BAND = 0.14;
 /**
- * The gate's leaves, folded back against the screen's west face beside its posts, as interior-images.md #29 and #P8 show them: #29, looking west,
- * shows them behind the fixed balusters, and #P8 among them, though not which face. Each is four bars standing on the base, `u` out from its post's
- * axis, under a top rail that curves up to them from the post's corner and runs on to a short stub, both read on #29 ([u, height]; the rail levels off
- * 0.15 m under the frieze). The north leaf has a rail at 1.6 m, which both show, with a lock box hanging from it, which #29 shows; the south one has none.
+ * The gate's leaves, folded back against the screen's west face beside its posts, as interior-images.md #29 and #P8 show them: the first, looking west,
+ * shows them behind the fixed balusters, and the second among them, though not which face. Each is four bars standing on the base, `u` out from its
+ * post's axis, under a top rail that curves up to them from the post's corner and runs on to a short stub, both read on interior-images.md #29
+ * ([u, height]; the rail levels off 0.15 m under the frieze). The north leaf has a rail at 1.6 m, which both photographs show, with a lock box hanging
+ * from it, which interior-images.md #29 shows; the south one has none. Simplified: the rail stops at the post's corner, 3.96 m up in that photograph,
+ * where it runs on behind the post and down to about 3.8 m by the springing, through what here is the gate arch's ring.
  */
 const LEAF_TOP: readonly (readonly [number, number])[] = [
   [0.08, 3.97],
