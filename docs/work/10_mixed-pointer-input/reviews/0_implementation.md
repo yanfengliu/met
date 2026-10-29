@@ -2,7 +2,7 @@
 
 ## Target
 
-Repository `met`, branch `orbit`: the working tree on base `8a6a0c2` (origin/main), as the patch `tmp/review-runs/u10-r0/target.patch` (ignored; SHA-256 `17abbd6643d125746a45f1da150e6d8e47c2ce01d793b8cf1dcc8f1269c64364`; 14 files, 830 lines in and 160 out, new files included), rebuilt afterwards as the commit object `c5a0c92` (tree `14f224e`). Its code was committed unchanged as `7c59f42`, which differs from it only in AGENTS.md and `docs/learning/gate-proofs.md`, edited while the review ran at the coordinator's request (each gate as a clause or one short line, the red proofs moved to gate-proofs.md), and in leaving this unit's plan out. Review 1 covers those edits.
+Repository `met`, branch `orbit`: the working tree on base `8a6a0c2` (origin/main), as the patch `snapshots/0_target.patch.txt` (SHA-256 `17abbd6643d125746a45f1da150e6d8e47c2ce01d793b8cf1dcc8f1269c64364`; 14 files, 830 lines in and 160 out, new files included), rebuilt afterwards as the commit object `c5a0c92` (tree `14f224e`). Its code was committed unchanged as `7c59f42`, which differs from it only in AGENTS.md and `docs/learning/gate-proofs.md`, edited while the review ran at the coordinator's request (each gate as a clause or one short line, the red proofs moved to gate-proofs.md), and in leaving this unit's plan out. Review 1 covers those edits.
 
 ## Reviewers and coverage
 
