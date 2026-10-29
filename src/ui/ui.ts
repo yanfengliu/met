@@ -110,6 +110,10 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   crosshair.after(prompt);
   root.appendChild(ui);
   closeOnOutside([chapters.disclosure, view.disclosure]);
+  // Closed by the keyboard, the close button hides with the bar: focus goes to the Build menu's button, which reopens the replay, as after its items.
+  bar.close.addEventListener('click', (event) => {
+    if (event.detail === 0) chapters.disclosure.trigger.focus();
+  });
   const held = bindKeys(actions, walking);
 
   // Panels never reach under the bar, whole or a strip, and while the replay is open the floor picker centres in the view above it: both follow the bar's

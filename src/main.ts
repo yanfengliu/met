@@ -34,7 +34,7 @@ import { orbitKeyMove, orbitKeys } from './viewer/orbit-keys.js';
 import { ModelPicker } from './viewer/pick.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
 import type { CameraPose } from './viewer/presets.js';
-import { opensReplay, readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
+import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
 import { capsMesh } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
 import { pointerRay } from './viewer/zoom.js';
@@ -151,7 +151,7 @@ function boot(): void {
   const player = new Player(steps.map((s) => s.weight ?? 1), start.t);
   if (shouldAutoplay(query)) player.playForward();
   /** The build replay is open: the timeline shows. Closed, the page shows the finished building, paused (docs/design/spec.md, Page: Build replay). */
-  let replay = opensReplay(query, start);
+  let replay = start.replay;
   if (query.spawn !== null && !query.walk) warnings.push(`Query parameter spawn="${query.spawn}" takes effect only with walk=1. It is ignored.`);
 
   let changed = true;

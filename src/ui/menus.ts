@@ -60,7 +60,7 @@ export class BuildMenu {
     // The Build replay item: a checkbox item, checked while the replay is open, its state also as a word for the eye and its summary as text.
     this.replayState = el('span', { className: 'met-years', text: 'Off', attrs: { 'aria-hidden': 'true' } });
     this.replay = el('button', {
-      className: 'met-item met-chapter met-replay',
+      className: 'met-item met-chapter',
       testid: 'replay-toggle',
       attrs: { type: 'button', role: 'menuitemcheckbox', 'aria-checked': 'false', 'aria-label': 'Build replay', 'aria-describedby': 'met-replay-summary' },
     }, [
@@ -92,7 +92,7 @@ export class BuildMenu {
       return item;
     });
     // A menu holds menu items and groups only, so the chapters' visible heading is hidden from assistive technology, which hears the group's label.
-    const group = el('div', { className: 'met-group-chapters', attrs: { role: 'group', 'aria-label': 'Chapters' } }, [
+    const group = el('div', { attrs: { role: 'group', 'aria-label': 'Chapters' } }, [
       el('div', { className: 'met-heading', text: 'Chapters', attrs: { 'aria-hidden': 'true' } }),
       ...this.items,
     ]);
@@ -173,7 +173,7 @@ export class ViewMenu {
       }
     }
     this.follow = button('Follow the build', 'follow-toggle', () => { actions.setFollow(!this.state.follow); }, { text: 'Follow the build', className: 'met-item' });
-    this.camera = el('div', { className: 'met-section' }, [el('h2', { text: 'Camera' }), this.follow]);
+    this.camera = el('div', {}, [el('h2', { text: 'Camera' }), this.follow]);
     panel.appendChild(this.camera);
     panel.appendChild(el('h2', { text: 'Walk' }));
     for (const spawn of spawns) {

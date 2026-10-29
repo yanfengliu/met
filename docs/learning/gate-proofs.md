@@ -1,6 +1,6 @@
 # Gate proofs
 
-The record that each gate which retired a lesson of [lessons.md](lessons.md) was made to go red by reintroducing the defect it claims to prevent. Each entry names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
+The record that each gate which retired a lesson of [lessons.md](lessons.md) was made to go red by reintroducing the defect it claims to prevent. Each such entry names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back. Since 2026-10-29 the file also holds the red proofs of gates whose AGENTS.md line is kept to one short line, by the coordinator's direction of that day; those entries name the gate, the mutations and the failures, and retire no lesson.
 
 ## A cited reference photograph must be recorded as viewed
 
@@ -40,6 +40,25 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 
 ## The walking screen is read after the frame that applies it
 
-**Gate:** `tests/e2e/walk-screen.spec.ts` reads each state of the walking screen once the page's next frame has applied it, which the Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed` and the Build replay item's `aria-checked` report.
+**Gate:** `tests/e2e/walk-screen.spec.ts` reads each state of the walking screen once the page's next frame has applied it, which the Timeline button's `aria-expanded` and the Walk toggle's `aria-pressed` report (and, since work unit 11, the Build replay item's `aria-checked`).
 
-**Proved red (at `acc0e0a`; moved here from AGENTS.md by work unit 11):** with the page's animation frames held 60 ms by a timer, the fold read failed in 5 of 6 runs and the leave read in 1. With the waits, it was still red when the bar never folded again or the orbit view's bar stayed folded.
+**Proved red (at `acc0e0a`; moved here from AGENTS.md by work unit 11):** with the page's animation frames held 60 ms by a timer, the fold read failed in 5 of 6 runs and the leave read in 1. With the waits, it was still red when the bar never folded again or the orbit view's bar stayed folded. These runs predate the Build replay item. Its `aria-checked` read goes red on a wrong state (work unit 11's entry below: the item checked before it is chosen, or the bar never showing), but no run with delayed frames covers its wait, and the `toBeVisible` wait on the Play button after it would likely hold such a run green.
+
+## The timeline shows only in the build replay
+
+**Gate:** `tests/e2e/replay.spec.ts` (work unit 11), with the replay's checks in `controls`, `layout`, `menus`, `walk-screen`, `walk-build`, `labels` and `camera`, and the unit tests `src/viewer/query.test.ts` (the replay at load and the `replay=0` warning) and `src/ui/timeline-bar.test.ts` (the bar's shape). It covers the default page with no timeline, the Build menu's Build replay item, the bar's close button, the timeline keys, the queries that open the replay, and the framing either way.
+
+**Proved red (2026-10-29):** each mutation was made on the work after review 0's repairs and undone (`tmp/red-proofs.sh`, ignored). Each run took the tests named, at both sizes where they run at both.
+
+- The old default put back, the replay open from load (`let replay = start.replay || true`): 24 of 28 tests red. `controls`' first load and autoplay tests, `layout`'s default page and Build menu tests, `menus`' Build menu test, all four `replay.spec` tests, both `walk-screen` tests, `walk-build`'s first test and `labels`' walking test all fail at the first check that reads the closed replay ("the build replay at load", or the Build replay item checked before it is chosen). Green, as they should be: `layout`'s two tests of the replay that `t=` opens, which open it under either default, the build budget and the follow camera during autoplay.
+- Closing the replay leaves t where it was: 3 of 3 red, `replay.spec`'s first test at both sizes ("replay, t and mode once closed while playing") and `walk-build`'s first.
+- Nothing fitted again when the view changes shape: 3 of 5 red, `replay.spec`'s preset and floor tests at 390×844 and `camera.spec`'s resize test (corners at 2.41 of the view). At 1280×720 the preset's and the floor's fits are limited by the view's height, so they stand where they stood, and those two tests stay green.
+- A timeline key or a chapter that does not open the replay: 3 of 3 red, `replay.spec`'s key test at both sizes and `menus`' Build menu test ("the replay after choosing koch-plaza-2014").
+- Opening the replay while walking leaves the bar folded: 2 of 2 red, `walk-screen`'s test with the replay closed at both sizes (the Play button never shows).
+- The follow-camera toggle shown with the replay closed: 4 of 6 red, `layout`'s and `replay.spec`'s default-page tests at both sizes. The key tests, which do not read the toggle, stay green.
+- The default page framed above a bar it does not show: 2 of 2 red ("the default page frames the whole canvas": aspect 1.92 for 1.78 at 1280×720).
+- The close button keeping keyboard focus as the bar hides it (review 0, F0): 2 of 2 red ("focus after the close button, by the keyboard").
+- The `replay=0` warning naming only the parameter that set the position, round 1's defect: `query.test.ts`'s warning test red, at `?replay=0&step=2&t=1`.
+- The bar's shape ignoring a closed replay: `timeline-bar.test.ts`'s first test red ("walking false, unfolded false: expected 'whole' to be 'strip'").
+
+With the work as committed, every one of these tests passes.

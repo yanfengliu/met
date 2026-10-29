@@ -99,10 +99,10 @@ export interface StepDef {
 export interface Chapter {
   /** Unique, stable, kebab-case. */
   readonly id: string;
-  /** Shown in the label and the chapter menu. */
+  /** Shown in the label and the Build menu. */
   readonly title: string;
   /** Shown in the label unless a step sets `year`, e.g. '1874–1880'. */
   readonly years: string;
-  /** One sentence on what the chapter builds, shown with it in the chapter menu. */
+  /** One sentence on what the chapter builds, shown with it in the Build menu. */
   readonly summary: string;
 }

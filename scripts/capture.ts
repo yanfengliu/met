@@ -223,7 +223,7 @@ async function shots(origin: string, args: Map<string, string>): Promise<void> {
     ...(['closed', 'open'] as const).map((state) => ({ name: `doors-entrance-${state}`, query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.entrance}&doors=${state}`, viewport: MODEL_VIEWPORT })),
     { name: 'doors-weston', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.weston}`, viewport: MODEL_VIEWPORT },
     { name: 'doors-cut-open', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.cut}&cut=6.5&doors=open`, viewport: MODEL_VIEWPORT },
-    // The default page sets no position, which would open the build replay (docs/design/spec.md, Page: Build replay): the finished building, no timeline.
+    // The default page: no position, since a position opens the build replay (docs/design/spec.md, Page: Build replay); the finished building, no timeline.
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-${v.name}`, query: 'shot=1', viewport: v })),
     // A position opens the build replay: its whole bar, mid-step.
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-mid-${v.name}`, query: `shot=1&t=${String(Math.floor(n / 2) + 0.5)}`, viewport: v })),

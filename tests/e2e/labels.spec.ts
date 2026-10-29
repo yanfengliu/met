@@ -2,9 +2,11 @@
  * The artworks' cards through real input (docs/design/spec.md, Collection: Labels), on the finished building at 1280×720 and 390×844.
  * - Walking: from the view menu's "Walk from the top of the Grand Staircase", turned by drags to face the cross hall and walked with W through its
  *   doorway until Tiepolo's Triumph of Marius, on gallery 600's far wall, is the look target within 6 m: the card shows its title, maker, date, medium,
- *   gallery, size, the CC0 credit and a plain link to its page, at the bottom left above the Walk toggle's strip (full width at 390×844), clear of every
- *   control, of the crosshair and of the door prompt's band under it, above the whole bar when the Build menu opens the build replay, above the folded
- *   strip when its Timeline button folds it, and above the Walk toggle's strip again when the replay closes; a drag that looks down at the floor hides it
+ *   gallery, size, the CC0 credit and a plain link to its page (a new tab, `noopener noreferrer`, no prefetch hint), at the bottom left above the Walk
+ *   toggle's strip (full width at 390×844), clear of every control, of the crosshair and of the door prompt's band under it; above the whole bar when
+ *   the Build menu opens the build replay, clear of every control and the crosshair (on a narrow screen it may reach into the band then, the spec's one
+ *   exception: Collection, Labels, Place); above the folded strip when its Timeline button folds it, and above the Walk toggle's strip again, clear of
+ *   the band, when the replay closes. A drag that looks down at the floor hides it
  *   and one that looks back up shows it again. At every frame drawn, the card shows exactly when the crosshair's one look target is an artwork (review
  *   6, F28); ./routes.spec.ts walks R1 and R5 through a door to the painting and back to show it never shows beside the door prompt (review 7, F30). At
  *   1280×720 a walking frame with the card showing keeps the 60 frames a second budget, and the link, clicked, opens the object's page in a new tab,

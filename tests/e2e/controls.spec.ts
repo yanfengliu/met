@@ -1,8 +1,8 @@
 /**
  * Timeline controls through real input at 1280×720 and 390×844 (docs/design/spec.md, Page: Build replay and Timeline bar): the first load (the finished
  * building, paused, with no timeline; the Build menu's Build replay opens it there, and Play runs the build from the start), autoplay=1, every transport
- * button, speed, the scrubber by mouse drag, and every keyboard shortcut of the orbit view, each test opening the replay by the Build menu as a person does
- * (./replay.spec.ts drives the replay's opening and closing, its framing and the timeline keys on the default page).
+ * button, speed, the scrubber by mouse drag, and every keyboard shortcut of the orbit view, each test but autoplay=1's opening the replay by the Build menu
+ * as a person does (./replay.spec.ts drives the replay's opening and closing, its framing and the timeline keys on the default page).
  * Each test checks the label, the scrubber value, the read-only `window.__met.t` and, where the scene must change, the canvas pixels.
  * Bound: pixel checks compare coarse luminance grids, so they prove that the drawing changed where the model is and not at the far corners, not that it is right.
  * The speed ratio is read against the page's own frame timestamps, not a wall clock: it proves how fast `t` runs per second of frames at each speed, and

@@ -68,6 +68,8 @@ export class TimelineBar {
   private readonly speeds: Map<Speed, HTMLButtonElement>;
   private readonly walk: HTMLButtonElement;
   private readonly fold: HTMLButtonElement;
+  /** The button that closes the build replay, which the bar hides with it: src/ui/ui.ts hands focus on after a keyboard activation. */
+  readonly close: HTMLButtonElement;
   private dragging = false;
 
   constructor(
@@ -124,10 +126,10 @@ export class TimelineBar {
     this.fold = button('Show the timeline', 'bar-toggle', () => { actions.toggleBar(); }, { icon: ICONS.unfold, text: 'Timeline', className: 'met-button met-bar-toggle' });
     setAttr(this.fold, 'aria-expanded', 'false');
     this.fold.hidden = true;
-    const close = button('Close the build replay', 'replay-close', () => { actions.closeReplay(); }, { icon: ICONS.close });
-    setAttr(close, 'title', 'Close the build replay and show the finished building');
+    this.close = button('Close the build replay', 'replay-close', () => { actions.closeReplay(); }, { icon: ICONS.close });
+    setAttr(this.close, 'title', 'Close the build replay and show the finished building');
     this.element = el('div', { className: 'met-bar', testid: 'timeline-bar', attrs: { role: 'region', 'aria-label': 'Build timeline controls' } }, [
-      el('div', { className: 'met-label-row' }, [el('div', { className: 'met-label' }, [this.title, this.detail]), close]),
+      el('div', { className: 'met-label-row' }, [el('div', { className: 'met-label' }, [this.title, this.detail]), this.close]),
       el('div', { className: 'met-scrub' }, [this.scrubber, marks]),
       el('div', { className: 'met-controls' }, [transport, el('div', { className: 'met-group met-modes' }, [speedGroup, this.fold, this.walk])]),
     ]);

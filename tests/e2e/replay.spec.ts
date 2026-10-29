@@ -5,14 +5,15 @@
  *   the viewport and apart, no follow-camera toggle in the View menu, and the view framing the whole canvas;
  * - the Build menu's Build replay item opens the replay at the finished building, paused, with every timeline control and the follow-camera toggle in
  *   view, and frames the part of the canvas above the bar, the preset in view fitted again; the bar's close button and then the menu item, after Play,
- *   close it: no timeline, the finished building, paused, the whole canvas framed and the preset where it was;
+ *   close it: no timeline, the finished building, paused, the whole canvas framed and the preset where it was; closed by Tab and Enter on its close
+ *   button, focus goes on to the Build menu's button;
  * - a timeline key on the default page opens the replay and acts there (Space plays the build from the empty site, as Play does at the end), and none
  *   opens it while walking;
  * - autoplay=1 opens it playing from t = 0, framed above the bar; replay=1 opens it paused at the end; t= and step= open it at their position; shot=1
  *   opens it as the query does and plays nothing; no other query opens it;
  * - a floor's framing is fitted again when the replay opens and when it closes.
  * Facts come from the read-only `window.__met`; the controls are found by data-testid; the model's corners in frame are projected in Node (helpers.ts).
- * Bound: boxes are compared as layout rectangles; the bar's drawing is judged in the captures (.shots/replay/, npm run shots).
+ * Bound: boxes are compared as layout rectangles; the bar's drawing is judged in the standard shots' UI images (npm run shots: ui-*, ui-mid-*, ui-walk-*).
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -100,6 +101,7 @@ for (const viewport of VIEWPORTS) {
     });
 
     test('the default page shows no timeline and every other control; Build replay opens it framed above the bar; its close button and the menu item close it at the finished building', async ({ page }) => {
+      // 2.0 to 4.0 s here (2026-10-29); Playwright's 30 s default is over seven times that.
       const f = await open(page, '');
       expect([f.replay, f.t, f.mode, f.walk.mode, f.view], 'replay, t, mode, walk mode and view at load').toEqual([false, f.n, 'paused', 'orbit', 'aerial-ne']);
       expect(await shown(page, TIMELINE), 'timeline controls on the default page').toEqual([]);
@@ -154,9 +156,24 @@ for (const viewport of VIEWPORTS) {
       expect([shut.replay, shut.t, shut.mode], 'replay, t and mode once closed while playing').toEqual([false, f.n, 'paused']);
       await expect(page.getByTestId('replay-toggle')).toHaveAttribute('aria-checked', 'false');
       expect(await shown(page, TIMELINE), 'timeline controls once closed by the menu').toEqual([]);
+
+      // Closed by the keyboard, Tab to the close button and Enter: focus goes on to the Build menu's button, in view, not lost with the bar (review 0, F0).
+      await openReplay(page);
+      let reached = false;
+      for (let k = 0; k < 40 && !reached; k += 1) {
+        await page.keyboard.press('Tab');
+        reached = await page.evaluate(() => document.activeElement?.getAttribute('data-testid') === 'replay-close');
+      }
+      expect(reached, 'Tab reaches the close button').toBe(true);
+      await page.keyboard.press('Enter');
+      await expect(page.getByTestId('btn-play')).toBeHidden();
+      expect(await replayOpen(page), 'closed by the keyboard').toBe(false);
+      await expect(page.getByTestId('chapter-menu-button'), 'focus after the close button, by the keyboard').toBeFocused();
     });
 
     test('a timeline key on the default page opens the replay and acts there; Space plays from the empty site; walking, none opens it', async ({ page }) => {
+      // Seven page loads and a walk: 11.0 to 12.0 s here (2026-10-29); five times that for a loaded machine.
+      test.setTimeout(60_000);
       const cases: readonly [string, (f: Facts) => Promise<void>][] = [
         ['Space', async () => { await page.waitForFunction(() => window.__met?.mode === 'playing' && window.__met.direction === 1 && window.__met.t < 1); }],
         ['Shift+Space', async () => { await page.waitForFunction(() => window.__met?.mode === 'playing' && window.__met.direction === -1); }],
@@ -191,6 +208,8 @@ for (const viewport of VIEWPORTS) {
     });
 
     test('autoplay=1 opens the replay playing from t = 0, replay=1 paused at the end, t= and step= at their position; shot=1 opens it as the query does and plays nothing', async ({ page }) => {
+      // Seventeen page loads: 18.7 to 18.8 s here (2026-10-29); about four times that for a loaded machine.
+      test.setTimeout(90_000);
       const plain = await open(page, '');
       expect(plain.replay, 'no query').toBe(false);
       await page.goto('/?autoplay=1');

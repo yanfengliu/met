@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { opensReplay, parseQuery, shouldAutoplay, startPosition } from './query.js';
+import { parseQuery, shouldAutoplay, startPosition } from './query.js';
 
 describe('parseQuery', () => {
   it('reads every parameter', () => {
@@ -12,12 +12,12 @@ describe('parseQuery', () => {
   });
 
   it('defaults to nothing set', () => {
-    expect(parseQuery('')).toMatchObject({ shot: false, t: null, step: null, view: null, cam: null, cut: null, solo: null, autoplay: null, replay: false, noui: false, walk: false, spawn: null, floor: null, warnings: [] });
+    expect(parseQuery('')).toMatchObject({ shot: false, t: null, step: null, view: null, cam: null, cut: null, solo: null, autoplay: null, replay: null, noui: false, walk: false, spawn: null, floor: null, warnings: [] });
   });
 
   it('ignores malformed values with a warning that names the parameter, the value and what is accepted', () => {
     const q = parseQuery('?t=abc&cam=1,2,3&cut=&autoplay=maybe&replay=open&walk=yes');
-    expect([q.t, q.cam, q.cut, q.autoplay, q.replay, q.walk]).toEqual([null, null, null, null, false, false]);
+    expect([q.t, q.cam, q.cut, q.autoplay, q.replay, q.walk]).toEqual([null, null, null, null, null, false]);
     expect(q.warnings).toEqual([
       'Query parameter cam="1,2,3" is not six numbers; use cam=px,py,pz,tx,ty,tz in metres. It is ignored.',
       'Query parameter t="abc" is not a number; use t=<number from 0 to N>. It is ignored.',
@@ -81,12 +81,10 @@ describe('startPosition and autoplay', () => {
   });
 });
 
-describe('opensReplay', () => {
+describe('the build replay at load (startPosition, Start.replay)', () => {
   const ids = ['a', 'b', 'c'];
-  const opens = (search: string): boolean => {
-    const q = parseQuery(search);
-    return opensReplay(q, startPosition(q, ids));
-  };
+  /** The replay at load as the page reads it (src/main.ts: `start.replay`). */
+  const opens = (search: string): boolean => startPosition(parseQuery(search), ids).replay;
 
   it('keeps the build replay closed on the default page and on every query that sets no position and asks for no replay', () => {
     for (const search of ['', '?autoplay=0', '?replay=0', '?shot=1', '?shot=1&noui=1', '?walk=1&spawn=plaza', '?walk=1&spawn=1,2,3,4,5,6', '?view=top', '?cam=1,2,3,4,5,6', '?floor=main', '?cut=8', '?doors=open']) {
@@ -104,5 +102,21 @@ describe('opensReplay', () => {
     for (const search of ['?t=abc', '?step=zzz', '?replay=open']) {
       expect(opens(search), search).toBe(false);
     }
+  });
+
+  it('names in a warning every parameter that opens the replay against replay=0, and what would keep it closed', () => {
+    const warned = (search: string): readonly string[] => startPosition(parseQuery(search), ids).warnings;
+    const text = (named: string, verb: string): string => `Query parameter replay asks for the build replay closed, but ${named} ${verb} it. Leave out ${named} to open the page on the finished building with the replay closed.`;
+    expect(warned('?replay=0&t=1')).toEqual([text('t', 'opens')]);
+    expect(warned('?replay=false&step=b')).toEqual([text('step', 'opens')]);
+    // step= wins over t=, but t= would open the replay once step= is left out, so both are named.
+    expect(warned('?replay=0&step=2&t=1')).toEqual([text('step and t', 'open')]);
+    expect(warned('?replay=0&step=b&t=1&autoplay')).toEqual([text('step, t and autoplay', 'open')]);
+    expect(warned('?replay=0&autoplay=1')).toEqual([text('autoplay', 'opens')]);
+    // autoplay=0 opens nothing, so it is not named.
+    expect(warned('?replay=0&t=1&autoplay=0')).toEqual([text('t', 'opens')]);
+    // A step= that names no step warns of its own and leaves t= to open the replay.
+    expect(warned('?replay=0&step=zzz&t=1')).toEqual([expect.stringMatching(/step="zzz" names no step/), text('t', 'opens')]);
+    for (const search of ['?replay=0', '?replay=1&t=1', '?replay=0&t=abc', '?t=1', '?replay=0&autoplay=0']) expect(warned(search), search).toEqual([]);
   });
 });
