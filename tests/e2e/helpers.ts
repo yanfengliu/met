@@ -34,6 +34,21 @@ export async function open(page: Page, query = 'autoplay=0'): Promise<Facts> {
   return facts(page);
 }
 
+/**
+ * Makes the page's browser give no pointer lock, as one without it does (an iframe without the permission): `requestPointerLock` is refused, with
+ * the `pointerlockerror` the browser fires. Walking then keeps the pointer free, so drags turn the view and the mouse reaches the walking screen's
+ * controls, which a locked pointer cannot: with the lock, Esc leaves walk mode first (docs/design/spec.md, Walk mode: Looking). The headless system
+ * Chrome grants a request made in a user's gesture, as entering walk mode by F, the Walk toggle or a spawn makes it. Call before `open`.
+ */
+export async function noPointerLock(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Element.prototype.requestPointerLock = function refused(): Promise<void> {
+      setTimeout(() => { document.dispatchEvent(new Event('pointerlockerror')); }, 0);
+      return Promise.reject(new DOMException('This browser gives no pointer lock.', 'NotSupportedError'));
+    };
+  });
+}
+
 /** The CPU throttle MET_CPU_THROTTLE asks for: a factor above 1, or 1. */
 export function throttleRate(): number {
   const rate = Number(process.env['MET_CPU_THROTTLE'] ?? '1');

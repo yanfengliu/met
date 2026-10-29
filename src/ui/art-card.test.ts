@@ -82,6 +82,7 @@ describe('the artwork’s card', () => {
     expect(CATALOGUE_SOURCE.licence).toMatch(/CC0/);
     expect(ART_CREDIT).toMatch(/The Met/);
     expect(ART_CREDIT).toMatch(/CC0/);
-    expect(LOCKED_HINT).toMatch(/^Esc frees the pointer/);
+    // Esc leaves walk mode and keeps the card in the orbit view, where the link is clicked (src/viewer/art-label.ts).
+    expect(LOCKED_HINT).toBe('Press Esc, then click the link.');
   });
 });

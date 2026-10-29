@@ -7,8 +7,10 @@
  * - it hides once none of the artwork's pieces is drawn by the camera: the build takes them away (at t = 0, or before its own instance arrives; a
  *   later t does not bring it back), the section cut, a floor view's included, lies under every piece, or they are on no layer the camera draws; a
  *   cut through the object, or through its plinth alone, keeps it, as the picker still meets the artwork there (F27);
- * - walking, the card is the look target's artwork, none for a door or nothing, clicks and Esc change nothing, and leaving walk mode hides the card,
- *   while entering it replaces an orbit click's card with the look target's.
+ * - walking, the card is the look target's artwork, none for a door or nothing, clicks and Esc change nothing, and entering walk mode replaces an orbit
+ *   click's card with the look target's;
+ * - leaving walk mode, which tells null before the next frame, keeps the look target's artwork as the orbit view's card, its pieces found as a click's
+ *   are, until a click elsewhere, Esc or the cut takes it; a look away first, a door in view, or a preset's dismissal keeps none (work unit 14).
  * Bound: boxes on a straight ray down −Z from an eye 1.6 m up; the click's own input is src/viewer/click.test.ts's, the page's wiring the browser's.
  */
 import { BoxGeometry, Layers, Matrix4, MeshStandardMaterial, Quaternion, Ray, Vector3 } from 'three';
@@ -184,7 +186,56 @@ describe('the card while walking', () => {
     expect(label.id, 'preparing').toBeNull();
   });
 
-  it('hides when walk mode ends, and replaces an orbit click’s card with the look target’s when it begins', () => {
+  it('keeps the look target’s card as the orbit view’s when walk mode ends, until a click elsewhere, Esc or the cut takes it; none after a look away, at a door or for a preset (work unit 14)', () => {
+    const { picker } = scene([{ near: 1.5, material: glass, tag: door, x: 3 }, { near: 3, material: bronze, tag: art('11013') }]);
+    const hit = (ray: Ray, query: Parameters<ModelPicker['hit']>[1]): ReturnType<ModelPicker['hit']> => picker.hit(ray, query);
+    const label = new ArtLabel();
+    /** Walking, looking at the artwork straight ahead. */
+    const looking = (): void => {
+      label.frame(true, VIEW);
+      label.look(lookTarget(hit, eye, ahead));
+      label.frame(true, VIEW);
+      expect(label.id, 'walking, the look target’s card').toBe('11013');
+    };
+    looking();
+    // Walk mode left (Esc, F or the lock lost): it tells null, then the next frame is the orbit view's.
+    label.look(null);
+    label.frame(false, VIEW);
+    expect(label.id, 'left looking at it: the orbit view keeps its card').toBe('11013');
+    label.frame(false, VIEW);
+    expect(label.id, 'and the frame after').toBe('11013');
+    label.dismiss();
+    expect(label.id, 'Esc hides it').toBeNull();
+    looking();
+    label.look(null);
+    label.frame(false, VIEW);
+    label.click(picker.hit(new Ray(new Vector3(9, 1.6, 0), ahead.clone()), ARTWORK_QUERY));
+    expect(label.id, 'a click on nothing hides it').toBeNull();
+    looking();
+    label.look(null);
+    label.frame(false, cutAt(-1));
+    expect(label.id, 'the cut under every piece of it: none').toBeNull();
+    looking();
+    label.look(null);
+    label.frame(true, VIEW);
+    expect(label.id, 'looked away while walking').toBeNull();
+    label.frame(false, VIEW);
+    expect(label.id, 'then left: none kept').toBeNull();
+    looking();
+    label.look(lookTarget(hit, new Vector3(3, 1.6, 0), ahead));
+    label.frame(true, VIEW);
+    label.look(null);
+    label.frame(false, VIEW);
+    expect(label.id, 'left looking at a door: none').toBeNull();
+    looking();
+    // A preset leaves walk mode, then dismisses the card (src/main.ts `applyPreset`).
+    label.look(null);
+    label.dismiss();
+    label.frame(false, VIEW);
+    expect(label.id, 'a preset chosen while walking: none').toBeNull();
+  });
+
+  it('replaces an orbit click’s card with the look target’s when walk mode begins', () => {
     const { picker } = scene([{ near: 3, material: bronze, tag: art('11013') }, { near: 3, material: bronze, tag: art('547802'), x: -10 }]);
     const hit = (ray: Ray, query: Parameters<ModelPicker['hit']>[1]): ReturnType<ModelPicker['hit']> => picker.hit(ray, query);
     const label = new ArtLabel();
@@ -197,7 +248,7 @@ describe('the card while walking', () => {
     label.frame(true, VIEW);
     expect(label.id).toBe('11013');
     label.frame(false, VIEW);
-    expect(label.id, 'back in the orbit view, before walk mode says it looks at nothing').toBeNull();
+    expect(label.id, 'back in the orbit view with no null from walk mode, which its leaving always tells: no card is kept').toBeNull();
     label.look(lookTarget(hit, eye, ahead));
     expect(label.id, 'a look target given in the orbit view shows no card').toBeNull();
     label.click(picker.hit(new Ray(new Vector3(-10, 1.6, 0), ahead.clone()), ARTWORK_QUERY));

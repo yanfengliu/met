@@ -208,7 +208,10 @@ export class ViewMenu {
   }
 }
 
-/** Closes open panels on Escape and on a pointer press outside them. */
+/**
+ * Closes open panels on Escape and on a pointer press outside them. An Escape that closes a panel is taken (`preventDefault`), so walking, it closes
+ * the menu and the next one leaves walk mode (src/ui/keyboard.ts, whose listener comes after this one).
+ */
 export function closeOnOutside(disclosures: readonly Disclosure[]): void {
   window.addEventListener('pointerdown', (event) => {
     for (const d of disclosures) if (d.open && event.target instanceof Node && !d.element.contains(event.target)) d.setOpen(false);
@@ -219,6 +222,7 @@ export function closeOnOutside(disclosures: readonly Disclosure[]): void {
       if (!d.open) continue;
       d.setOpen(false);
       d.trigger.focus();
+      event.preventDefault();
     }
   });
 }

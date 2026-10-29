@@ -14,12 +14,14 @@
  * A click takes effect on the page's next frame (src/main.ts `frame`), so each state is read once the page's next frame has applied it, waiting for
  * the attribute that frame sets, which reports it: the Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed`, the Build replay item's
  * `aria-checked`.
- * Bound: pointer lock is not available headless, so Esc and the locked look are not driven here; walk.spec drives the drag and the click.
+ * Bound: the browser gives these tests no pointer lock (./helpers.ts `noPointerLock`), as one without it does, so the mouse reaches the walking
+ * screen's controls: a locked pointer reaches none, and Esc leaves walk mode first (work unit 14). ./mouse-look.spec.ts drives the lock, the locked
+ * look and Esc, ./walk.spec.ts the drag and the click.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { facts, open, openReplay, press, waitForT, watchErrors } from './helpers.js';
+import { facts, noPointerLock, open, openReplay, press, waitForT, watchErrors } from './helpers.js';
 
 const VIEWPORTS = [
   { width: 1280, height: 720 },
@@ -66,8 +68,10 @@ async function shown(page: Page, ids: readonly string[]): Promise<string[]> {
   return (await boxes(page, ids)).map((b) => b.id);
 }
 
+/** Waits until walk mode is on and prepared, the pointer free: the browser gave no lock (`noPointerLock`). */
 async function walking(page: Page): Promise<void> {
   await page.waitForFunction(() => window.__met?.walk.mode === 'walk' && !window.__met.walk.preparing && window.__met.walk.eye !== null, undefined, { timeout: 15_000 });
+  expect((await facts(page)).walk.pointerLocked, 'walking with the pointer free').toBe(false);
 }
 
 for (const viewport of VIEWPORTS) {
@@ -76,6 +80,7 @@ for (const viewport of VIEWPORTS) {
 
     test('the replay closed: a crosshair at the centre, the menus and the Walk toggle alone; the hint goes at the first step; Build replay brings the whole bar, Timeline folds it, its close button closes the replay; Walk leaves', async ({ page }) => {
       const errors = watchErrors(page);
+      await noPointerLock(page);
       const f = await open(page, '');
       await press(page, 'walk-toggle');
       await walking(page);
@@ -134,6 +139,7 @@ for (const viewport of VIEWPORTS) {
 
     test('the replay open: the menus and the Timeline and Walk buttons; Timeline brings the whole bar back and folds it; Walk leaves to the whole bar', async ({ page }) => {
       const errors = watchErrors(page);
+      await noPointerLock(page);
       const f = await open(page, '');
       await openReplay(page);
       await press(page, 'walk-toggle');

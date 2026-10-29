@@ -13,7 +13,7 @@ import type { Page } from '@playwright/test';
 
 import type { Vec3 } from '../../src/build/types.js';
 import { DEFAULT_FOV, PRESETS } from '../../src/viewer/presets.js';
-import { camera, cameraGap, centreOf, choosePreset, cornerReach, distance, dragCanvas, open, press, settledCamera, watchErrors } from './helpers.js';
+import { camera, cameraGap, centreOf, choosePreset, cornerReach, distance, dragCanvas, noPointerLock, open, press, settledCamera, watchErrors } from './helpers.js';
 import type { Facts } from './helpers.js';
 
 test.describe('camera', () => {
@@ -72,6 +72,8 @@ test.describe('camera', () => {
   });
 
   test('a preset chosen from the menu in walk mode leaves walk mode and lands on it; walking again and leaving keeps the camera at the eye through a resize', async ({ page }) => {
+    // F locks the pointer where the browser gives the lock, and a locked pointer reaches no menu (work unit 14): this browser gives none.
+    await noPointerLock(page);
     await open(page);
     await choosePreset(page, 'front');
     const reference = await settledCamera(page);

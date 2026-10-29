@@ -27,8 +27,11 @@ export interface ArtCardContent {
 
 /** The credit for the data every card shows (docs/research/collection.md, Source and licence). */
 export const ART_CREDIT = 'Object data: The Met Open Access, CC0';
-/** What the card says while the pointer is locked to the walking view, where the link cannot be clicked. */
-export const LOCKED_HINT = 'Esc frees the pointer to open the link.';
+/**
+ * What the card says while the pointer is locked to the walking view, where the link cannot be clicked: Esc leaves walk mode, and the card of the
+ * artwork in view stays in the orbit view (src/viewer/art-label.ts), its link a click away.
+ */
+export const LOCKED_HINT = 'Press Esc, then click the link.';
 
 /**
  * A record's text as the card shows it: plain text on one line. Some titles carry markup and line breaks as the API gives them ("Jousting Armor

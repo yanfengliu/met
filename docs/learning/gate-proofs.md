@@ -107,6 +107,7 @@ With the work as committed, all pass: 14 tests unthrottled in 94 s, inside `npm 
 
 - `doors=open` and `doors=closed` under `shot=1`, the doors set before the walker is placed and both before the first frame drawn: red with the set-up moved after the placement, after the first frame, marked at load but done after the first frame, or done after the first render in the same callback, which the probe of `7b7fe94`, reading the doors' state at the callback's end, passed.
 - The slowest frame of each swing under 16.7 ms of work: the walked cycles red at 147.8 ms with 12 ms planted in each swing check while walking; red with 40 µs of work planted for each object drawn on a swing's frames: 30.3 ms facing in, which the gate of `d4d716d`, facing out only, passed at 11.5 ms.
+- The locked click now the browser's own lock, taken by a click of the view (work unit 14): with the click while locked using no door (`src/main.ts`), the entrance test red, the wait for the closing swing timing out.
 
 ### `src/build/window-parts.test.ts`
 
@@ -180,3 +181,24 @@ The build replay (work unit 11, 2026-10-29), with its checks in `controls`, `lay
 
 - The `replay=0` warning naming only the parameter that set the position, round 1's defect of work unit 11: the warning test red, at `?replay=0&step=2&t=1`.
 - The bar's shape ignoring a closed replay: `timeline-bar.test.ts`'s first test red ("walking false, unfolded false: expected 'whole' to be 'strip'").
+
+### `tests/e2e/mouse-look.spec.ts` and `src/walk/walk-lock.test.ts`
+
+Mouse-look and Esc (work unit 14, 2026-10-29): each mutation made on the work and undone, the file restored byte for byte (`mutate.py` in the session's scratchpad, not kept).
+
+- Entering no longer asks for the lock (`askLock` left out of `enter`): `walk-lock.test.ts`'s first test red ("entered in a gesture, the last press a mouse's (none yet: the keyboard): expected +0 to be 1"); `mouse-look.spec`'s first and third tests red, the waits for the lock after the Walk toggle (line 81) and after F (line 124) timing out.
+- The lock asked for after a finger's or a pen's press (`lastPress` unread): the first unit test red ("entered after a touch press: expected 2 to be 1"); the touch test red ("requests for the lock after a tap": 1).
+- The lock asked for with no gesture (the activation flag unread): the first unit test red ("entered with no gesture, as at load with walk=1: expected 2 to be 1").
+- Esc no longer read while walking (the old keyboard): `mouse-look.spec`'s first and third tests red, the wait for the orbit view after Esc timing out with the pointer locked (lines 94 and 126; headless Chrome hands Esc to the page and keeps the lock).
+- The lock lost while walking leaving nothing (the old `pointerlockchange` handler's exit gone): the third unit test red ("walk mode after the lock was lost: expected true to be false"); `mouse-look.spec`'s third test red after `document.exitPointerLock()` (line 139), its first test green.
+- The page's own release taken for a loss (`releasing` unread): the fourth unit test red ("entered again before the browser told the release: still walking: expected false to be true").
+- A lock that comes once walk mode was left kept: the fourth unit test red ("a late lock freed: expected +0 to be 1").
+- The old drag rule, no drag while the pointer is locked: the second unit test red, a finger's 60 px drag taken as the locked mouse's 999 px movement ("expected -1.2987 to be close to -0.078").
+- The old hint rules, a look and the lock ending the hint: the fifth unit test red ("the hint once walking, the pointer locked: expected false to be true").
+- An open menu not taking Esc (`menus.ts` without its `preventDefault`): `mouse-look.spec`'s third test red ("the menu closed, still walking": "orbit").
+- A free move with no button held turning the view (planted): `mouse-look.spec`'s second test red ("a free move with no button held").
+
+### `tests/e2e/labels.spec.ts` and `src/viewer/art-label.test.ts`
+
+- The card left behind on leaving walk mode, the old `frame` (work unit 14): `art-label.test.ts`'s keep test red ("left looking at it: the orbit view keeps its card: expected null to be '11013'"); `labels.spec`'s locked test red at both sizes ("the card kept in the orbit view": null).
+- A preset's dismissal not dropping the card leaving would keep: the keep test red ("a preset chosen while walking: none: expected '11013' to be null").

@@ -1,11 +1,13 @@
 /**
  * Which artwork's card shows (docs/design/spec.md, Collection: Labels), by the artwork's tag (src/build/types.ts `PieceTag`, kind artwork, its Met
  * object ID). Walking, the look target decides (src/walk/look.ts): the card shows while the eye looks at an artwork within its reach and hides as soon as
- * it looks at anything else, so once Esc frees the pointer the view stands still and the card stays for the artwork in view while the visitor reaches
- * its link. In the orbit view a click decides: one whose ray (`ARTWORK_QUERY` through src/viewer/pick.ts `ModelPicker.hit`) meets an artwork shows
- * that artwork's card, any other click hides it, and so do Esc and a camera preset (review 6, F26). The card also hides once the camera draws none of
- * the artwork's pieces, as the picker counts a drawn piece: the build has taken them away, the section cut or a floor view's cut has removed them, or
- * they are on no layer the camera draws (F27). Entering or leaving walk mode hides it.
+ * it looks at anything else. In the orbit view a click decides: one whose ray (`ARTWORK_QUERY` through src/viewer/pick.ts `ModelPicker.hit`) meets an
+ * artwork shows that artwork's card, any other click hides it, and so do Esc and a camera preset (review 6, F26). The card also hides once the camera
+ * draws none of the artwork's pieces, as the picker counts a drawn piece: the build has taken them away, the section cut or a floor view's cut has
+ * removed them, or they are on no layer the camera draws (F27). Entering walk mode hides it. Leaving keeps the look target's card, as the orbit view's,
+ * the card a click on that artwork shows (work unit 14): a locked pointer cannot click the link, and Esc leaves walk mode, so Esc and then a click on
+ * the link open the object's page. Walk mode tells null on leaving before the next frame, so a null heard while walking holds the artwork until
+ * `frame` knows whether walk mode was left (keep it) or the eye looked away (drop it); a preset's dismissal drops it too.
  * Pure state over what it is given: it reads the meshes' visibility, counts, layers, instance matrices and materials, and writes nothing of the scene.
  */
 import { Box3, Matrix4 } from 'three';
@@ -80,8 +82,10 @@ interface Clicked {
 }
 
 export class ArtLabel {
-  /** The look target's artwork id, as walk mode last gave it. */
-  private looked: string | null = null;
+  /** The look target, as walk mode last gave it, while it is an artwork. */
+  private looked: LookTarget | null = null;
+  /** The artwork looked at when walk mode last told null, until the next frame says whether walk mode was left. */
+  private parting: LookTarget | null = null;
   /** The artwork the last orbit-view click met. */
   private clicked: Clicked | null = null;
   /** Whether the last frame was walking. */
@@ -94,12 +98,13 @@ export class ArtLabel {
 
   /** The Met object ID of the artwork whose card shows, or null: walking, the look target's; in the orbit view, the last click's. */
   get id(): string | null {
-    return this.walking ? this.looked : (this.clicked?.id ?? null);
+    return this.walking ? (this.looked?.id ?? null) : (this.clicked?.id ?? null);
   }
 
   /** The walking eye's look target whenever walk mode gives a new one, or null (no tagged piece in reach, or walk mode preparing or off): a door shows no card. */
   look(target: LookTarget | null): void {
-    this.looked = target?.kind === 'artwork' ? target.id : null;
+    this.parting = target === null ? this.looked : null;
+    this.looked = target?.kind === 'artwork' ? target : null;
   }
 
   /** An orbit-view click whose ray met `hit` under `ARTWORK_QUERY`: that artwork's card, or none when it met no artwork. Walking, clicks look instead. */
@@ -108,18 +113,26 @@ export class ArtLabel {
     this.clicked = hit?.tag?.kind === 'artwork' ? { id: hit.tag.id, pieces: this.piecesOf(hit, hit.tag.id) } : null;
   }
 
-  /** Esc or a camera preset: the orbit view's card hides. Walking, the card follows the eye, and Esc is the browser's, freeing the pointer. */
+  /**
+   * Esc or a camera preset: the orbit view's card hides, and so does the look target's that leaving walk mode would keep (a preset leaves walk mode,
+   * then dismisses). Walking, the card follows the eye.
+   */
   dismiss(): void {
     this.clicked = null;
+    this.parting = null;
   }
 
   /**
-   * Once a frame, `walking` while walk mode is on, with what the camera draws: entering walk mode drops an orbit click's card and leaving it the look
-   * target's; in the orbit view the card hides once none of its artwork's pieces is drawn (`drawnPiece`).
+   * Once a frame, `walking` while walk mode is on, with what the camera draws: entering walk mode drops an orbit click's card; leaving it keeps the look
+   * target's artwork as the orbit view's card, as a click on it would show it; in the orbit view the card hides once none of its artwork's pieces is
+   * drawn (`drawnPiece`).
    */
   frame(walking: boolean, view: DrawnView): void {
+    const kept = this.walking && !walking ? this.parting : null;
+    this.parting = null;
     if (walking) this.clicked = null;
     else this.looked = null;
+    if (kept !== null) this.clicked = { id: kept.id, pieces: this.piecesOf(kept.hit, kept.id) };
     if (this.clicked !== null && !this.clicked.pieces.some((piece) => drawnPiece(piece, view))) this.clicked = null;
     this.walking = walking;
   }

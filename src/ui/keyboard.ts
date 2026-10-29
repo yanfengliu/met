@@ -4,7 +4,9 @@
  *   over the ground and Q E down and up while held (Shift doubles the speed; src/viewer/orbit-keys.ts); Page Up and Page Down go up and down a
  *   floor (src/viewer/floors.ts); F enters walk mode.
  * - Walk mode: W A S D and the arrow keys walk while held, Shift runs, Space jumps, E opens or closes the door looked at (docs/design/spec.md, Doors),
- *   F returns to the orbit view; the timeline and floor keys are off. E is taken before the held keys, so in walk mode it is never held.
+ *   F and Esc return to the orbit view; the timeline and floor keys are off. E is taken before the held keys, so in walk mode it is never held. With the
+ *   pointer locked the browser takes Esc to free it, and walk mode, told the lock went, leaves (src/walk/walk-mode.ts); an open menu takes Esc first
+ *   (src/ui/menus.ts), so the next one leaves.
  * Held keys are physical keys (`event.code`), so W A S D sit in the same place on any layout; `bindKeys` returns the set of those held, which the
  * frame loop reads, and empties it when the page loses focus. A focused button keeps Space and Enter for itself, a focused slider other than the
  * scrubber keeps the keys it moves by (arrows, Home, End, Page Up and Page Down), and a text field keeps every key.
@@ -49,6 +51,12 @@ export function bindKeys(actions: KeyActions, walking: () => boolean): ReadonlyS
     if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
     if (keepsKey(event.target, event.key)) return;
     const walk = walking();
+    // Walking, Esc leaves walk mode as F does (in the orbit view it is the artwork card's and the menus', src/main.ts and src/ui/menus.ts).
+    if (walk && event.key === 'Escape') {
+      if (!event.repeat) actions.toggleWalk();
+      event.preventDefault();
+      return;
+    }
     // Walking, E uses the door looked at; it must come before the held keys, where the orbit view's E moves the camera up.
     if (walk && event.code === 'KeyE') {
       if (!event.repeat) actions.act();

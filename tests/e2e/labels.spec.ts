@@ -17,18 +17,25 @@
  *   through the finished model in the test process; a click on a wall hides it; Esc hides it; the card sits above the Walk toggle's strip, and above
  *   the whole bar while the build replay is open, clear of the floor picker and every control. A clicked card goes when walk mode begins and does not
  *   come back when it ends.
+ * - The pointer locked (work unit 14): placed 4 m before the painting, a click of the view locks the pointer, and the card says "Press Esc, then click
+ *   the link."; Esc leaves walk mode and keeps the card in the orbit view, laid out with its controls, the hint gone, and its link, clicked, opens the
+ *   object's page; Esc again hides it.
  * The painting's place comes from the collection's placements (src/model/collection/spaces-b.ts), the pixel a click goes to from the published camera,
  * and both are checked apart from the page (./labels-helpers.ts). ./labels-view.spec.ts drives the card through the follow camera, presets and the cut.
- * Bound: pointer lock is not available headless, so the locked look and Esc freeing it are not driven (the walking pointer is free throughout); the
- * page's own requests are recorded for the whole test and none may go to metmuseum.org; frame times are this machine's; the frame-by-frame check reads
- * the page's DOM from a requestAnimationFrame loop beside the page's own, which runs after it in each frame and writes nothing.
+ * Bound: the walking test's browser gives no pointer lock (./helpers.ts `noPointerLock`), as one without it does, so its pointer stays free to reach
+ * the bar and the link while walking, where a locked one reaches no control; the locked card's lock is the browser's own, which the headless system
+ * Chrome grants to a click; the page's own requests are recorded for the whole test and none may go to metmuseum.org; frame times are this machine's;
+ * the frame-by-frame check reads the page's DOM from a requestAnimationFrame loop beside the page's own, which runs after it in each frame and writes
+ * nothing.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import { entryOf } from '../../src/model/collection/place.js';
-import { cameraGap, choosePreset, expectWalkingBudget, facts, open, openMenu, openReplay, press, settle, settledCamera, walkingBudget, watchErrors } from './helpers.js';
-import { BAND, ORBIT_CONTROLS, PRESET, TRIUMPH, VIEWPORTS, WALK_CONTROLS, artworkBounds, boxes, drag, expectLaidOut, expectTriumphCard, onCanvas, overlaps, recordRequests, surfaceAt, triumphPixel } from './labels-helpers.js';
+import { SECOND_FLOOR_Y } from '../../src/model/frame.js';
+import { LOCKED_HINT } from '../../src/ui/art-card.js';
+import { cameraGap, choosePreset, expectWalkingBudget, facts, noPointerLock, open, openMenu, openReplay, press, settle, settledCamera, walkingBudget, watchErrors } from './helpers.js';
+import { BAND, ORBIT_CONTROLS, PRESET, TRIUMPH, VIEWPORTS, WALK_CONTROLS, artworkBounds, boxes, drag, expectLaidOut, expectTriumphCard, onCanvas, overlaps, recordRequests, surfaceAt, triumphFront, triumphPixel } from './labels-helpers.js';
 import type { Box } from './labels-helpers.js';
 import { face, still, walking } from './route-walk.js';
 
@@ -61,11 +68,13 @@ for (const viewport of VIEWPORTS) {
     test('walking: the card shows while the eye looks at the Triumph of Marius within 6 m, and hides when it looks away', async ({ page }) => {
       const errors = watchErrors(page);
       const requests = recordRequests(page);
+      await noPointerLock(page);
       await open(page, '');
       await openMenu(page, 'view-menu');
       await press(page, 'walk-spawn-second-floor');
       await page.waitForFunction(() => window.__met?.walk.spawn === 'second-floor');
       await walking(page);
+      expect((await facts(page)).walk.pointerLocked, 'walking with the pointer free').toBe(false);
       await watchCard(page);
       // Turned to face the cross hall and gallery 600 beyond it (yaw 0 faces −Z), 16 m from the painting: no card yet.
       await face(page, 0);
@@ -247,12 +256,59 @@ for (const viewport of VIEWPORTS) {
       expect((await facts(page)).walk.target, 'the look target on the plaza').toBeNull();
       expect((await facts(page)).label, 'walking, the clicked card is gone').toBeNull();
       await expect(page.getByTestId('art-card')).toBeHidden();
-      // Out again by the toggle: the card clicked before walking does not come back.
-      await press(page, 'walk-toggle');
+      // Out again by F (the toggle's click locked the pointer, which reaches no control): the card clicked before walking does not come back.
+      await page.keyboard.press('KeyF');
       await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
       await settle(page);
       expect((await facts(page)).label, 'back in the orbit view').toBeNull();
       await expect(page.getByTestId('art-card')).toBeHidden();
+      errors.expectClean();
+    });
+
+    test('the pointer locked: the card says Esc, then the link; Esc leaves walk mode and keeps the card, whose link opens the object page', async ({ page }) => {
+      const errors = watchErrors(page);
+      const requests = recordRequests(page);
+      const { feet, target } = triumphFront(4, SECOND_FLOOR_Y);
+      await open(page, `walk=1&spawn=${[...feet, ...target].map((v) => v.toFixed(4)).join(',')}`);
+      await walking(page);
+      await page.waitForFunction((id) => window.__met?.label?.id === id, String(TRIUMPH), { polling: 'raf', timeout: 5000 });
+      // Entered at load, with no gesture: the pointer is free, and a click of the view locks it.
+      expect((await facts(page)).walk.pointerLocked, 'entered at load').toBe(false);
+      await expect(page.getByTestId('art-hint')).toBeHidden();
+      const box = await page.getByTestId('canvas').boundingBox();
+      if (box === null) throw new Error('The canvas has no box.');
+      const at = { x: Math.round(box.x + box.width * 0.8), y: Math.round(box.y + box.height * 0.2) };
+      expect(await onCanvas(page, at.x, at.y), 'nothing of the page covers the pixel clicked').toBe(true);
+      await page.mouse.click(at.x, at.y);
+      await page.waitForFunction(() => window.__met?.walk.pointerLocked === true);
+      await expectTriumphCard(page);
+      await expect(page.getByTestId('art-hint')).toHaveText(LOCKED_HINT);
+      // Esc: the orbit view at the eye, the card kept, the hint gone, laid out with the orbit view's controls.
+      await page.keyboard.press('Escape');
+      await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
+      await settle(page);
+      expect((await facts(page)).label, 'the card kept in the orbit view').toEqual({ id: String(TRIUMPH), title: entryOf(TRIUMPH).title });
+      await expectTriumphCard(page);
+      await expect(page.getByTestId('art-hint')).toBeHidden();
+      expectLaidOut(await boxes(page, ORBIT_CONTROLS), viewport, 'the orbit view, the card kept from the walk');
+      // Its link opens the object's page in a new tab, the request stopped in the test's browser.
+      const asked: string[] = [];
+      await page.context().route(/metmuseum\.org/, async (route) => {
+        asked.push(route.request().url());
+        await route.abort();
+      });
+      const tab = page.context().waitForEvent('page');
+      await page.getByTestId('art-link').click();
+      const opened = await tab;
+      await expect.poll(() => asked, { message: 'the new tab asks for the object page' }).toContain(`https://www.metmuseum.org/art/collection/search/${String(TRIUMPH)}`);
+      await opened.close();
+      await page.bringToFront();
+      // Esc again: the orbit view's Esc hides the card.
+      await page.keyboard.press('Escape');
+      await settle(page);
+      expect((await facts(page)).label, 'after Esc in the orbit view').toBeNull();
+      await expect(page.getByTestId('art-card')).toBeHidden();
+      expect(requests.filter((url) => /metmuseum\.org/i.test(url)), 'requests of the page itself to metmuseum.org').toEqual([]);
       errors.expectClean();
     });
   });

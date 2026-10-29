@@ -5,14 +5,16 @@
  * - From the plaza, where the Walk toggle puts the walker on the entrance's axis facing the facade, W alone, held at a walk, let go 4 m before the middle
  *   doorway's leaves to learn how late a key goes up (./route-keys.ts) and held again and let go 1.3 m before them, early by a walk's coast and that lag's
  *   travel, brings the walker to rest with the crosshair on the line where the pair meet; with no drag the prompt says "E Open", and E opens the door.
- * - At the north link door, met on its axis: walked by D out along the plaza to its line, 27 m off, turned there by drags toward its leaves' meeting line,
+ * - At the north link door, met on its axis: from the plaza spawn, entered at load (`walk=1`), with no gesture, so the pointer stays free and drags
+ *   turn the view (the Walk toggle's click would lock it), walked by D out along the plaza to its line, 27 m off, turned there by drags toward its leaves' meeting line,
  *   run at by W and Shift to about 1.3 m before the leaves, let go early by a run's coast and the travel of the lag the walk out learnt, and turned again
  *   onto that line, the eye's ray crossing the leaves' whole depth within 3 mm of
  *   it, the prompt says "Locked", and E leaves the door shut.
  * Red at 0defda0, whose look target was the centre ray's alone: through the gap it met nothing, so neither prompt showed (the waits for them time out).
  * A ray more than about 4° off a door's axis meets a leaf's edge inside the gap, which is why the link door is run at from far out along its line.
  * Bound: where the ray crosses the leaves is worked out from the published eye and look and the door's pieces in the finished model built in the test
- * process; a drag turns the view LOOK_PER_PIXEL a pixel, so an aim is good to half a pixel, under 1 mm at the link door.
+ * process; a drag turns the view LOOK_PER_PIXEL a pixel, so an aim is good to half a pixel, under 1 mm at the link door. The walk to the middle door
+ * enters by the Walk toggle, which locks the pointer (work unit 14), and moves no mouse after it, so the view turns by nothing.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -144,8 +146,7 @@ test.describe('the door prompt between a pair’s leaves', () => {
     // About 22 s here (21.8 to 22.4 s in three full runs, 2026-10-27), most of it the walk out along the plaza; four times that for a loaded machine.
     test.setTimeout(90_000);
     const errors = watchErrors(page);
-    await open(page, '');
-    await press(page, 'walk-toggle');
+    await open(page, 'walk=1&spawn=plaza');
     await walking(page);
     const leaves = leavesOf(LINK);
     // The meeting line in the leaves' mid-plane, which the ray is aimed at so it crosses their depth evenly.

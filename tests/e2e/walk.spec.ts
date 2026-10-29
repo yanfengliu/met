@@ -1,8 +1,9 @@
 /**
  * Walk mode and the orbit view's movement keys through real input (docs/design/spec.md, Keyboard and Walk mode): the orbit keys move the camera and
- * its target together and leave the timeline keys alone; the Walk toggle, the F key, a view-menu spawn and `?walk=1&spawn=` enter walk mode; on the
- * real model, holding W walks from the plaza up the front steps; a drag turns the view the way the pointer moves, LOOK_PER_PIXEL a pixel, and only a
- * press that travels under CLICK_SLOP (5 px) asks for pointer lock (a probe counts the requests); F returns to the orbit view where the walker stood;
+ * its target together and leave the timeline keys alone; the Walk toggle, the F key, a view-menu spawn and `?walk=1&spawn=` enter walk mode, the
+ * first three locking the pointer, and F and Esc leave it; on the real model, holding W walks from the plaza up the front steps; entered at load,
+ * the pointer free, a drag turns the view the way the pointer moves, LOOK_PER_PIXEL a pixel, and only a press that travels under CLICK_SLOP (5 px)
+ * asks for pointer lock (a probe counts the requests; ./mouse-look.spec.ts drives the locked look); F returns to the orbit view where the walker stood;
  * F followed by Space or ArrowLeft within one frame (sent back to back through CDP, a probe's frame count confirming they shared a frame) gives the
  * second key the new mode's meaning, both ways.
  * Facts come from `window.__met.walk` and `window.__met.camera`; spawn positions from src/walk/spawns.ts; levels from src/model/frame.ts.
@@ -179,10 +180,12 @@ test.describe('walk mode', () => {
     errors.expectClean();
   });
 
-  test('the Walk toggle and the F key enter and leave walk mode; a view-menu spawn enters it there', async ({ page }) => {
+  test('the Walk toggle, the F key and a view-menu spawn enter walk mode, there, the pointer locked; F and Esc leave it', async ({ page }) => {
     await open(page, '');
     await press(page, 'walk-toggle');
     const first = await walking(page);
+    // Entered by a mouse's click: the pointer locked to the view (./mouse-look.spec.ts drives the locked look).
+    await page.waitForFunction(() => window.__met?.walk.pointerLocked === true);
     const plaza = spawnById('plaza');
     if (plaza === undefined) throw new Error('No plaza spawn.');
     expect(first.spawn).toBe('plaza');
@@ -199,13 +202,13 @@ test.describe('walk mode', () => {
     expect(distance((await camera(page)).position, first.eye ?? [0, 0, 0]), 'the orbit camera at the eye').toBeLessThan(0.01);
     await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.getByTestId('walk-status')).toBeHidden();
-    // F enters again, where the walker stood; the toggle leaves.
+    // F enters again, where the walker stood; Esc leaves, as F does. The toggle leaves only a free pointer, which ./walk-screen.spec.ts drives: a locked one reaches no control.
     await page.keyboard.press('KeyF');
     const again = await walking(page);
     expect(distance(again.eye ?? [0, 0, 0], first.eye ?? [9, 9, 9]), 'back where it stood').toBeLessThan(0.01);
-    await press(page, 'walk-toggle');
+    await page.keyboard.press('Escape');
     await orbiting(page);
-    // A spawn from the view menu.
+    // A spawn from the view menu, the pointer locked there too; Esc leaves, and the view menu is reached again.
     for (const [id, floor] of [['great-hall', MAIN_FLOOR_Y], ['second-floor', SECOND_FLOOR_Y]] as const) {
       await openMenu(page, 'view-menu');
       await press(page, `walk-spawn-${id}`);
@@ -213,6 +216,9 @@ test.describe('walk mode', () => {
       const at = (await facts(page)).walk;
       expect(at.eye?.[1] ?? 0, `${id}: eye height`).toBeCloseTo(floor + EYE, 1);
       expect(at.onGround, `${id}: on the floor`).toBe(true);
+      await page.waitForFunction(() => window.__met?.walk.pointerLocked === true);
+      await page.keyboard.press('Escape');
+      await orbiting(page);
     }
   });
 
@@ -315,6 +321,9 @@ test.describe('walk mode', () => {
     expectWalkingBudget(await walkingBudget(page), 'on the plaza');
     expectWalkingBudget(await walkingBudget(page, true), 'running up the front steps');
     for (const id of ['great-hall', 'second-floor']) {
+      // F locked the pointer, which reaches no menu: Esc leaves walk mode first, as a visitor does, and the spawn enters it again.
+      await page.keyboard.press('Escape');
+      await orbiting(page);
       await openMenu(page, 'view-menu');
       await press(page, `walk-spawn-${id}`);
       await page.waitForFunction((s) => window.__met?.walk.spawn === s && !window.__met.walk.preparing && window.__met.walk.eye !== null, id);

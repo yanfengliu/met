@@ -2,7 +2,9 @@
  * The walk's doors, passages, stairs, pool, dais and artworks through real input on the finished building (docs/design/spec.md, Walk mode, Doors and
  * Collection: Labels), in two parts; walkability, every route walked both ways, is the headless walker's (src/model/hunt/routes.test.ts,
  * src/model/reach.test.ts). Only held keys (W, S, Shift), mouse drags, E and the view menu move the walker or act, and its eye is read from the
- * read-only `window.__met.walk` at every frame (./route-walk.ts, ./route-holds.ts).
+ * read-only `window.__met.walk` at every frame (./route-walk.ts, ./route-holds.ts). The pointer stays free throughout, so drags turn the walker and
+ * the view menu is reached while walking: the short walk's browser gives no pointer lock (./helpers.ts `noPointerLock`), as one without it does, and
+ * the fixed places enter at load, with no gesture; ./mouse-look.spec.ts drives the lock (work unit 14).
  * - One short walk: from the plaza spawn (F) up the front steps on the axis, at a run and then at a walk, straight at the central arch's closed middle
  *   door, whose prompt says "E Open" at every frame from 1.9 m out (F46) and whose leaves hold the walker a body's radius before them; E, looking straight
  *   on, swings it into the building; through it, let go once clear of the leaves' sweep, turned back onto an open leaf, "E Close" and E shuts it behind.
@@ -47,7 +49,7 @@ import { ROUTE_R3, ROUTE_R4, ROUTE_R6, WESTON_APPROACH } from '../../src/model/h
 import { STAIR_LANDING_Y } from '../../src/model/hunt/stair.js';
 import { DAIS, DAIS_STEPS, DENDUR_FLOOR_Y, GATE_RAIL, GATE_SLABS, GATE_THRESHOLD, PLATFORM_Y, POOL, POOL_FLOOR_Y, TEMPLE_AXIS_X, TERRACE } from '../../src/model/roche-north/plan.js';
 import { BODY, MOTION } from '../../src/walk/walker.js';
-import { expectWalkingBudget, open, openMenu, press, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
+import { expectWalkingBudget, noPointerLock, open, openMenu, press, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
 import { artworkBounds, TRIUMPH } from './labels-helpers.js';
 import { approach, axisPoint, clearOfSwing, doorPlan, LOOK, outOf, promptOnApproach, screenMark, screensApart, screensSince, useStretch, watchScreens } from './route-places.js';
 import type { DoorPlan, Screen } from './route-places.js';
@@ -197,6 +199,7 @@ test.describe('the walk through real input', () => {
   test('one short walk: up the front steps straight at the closed middle door, held, opened by E and shut behind; a Grand Staircase flight and gallery 600’s Triumph of Marius; back at the door, still shut; the card and the prompt never at once', async ({ page }) => {
     test.setTimeout(150_000 * throttleRate());
     const started = Date.now();
+    await noPointerLock(page);
     const f = await open(page, '');
     await throttle(page);
     expect(f.t, 'the finished building').toBe(f.n);
@@ -204,6 +207,7 @@ test.describe('the walk through real input', () => {
     await page.keyboard.press('KeyF');
     const start = await walking(page);
     expect(await page.evaluate(() => window.__met?.walk.spawn), 'walk mode starts on the plaza').toBe('plaza');
+    expect(await page.evaluate(() => window.__met?.walk.pointerLocked), 'the browser gave no lock: the pointer free').toBe(false);
     await watchScreens(page);
     await record(page);
     const door = doorPlan(MIDDLE_DOOR);

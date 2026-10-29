@@ -72,8 +72,8 @@ export interface Ui {
 const WALK_STATUS: Readonly<Record<WalkStatus, string>> = {
   off: '',
   preparing: 'Preparing walk mode…',
-  free: 'Walk mode. Click the view to look with the mouse, or drag. W A S D or the arrows walk, Shift runs, Space jumps, F leaves.',
-  locked: 'Move the mouse to look. Esc frees the pointer; F leaves walk mode.',
+  free: 'Walk mode. Click the view to look with the mouse, or drag. W A S D or the arrows walk, Shift runs, Space jumps, Esc or F leaves.',
+  locked: 'Walk mode. Move the mouse to look. W A S D or the arrows walk, Shift runs, Space jumps, Esc or F leaves.',
 };
 
 /**

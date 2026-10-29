@@ -3,13 +3,16 @@
  * at the current t, looking through the page's camera.
  * Entering prepares the world on the next frame, after the status line has been drawn ("Preparing walk mode"), and puts the walker at the spawn
  * asked for, else where it last stood in this page, else at the default spawn. While walking, the world is rebuilt whenever the set of complete
- * steps changes, and after every build the walker's place is checked against it (src/walk/walker.ts, `settle`); the orbit controls are off. Looking: pointer lock on a click of the view (the movement of the mouse turns the walker), or a
- * drag with the mouse or a finger, which turns the view the way the pointer moves, as the locked mouse does. Leaving puts the orbit camera at the
- * walker's eye, its target 5 m ahead. The status line's hint shows how to look, move and leave until the visitor first walks or looks, at most
- * `HINT_SECONDS`, and again when the pointer is freed. Every walking frame, and afresh whenever something reads it, the look target (./look.ts) is
- * found along the eye's ray; `onLookTarget` is the one hook that hears it change, for doors and labels alike. The doors that open collide where the
- * door layer stands them, their swings moved on in the walker's own physics steps (./door-world.ts), and after every check of the walker's place a door
- * whose leaves a build left in the walker is put clear of it. The walk mode reads the scene and never writes it.
+ * steps changes, and after every build the walker's place is checked against it (src/walk/walker.ts, `settle`); the orbit controls are off.
+ * Looking (work unit 14): entering by a mouse or the keyboard asks for pointer lock, and the locked mouse turns the walker as it moves, no button
+ * held; where the browser gives no lock (no user gesture, as at load with `walk=1`), a click of the view asks again. A drag with an unlocked mouse, a
+ * finger or a pen turns the view the way the pointer moves, as the locked mouse does. Losing the lock while walking leaves walk mode: the browser
+ * frees the pointer on Esc and tells the page only that the lock went. Leaving puts the orbit camera at the walker's eye, its target 5 m ahead. The
+ * status line's hint shows how to look, move and leave until the visitor first walks, at most `HINT_SECONDS`. Every walking frame, and afresh
+ * whenever something reads it, the look target (./look.ts) is found along the eye's ray; `onLookTarget` is the one hook that hears it change, for
+ * doors and labels alike. The doors that open collide where the door layer stands them, their swings moved on in the walker's own physics steps
+ * (./door-world.ts), and after every check of the walker's place a door whose leaves a build left in the walker is put clear of it. The walk mode
+ * reads the scene and never writes it.
  */
 import { Vector3 } from 'three';
 
@@ -40,7 +43,10 @@ export const LOOK_PER_PIXEL = 0.0013;
  * click travels 0 to 2 px, and under 5 px a drag would have turned the view by under 0.4°, which nobody means as a look.
  */
 export const CLICK_SLOP = 5;
-/** Seconds the status line shows how to look, move and leave after walking starts or the pointer is freed, unless the visitor walks or looks first. */
+/**
+ * Seconds the status line shows how to look, move and leave after walking starts, unless the visitor walks first. A look does not end it: entering
+ * locks the pointer, and the mouse's first twitch would take the hint away before it is read.
+ */
 export const HINT_SECONDS = 6;
 /** Walking frames whose work times `frameMs` takes the median of. */
 const FRAME_WINDOW = 120;
@@ -111,6 +117,10 @@ export class WalkMode {
   private spawnId: string | null = null;
   private orbitFov = 45;
   private locked = false;
+  /** Set while a release of the lock the page asked for itself is on its way, so its `pointerlockchange` does not leave walk mode. */
+  private releasing = false;
+  /** The kind of pointer of the last press anywhere on the page: a finger's or a pen's tap that enters walk mode asks for no lock. */
+  private lastPress = 'mouse';
   private drag: { id: number; x: number; y: number; moved: number } | null = null;
   /** Seconds left of the status line's hint. */
   private hintLeft = 0;
@@ -189,6 +199,7 @@ export class WalkMode {
     this.seen = null;
     this.tell(null);
     this.host.rig.setWalking(true);
+    this.askLock();
   }
 
   /** Builds and places at once, without waiting a frame for the status line (capture mode). */
@@ -205,7 +216,7 @@ export class WalkMode {
     this.hintLeft = 0;
     this.seen = null;
     this.tell(null);
-    if (document.pointerLockElement === this.host.canvas) document.exitPointerLock();
+    this.freePointer();
     const rig = this.host.rig;
     rig.setWalking(false);
     if (this.placed) {
@@ -319,7 +330,7 @@ export class WalkMode {
       this.settle(this.settledFor);
     }
     this.prepare = false;
-    this.hintLeft = this.locked ? 0 : HINT_SECONDS;
+    this.hintLeft = HINT_SECONDS;
     this.lastEye.set(Number.NaN, 0, 0);
   }
 
@@ -355,24 +366,33 @@ export class WalkMode {
   /** Turns the walker by a pointer's movement of (dx, dy) pixels: the view turns the way the pointer moves, right for right and up for up. */
   private turnBy(dx: number, dy: number): void {
     this.walker.turn(-dx * LOOK_PER_PIXEL, -dy * LOOK_PER_PIXEL);
-    this.hintLeft = 0;
+  }
+
+  /** Whether `event` is the locked mouse's: the lock holds the mouse alone, so a finger or a pen still drags to look. */
+  private lockedMouse(event: PointerEvent): boolean {
+    return this.locked && event.pointerType === 'mouse';
   }
 
   private bindPointer(canvas: HTMLCanvasElement): void {
+    document.addEventListener('pointerdown', (event) => { this.lastPress = event.pointerType; }, { capture: true, passive: true });
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement === canvas;
-      // Freed while walking (Esc): the hint says again how to look and leave; locked, the browser says how to free the pointer.
-      if (this.on && !this.prepare) this.hintLeft = locked ? 0 : HINT_SECONDS;
+      const lost = this.locked && !locked && !this.releasing;
       this.locked = locked;
+      this.releasing = false;
+      // A lock that came once walk mode was left (F pressed again before the browser gave it): the orbit view keeps its pointer.
+      if (locked && !this.on) this.freePointer();
+      // Lost while walking: the browser frees the pointer on Esc and tells the page only that the lock went, so walk mode is left, as Esc leaves it.
+      else if (lost && this.on) this.exit();
     });
     canvas.addEventListener('pointerdown', (event) => {
-      if (!this.on || this.locked || this.drag !== null) return;
+      if (!this.on || this.lockedMouse(event) || this.drag !== null) return;
       this.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: 0 };
       canvas.setPointerCapture(event.pointerId);
     });
     canvas.addEventListener('pointermove', (event) => {
       if (!this.on || this.prepare) return;
-      if (this.locked) {
+      if (this.lockedMouse(event)) {
         this.turnBy(event.movementX, event.movementY);
         return;
       }
@@ -396,7 +416,25 @@ export class WalkMode {
     canvas.addEventListener('pointercancel', (event) => { release(event, true); });
   }
 
-  /** Asks for pointer lock; where the browser refuses (headless, some trackpads, an iframe), looking stays on drag. */
+  /**
+   * On entering: asks for pointer lock where the browser can give it now, in a user's gesture (the F key, a click of the Walk toggle or a spawn) whose
+   * last press was not a finger's or a pen's. Without a gesture, as at load with `walk=1`, the browser would refuse, so the first click asks.
+   */
+  private askLock(): void {
+    // A browser without the User Activation API (Safari before 16.4) is asked anyway; it refuses without a gesture.
+    const activation = (navigator as { readonly userActivation?: UserActivation }).userActivation;
+    if (this.locked || this.lastPress !== 'mouse' || activation?.isActive === false) return;
+    this.requestLock(this.host.canvas);
+  }
+
+  /** Frees the pointer if the page holds it locked, so the `pointerlockchange` that tells it is the page's own and leaves nothing. */
+  private freePointer(): void {
+    if (document.pointerLockElement !== this.host.canvas) return;
+    this.releasing = true;
+    document.exitPointerLock();
+  }
+
+  /** Asks for pointer lock; where the browser refuses (an iframe without the permission, a request too soon after Esc), looking stays on drag. */
   private requestLock(canvas: HTMLCanvasElement): void {
     try {
       Promise.resolve(canvas.requestPointerLock()).catch(() => undefined);

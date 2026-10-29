@@ -114,6 +114,17 @@ export function triumph(): { readonly box: Box3; readonly middle: Vector3 } {
 }
 
 /**
+ * A walk place `metres` straight out from the Triumph's face, on gallery 600's floor at `floorY`, looking at the middle of its face: the feet and the
+ * target for `spawn=x,y,z,tx,ty,tz` (src/walk/spawns.ts `placeOf`). Out is from the canvas's middle through its face's middle, laid level.
+ */
+export function triumphFront(metres: number, floorY: number): { readonly feet: readonly number[]; readonly target: readonly number[] } {
+  const { box, middle } = triumph();
+  const out = middle.clone().sub(box.getCenter(new Vector3())).setY(0).normalize();
+  const feet = middle.clone().addScaledVector(out, metres).setY(floorY);
+  return { feet: feet.toArray(), target: middle.toArray() };
+}
+
+/**
  * The Triumph's pixel under camera `c`, checked apart from the page: nothing of the page covers it, and the first surface along its ray, cast through
  * the finished model in the test process, lies on the painting.
  */

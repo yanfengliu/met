@@ -186,7 +186,7 @@ function boot(): void {
     if (target?.kind === 'door' && doors.use(target.id, rig.camera.position)) needsRender = true;
   };
   viewer.renderer.domElement.addEventListener('pointerdown', (event) => {
-    if (walk.active && walk.pointerLocked && event.button === 0) useDoor();
+    if (walk.active && walk.pointerLocked && event.pointerType === 'mouse' && event.button === 0) useDoor();
   });
   /** Opens the build replay at the `t` in view; walking, its bar shows whole, as the visitor asked for it. */
   const openReplay = (): void => {
