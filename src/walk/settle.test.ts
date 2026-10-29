@@ -4,6 +4,10 @@
  * as walk mode rebuilds it, and the walker settled against the pieces the second build added (`instancesBefore`), as walk mode settles it.
  * Two cases run the real sequence: the Grand Staircase's flights built where a walker stands (review of work unit 1, U1 part two), and Weston's facade
  * built through a walker in its pavilion's brick (work unit 3, review 2, F14).
+ * The cases: on the workspace ground at once at t = 0, buried by a floor built over it and lifted onto it, dropped when it goes, lifted out of a
+ * 1.2 m wall built through it, onto a desk built in a room rather than the roof, past a surface with too little room, lost in a piece with no
+ * walkable top, the nearest spawn, and on the real sequence Weston's facade built through a walker in its pavilion's brick, which lifts it onto the
+ * coping: red with `openWall`'s bottom face left out, the walker kept in the brick.
  * Bound: fixtures are closed boxes. Every piece of the model is closed along vertical lines or a declared sheet (src/model/closure.test.ts); a sheet has
  * no inside, so the build does not lift a walker out of one, which src/walk/crossings.test.ts checks.
  * Walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.

@@ -5,8 +5,8 @@
  * line's hint shows until the walker first walks; Timeline brings the whole bar back, whose controls then work and step the build while walking, and
  * folds it again; the Walk toggle leaves, giving the orbit view its whole bar and no crosshair; F enters again with the bar folded. Every control in
  * view is inside the viewport, unclipped and apart from the others and from the crosshair, folded and unfolded.
- * A click takes effect on the page's next frame (src/main.ts `frame`), so a read of the screen after one waits for the attribute that frame sets: the
- * Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed`.
+ * A click takes effect on the page's next frame (src/main.ts `frame`), so each state is read once the page's next frame has applied it, waiting for
+ * the attribute that frame sets, which reports it: the Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed`.
  * Bound: pointer lock is not available headless, so Esc and the locked look are not driven here; walk.spec drives the drag and the click.
  */
 import { expect, test } from '@playwright/test';

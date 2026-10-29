@@ -4,8 +4,9 @@
  * floor, built by the timeline, turned by the page's door layer (src/viewer/doors.ts) and collided with through the page's own path (`walkWorld`: the
  * static world without the door's closed leaves, and the leaves where the layer stands them), the walker stepped at 60 frames a second unless a case says
  * otherwise. The leaves stop a walker closed and let it through open; a door turning into a walker, opening or closing, holds where its leaves would touch
- * it and goes on once the walker steps away, the same at 30, 60 and 144 frames a second and through a stalled frame; one swung through a walker in one step
- * is refused though both its ends are clear; a door turned back mid-swing goes back from where it stands.
+ * it and goes on once the walker steps away, the same at 30, 60 and 144 frames a second and through stalled frames of 0.25 s and 2 s; one swung
+ * through a walker in one step is refused though both its ends are clear; a door turned back mid-swing goes back from where it stands; a closing door
+ * held by a walker between its leaves turns back open on the side it stands, either side (review 15, F43).
  * The oracle for "never inside the body" is apart from the collision (./door-testing.ts `gap`). The build moving under the walker is in ./door-settle.test.ts.
  * Bound: the doorway stands square to Z; the walker walks on the doorway's axis or is placed; frame times are exact.
  */

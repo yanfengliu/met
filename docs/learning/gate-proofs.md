@@ -1,6 +1,10 @@
 # Gate proofs
 
-The record that a gate was made to go red by reintroducing the defect it claims to prevent: each gate that retired a lesson of [lessons.md](lessons.md), and each gate for a review finding whose work unit records its proof here. Each entry names the gate, the mutation and the failure it produced; a lesson's entry also names the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
+The record that each gate was made to go red by reintroducing the defect it claims to prevent, or by planting a fault it must catch. A gate whose test header lists its red proofs keeps them there; this file holds the rest.
+
+The first entries are the gates that retired a lesson of [lessons.md](lessons.md). Each names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
+
+Under [Red proofs by gate](#red-proofs-by-gate), each gate's other red proofs are filed under its test. Most came from AGENTS.md's Gates section, where each work unit wrote them until work unit 12 moved them here; a gate's new red proofs go there too, or in its test's header. Each names the mutation, and the failure and the commit it was red at where the record gives them. Their review rounds and finding IDs (review 17, F46) are work unit 2's, in `docs/work/2_doors-and-collection/reviews/`.
 
 ## A cited reference photograph must be recorded as viewed
 
@@ -38,37 +42,122 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 
 **Evidence:** `git show db1e297:docs/learning/lessons-evidence.md` reads the lesson's evidence back, and `git show db1e297:docs/learning/lessons.md` its line.
 
-## A barrel vault's coffers keep their floors
+## Red proofs by gate
 
-**Finding:** work unit 7's F39 (review 2, Claude N8): `barrelVault` built coffers whose ribs left no floor. A coffer's floor is its cell inset 0.8 ribs from each side, so where 1.6 ribs reach the cell's width on the inner face or its length, the floor's sides meet, and past it they cross; where only one of the two is passed, the floor faces away from the vault's axis. On N8's vault (span 4 m, length 3 m, thickness 0.3 m, ten coffers across, one along, depth 0.05 m, rib 0.5 m), built at `8a6a0c2`, all 20 floor faces faced away from the axis, each floor 0.17 m wide the wrong way round, and nothing refused it. Work unit 9's review 0 added that a floor short of crossing can still be lost: `MeshBuilder.polygon` leaves out a face under 5e-13 m², and Float32 positions could close a floor under a micrometre (F0). So the refusal asks each floor to keep 1 mm across and along, a wide margin over both.
+### `src/repo-conventions.test.ts`
 
-**Gate:** `src/model/lib/dome.test.ts`, work unit 9, two tests.
+- AGENTS.md within 30,000 bytes (work unit 12, 2026-10-29): with `8a6a0c2`'s AGENTS.md put back, the last before work unit 12, red: "AGENTS.md holds 69357 bytes with CRLF line endings, 39357 over the 30000-byte bound, and Codex reads only its first 32 KiB: …" (69,223 bytes with LF endings, 134 lines); with work unit 12's, green. Its detector test passes 30,000 bytes of synthetic text and fails 30,001, read with LF endings or CRLF.
 
-- "refuses ribs that leave a coffer less than 1 mm of floor: just short of that, read off vaults that build, the floors face the axis". On three vaults it reads the floors' width or length off the built faces of two vaults that build, ribs 0.05 and 0.1 m. Two are semicircles of 2 m radius, whose floors close across (ten cells, 0.6283 m wide on the inner face) or along (ten cells, 0.3 m long). The third is segmental, rise 1 m, with its inner face 2.5 m in radius about an axis 1.5 m below its springing (review 0, F6). It finds the rib at which that line gives 1 mm of floor: 0.3920737, 0.1868750 and 0.2891548 m. A rib 0.1 mm short of it must build every floor, each face toward the axis, 1 to 1.2 mm across or along. A rib 0.1 mm past it must be refused, naming a rib that builds every floor facing the axis, 1 to 1.2 mm across or along.
-- "names a rib that builds, with the thickness enough for any rib up to it, before the shell is read, and none where no rib can". Three shells that some rib up to the one named would leave too thin must name the rib and the thickness enough for all of them, pinned as worked by hand (review 0, F1; review 1, F9 and F13): 0.1868 and 0.0594 m, 0.1957 and 0.0564 m, and 1.874 and 0.06 m. In the shell named, every rib up to the one named, 5 mm apart, must build with its floors facing the axis. The third shell fits the rib named but not 0.25 m, whose floors' corners stand under a facet's middle. The second is too thin at its own rib as well, so it pins the rib refusal's place before the thickness refusal. A need of 2097152 m, too large for rounding up to keep its 1e-6, must get a thickness above it that builds (F10), and a room as large must get a depth below it that builds (review 2, F20); these check the advice's arithmetic, since Float32 positions that far out lie 0.25 m apart. N8's vault must be refused with its whole message, and Codex's floor 1.6e-14 m long must be refused for its floor (F0). A rib left at its default must say so (F7). Cells under 1 mm, long or wide or both, must be told that no rib passes and which way to grow, offered fewer coffers only where there are more than the least (F3, F16, F21). A rise so small for its span that the radius overflows must be refused, with coffers or without, naming span and rise (F18).
+### `tests/e2e/walk-screen.spec.ts`
 
-The fixtures stand 0.1 mm of rib either side of the least floor, so the test does not tell `<` from `≤` there. The sweep reads ribs 5 mm apart; between them, the review 1 record's argument holds (a corner's need for shell grows as it nears a facet's middle).
+- Each state read once the page's next frame has applied it: red at `acc0e0a` with the page's animation frames held 60 ms by a timer: the fold read failed in 5 of 6 runs, the leave read in 1; with the waits, still red when the bar never folds again or the orbit view's bar stays folded.
 
-**Proved red (2026-10-29):** each mutation was made on the repaired `src/model/lib/dome.ts`, after review 2's repairs, and undone, the file restored byte for byte.
+### `tests/e2e/stairs.spec.ts`
 
-- The refusal deleted: red, both tests: "width, rise 2: expected '' to match /^barrelVault: coffers\.rib …/", the vault 0.1 mm past the least floor building, and no rib or thickness named.
-- Floors allowed down to none (`FLOOR_LEAST` 0), F39's own bound: red, both: the vault 0.1 mm past builds, and the first shell is told 0.1874 m.
-- The refusal at 1.5 ribs: red, both: the vault 0.1 mm past builds, and so does Codex's sliver ("expected '' to match /less than 1 mm of floor/").
-- The refusal at 1.7 ribs: red, both: the vault 0.1 mm short refused, and the named rib, 0.1868 m, refused in turn.
-- The cell's chord taken for its width, 0.6257 m for 0.6283 m: red, both: the vault 0.1 mm short refused, naming "at most 0.3904 m".
-- Half the span taken for the radius: red, both: the segmental vault 0.1 mm short refused, its cells read as 0.3709 m wide for 0.4636 m.
-- π taken for the arc: red, the segmental vault 0.1 mm past builds.
-- The radius left unchecked: red, the vault whose radius overflows refused for its thickness, not its rise.
-- `buildVault`'s floors alone inset 1.7 half-ribs, the refusal left at 1.6: red, both: the vault 0.1 mm past the least floor read off the geometry builds, and all 40 floor faces of a named vault face away from the axis. The thickness refusal's test, whose floor corners stayed at 1.6, read 424 lines through pockets.
-- No thickness named with the rib: red, the advice "make coffers.rib at most 0.1868 m." alone.
-- The shell read at the rib named alone, review 0's repair: red, the third shell told "at most 1.874 m." with no thickness.
-- The thickness rounded up without its step past the need: red, "expected '2097152.0000' to be '2097152.0001'".
-- The depth rounded down without its step below the room: red, the vault told "coffers.depth at most 2097152.0000 m", the depth it has.
-- Fewer coffers along offered where there is one: red, the cells 0.8 mm long in a vault of one coffer along.
-- Fewer coffers across offered where there are two: red, the cells 0.79 mm wide in a vault of two coffers across.
-- The two sides of the no-rib advice joined by " and ", as at `3e0b2c5`: red, the cells too small both ways.
-- The shell read before the rib (a copy of the thickness refusal put in front): red, the second shell refused for its thickness ("barrelVault: thickness first"), not its rib.
+- The rendered eye on a flight, never dropping climbing nor rising descending, and drawn from the walker's eye: red with the eye of `db4cc47`: drops of 6.5 to 14.4 cm climbing, rises of 5.9 to 13.3 cm descending; red with a dip added in `setWalkView`, which left `walk.eye` alone: frames drawn 3.1 cm from the eye.
+- The eye at rest on the plaza, 1.6 m over the surface under it: red with the published eye 3 cm high on the plaza, which the spawn-height check it replaced passed; with the key held 0.4 s past its stop that old check read 3.15 cm out and this one stayed green.
 
-With the repaired `dome.ts` the file's 10 tests pass.
+### `src/model/hunt/routes.test.ts`
 
-**Evidence:** `docs/work/7_faces-out/reviews/2_implementation.md` (N8, F39) and `docs/work/9_barrel-rib-refusal/plan.md`.
+- R5 through the cross hall's doorway into gallery 600: red with the doorway walled up: stalled at the back wall, 6.06 m short.
+- R7 from gallery 153 through its south wall's door: red with R7 led through gallery 153's south wall: stalled at it, 44.48 m short.
+
+### `tests/e2e/routes.spec.ts`
+
+Work unit 2's follow-up (reviews 23 to 27) replaced the route walks of `3860384` with one short real-key walk and fixed places set by `spawn=x,y,z,tx,ty,tz` (review 22, F66). Each proof the walks held was planted again on 2026-10-29 in the work's tree and undone, the tests named running unthrottled:
+
+- F30, the door prompt left showing once a door has shown it (`src/main.ts`, the look target's hook keeping the last door): the short walk, no frame with the card and no prompt.
+- F46, the closed doors' doorways out of the hit query (`src/viewer/doors.ts` `registerWith`), as at `0defda0`: the short walk, 89 of 186 frames walking straight at the closed door within 1.9 m with no "E Open"; the middle door from the Great Hall, 144 of 257.
+- F54, the door planted to swing open by itself toward the plaza 3 s after E shuts it (`src/viewer/doors.ts` `use`): the short walk, the door found open at −90° as the walker came back to it from the plaza.
+- F55, a hop planted on the way to Ruth Gleaning (`src/walk/walker.ts` `update`, once, 1.5 m from R6's end): its approach, 98 frames off the ground.
+- The door's hold, the middle door's leaves out of the door world (`src/walk/door-world.ts`): the short walk, held at Z −14.20 by the information desk, 12.86 m past the leaves; the middle door from the Great Hall, no stop before the plaza, at Z 25.57.
+- Walked through, the leaves' collision left closed while they swing (`door-world.ts` `pose`): the short walk, the middle door from the Great Hall, and Weston's door from the Petrie Court and from gallery 529, each stuck in its doorway.
+- Weston's door, its leaves out of the door world: from the Petrie Court, held at X −37.10 in wing B, 12.6 m past the leaves.
+- R5's doorway walled up (`src/model/hunt/stair.ts`, the cross hall's back wall with no opening): the short walk, stuck at Z −66.44 before the wall; the place in the doorway, the walker lifted 7 m onto the wall's top.
+- The Dendur pool 0.6 m deep (`POOL_FLOOR_Y`, `src/model/roche-north/plan.ts`): stuck in its north arm, no 5 cm of progress walking out.
+- The gate's rail taken away (`src/model/roche-north/sackler.ts`): the walker went on to the gate's riser, held at Z −64.68 instead of before the rail.
+- The gate's passage left unfilled: the walker from the forecourt dropped into it and could not walk back out onto the forecourt.
+- The walking eye 3 cm high (`src/walk/walker.ts` `eye`): the short walk on the landing, and the places in R5's doorway, on the landing, on the forecourt and at the head of the south flight, 2.5 to 3.0 cm off.
+- An artwork's card reach 8 m (`src/walk/look.ts`): the short walk's Triumph of Marius, and Ruth Gleaning, cards shown farther than 6 m; the Sphinx's from where its approach set off, 7.7 m out.
+- Each key let go 0.7 s late (`tests/e2e/route-keys.ts` `Keys`), past the release the door's stretch allows: the short walk, "at rest 2.43 m out from the leaves … where it can shut the door from 0.95 to 2.28 m out; it went on 1.62 m past where W was let go, 0.74 s of walking after its coast".
+
+With the work as committed, all pass: 14 tests unthrottled in 94 s, inside `npm run verify`, and 12 at 4× in 109, 111 and 106 s in three runs in a row, its two frame budgets skipped there.
+
+### `src/model/roche-north/walk.test.ts`
+
+- No trap at Dendur, from every start 2 m apart over the pool's water: red with the 0.6 m pool: 89 starts trapped.
+- On the gate's axis from the terrace the walker stops at the rail, and from the forecourt it walks into the passage on the forecourt's level and back: red with the passage unfilled and no rail: it walks into the passage from the terrace and drops off the forecourt's level.
+
+### `tests/e2e/zoom.spec.ts`
+
+- Every wheel notch within 1 cm of the ray under the pointer, until it stops 0.5 m before the first surface there or at the camera floor: a picker returning the camera-to-target distance, a ray biased 1.5 mrad, or a zoom without the camera floor as a bound turns it red.
+- On the camera floor, looking down from the far bound a notch out still moves, and looking up a notch out stays on the floor while a notch in moves: both red with the zoom of `8a5f651`.
+- Under a footing on the floor, a right-drag that pans the camera under the floor and a wheel notch sent at once leave the view as it was: red at `29c93d3`: turned 7.0°.
+
+### `tests/e2e/network.spec.ts`
+
+- No request but to the page's own host: red with a planted fetch of a Collection API record.
+
+### `tests/e2e/labels-view.spec.ts`
+
+- A 2 px click on the painting shows its card and moves nothing, the preset staying in view and the follow camera on: red at `86bdf0c`, where the camera moved 0.514 m (review 6, F25).
+
+### `tests/e2e/doors.spec.ts`
+
+- `doors=open` and `doors=closed` under `shot=1`, the doors set before the walker is placed and both before the first frame drawn: red with the set-up moved after the placement, after the first frame, marked at load but done after the first frame, or done after the first render in the same callback, which the probe of `7b7fe94`, reading the doors' state at the callback's end, passed.
+- The slowest frame of each swing under 16.7 ms of work: the walked cycles red at 147.8 ms with 12 ms planted in each swing check while walking; red with 40 µs of work planted for each object drawn on a swing's frames: 30.3 ms facing in, which the gate of `d4d716d`, facing out only, passed at 11.5 ms.
+
+### `src/build/window-parts.test.ts`
+
+- Every role of a door, each leaf apart among them, placed with the rest: red with a leaf left out of the closed leaves.
+
+### `src/walk/door-world.test.ts`
+
+- A closing door held by a walker between its leaves, turned back open on the side it stands: review 15, F43, red at `7b054d7`: held at ±66.4°, "opening", into the walker.
+- The leaves against the walker, through stalled frames of 0.25 s and 2 s: red with only each step's end pose tried, with no hold, with the leaves out of the walls, and with the swing moved once a frame: held at 90° after the stalls against 66.4°.
+
+### `src/walk/door-settle.test.ts`
+
+- A door's step completing with the walker in its doorway opens the door away at once, the walker's feet on the floor and no leaf in it: red with no release after the check: shut on it; and with the leaves in the static world: moved 25 cm by `settle`.
+
+### `src/viewer/doors.test.ts`
+
+- The timeline's state byte for byte a timeline's without the door layer, the layer hiding by layer masks only: red when it hides by `visible`.
+- A door's piece that the step's resting pieces leave out, a locked door's included, refused naming the door and the piece: red with the silent skip of `0defda0` (review 17, F47).
+
+### `src/viewer/pick.test.ts` and `src/walk/look.test.ts`
+
+- A tagged glass piece found when accepted and stopping the ray when not, as a glazed door out of reach does: red at `a9f6f5a`, which passed a glass door out of reach; in the look target, the glass door red at `a9f6f5a` too.
+
+### `src/viewer/mixed-pointers.test.ts`
+
+Mixed pointer input before the orbit view's camera input is arbitrated (work unit 10, for work unit 2's F39: OrbitControls keeps a finger's position but not a mouse's or a pen's, and takes every pointer it hears for its own).
+
+- Mixed sequences on the real rig, with the click and without: red with the rig, the zoom and the click of `8a6a0c2` as they were, in all ten rows: eight threw inside OrbitControls (`Cannot read properties of undefined (reading 'x')`), the pen's hover left the camera 6.07 m off, and the pinch a mouse joined ended 6 cm off.
+- The rig refusing an OrbitControls already connected: red with that check left out ("expected [Function] to throw an error").
+
+### `src/viewer/pointer-arbiter.test.ts`
+
+- The camera freed only once every consumer has heard each holder's end: red with it freed at the first consumer that hears an end.
+
+### `src/viewer/click-random.test.ts`
+
+- Mixed pointer types (work unit 10): with the rig, the zoom and the click of `8a6a0c2`, every run red, since the test hears the zoom through the filter that `8a6a0c2`'s zoom does not take, and the controls through listener fields that the test's mock wraps only after the constructor, given the canvas by `8a6a0c2`'s rig, has connected them. With that mock made to disconnect, wrap and connect again (the zoom left unheard), 237 of the 400 seeds threw inside OrbitControls, with the click and without.
+- Why these sequences passed at `8a6a0c2`: their generator was written around F39 when review 11 deferred it, so that nothing pressed while a mouse or a pen was down, no finger ended while one was, and no middle button pressed while a finger was. That test, with only those rules lifted, threw in 284 of its 400 seeds at `8a6a0c2`.
+- A sub-slop press released while walking: red with the click of `8a6a0c2` alone in 3 seeds (32, 130 and 139), each dropping its held move as a click's.
+- With the arbiter freeing the camera at the first consumer that hears an end, and the rig's relay of cancels left out: 110 of the 800 runs red, 12 of them throwing inside OrbitControls; with the work's freeing rule, the same 110 red and none throwing.
+- Review 11's files of `42722e9` on the mixed sequences: its click as it was, red in 19 seeds (a click from a press another pointer was down during, a finger whose capture was lost among them, F37, or whose buttons changed, F38, and held moves dropped at a release); its zoom, its listeners put through the arbiter's filter, red in 268 of the 800 runs (ends heard on the canvas only, F37); the rig's relay of cancels left out, red in 110 (F37).
+- Before work unit 10, on the sequences of `4e16588`, written around F39: red with the gate, zoom and rig of `42722e9` in 308 of the 400 seeds; with each alone, its gate 44 (seed 29, a click from a press whose buttons changed, F38; seed 76, a mouse click while a finger whose capture was lost was down, F37), its zoom 250 (seed 34, a zoom on one finger's move, a finger released over another element left behind; seed 45, a zoom on a left drag, a cancelled middle drag left behind), its rig 145 (seed 1, the controls never hearing a finger's cancel over another element; 61 seeds then threw in the controls).
+
+### `tests/e2e/mixed-pointers.spec.ts`
+
+- In a worktree at `8a6a0c2` with only the spec added: three uncaught exceptions from OrbitControls, as the finger landed during the mouse drag and as it lifted, and as the finger lifted while the mouse was down.
+
+### `src/model/lib/dome.test.ts`
+
+- The Great Hall pendentives' seams, read at every detail: red with the spandrels on their old points, apart from the curved faces', with 48, 96 and 160 edges borne by an odd number of faces.
+- `barrelVault` refusing coffers whose openings' or floors' corners would stand out of the chords of its outer face's facets above them: red with the refusal off, with one share for every corner, or with the openings unread.
+- `barrelVault` refusing ribs that leave a coffer less than 1 mm of floor across or along, naming a rib that passes and, where the shell is too thin, a thickness enough for any rib up to it (work unit 9, answering work unit 7's F39; `docs/work/9_barrel-rib-refusal/`). A floor is its cell inset 0.8 ribs from each side, so where 1.6 ribs reach the cell's width on the inner face or its length, its sides cross: F39's vault, span 4 m, ten coffers across and ribs of 0.5 m, built at `8a6a0c2` with all 20 floor faces facing away from the axis. A floor short of crossing can still be lost, since `MeshBuilder.polygon` leaves out a face under 5e-13 m² and Float32 positions can close one under a micrometre, so 1 mm is asked (work unit 9's F0).
+  - The gate, two tests. The first reads the floors' width or length off the built faces of two vaults that build, ribs 0.05 and 0.1 m, on semicircles of 2 m radius whose floors close across (ten cells, 0.6283 m wide on the inner face) or along (ten cells, 0.3 m long), and on a segmental vault of rise 1 m, 2.5 m in radius about an axis 1.5 m below its springing. It finds the rib at which that line gives 1 mm of floor: 0.3920737, 0.1868750 and 0.2891548 m. With a rib 0.1 mm short of it every floor must build facing the axis, 1 to 1.2 mm across or along; 0.1 mm past it the vault must be refused, naming a rib whose floors build so. The second pins, as worked by hand, the rib and thickness named for three shells that some rib up to the one named would leave too thin: 0.1868 and 0.0594 m, 0.1957 and 0.0564 m, and 1.874 and 0.06 m. It builds every rib up to each, 5 mm apart, in the shell named. It holds the rib refusal before the thickness refusal, N8's whole message, Codex's floor 1.6e-14 m long, a defaulted rib, cells under 1 mm one way or both, a need and a room of 2097152 m for the rounding's arithmetic only, and a rise whose radius overflows, with coffers and without.
+  - Bounds. The fixtures stand 0.1 mm of rib either side of the least floor, so `<` and `≤` are not told apart there; the sweep reads ribs 5 mm apart, and review 1's F9 argument covers those between. Review 3 left four bounds unrepaired, far from any vault the model builds (F24 to F27). The radius check lets a radius of 0 through, as for a span and rise of 5e-324 m. It calls an overflow on the way to a radius that is a number, at spans over about 1.34e154 m, a radius too large. It stops float64 overflow, not positions past Float32's 3.4e38 m. The depth named can be refused again at radii over about 1e5 m, where numbers lie farther apart than its margin. Fewer coffers can be offered where even the least count leaves the cells 1 mm or less.
+  - Red (2026-10-29), each mutation made on the work's `dome.ts` after review 2's repairs and undone, the file restored byte for byte. Both tests go red with the refusal deleted ("width, rise 2: expected '' to match /^barrelVault: coffers\.rib …/"); with floors allowed down to none (`FLOOR_LEAST` 0), F39's own bound; at 1.5 ribs, Codex's sliver building; at 1.7 ribs, the named 0.1868 m refused in turn; with the cell's chord for its width ("at most 0.3904 m"); with half the span for the radius in the cell's width (0.3709 m for 0.4636 m); and with only `buildVault`'s floors inset 1.7 half-ribs, all 40 floor faces of a named vault facing away, the thickness test reading 424 lines through pockets. One test goes red with π for the arc in the cell's width, the segmental vault 0.1 mm past building; with the radius left unchecked, the overflowing vault refused for its thickness; with no thickness named with the rib; with the shell read at the rib named alone, review 0's repair, the third shell told "at most 1.874 m." alone; with the thickness's rounding unstepped ("2097152.0000"); with the depth's unstepped, its own depth named; with fewer coffers along offered at one, and across at two; with the two sides joined by " and "; and with the shell read before the rib ("barrelVault: thickness first"). With the work's `dome.ts` the file's 10 tests pass.

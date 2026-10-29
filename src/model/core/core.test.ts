@@ -1,6 +1,11 @@
 /**
  * Headless checks of the core area's steps (src/model/core/): ids, titles and chapters, every piece inside the core blocks, the area budget
  * (350,000 triangles counting instances, 130 instanced meshes, 1 step light; coordinator's assignment, 2026-10-11) and finite matrices.
+ * `openWall` with each kind of hole and `holeLining` are closed, and the faces they stand on look down (`levelFaces`; red with `openWall`'s bottom
+ * wound up). `openWall` refuses doors less than 1 mm apart, touching or overlapping, on every call before its cache, and leaves each opening clear in
+ * its front and back faces, by their areas, by every triangle clipped against each opening it leaves (no area more than 0.01 mm inside it), and by
+ * nine lines along Z through it (red with a crossing pair taken: the front face 92.8 m² where it should cover 86.2 m²), whichever cache entry came
+ * first (red with a key that read a niche's depth as a door's).
  * Bound: geometry is built in Node without WebGL, so counts and bounds are exact but nothing here looks at a rendered pixel.
  * Blocks: core-1880-a, core-1888-b and core-1894-c tile X −49.7..49.4, Z −138.3..−69.0 (exterior.md section 2). A piece may overstep that by
  * 0.3 m; trim (any non-brick piece) on the west face (into the Lehman court and the park) and on Weston's south face (into the Petrie Court)

@@ -2,6 +2,9 @@
  * The walker (src/walk/walker.ts) on fixtures built from real pieces through the page's own collision path: step definitions of boxes and the parts
  * library's stair flight, built by the timeline, evaluated at t, selected by `collisionMeshes` and indexed by `CollisionWorld` over three-mesh-bvh.
  * Each case drives the walker with keys held for simulated seconds at 60 frames a second, as the page does, and reads its feet and eye.
+ * The cases: walls and sliding, a wall turned 30°, a 38° slope walked and a 45° one not, stairs of 0.17 m risers, a 0.3 m step under a 1.8 m ceiling
+ * not climbed and a stair under a 2.5 m ceiling climbed only while the body fits, a 0.5 m ledge not climbed, a drop, gaps, a jump, the same walk at
+ * 30 and 144 frames a second, and incomplete steps and `userData.solid === false` left out.
  * Bound: fixtures are axis-aligned rooms, a straight flight (also under a low ceiling) and ledges; the real model is walked in tests/e2e/walk.spec.ts.
  */
 import { BoxGeometry, MathUtils, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';

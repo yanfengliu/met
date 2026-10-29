@@ -3,7 +3,7 @@
 Status: complete
 Owner: Coordinator (Claude Code desktop session, 2026-10-14)
 Created: 2026-10-25
-Updated: 2026-10-28
+Updated: 2026-10-29
 
 ## Problem and outcome
 
@@ -154,10 +154,34 @@ Live checks (review 17's F49): live at `a4af999` and again at `3860384` (Pages r
 Left open, outside this unit:
 - F39, a crash on mixed mouse and touch inside three's OrbitControls, older than this unit;
 - F42, listener teardown, for a rig the page never disposes;
-- F66, the long route walks' corner settle at the Dendur pool step at 4× CPU throttle: the owner chose to land with it recorded and to replace the long walks with fixed-position checks, pictures and one short real-key walk.
+- F66, the long route walks' corner settle at the Dendur pool step at 4× CPU throttle: the owner chose to land with it recorded and to replace the long walks with fixed-position checks, pictures and one short real-key walk, which the follow-up below did (2026-10-29).
 
 The first is filed as a follow-up task. The Weston doorway's head, against photo #33, was resolved in its own session as work unit 3 (`53a981c`).
 
 For the owner: walk mode moves by keys only, so on a phone it shows the view but cannot walk or use a door. Touch controls were not asked for.
 
 The owner keeps a render gallery of main (`docs/policies/local-rules.md`).
+
+## Follow-up: fixed places for the route walks (2026-10-29)
+
+F66 was left open at the close. The browser walks of every route took about 10 min a run at 4× CPU throttle and could still fail under load. The owner asked whether pictures at fixed positions and angles would do, and chose to replace the long walks (2026-10-28). Worker `walkgate` did it, reviewed in rounds 23 and 24.
+
+- **Outcome.** `tests/e2e/routes.spec.ts` has two parts; walkability stays with `src/model/hunt/routes.test.ts` and `src/model/reach.test.ts`.
+  - Fixed places. The walker is placed through the page by a new query form, `walk=1&spawn=x,y,z,tx,ty,tz` (`placeOf` and `startOf`, `src/walk/spawns.ts`). At each place the walks checked, it checks what they checked there, and it writes a picture of the view.
+  - One short real-key walk, at 1× and 4×. It goes from the plaza through the closed middle door and shuts it behind. Then, by the view menu, down a Grand Staircase flight and up through R5's doorway until the Triumph of Marius's card shows, and back to the door.
+- **Acceptance.**
+  - Every red proof AGENTS.md gave the walks is red again on the new checks (`docs/learning/gate-proofs.md`).
+  - routes.spec runs in under about 2 min at 4×, three runs in a row with walk.spec, and `npm run verify` is green.
+  - The coverage dropped is named.
+- **Coverage dropped.**
+  - The browser walks of the seven routes both ways, and their runs under load: the routes are walked headless only.
+  - The rendered eye's level through the McKim, Mead & White seams, the Engelhard passage and the Petrie corridor: read only as the headless walker's feet.
+  - The Dendur platform's side flight and the dais's north flight climbed in the page: the north flight is climbed headless (`src/model/roche-north/walk.test.ts`).
+  - The arrival in gallery 600: the short walk stops in the doorway's passage once the card shows, and the headless R5 walks into the gallery.
+  - The front steps walked down to the plaza at 4×: `stairs.spec` walks them both ways at 1×.
+- **Left as it was.** `doors.spec` and `door-look.spec` still walk with `route-walk.ts`'s corner settle and `route-keys.ts`'s release-lag learning, so both stay.
+- **Result.** The work is `324ad87`, merged with origin/main and pushed to it.
+  - routes.spec takes 94 s unthrottled, inside `npm run verify` (95 e2e in 8.7 min, against 84 in 14.6 min at `3860384`). At 4× it took 109, 111 and 106 s in three runs in a row with walk.spec, against about 10 min.
+  - All 14 red proofs are red on the new checks.
+  - Reviews 23 to 27: Codex and Claude, then four focused Codex checks. F67 to F83 are closed, the last check accepting.
+  - F66 is resolved.

@@ -1,10 +1,11 @@
 /**
- * Walking the public routes through real input (tests/e2e/routes.spec.ts): walk mode entered as a visitor enters it, then only held keys (W, A, S, D,
- * Shift) and mouse drags move the walker, its eye read from the read-only `window.__met.walk` at every frame. The routes are src/model/hunt/routes.ts's
- * plan lines, whose segments run along an axis or at 45° to one: facing along an axis, W, S, A or D walks a straight segment and two of them a diagonal
- * one; drags turn the walker. The doors on the way (docs/design/spec.md, Doors) are read from the read-only `window.__met.doors` and used by E, as a
- * visitor uses them. A leg lets go where the walker, going on for the release lag a key takes to reach the page under load, ends at its end (./route-keys.ts),
- * and at a corner it walks onto the corner until it rests within 0.25 m of it along the axis it stops on, or fails. See routes.spec.ts for the bounds.
+ * Walking the real model through real input: walk mode entered as a visitor enters it, then only held keys (W, A, S, D, Shift) and mouse drags move the
+ * walker, its eye read from the read-only `window.__met.walk` at every frame. `walk` follows plan lines whose segments run along an axis or at 45° to one
+ * (./doors.spec.ts, ./door-look.spec.ts): facing along an axis, W, S, A or D walks a straight segment and two of them a diagonal one; drags turn the walker.
+ * A leg lets go where the walker, going on for the release lag a key takes to reach the page under load, ends at its end (./route-keys.ts), and at a
+ * corner it walks onto the corner until it rests within 0.25 m of it along the axis it stops on, or fails; ./route-holds.ts holds keys without either,
+ * for ./routes.spec.ts. The doors on the way (docs/design/spec.md, Doors) are read from the read-only `window.__met.doors` and used by E, as a visitor
+ * uses them.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -12,17 +13,15 @@ import { Box3 } from 'three';
 import type { BufferGeometry } from 'three';
 
 import type { Vec3 } from '../../src/build/types.js';
-import { MAIN_FLOOR_Y } from '../../src/model/frame.js';
 import { ENTRANCE_DOOR_Z, entranceDoor } from '../../src/model/hunt/arches.js';
-import { spawnById } from '../../src/walk/spawns.js';
-import { BODY, MOTION } from '../../src/walk/walker.js';
-import { open, openMenu, press, throttle, throttleRate } from './helpers.js';
+import { LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
+import { MOTION } from '../../src/walk/walker.js';
+import { throttleRate } from './helpers.js';
 import { bounded, Keys, lag, learnLag, startKeyLog, travel, watch, WATCH_MS } from './route-keys.js';
 import type { Stop, Watched } from './route-keys.js';
 
 export type { Stop } from './route-keys.js';
 
-const EYE = BODY.eye;
 export type XZ = readonly [number, number];
 /** A level unit direction along an axis, as [x, z]. */
 export type Facing = readonly [number, number];
@@ -86,23 +85,6 @@ export async function record(page: Page): Promise<Sample[]> {
 export async function walking(page: Page): Promise<Sample> {
   await page.waitForFunction(() => window.__met?.walk.mode === 'walk' && !window.__met.walk.preparing && window.__met.walk.eye !== null, undefined, { timeout: 15_000 });
   return sample(page);
-}
-
-/** Opens the finished building and enters walk mode by the view menu's "Walk from the Great Hall"; the walker stands on the main floor there. */
-export async function walkFromGreatHall(page: Page): Promise<{ start: Sample; spawn: NonNullable<ReturnType<typeof spawnById>> }> {
-  await open(page, '');
-  await throttle(page);
-  await openMenu(page, 'view-menu');
-  await press(page, 'walk-spawn-great-hall');
-  const ms = 15_000 * throttleRate();
-  await page.waitForFunction(() => window.__met?.walk.spawn === 'great-hall', undefined, { timeout: ms }).catch(async () => {
-    throw new Error(`The view menu's "Walk from the Great Hall" never put the walker at its spawn within ${String(ms)} ms: window.__met.walk.spawn is ${String(await page.evaluate(() => window.__met?.walk.spawn).catch(() => 'unread'))}.`);
-  });
-  const start = await walking(page);
-  const spawn = spawnById('great-hall');
-  if (spawn === undefined) throw new Error('No great-hall spawn in src/walk/spawns.ts.');
-  expect(Math.abs(start.eye[1] - (MAIN_FLOOR_Y + EYE)), 'the Great Hall spawn stands on the main floor').toBeLessThan(0.03);
-  return { start, spawn };
 }
 
 /** Waits until the walker stands still (two frames with the eye within a millimetre), at most 2 s. */
@@ -296,7 +278,14 @@ export async function walk(page: Page, route: string, list: readonly Leg[], samp
 export const yawOf = (look: Vec3): number => Math.atan2(-look[0], -look[2]);
 export const wrap = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
 
-/** Turns the walker to face `yaw` with mouse drags across the canvas: one to learn how far a pixel turns, then the rest, then corrections. */
+/** The longest single mouse move of a drag, pixels: each move is a frame's turn, and a frame at 4× CPU throttle can take 50 ms or more. */
+export const DRAG_STEP = 160;
+
+/**
+ * Turns the walker to face `yaw` with mouse drags across the canvas: a first drag of at most 300 px, which learns how far a pixel turns (it cannot turn
+ * far enough to wrap round), then the rest at the rate the last long drag turned, then corrections, each drag up to 0.6 of the canvas's width in moves of
+ * at most DRAG_STEP. A drag to the right must turn the walker to the right, and a drag's whole turn must stand by the next frame.
+ */
 export async function face(page: Page, yaw: number): Promise<Sample> {
   const box = await page.getByTestId('canvas').boundingBox();
   if (box === null) throw new Error('The canvas has no box.');
@@ -310,7 +299,7 @@ export async function face(page: Page, yaw: number): Promise<Sample> {
     await page.mouse.down();
     for (const target of path) {
       const from = x;
-      const steps = Math.max(1, Math.ceil(Math.abs(x0 + target - from) / 20));
+      const steps = Math.max(1, Math.ceil(Math.abs(x0 + target - from) / DRAG_STEP));
       for (let k = 1; k <= steps; k++) {
         x = from + ((x0 + target - from) * k) / steps;
         await page.mouse.move(x, y);
@@ -319,21 +308,25 @@ export async function face(page: Page, yaw: number): Promise<Sample> {
     await page.mouse.up();
   };
   let now = await sample(page);
-  const before = yawOf(now.look);
-  await drag(200);
-  now = await sample(page);
-  const perPixel = wrap(yawOf(now.look) - before) / 200;
-  expect(perPixel, 'radians a pixel of drag to the right turns: to the right, so negative').toBeLessThan(0);
-  for (let k = 0; k < 4; k++) {
+  // The spec's rate to start with (a drag to the right turns right, so the yaw falls), then the rate each drag of 50 px or more turned.
+  let perPixel = -LOOK_PER_PIXEL;
+  let learnt = false;
+  for (let k = 0; k < 6; k++) {
     const error = wrap(yaw - yawOf(now.look));
     if (Math.abs(error) < 0.004) return now;
     let pixels = Math.round(error / perPixel);
+    if (!learnt) pixels = Math.sign(pixels) * Math.min(Math.abs(pixels), 300);
     while (pixels !== 0) {
       const chunk = Math.sign(pixels) * Math.min(Math.abs(pixels), Math.floor(box.width * 0.6));
+      const before = yawOf(now.look);
       await drag(chunk);
+      now = await sample(page);
       pixels -= chunk;
+      if (Math.abs(chunk) < 50) continue;
+      perPixel = wrap(yawOf(now.look) - before) / chunk;
+      if (!learnt) expect(perPixel, 'radians a pixel of drag to the right turns: to the right, so negative').toBeLessThan(0);
+      learnt = true;
     }
-    now = await sample(page);
   }
   throw new Error(`The drags could not turn the walker to yaw ${yaw.toFixed(3)}: it faces ${yawOf(now.look).toFixed(3)} (look ${fmt(now.look)}).`);
 }
@@ -346,42 +339,6 @@ export const off = (samples: readonly Sample[], level: number, tolerance: number
  * lower, but it is in the air all the way over.
  */
 export const airborne = (samples: readonly Sample[]): string[] => samples.filter((s) => !s.onGround).map((s) => fmt(s.eye));
-
-/**
- * Holds `keys` until something stops the walker past `edge` along the level `axis`: watched in the page at every frame, its eye stays within 1 mm of where
- * it stood 10 frames before, the keys still held, at most `ms`. Returns that eye and then lets go; every frame goes into `samples`. Fails with where the
- * walker stands when it does not stop there in time, as when nothing stops it.
- */
-export async function into(page: Page, keys: readonly string[], axis: Facing, edge: number, samples: Sample[], ms: number): Promise<Sample> {
-  // Frames from before (turns, earlier walks) are not its own.
-  await record(page);
-  await page.evaluate(() => { delete (window as unknown as { stillSince?: unknown }).stillSince; });
-  for (const key of keys) await page.keyboard.down(key);
-  const stopped = await page.waitForFunction(
-    ([ax, az, at]) => {
-      const w = window as unknown as { stillSince?: { eye: readonly number[]; frames: number } };
-      const eye = window.__met?.walk.eye;
-      if (eye == null || eye[0] * ax + eye[2] * az < at) return false;
-      const since = w.stillSince;
-      if (since === undefined || Math.hypot(eye[0] - (since.eye[0] ?? 0), eye[1] - (since.eye[1] ?? 0), eye[2] - (since.eye[2] ?? 0)) >= 1e-3) {
-        w.stillSince = { eye: [...eye], frames: 0 };
-        return false;
-      }
-      since.frames += 1;
-      return since.frames >= 10;
-    },
-    [axis[0], axis[1], edge] as const,
-    { polling: 'raf', timeout: ms },
-  ).then(
-    () => true,
-    () => false,
-  );
-  const held = await sample(page);
-  for (const key of [...keys].reverse()) await page.keyboard.up(key);
-  samples.push(...(await record(page)));
-  if (!stopped) throw new Error(`Holding ${keys.join('+')}, the walker came to no stop past ${edge.toFixed(2)} m along [${axis.join(', ')}] within ${String(ms)} ms: the eye is at ${fmt(held.eye)}.`);
-  return held;
-}
 
 /** The Fifth Avenue entrance's middle door, on the axis, which R1 passes (src/model/doors.ts). */
 export const MIDDLE_DOOR = 'hunt-entrance-middle';

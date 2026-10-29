@@ -1,5 +1,6 @@
 /**
  * The shared machinery under every part: cache keys, the mesh builder, profile rings, sweeps, lathes and `along`.
+ * `MeshBuilder.grid`'s `flattest` split is read on a quad either way round, smooth and flat.
  * Bound: geometry is checked through its attribute arrays (finite, unit normals, winding agrees with normals, bounds); appearance is the gallery's job.
  */
 import * as THREE from 'three';

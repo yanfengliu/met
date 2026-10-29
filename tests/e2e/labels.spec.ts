@@ -5,12 +5,14 @@
  *   gallery, size, the CC0 credit and a plain link to its page, at the bottom left above the folded bar (full width at 390×844), clear of every control,
  *   of the crosshair and of the door prompt's band under it, and above the whole bar when it is unfolded; a drag that looks down at the floor hides it
  *   and one that looks back up shows it again. At every frame drawn, the card shows exactly when the crosshair's one look target is an artwork (review
- *   6, F28); ./routes.spec.ts walks R1 and R5 through a door to the painting and back to show it never shows beside the door prompt (review 7, F30). At
- *   1280×720 a walking frame with the card showing keeps the 60 frames a second budget, and the link, clicked, opens the object's page in a new tab,
- *   its request stopped in the test's browser so nothing leaves the machine.
- * - Orbit view, at gallery 600's preset: a drag that starts on the painting shows no card; a click on it shows the card, moving neither the camera nor
- *   the preset in view, as does a press that travels under CLICK_SLOP; a click on a wall hides it; Esc hides it; the card sits above the bar, clear of
- *   the floor picker and every control. A clicked card goes when walk mode begins and does not come back when it ends.
+ *   6, F28); ./routes.spec.ts's short walk, from the entrance's door to the painting and by the view menu back to the door, shows it never shows
+ *   beside the door prompt (review 7, F30). At 1280×720 a walking frame with the card showing keeps the 60 frames a second budget (the median work a
+ *   frame and the mean GPU-synced render under 16.7 ms, the median frame interval under 18.37 ms: ./helpers.ts `expectWalkingBudget`), and the link,
+ *   clicked, opens the object's page in a new tab, its request stopped in the test's browser so nothing leaves the machine.
+ * - Orbit view, at gallery 600's preset (`int-european-paintings-600`): a drag that starts on the painting shows no card; a click on it shows the
+ *   card, moving neither the camera nor the preset in view, as does a press that travels 4 px, under CLICK_SLOP (5 px), both pixels checked by a cast
+ *   through the finished model in the test process; a click on a wall hides it; Esc hides it; the card sits above the bar, clear of the floor picker
+ *   and every control. A clicked card goes when walk mode begins and does not come back when it ends.
  * The painting's place comes from the collection's placements (src/model/collection/spaces-b.ts), the pixel a click goes to from the published camera,
  * and both are checked apart from the page (./labels-helpers.ts). ./labels-view.spec.ts drives the card through the follow camera, presets and the cut.
  * Bound: pointer lock is not available headless, so the locked look and Esc freeing it are not driven (the walking pointer is free throughout); the

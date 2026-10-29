@@ -1,6 +1,6 @@
 /**
- * What the route walks (./routes.spec.ts) meet on their way, beside the walking itself (./route-walk.ts), each read apart from the page or used through
- * real input:
+ * What the walks of ./routes.spec.ts meet on their way, beside the walking itself (./route-walk.ts), each read apart from the page or used through real
+ * input:
  * - a door's closed leaves where the finished model places them, read from the timeline built in the test's own process (./surface.ts): the planes of
  *   their faces, their hinges and how far a leaf reaches from a hinge, so a walk can be held at them, look at a leaf and stand clear of their swing;
  * - the eye aimed at a point by drags, across for its yaw and up or down for its pitch, `LOOK_PER_PIXEL` a pixel;
@@ -19,7 +19,9 @@ import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
 import { BODY } from '../../src/walk/walker.js';
 import { throttleRate } from './helpers.js';
 import { artworkBounds } from './labels-helpers.js';
-import { airborne, face, fmt, record, still, toward, wrap, yawOf } from './route-walk.js';
+import { inTime, promptly } from './route-holds.js';
+import { bounded } from './route-keys.js';
+import { airborne, DRAG_STEP, face, fmt, record, still, toward, wrap, yawOf } from './route-walk.js';
 import type { Facing, Sample, XZ } from './route-walk.js';
 import { finishedTimeline } from './surface.js';
 
@@ -88,30 +90,37 @@ export function clearOfSwing(eye: Vec3, door: DoorPlan): number {
 }
 
 /** How far the eye may stand from a point of a leaf it looks at, metres: a door's 2 m reach (src/walk/look.ts) less what an aim may miss by. */
-const LOOK = LOOK_REACH.door - 0.2;
+export const LOOK = LOOK_REACH.door - 0.2;
 /** How far clear of a swing the body stands to use a door, metres. */
 const CLEAR = 0.15;
 
-/**
- * Where on the doorway's axis, on its `side`, the walker stands to close the door open toward that side and to open it again closed: within LOOK of a
- * point of the leaf either way (`leafPoint`) and CLEAR of all its leaves sweep, the middle of the stretch of the axis that allows both, found in 1 cm
- * steps. Fails, naming the stretch tried, when there is none.
- */
-export function standOff(door: DoorPlan, side: 'front' | 'back'): XZ {
-  const out = side === 'front' ? 1 : -1;
+/** The level direction out of door `door` on its `side`: its normal, or the normal reversed. */
+export const outOf = (door: DoorPlan, side: 'front' | 'back'): Facing => (side === 'front' ? door.normal : [-door.normal[0], -door.normal[1]]);
+
+/** The point on the doorway's axis `d` metres out from the closed leaves' face on its `side`. */
+export function axisPoint(door: DoorPlan, side: 'front' | 'back', d: number): XZ {
   const face = side === 'front' ? door.front : door.back;
-  const at = (s: number): XZ => {
-    const k = face + out * s - along(door.middle, door.normal);
-    return [door.middle[0] + door.normal[0] * k, door.middle[1] + door.normal[1] * k];
-  };
-  const fits = (p: XZ): boolean =>
-    [leafPoint(door, 'closed', side), leafPoint(door, 'open', side)].every((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) <= LOOK) && clearOfSwing([p[0], 0, p[1]], door) >= CLEAR;
+  const k = face + (side === 'front' ? d : -d) - along(door.middle, door.normal);
+  return [door.middle[0] + door.normal[0] * k, door.middle[1] + door.normal[1] * k];
+}
+
+/**
+ * The stretch of the doorway's axis on its `side` where the walker uses the door open toward that side and shuts it: from `near`, metres out from the
+ * leaves' face, where the body comes CLEAR of all their sweep (`clearOfSwing`), to `far`, the last place within LOOK of the open leaf's point at `share`
+ * of its width (`leafPoint`), found in 1 cm steps. A walk through the door that lets go once the eye passes `near` less a walk's coast rests on it as long
+ * as the release reaches the page before the walker has gone on `far − near` past that line. Fails, naming the door, when there is no such stretch.
+ */
+export function useStretch(door: DoorPlan, side: 'front' | 'back', share: number): { readonly near: number; readonly far: number; readonly leaf: XZ } {
+  const leaf = leafPoint(door, 'open', side, share);
   const good: number[] = [];
-  for (let s = 0.3; s <= 3; s += 0.01) if (fits(at(s))) good.push(s);
-  const first = good[0];
-  const last = good.at(-1);
-  if (first === undefined || last === undefined) throw new Error(`Door ${door.id}: no place on its axis 0.3 to 3 m out on its ${side} lies within ${String(LOOK)} m of its leaf closed and open and ${String(CLEAR)} m clear of their swing.`);
-  return at((first + last) / 2);
+  for (let d = 0.3; d <= 4; d += 0.01) {
+    const p = axisPoint(door, side, d);
+    if (clearOfSwing([p[0], 0, p[1]], door) >= CLEAR && Math.hypot(p[0] - leaf[0], p[1] - leaf[1]) <= LOOK) good.push(d);
+  }
+  const near = good[0];
+  const far = good.at(-1);
+  if (near === undefined || far === undefined) throw new Error(`Door ${door.id}: no place on its axis 0.3 to 4 m out on its ${side} lies ${String(CLEAR)} m clear of its leaves' swing and within ${String(LOOK)} m of its open leaf.`);
+  return { near, far, leaf };
 }
 
 /**
@@ -127,15 +136,7 @@ export function leafPoint(door: DoorPlan, state: 'closed' | 'open', side: 'front
   return [hinge[0] + door.normal[0] * out * k - across[0] * 0.05, hinge[1] + door.normal[1] * out * k - across[1] * 0.05];
 }
 
-/**
- * Where a walk from the eye toward `next` starts, so that its first leg runs exactly along an axis, as `legs` needs: the eye's own place along that leg,
- * `next`'s across it. The walker keeps its offset across the leg, a few centimetres after a corner's stop, until the corner at the leg's end.
- */
-export function lineUp(s: Sample, next: XZ): XZ {
-  return Math.abs(s.eye[0] - next[0]) < Math.abs(s.eye[2] - next[1]) ? [next[0], s.eye[2]] : [s.eye[0], next[1]];
-}
-
-/** Tilts the walker's view to `pitch` radians with a vertical drag at the canvas's middle, down for down, `LOOK_PER_PIXEL` a pixel; a tilt under a click's travel is left. */
+/** Tilts the walker's view to `pitch` radians with a vertical drag at the canvas's middle in moves of at most DRAG_STEP, down for down, `LOOK_PER_PIXEL` a pixel; a tilt under a click's travel is left. */
 export async function tilt(page: Page, pitch: number): Promise<void> {
   const now = await still(page);
   const dy = Math.round((Math.asin(now.look[1]) - pitch) / LOOK_PER_PIXEL);
@@ -144,9 +145,10 @@ export async function tilt(page: Page, pitch: number): Promise<void> {
   if (canvas === null) throw new Error('The canvas has no box.');
   const x = canvas.x + canvas.width / 2;
   const y = canvas.y + canvas.height / 2 - dy / 2;
+  const steps = Math.max(1, Math.ceil(Math.abs(dy) / DRAG_STEP));
   await page.mouse.move(x, y);
   await page.mouse.down();
-  for (let k = 1; k <= 10; k += 1) await page.mouse.move(x, y + (dy * k) / 10);
+  for (let k = 1; k <= steps; k += 1) await page.mouse.move(x, y + (dy * k) / steps);
   await page.mouse.up();
 }
 
@@ -169,19 +171,15 @@ export interface Screen {
   readonly eye: Vec3 | null;
 }
 
-/** Starts recording every frame the page draws (`Screen`), or empties the record if it runs. */
+/** Starts recording every frame the page draws (`Screen`), unless it records already; the record runs until the page goes. */
 export async function watchScreens(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as unknown as { screens?: unknown[] };
-    if (w.screens !== undefined) {
-      w.screens.splice(0);
-      return;
-    }
+    if (w.screens !== undefined) return;
     const list: unknown[] = [];
     w.screens = list;
     const shown = (id: string): HTMLElement | null => document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
     const tick = (): void => {
-      if (w.screens !== list) return;
       const card = shown('art-card');
       const prompt = shown('door-prompt');
       const walk = window.__met?.walk;
@@ -201,24 +199,27 @@ export async function watchScreens(page: Page): Promise<void> {
   });
 }
 
-/** The frames recorded since the last call; `stop` ends the recording. */
-export async function screens(page: Page, stop = false): Promise<Screen[]> {
-  return page.evaluate((end) => {
-    const w = window as unknown as { screens?: Screen[] };
-    const out = (w.screens ?? []).splice(0);
-    if (end) delete w.screens;
-    return out;
-  }, stop);
-}
-
 /** How many frames the record holds now, to read those from here on with `screensSince`. */
 export async function screenMark(page: Page): Promise<number> {
   return page.evaluate(() => (window as unknown as { screens?: unknown[] }).screens?.length ?? 0);
 }
 
-/** A copy of the frames recorded from index `from` on, leaving the record as it is. */
-export async function screensSince(page: Page, from: number): Promise<Screen[]> {
+/** A copy of the frames recorded from index `from` on (all of them by default), leaving the record as it is. */
+export async function screensSince(page: Page, from = 0): Promise<Screen[]> {
   return page.evaluate((k) => ((window as unknown as { screens?: Screen[] }).screens ?? []).slice(k), from);
+}
+
+/**
+ * The frames, among `frames`, that break the one look target's rule (docs/design/spec.md, Collection: Labels, Place; review 7, F30): the card and the door
+ * prompt never both show; the prompt shows only with a door under the crosshair, saying "E Open", "E Close" or "Locked"; the card only with an artwork.
+ */
+export function screensApart(frames: readonly Screen[]): string[] {
+  return frames.flatMap((s, i) => {
+    if (s.card && s.prompt) return [`frame ${String(i)}: the card and the prompt "${s.words}" both show, target ${String(s.kind)}`];
+    if (s.prompt && !(s.kind === 'door' && /^(E Open|E Close|Locked)$/.test(s.words))) return [`frame ${String(i)}: the prompt "${s.words}" with the look target ${String(s.kind)}`];
+    if (s.card && s.kind !== 'artwork') return [`frame ${String(i)}: the card with the look target ${String(s.kind)}`];
+    return [];
+  });
 }
 
 /** How far out from a closed door's leaves a walk straight at it must see its prompt: the door's 2 m reach (src/walk/look.ts) less a margin. */
@@ -261,26 +262,63 @@ const CARD_REACH = 6;
 
 /**
  * Approaches artwork `id` (its Met object ID; its box from the collection's placements, ./labels-helpers.ts) as a visitor does: from where the eye stands,
- * farther from it than an artwork's 6 m reach (CARD_REACH), aimed at its box's middle by drags, and walked toward it at a walk with W held until its
- * card shows, watched in the page at every frame; then turned by drags to `away` (a yaw) until the card goes. At every frame recorded the card follows the
- * look target (`cardApart`), and no frame shows it while the eye stands farther than 6 m from the artwork's box. Fails unless the card showed before the
- * eye came within NEAR of the box, and went once the walker turned away. It records its own frames (`watchScreens`) and ends the record when done; the
- * walk's own frames (./route-walk.ts `record`), from before the aim to after the turn, go into `samples`, and none may be off the ground (review 20, F55:
- * the next walk dropped them, so the airborne check never saw this walk). Returns the first frame with the card.
+ * farther from it than an artwork's 6 m reach (CARD_REACH), aimed at its box's middle by drags unless it already looks there within a pixel, and walked
+ * toward it at a walk with W held until its card shows, watched in the page at every frame (with `runFrom`, run with Shift held too until the eye is that
+ * many metres from the box, more than CARD_REACH and its run's lag); then turned by drags to `away` (a yaw) until the card goes. At every frame recorded
+ * the card follows the look target (`cardApart`), and no frame shows it while the eye stands farther than the spec's 6 m from the artwork's box. Fails
+ * unless the card shows before the eye comes within NEAR (3 m) of the box, and went once the walker turned away. It reads its frames from the page's
+ * screen record (`watchScreens`, started if it is not running) and leaves the record running, so a caller's own reading of it sees them too; the walk's
+ * own frames (./route-walk.ts `record`), from before the aim to after the turn, go into `samples`, and none may be off the ground, so the walk toward the
+ * artwork and the turn away keep the walker on it (review 20, F55: a later walk once dropped them, so the airborne check never saw this walk). Returns
+ * the first frame with the card.
  */
-export async function approach(page: Page, id: number, away: number, where: string, samples: Sample[]): Promise<Screen> {
+export async function approach(page: Page, id: number, away: number, where: string, samples: Sample[], runFrom?: number): Promise<Screen> {
+  // The whole approach, its turns by drags included, within one deadline timed in the test's process, which a frozen page cannot hold (./route-holds.ts).
+  const ms = APPROACH_MS * throttleRate();
+  const done = await inTime(walkUpTo(page, id, away, where, samples, runFrom), ms);
+  if (done === 'late') throw new Error(`${where}: the approach to artwork ${String(id)} did not finish in ${String(ms)} ms; the page looks frozen.`);
+  return done;
+}
+
+/** How long a whole approach may take, milliseconds times the CPU throttle: walking 20 m at a walk takes 10 s, the turns and checks a few more. */
+const APPROACH_MS = 60_000;
+
+/** `approach`'s walk to the artwork and the turn away from it. */
+async function walkUpTo(page: Page, id: number, away: number, where: string, samples: Sample[], runFrom: number | undefined): Promise<Screen> {
   const box = artworkBounds().get(id);
   if (box === undefined) throw new Error(`${where}: no artwork ${String(id)} among the collection's placements (src/model/collection/spaces-a.ts, spaces-b.ts).`);
   const reach = CARD_REACH;
-  samples.push(...(await record(page)));
-  const start = await still(page);
+  samples.push(...(await promptly(record(page), `${where}: reading the walk's frames`)));
+  const start = await promptly(still(page), `${where}: waiting for the walker to stand still`);
   const from = boxDistance(start.eye, box);
   if (from <= reach + 0.5) throw new Error(`${where}: the eye at ${fmt(start.eye)} stands ${from.toFixed(2)} m from artwork ${String(id)}, inside or near its ${String(reach)} m reach; an approach starts farther off.`);
   const middle = box.getCenter(new Vector3());
-  await aim(page, middle.x, middle.y, middle.z);
-  await watchScreens(page);
-  await page.keyboard.down('KeyW');
-  const how = await page
+  const yawError = wrap(toward(start.eye, middle.x, middle.z) - yawOf(start.look));
+  const pitchError = Math.atan2(middle.y - start.eye[1], Math.hypot(middle.x - start.eye[0], middle.z - start.eye[2])) - Math.asin(start.look[1]);
+  if (Math.abs(yawError) > 0.004 || Math.abs(pitchError) > LOOK_PER_PIXEL) await aim(page, middle.x, middle.y, middle.z);
+  await promptly(watchScreens(page), `${where}: starting the screen record`);
+  const setOff = await promptly(screenMark(page), `${where}: reading the screen record`);
+  const ms = 20_000 * throttleRate();
+  if (runFrom !== undefined) {
+    if (runFrom < reach + 2) throw new Error(`${where}: a run toward artwork ${String(id)} must end farther than its ${String(reach)} m reach and a run's lag, not ${String(runFrom)} m from it.`);
+    await promptly(page.keyboard.down('Shift'), `${where}: pressing Shift`);
+    await promptly(page.keyboard.down('KeyW'), `${where}: pressing W`);
+    const ran = await inTime(page.waitForFunction(
+      ([x0, y0, z0, x1, y1, z1, at]) => {
+        const eye = window.__met?.walk.eye;
+        return eye != null && Math.hypot(Math.max(x0 - eye[0], 0, eye[0] - x1), Math.max(y0 - eye[1], 0, eye[1] - y1), Math.max(z0 - eye[2], 0, eye[2] - z1)) <= at;
+      },
+      [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z, runFrom] as const,
+      { polling: 'raf', timeout: ms },
+    ).then(() => true, () => false), ms);
+    await bounded(page.keyboard.up('Shift'));
+    if (ran !== true) {
+      await bounded(page.keyboard.up('KeyW'));
+      const eye = await bounded(page.evaluate(() => window.__met?.walk.eye ?? null));
+      throw new Error(`${where}: running toward artwork ${String(id)} from ${fmt(start.eye)}, the eye never came within ${String(runFrom)} m of its box in ${String(ms)} ms; it was last at ${eye == null ? 'none' : fmt(eye)}.`);
+    }
+  } else await promptly(page.keyboard.down('KeyW'), `${where}: pressing W`);
+  const how = await inTime(page
     .waitForFunction(
       ([want, x0, y0, z0, x1, y1, z1, near]) => {
         if (window.__met?.label?.id === want) return 'card';
@@ -290,15 +328,16 @@ export async function approach(page: Page, id: number, away: number, where: stri
         return d <= near ? 'near' : false;
       },
       [String(id), box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z, NEAR] as const,
-      { polling: 'raf', timeout: 20_000 * throttleRate() },
+      { polling: 'raf', timeout: ms },
     )
     .then(
       async (handle) => String(await handle.jsonValue()),
       () => 'stuck',
-    );
-  await page.keyboard.up('KeyW');
-  const stopped = await still(page);
-  const frames = await screens(page);
+    ), ms);
+  await bounded(page.keyboard.up('KeyW'));
+  if (how === 'late') throw new Error(`${where}: walking toward artwork ${String(id)} from ${fmt(start.eye)}, neither its card nor the eye within ${String(NEAR)} m came in ${String(ms)} ms, as the page's frames stopped.`);
+  const stopped = await promptly(still(page), `${where}: waiting for the walker to stand still`);
+  const frames = await promptly(screensSince(page, setOff), `${where}: reading the screen record`);
   const report = `${where}: walking toward artwork ${String(id)} from ${fmt(start.eye)}, ${from.toFixed(2)} m off, stopped at ${fmt(stopped.eye)} (${how})`;
   expect(how, `${report}: its card shows before the eye comes within ${String(NEAR)} m`).toBe('card');
   const first = frames.find((s) => s.card);
@@ -311,13 +350,15 @@ export async function approach(page: Page, id: number, away: number, where: stri
   expect(first.target?.distance ?? Number.POSITIVE_INFINITY, `${report}: the look target's distance as the card first shows`).toBeLessThanOrEqual(reach);
   console.log(`${report}: the card first shown with the look target ${(first.target?.distance ?? Number.NaN).toFixed(2)} m off, the eye ${first.eye === null ? '?' : boxDistance(first.eye, box).toFixed(2)} m from the artwork's box`);
   // Turned away, the card goes, and at every frame of the turn it still follows the look target.
+  const turning = await promptly(screenMark(page), `${where}: reading the screen record`);
   await face(page, wrap(away));
-  await page.waitForFunction(() => window.__met?.label === null, undefined, { polling: 'raf', timeout: 5000 * throttleRate() });
-  await expect(page.getByTestId('art-card')).toBeHidden();
-  const turn = await screens(page, true);
+  const gone = await inTime(page.waitForFunction(() => window.__met?.label === null, undefined, { polling: 'raf', timeout: 5000 * throttleRate() }).then(() => true, () => false), 5000 * throttleRate());
+  expect(gone, `${where}: the card gone within ${String(5000 * throttleRate())} ms of the turn away`).toBe(true);
+  await promptly(expect(page.getByTestId('art-card')).toBeHidden({ timeout: 1500 * throttleRate() }), `${where}: reading the card's place`);
+  const turn = await promptly(screensSince(page, turning), `${where}: reading the screen record`);
   expect(cardApart(turn), `${where}: frames of the turn away where the card did not follow the look target`).toEqual([]);
-  expect(turn.at(-1)?.card, `${where}: the card gone once turned away to yaw ${away.toFixed(2)} (facing ${yawOf((await still(page)).look).toFixed(2)})`).toBe(false);
-  const walked = await record(page);
+  expect(turn.at(-1)?.card, `${where}: the card gone once turned away to yaw ${away.toFixed(2)} (facing ${yawOf((await promptly(still(page), `${where}: waiting for the walker to stand still`)).look).toFixed(2)})`).toBe(false);
+  const walked = await promptly(record(page), `${where}: reading the walk's frames`);
   expect(airborne(walked), `${report}: eyes where the walker was off the ground on the way to the artwork and turning away`).toEqual([]);
   samples.push(...walked);
   return first;

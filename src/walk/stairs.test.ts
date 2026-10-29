@@ -3,9 +3,10 @@
  * of the finished model, its collision world built as the page builds it with the doors open (`doors=open`), walking and running, at 30, 60 and 144 frames a second, and its eye is read
  * after every frame, as the page reads it. On a flight's own stretch the eye never drops while climbing and never rises while descending; on the whole
  * walk no frame moves it by more than the climb covers in that frame (`SLOPE` × speed × frame time) plus half the tallest riser, and it stays within
- * `LAG` of the feet's height plus 1.6 m.
+ * `LAG` (0.3 m) of the feet's height plus 1.6 m.
  * Red before the fix (work unit 2, M1): the eye dropped 10 to 16 cm for a frame at a riser, the full ease of a stair snap added to a height still partly
  * interpolated. Without the ease each riser is one frame's jump of the whole riser, which the per-frame bound refuses at every frame rate.
+ * All 24 walks are red with the eye of db4cc47, from before the fix, and all 24 without the ease (a riser's jump in a frame).
  * Bound: straight walks on the axis (X 0), from the plaza spawn to the vestibule behind the central doors and from the nave's west side to the cross
  * hall, keys held throughout, no steering; frame times exactly 1/fps. A flight's stretch runs from its foot to the floor at its top (the front steps
  * with the three steps in the central doorway); off it the floors have small steps of their own (1 to 3 cm by the Grand Staircase's foot), which the

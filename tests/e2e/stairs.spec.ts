@@ -8,13 +8,14 @@
  * stretch it never drops while climbing and never rises while descending, and no frame moves it more than the climb covers in that frame's time plus
  * half the tallest riser. src/walk/stairs.test.ts checks the same, and the eye's lag behind the feet, at 30, 60 and 144 frames a second.
  * Where a walk ends the walker rests, and the last rendered camera is checked there. Three ends are flat floors at levels the model fixes (the main
- * floor behind the central doors, the Great Hall's at the foot of the stair, the second floor), compared with that level plus BODY.eye. The plaza end
- * is not flat: it falls 1% toward the curb (CROSS_FALL, src/model/site/ground.ts) and the walker travels a variable distance past the stop before the
- * keys go up and it rests, so the spawn's height is no bound there (2 cm is 2 m of walk; seen once in four runs: 2.12 cm at frame 2339, 2.1 m past the
- * spawn). There the eye must stand BODY.eye, within 1 cm, over the first surface straight down from it, found apart from the page by a cast through
- * the finished model built in this process (./surface.ts: triangle by triangle, both faces, no page state). The front steps' walk opens with the doors
- * open (`doors=open`): it is about the eye on the steps, not the doors, and the central doorway's leaves are solid (docs/design/spec.md, Doors), so a
- * closed door would stop it in the doorway; tests/e2e/routes.spec.ts (R1) walks into the closed door and opens it by E.
+ * floor behind the central doors, the Great Hall's at the foot of the stair, the second floor), compared with that level plus BODY.eye (1.6 m). The
+ * plaza end is not flat: it falls 1% toward the curb (CROSS_FALL, src/model/site/ground.ts) and the walker travels a variable distance past the stop
+ * before the keys go up and it rests, so the spawn's height is no bound there (2 cm is 2 m of walk; seen once in four runs: 2.12 cm at frame 2339,
+ * 2.1 m past the spawn). There the eye must stand BODY.eye, within 1 cm, over the first surface straight down from it, found apart from the page by a
+ * cast through the finished model built in this process (./surface.ts: triangle by triangle, both faces, no page state, as ./zoom.spec.ts finds its
+ * surface). The front steps' walk opens with the doors open (`doors=open`): it is about the eye on the steps, not the doors, and the entrance's
+ * leaves, the central doorway's, are solid (docs/design/spec.md, Doors), so a closed door would stop it in the doorway; tests/e2e/routes.spec.ts (R1)
+ * walks into the closed door and opens it by E.
  * Bound: walking backward with S stands in for turning round; the frame rate is the page's own (60 a second headless here), so other rates are the unit
  * test's; frame times come from requestAnimationFrame timestamps, one frame late when the loop runs before the page's, and are capped, as the page
  * caps them, at 0.1 s. The plaza end is checked against the surface under the eye, not against the plaza's own level: the stop 0.5 m past the spawn

@@ -1,8 +1,10 @@
 /**
  * The look target's one hook (src/walk/walk-mode.ts, `onLookTarget`), on walk mode over a stand-in page: a canvas, a document and a camera rig as far
  * as walk mode reads them, no WebGL, and a scripted hit query. A listener hears the target when its kind or id changes as walking frames find it,
- * not when only its distance does and not on a fresh read; it hears null when walk mode is left, and nothing once it stops listening. A read of the walk
- * facts finds the target afresh and writes nothing, the last frame's target standing until the next frame (review 17, F45).
+ * not when only its distance does and not on a fresh read; it hears null on leaving walk mode, and nothing once it has stopped listening. A read of
+ * the walk facts finds the target afresh and writes nothing, the last frame's target standing until the next frame (review 17, F45).
+ * Entered at a place of the query's own (src/walk/spawns.ts `placeOf`), walk mode stands the walker there looking at its target, and its facts name
+ * the spawn `place`.
  * Bound: what the eye meets is scripted, not cast (src/walk/look.test.ts casts it); the walk itself is the walker's (src/walk/walker.test.ts).
  */
 import { BoxGeometry, InstancedMesh, MeshBasicMaterial, PerspectiveCamera } from 'three';
@@ -12,6 +14,7 @@ import type { PieceTag } from '../build/types.js';
 import type { CameraRig } from '../viewer/camera-rig.js';
 import type { PickHit } from '../viewer/pick.js';
 import { GeometryBvhs } from './bvh-cache.js';
+import { PLACE_ID, placeOf } from './spawns.js';
 import { WalkMode } from './walk-mode.js';
 
 /** A canvas as far as walk mode reads one: pointer events and capture. */
@@ -97,5 +100,28 @@ describe('the look target hook', () => {
     frame();
     expect(walk.lastTarget?.id, 'walking again, the door is in view').toBe('weston');
     expect(heard, 'a stopped listener hears nothing').toHaveLength(5);
+  });
+});
+
+describe('entering at a place of the query’s own', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', { addEventListener: () => undefined, pointerLockElement: null, exitPointerLock: () => undefined });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('stands the walker there, facing and looking at its target, as `place` in the facts', () => {
+    const walk = new WalkMode({ canvas: new StandIn() as unknown as HTMLCanvasElement, rig: rig(), steps: [], floorY: -5, bvhs: new GeometryBvhs() }, () => undefined);
+    const place = placeOf('3,-5,4,6,-3.4,8');
+    if (place === null) throw new Error('placeOf refused six numbers.');
+    walk.enter(place);
+    walk.frame(1 / 60, 0, new Set());
+    walk.frame(1 / 60, 0, new Set());
+    const facts = walk.facts();
+    expect(facts.spawn).toBe(PLACE_ID);
+    // Nothing is built here, so the feet stand on the workspace ground at Y −5, the eye 1.6 m over them, looking level at the target 5 m off.
+    expect(facts.eye?.map((v) => Math.round(v * 1e9) / 1e9)).toEqual([3, -3.4, 4]);
+    expect(facts.look?.map((v) => Math.round(v * 1e9) / 1e9)).toEqual([0.6, 0, 0.8]);
   });
 });
