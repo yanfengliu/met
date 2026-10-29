@@ -204,9 +204,18 @@ export interface BarrelVaultParams {
   rise?: number;
   /** Shell thickness, metres. Default span / 20. */
   thickness?: number;
-  /** Coffers on the intrados, or none. Default none. */
+  /** Coffers on the intrados, or none. Default none. `rib` is the width between two openings on the inner face and `depth` how far a floor lies out from it, both span / 40 by default. */
   coffers?: { across: number; along: number; depth?: number; rib?: number } | false;
   detail?: Detail;
+}
+
+/** A coffer's floor is its cell inset this many half-ribs from each side, so the floor takes this many ribs off its cell's width and its length. */
+const FLOOR_INSET = 1.6;
+
+/** `x` rounded down to four significant digits and kept below it, so that a value named as "at most" it passes. */
+function below(x: number): number {
+  const unit = 10 ** (Math.floor(Math.log10(x)) - 3);
+  return Number((Math.floor(x / unit - 1e-6) * unit).toPrecision(4));
 }
 
 export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
@@ -223,12 +232,21 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     detail: checkDetail('barrelVault', params.detail ?? 'medium'),
   };
   if (full.coffers !== null) {
-    // Each coffer must stay inside the shell, whose outer face runs along the chords of its facets as buildVault divides it. A coffer's points farthest
-    // out are the corners of its opening, half a rib in from its cell on the inner face, and of its floor, 1.6 half-ribs in and `depth` out; a corner
-    // under a facet's middle has the least room.
-    const { across, depth, rib } = full.coffers;
+    const { across, along, depth, rib } = full.coffers;
     const radius = (span * span) / (8 * rise) + rise / 2;
     const arc = 2 * Math.asin(Math.min(1, span / 2 / radius));
+    // A floor keeps a width and a length only while FLOOR_INSET ribs fall short of its cell's width, the cell's arc on the inner face, and of its
+    // length: at that its sides meet, and past it they cross and the floor faces out, away from the axis.
+    const cell = { width: (radius * arc) / across, length: full.length / along };
+    const shown = (x: number): string => String(Number(x.toPrecision(4)));
+    require(
+      'barrelVault',
+      FLOOR_INSET * rib < Math.min(cell.width, cell.length),
+      `coffers.rib ${String(rib)} m leaves the coffers no floor, their sides meeting or crossing: a floor stands ${String(FLOOR_INSET / 2)} ribs in from each side of its cell, which is ${shown(cell.width)} m wide on the inner face and ${shown(cell.length)} m long; make coffers.rib at most ${String(below(Math.min(cell.width, cell.length) / FLOOR_INSET))} m.`,
+    );
+    // Each coffer must stay inside the shell, whose outer face runs along the chords of its facets as buildVault divides it. A coffer's points farthest
+    // out are the corners of its opening, half a rib in from its cell on the inner face, and of its floor, FLOOR_INSET half-ribs in and `depth` out; a
+    // corner under a facet's middle has the least room.
     const facets = across * Math.max(1, Math.ceil(byDetail(full.detail, [8, 16, 32]) / across));
     const facet = arc / facets;
     // How far out the chord above a point at angle `at` from the face's first edge lies, as a share of the outer radius.
@@ -239,7 +257,7 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     for (let i = 0; i < across; i += 1) {
       for (const [kind, inset, out] of [
         ['openings', rib / 2 / radius, 0],
-        ['floors', (1.6 * rib) / 2 / radius, depth],
+        ['floors', (FLOOR_INSET * rib) / 2 / radius, depth],
       ] as const) {
         for (const at of [(arc * i) / across + inset, (arc * (i + 1)) / across - inset]) {
           need[kind] = Math.max(need[kind], (radius + out) / chord(at) - radius);
@@ -312,11 +330,11 @@ function buildVault(v: { span: number; length: number; rise: number; thickness: 
       const a1 = a0 + da;
       const z0 = -L + j * dz;
       const z1 = z0 + dz;
-      // Corners: cell (at the intrados), opening (inset by half a rib) and coffer floor (inset further, recessed).
+      // Corners: cell (at the intrados), opening (inset by half a rib) and coffer floor (inset FLOOR_INSET half-ribs, recessed).
       const ring = (r: number, inA: number, inZ: number): THREE.Vector3[] => [point(r, a0 + inA, z0 + inZ), point(r, a1 - inA, z0 + inZ), point(r, a1 - inA, z1 - inZ), point(r, a0 + inA, z1 - inZ)];
       const cell = ring(radius, 0, 0);
       const opening = ring(radius, ia, iz);
-      const floor = ring(radius + depth, ia * 1.6, iz * 1.6);
+      const floor = ring(radius + depth, ia * FLOOR_INSET, iz * FLOOR_INSET);
       // Frames and sides as written face inward (toward the axis); the floor ring runs the other way and is reversed.
       for (let k = 0; k < 4; k++) {
         const k1 = (k + 1) % 4;

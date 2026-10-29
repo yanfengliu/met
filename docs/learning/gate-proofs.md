@@ -1,6 +1,6 @@
 # Gate proofs
 
-The record that each gate which retired a lesson of [lessons.md](lessons.md) was made to go red by reintroducing the defect it claims to prevent. Each entry names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
+The record that a gate was made to go red by reintroducing the defect it claims to prevent: each gate that retired a lesson of [lessons.md](lessons.md), and each gate for a review finding whose work unit records its proof here. Each entry names the gate, the mutation and the failure it produced; a lesson's entry also names the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
 
 ## A cited reference photograph must be recorded as viewed
 
@@ -37,3 +37,21 @@ With the work's indexes and citations, all 7 of the file's tests pass. Its detec
 With the work's screen the gate is green: one group of 565 pieces, its lowest point on the floor.
 
 **Evidence:** `git show db1e297:docs/learning/lessons-evidence.md` reads the lesson's evidence back, and `git show db1e297:docs/learning/lessons.md` its line.
+
+## A barrel vault's coffers keep their floors
+
+**Finding:** work unit 7's F39 (review 2, Claude N8): `barrelVault` built coffers whose ribs left no floor. A coffer's floor is its cell inset 0.8 ribs from each side, so where 1.6 ribs reach the cell's width on the inner face or its length, the floor's sides cross and it faces out, away from the vault's axis. On N8's vault (span 4 m, length 3 m, thickness 0.3 m, ten coffers across, one along, depth 0.05 m, rib 0.5 m), built at `8a6a0c2`, all 20 floor faces faced away from the axis, each floor 0.17 m wide the wrong way round, and nothing refused it.
+
+**Gate:** `src/model/lib/dome.test.ts`, "refuses ribs that leave a coffer no floor, naming a rib that passes: just short of where the floors close, read off vaults that build, they face the axis" (work unit 9). On vaults of 2 m radius whose floors close across (ten cells, 0.6283 m wide on the inner face) or along (ten cells, 0.3 m long), it reads the floors' width or length off the built faces of two vaults that build, ribs 0.05 and 0.1 m, and finds the rib at which they close where that line meets zero (0.3926987 and 0.1875000 m). A rib 0.1 mm short of it must build every floor, each face toward the axis and under 0.2 mm across. A rib 0.1 mm past it must be refused, naming a rib that builds floors facing the axis within 0.2 mm of the closing. N8's vault must be refused with its whole message. The fixtures stand 0.1 mm either side of the closing, so the test does not tell `<` from `≤` at the closing itself, where a floor has no width and `MeshBuilder.polygon` leaves it out.
+
+**Proved red (2026-10-29):** each mutation was made on the finished work's `src/model/lib/dome.ts` and undone, the file restored byte for byte.
+
+- The refusal deleted: red, "width: expected '' to match /^barrelVault: coffers\.rib …/": the vault 0.1 mm past the closing builds.
+- The refusal at 1.5 ribs: red, the same.
+- The refusal at 1.7 ribs: red, the vault 0.1 mm short of the closing refused ("coffers.rib 0.39259872078346986 m leaves the coffers no floor …").
+- The cell's chord taken for its width, 0.6257 m for 0.6283 m: red, the same, naming "at most 0.391 m".
+- `buildVault`'s floors alone inset 1.7 half-ribs, the refusal left at 1.6: red, the vault 0.1 mm past the closing read off the geometry builds; the thickness refusal's test, whose floor corners stayed at 1.6, read 424 lines through pockets.
+
+With the work's `dome.ts` the file's 9 tests pass.
+
+**Evidence:** `docs/work/7_faces-out/reviews/2_implementation.md` (N8, F39) and `docs/work/9_barrel-rib-refusal/plan.md`.
