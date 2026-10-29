@@ -1,8 +1,9 @@
 /**
- * The timeline bar (docs/design/spec.md, Page): start, step back, play backward, play/pause, step forward, end; speed; the walk-mode toggle; a scrubber
- * over [0, N] with chapter boundaries marked; the label and the step's detail. Every control has an accessible name and a `data-testid`.
- * While walking the bar folds into a small strip at the bottom right holding the Timeline button (`bar-toggle`), which unfolds it and folds it again,
- * and the Walk toggle, which leaves walk mode; in the orbit view it is always whole and the Timeline button is hidden.
+ * The timeline bar (docs/design/spec.md, Page: Build replay and Timeline bar): start, step back, play backward, play/pause, step forward, end; speed;
+ * the walk-mode toggle; a scrubber over [0, N] with chapter boundaries marked; the label and the step's detail, beside the button that closes the build
+ * replay. Every control has an accessible name and a `data-testid`. The bar takes one of three shapes (`barShape`): whole while the build replay is
+ * open in the orbit view; folded while walking with the replay open, a strip at the bottom right holding the Timeline button (`bar-toggle`), which
+ * unfolds it and folds it again, and the Walk toggle; and, with the replay closed, a strip holding the Walk toggle alone.
  */
 import type { PlayerMode, Speed } from '../build/player.js';
 import { SPEEDS } from '../build/player.js';
@@ -24,6 +25,8 @@ export interface BarActions {
   toggleWalk(): void;
   /** Unfolds the bar while walking, or folds it again. */
   toggleBar(): void;
+  /** Closes the build replay: the bar shrinks to the Walk toggle's strip and the page shows the finished building, paused. */
+  closeReplay(): void;
 }
 
 export interface BarState {
@@ -35,6 +38,17 @@ export interface BarState {
   readonly walking: boolean;
   /** While walking, whether the bar is unfolded. */
   readonly barOpen: boolean;
+  /** The build replay is open: the timeline shows, whole or folded. */
+  readonly replay: boolean;
+}
+
+/** How the bar shows: `whole`, `folded` (the Timeline button and the Walk toggle) or `strip` (the Walk toggle alone). */
+export type BarShape = 'whole' | 'folded' | 'strip';
+
+/** The bar's shape: a strip while the build replay is closed; with it open, whole in the orbit view and, walking, folded until unfolded. */
+export function barShape(state: Pick<BarState, 'walking' | 'barOpen' | 'replay'>): BarShape {
+  if (!state.replay) return 'strip';
+  return state.walking && !state.barOpen ? 'folded' : 'whole';
 }
 
 export interface BarInfo {
@@ -54,6 +68,8 @@ export class TimelineBar {
   private readonly speeds: Map<Speed, HTMLButtonElement>;
   private readonly walk: HTMLButtonElement;
   private readonly fold: HTMLButtonElement;
+  /** The button that closes the build replay, which the bar hides with it: src/ui/ui.ts hands focus on after a keyboard activation. */
+  readonly close: HTMLButtonElement;
   private dragging = false;
 
   constructor(
@@ -110,8 +126,10 @@ export class TimelineBar {
     this.fold = button('Show the timeline', 'bar-toggle', () => { actions.toggleBar(); }, { icon: ICONS.unfold, text: 'Timeline', className: 'met-button met-bar-toggle' });
     setAttr(this.fold, 'aria-expanded', 'false');
     this.fold.hidden = true;
+    this.close = button('Close the build replay', 'replay-close', () => { actions.closeReplay(); }, { icon: ICONS.close });
+    setAttr(this.close, 'title', 'Close the build replay and show the finished building');
     this.element = el('div', { className: 'met-bar', testid: 'timeline-bar', attrs: { role: 'region', 'aria-label': 'Build timeline controls' } }, [
-      el('div', { className: 'met-label' }, [this.title, this.detail]),
+      el('div', { className: 'met-label-row' }, [el('div', { className: 'met-label' }, [this.title, this.detail]), this.close]),
       el('div', { className: 'met-scrub' }, [this.scrubber, marks]),
       el('div', { className: 'met-controls' }, [transport, el('div', { className: 'met-group met-modes' }, [speedGroup, this.fold, this.walk])]),
     ]);
@@ -136,11 +154,14 @@ export class TimelineBar {
     for (const [speed, b] of this.speeds) setAttr(b, 'aria-pressed', String(speed === state.speed));
     setAttr(this.walk, 'aria-pressed', String(state.walking));
     setAttr(this.walk, 'title', state.walking ? 'Leave walk mode (F)' : 'Walk in first person (F)');
-    // While walking the bar folds into the strip unless unfolded; the Timeline button belongs to walk mode.
-    const folded = state.walking && !state.barOpen;
-    if (this.element.classList.contains('met-bar-folded') !== folded) this.element.classList.toggle('met-bar-folded', folded);
-    if (this.fold.hidden !== !state.walking) this.fold.hidden = !state.walking;
-    const open = state.walking && state.barOpen;
+    // A strip unless whole: walking it folds until unfolded, and with the replay closed only the Walk toggle shows. The Timeline button belongs to walk
+    // mode with the replay open.
+    const shape = barShape(state);
+    if (this.element.classList.contains('met-bar-folded') !== (shape !== 'whole')) this.element.classList.toggle('met-bar-folded', shape !== 'whole');
+    setAttr(this.element, 'aria-label', state.replay ? 'Build timeline controls' : 'Walk');
+    const timeline = state.walking && state.replay;
+    if (this.fold.hidden !== !timeline) this.fold.hidden = !timeline;
+    const open = timeline && state.barOpen;
     setAttr(this.fold, 'aria-expanded', String(open));
     setAttr(this.fold, 'aria-label', open ? 'Hide the timeline' : 'Show the timeline');
     setAttr(this.fold, 'title', open ? 'Hide the timeline' : 'Show the timeline');

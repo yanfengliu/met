@@ -65,3 +65,5 @@ Landed on origin's main, 2026-10-28. No closed part of the model faces in as dra
 Three review rounds, each by Codex and Claude, found F0 to F39; each is repaired, withdrawn (F13, the sweep's fold refusal), stated as a bound (F31, F32) or noted (F34, F38, F39). The standard shots changed where the soffits, the capitals, the Dendur rolls and the Great Hall arches changed, each read at native resolution; the gables show in no standard view.
 
 Open notes: the readings' bounds (`src/model/lib/facing.ts`); the mirror refusal in `src/build/kit.ts`, which this session could not edit, the gate's matrix check standing in for it. Follow-up proposed, not started: `barrelVault` refuses a rib where 1.6 ribs reach a coffer's cell (F39, older than this work).
+
+Update, 2026-10-29: the `barrelVault` follow-up (F39) was done as work unit 9 ([`9_barrel-rib-refusal`](../9_barrel-rib-refusal/plan.md), `7c8206d`).

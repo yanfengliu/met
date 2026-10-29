@@ -24,7 +24,7 @@ export function watchErrors(page: Page): { expectClean: () => void } {
   };
 }
 
-/** Opens the page with `query` (by default the page's own default: the finished building, paused) and waits for the capture contract's ready flag, at most 20 s times the CPU throttle. */
+/** Opens the page with `query` (by default the page's own default: the finished building, paused, the build replay closed) and waits for the capture contract's ready flag, at most 20 s times the CPU throttle. */
 export async function open(page: Page, query = 'autoplay=0'): Promise<Facts> {
   await page.goto(`/?${query}`);
   const ms = 20_000 * throttleRate();
@@ -117,6 +117,20 @@ export async function press(page: Page, testid: string): Promise<void> {
 export async function openMenu(page: Page, menu: 'chapter-menu' | 'view-menu'): Promise<void> {
   if (await page.getByTestId(menu).isHidden()) await press(page, `${menu}-button`);
   await expect(page.getByTestId(menu)).toBeVisible();
+}
+
+/**
+ * Opens the build replay, closed as the page opens, by the Build menu's Build replay item, as a person does (docs/design/spec.md, Page: Build replay),
+ * and waits for the frame that shows the whole bar: its Play button in view (walking, opening the replay unfolds the bar).
+ */
+export async function openReplay(page: Page): Promise<void> {
+  await openMenu(page, 'chapter-menu');
+  const item = page.getByTestId('replay-toggle');
+  await expect(item, 'the Build replay item before it is chosen').toHaveAttribute('aria-checked', 'false');
+  await item.click();
+  await expect(item, 'the Build replay item once chosen').toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByTestId('btn-play')).toBeVisible();
+  await settle(page);
 }
 
 /** The label's step number k from `Step k / N`. */

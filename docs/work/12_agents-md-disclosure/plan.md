@@ -1,6 +1,6 @@
 # met's AGENTS.md discloses progressively, under Codex's 32 KiB
 
-Status: active
+Status: complete
 Owner: agentsmd, a worker of the met coordinator
 Created: 2026-10-29
 Updated: 2026-10-29
@@ -48,8 +48,8 @@ Where each kind of detail went:
 - [x] Add the size gate and prove it red.
 - [x] Review round 0 (`reviews/0_implementation.md`); fix its findings.
 - [x] Land through the slot: `05bdfee` on origin's main.
-- [ ] Land these records after units 9 to 11's, merging origin's main.
+- [x] Land these records after units 9 to 11's, merging origin's main.
 
 ## Outcome
 
-Landed on origin's main at `05bdfee`, 2026-10-29, a fast-forward of `8a6a0c2`: `67da660` the work, `05bdfee` its repairs after review 0. AGENTS.md is 26,972 bytes with LF endings and 27,108 with CRLF (Gates 10,542 bytes and 1,453 words, from 52,793 and 9,211); its canon and its other sections are byte for byte `8a6a0c2`'s. Only comments changed in 47 TypeScript files; `src/repo-conventions.test.ts` gained the size gate, red with `8a6a0c2`'s AGENTS.md (69,357 bytes with CRLF endings) and recorded in `docs/learning/gate-proofs.md`. `npm run verify` passed on `67da660` and on `05bdfee` through the gate lock (`MET_PORT=5365`): 681 unit tests and 84 e2e tests. The check found all 80 sentences (327 clauses: 40 kept, 156 already held, 128 moved, 3 across two tests) and went red on eleven planted, dropped and misfiled facts and on a changed canon; it stays green on a reversed polarity in a long clause, one of its stated bounds. Review 0 ([reviews/0_implementation.md](reviews/0_implementation.md)), Codex and Claude: no blocking finding, eighteen findings, seventeen repaired or stated at `05bdfee`, one not adopted; the repairs were not reviewed again. Limits: the check compares words, not meanings, and lives outside the repo, in the session's scratchpad; the gate bounds the whole file, so a canon sync can trip it, and then met's own sections must shrink. These records wait for units 9 to 11's, so the registry stays consecutive.
+Landed on origin's main at `05bdfee`, 2026-10-29, a fast-forward of `8a6a0c2`: `67da660` the work, `05bdfee` its repairs after review 0. At `05bdfee`, AGENTS.md was 26,972 bytes with LF endings and 27,108 with CRLF (Gates 10,542 bytes and 1,453 words, from 52,793 and 9,211); its canon and its other sections are byte for byte `8a6a0c2`'s. Only comments changed in 47 TypeScript files; `src/repo-conventions.test.ts` gained the size gate, red with `8a6a0c2`'s AGENTS.md (69,357 bytes with CRLF endings) and recorded in `docs/learning/gate-proofs.md`. `npm run verify` passed on `67da660` and on `05bdfee` through the gate lock (`MET_PORT=5365`): 681 unit tests and 84 e2e tests. The check found all 80 sentences (327 clauses: 40 kept, 156 already held, 128 moved, 3 across two tests) and went red on eleven planted, dropped and misfiled facts and on a changed canon; it stays green on a reversed polarity in a long clause, one of its stated bounds. Review 0 ([reviews/0_implementation.md](reviews/0_implementation.md)), Codex and Claude: no blocking finding, eighteen findings, seventeen repaired or stated at `05bdfee`, one not adopted; the repairs were not reviewed again. Limits: the check compares words, not meanings, and lives outside the repo, in the session's scratchpad; the gate bounds the whole file, so a canon sync can trip it, and then met's own sections must shrink. These records landed after units 9 to 11's, merged with origin's main at `6ac45a9`, so the registry stays consecutive; by then the canon sync and units 9 to 11 had brought AGENTS.md to 28,573 bytes (28,713 with CRLF endings), under the gate.
