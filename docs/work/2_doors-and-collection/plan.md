@@ -156,7 +156,7 @@ Left open, outside this unit:
 - F42, listener teardown, for a rig the page never disposes;
 - F66, the long route walks' corner settle at the Dendur pool step at 4× CPU throttle: the owner chose to land with it recorded and to replace the long walks with fixed-position checks, pictures and one short real-key walk, which the follow-up below did (2026-10-29).
 
-The first is filed as a follow-up task. The Weston doorway's head, against photo #33, was resolved in its own session as work unit 3 (`53a981c`).
+The first is filed as a follow-up task, and was resolved as work unit 10 (`6426f08`). The Weston doorway's head, against photo #33, was resolved in its own session as work unit 3 (`53a981c`).
 
 For the owner: walk mode moves by keys only, so on a phone it shows the view but cannot walk or use a door. Touch controls were not asked for.
 

@@ -40,6 +40,10 @@
     {
       "id": 9,
       "theme": "barrel-rib-refusal"
+    },
+    {
+      "id": 10,
+      "theme": "mixed-pointer-input"
     }
   ]
 }
