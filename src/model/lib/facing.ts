@@ -2,12 +2,13 @@
  * Which way the closed parts of a geometry face: a part wound inside out holds its inside in front of its faces, which back-face culling draws from
  * inside and the section cut's cap pass reads as outside (docs/design/spec.md, Build-step API: Solids and sheets).
  * A part is the triangles that share corners, joined by position to a micrometre, so two solids touching at one corner are one part. Along a unit
- * direction v its volume is, by the divergence theorem,
- * the sum over its faces of each face's centroid height along v times its signed area across v: positive wound outward, negative inside out, and the
- * same wherever heights are measured from once its faces looking up and looking down cover equal areas across v, as on a part closed along v. The parts
- * that close along v only together are read as one; parts that do not close even then are left to the closure check (`openAlong`, ./check.ts).
+ * direction v its volume is, by the divergence theorem, the sum over its faces of each face's centroid height along v times its signed area across v:
+ * positive wound outward, negative inside out, and the same wherever heights are measured from once its faces looking up and looking down cover equal
+ * areas across v, as on a part closed along v. Heights are measured from one of the part's own corners, so rounding grows with the part's size, not with
+ * its distance from the frame's origin. The parts that close along v only together are read as one; parts that do not close even then are left to the
+ * closure check (`openAlong`, ./check.ts).
  * Bound: a part reads as one sign in all, so a pocket of it wound inside out, where its surface folds through itself, leaves a positive sum and is not
- * seen; of the parts that close only together, one wound inside out among outward ones can pass. `inwardAlong` reads the pockets, on a grid of lines.
+ * seen; of the parts that close only together, one wound inside out among outward ones can pass. `inwardAlong` reads the pockets, on lines.
  */
 import { Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -16,14 +17,14 @@ import type { BufferGeometry } from 'three';
 const WELD = 1e-6;
 /** The share of a part's area across v that its faces looking up and looking down may leave unmatched and still close it along v. */
 const OPEN_SHARE = 1e-6;
-/** The share of a part's volume terms and of its faces' heights times their areas, summed unsigned, that rounding may leave in the volume. */
+/** The share of a part's volume terms, summed unsigned, that rounding may leave in their signed sum. */
 const ROUNDING = 1e-9;
 
 /** A part, or the parts that close only together, with its volume read along v. */
 export interface PartVolume {
   /** Its volume, signed: negative for a part wound inside out, in the geometry's own units cubed. */
   readonly volume: number;
-  /** The most rounding can put the volume out by: its unmatched area across v times its height along v, and a billionth of its terms and of its faces' heights times their areas, unsigned. */
+  /** The most rounding can put the volume out by: its unmatched area across v times its height along v, and a billionth of its terms summed unsigned. */
   readonly noise: number;
   /** How many welded parts it is: 1, or more for the parts that close only together. */
   readonly parts: number;
@@ -31,7 +32,7 @@ export interface PartVolume {
   readonly at: Vector3;
 }
 
-/** One part's sums: its signed area across v, that area unsigned, its volume with heights from its lowest corner, what rounding grows with, and its lowest and highest corner. */
+/** One part's sums, its heights along v from its corner `at`: its signed area across v, that area unsigned, its volume with heights from its lowest corner, that volume's terms unsigned, and its lowest and highest corner. */
 interface Tally {
   across: number;
   total: number;
@@ -75,14 +76,17 @@ export function partVolumes(geometry: BufferGeometry, vertical: Vector3): PartVo
     parent[root(id[t + 1] ?? 0)] = r;
     parent[root(id[t + 2] ?? 0)] = r;
   }
-  // Heights from each part's lowest corner, so rounding in its unmatched area costs no more than its own height.
+  // Heights from each part's first corner, then from its lowest, so rounding costs no more than the part's own size and height.
   const tallies = new Map<number, Tally>();
   for (let k = 0; k < count; k += 1) {
-    const h = p.fromBufferAttribute(position, corner(k)).dot(vertical);
+    p.fromBufferAttribute(position, corner(k));
     const r = root(id[k] ?? 0);
     const tally = tallies.get(r);
-    if (tally === undefined) tallies.set(r, { across: 0, total: 0, volume: 0, terms: 0, low: h, high: h, at: p.clone() });
-    else [tally.low, tally.high] = [Math.min(tally.low, h), Math.max(tally.high, h)];
+    if (tally === undefined) tallies.set(r, { across: 0, total: 0, volume: 0, terms: 0, low: 0, high: 0, at: p.clone() });
+    else {
+      const h = p.sub(tally.at).dot(vertical);
+      [tally.low, tally.high] = [Math.min(tally.low, h), Math.max(tally.high, h)];
+    }
   }
   const [a, b, c, ab, ac] = [new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()];
   for (let t = 0; t + 2 < count; t += 3) {
@@ -94,11 +98,11 @@ export function partVolumes(geometry: BufferGeometry, vertical: Vector3): PartVo
     const across = ab.subVectors(b, a).cross(ac.subVectors(c, a)).dot(vertical) / 2;
     tally.across += across;
     tally.total += Math.abs(across);
-    // Each corner's height from the part's lowest before they are averaged, so a level membrane's terms vanish; their rounding grows with the heights.
-    const [ha, hb, hc] = [a.dot(vertical), b.dot(vertical), c.dot(vertical)];
-    const term = ((ha - tally.low + (hb - tally.low) + (hc - tally.low)) / 3) * across;
+    // Each corner's height from the part's lowest before they are averaged, so a level membrane's two sides cancel exactly.
+    const [ha, hb, hc] = [a, b, c].map((q) => q.clone().sub(tally.at).dot(vertical) - tally.low) as [number, number, number];
+    const term = ((ha + hb + hc) / 3) * across;
     tally.volume += term;
-    tally.terms += Math.abs(term) + ((Math.abs(ha) + Math.abs(hb) + Math.abs(hc)) / 3) * Math.abs(across);
+    tally.terms += Math.abs(term);
   }
   const closes = (across: number, total: number): boolean => Math.abs(across) <= OPEN_SHARE * total;
   // Summing terms that cancel, as a membrane's two sides do, leaves a remainder that grows with the terms, not with what is left unmatched.
@@ -111,13 +115,14 @@ export function partVolumes(geometry: BufferGeometry, vertical: Vector3): PartVo
   }
   const first = open[0];
   if (first !== undefined) {
-    // The parts that close only together, their heights all from the lowest of their corners.
-    const low = Math.min(...open.map((t) => t.low));
-    const high = Math.max(...open.map((t) => t.high));
+    // The parts that close only together, their heights all from the lowest of their corners, found from the first part's corner.
+    const lows = open.map((t) => t.at.clone().sub(first.at).dot(vertical) + t.low);
+    const low = Math.min(...lows);
+    const high = Math.max(...open.map((t, k) => (lows[k] ?? 0) - t.low + t.high));
     const across = open.reduce((sum, t) => sum + t.across, 0);
     const total = open.reduce((sum, t) => sum + t.total, 0);
-    const volume = open.reduce((sum, t) => sum + t.volume + (t.low - low) * t.across, 0);
-    const terms = open.reduce((sum, t) => sum + t.terms + Math.abs((t.low - low) * t.across), 0);
+    const volume = open.reduce((sum, t, k) => sum + t.volume + ((lows[k] ?? low) - low) * t.across, 0);
+    const terms = open.reduce((sum, t, k) => sum + t.terms + Math.abs(((lows[k] ?? low) - low) * t.across), 0);
     if (closes(across, total)) out.push({ volume, noise: noise(across, high - low, terms), parts: open.length, at: first.at });
   }
   return out;
@@ -151,7 +156,9 @@ export interface InwardStretch {
  * bounds across the lines (OFF), and two lines BESIDE each open edge, one either side, ALONG it: an edge borne by an odd number of triangles, corners
  * joined by position to a micrometre, as where a part's open ends line up along the lines and the closure check reads it closed. Hits at one height are
  * read together, and a line with a hit on an edge of its triangle is cast again a hair aside (ASIDE), so that it meets each surface there once.
- * Bound: a pocket narrower than a cell that no open edge borders can be missed; a line still on an edge after its fourth try counts what it meets.
+ * Bound: a pocket narrower than a cell that no open edge borders can be missed, and so can one narrower than BESIDE beside an open edge, as in a part a
+ * hundred times smaller than Diana's bow; lined-up open ends that wind to an inside between them, +1 as any inside, read as no pocket at all; a line
+ * still on an edge after its fourth try counts what it meets.
  */
 export function inwardAlong(geometry: BufferGeometry, vertical: Vector3, cells: number): InwardStretch {
   const position = geometry.getAttribute('position');

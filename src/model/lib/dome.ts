@@ -254,7 +254,7 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     require(
       'barrelVault',
       Math.max(need.openings, need.floors) < full.thickness,
-      `a shell ${String(full.thickness)} thick lets the coffers' ${kind} stand out of its outer face, which runs along the chords of its facets, as pockets wound inside out (coffers.depth ${String(depth)}, coffers.rib ${String(rib)}); make the shell at least ${thick.toFixed(4)} m thick${kind === 'floors' && deep > 0 ? ` or the coffers at most ${deep.toFixed(4)} m deep` : ''}.`,
+      `thickness ${String(full.thickness)} m lets the coffers' ${kind} stand out of the shell's outer face, which runs along the chords of its facets, as pockets wound inside out (coffers.depth ${String(depth)} m, coffers.rib ${String(rib)} m); make thickness at least ${thick.toFixed(4)} m${kind === 'floors' && deep > 0 ? ` or coffers.depth at most ${deep.toFixed(4)} m` : ''}.`,
     );
   }
   return cached('barrelVault', full, () => buildVault(full));

@@ -23,8 +23,8 @@
  * vertical see it at most BEHIND wide, twice its area in plan over its longest edge in plan, in its frame. And each closed part's facing as drawn: its
  * volume read along vertical by its faces (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one, signed
  * by its piece's matrix, which an instanced mesh does not turn back; no pocket on a grid of GRID lines a side over each shape and each door's leaves, nor
- * on two lines beside each of their open edges (`inwardAlong`), which read a part whose open ends line up along vertical lines, as `openAlong` reads such
- * a part closed; and no piece of the model mirrored.
+ * on two lines beside each of their open edges (`inwardAlong`), which read a part whose open ends line up along vertical lines and wind inside out
+ * between them, as `openAlong` reads such a part closed; and no piece of the model mirrored.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
  * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage), with main's crossing rule, which counted hits within 1 µm once (206
  * shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside turned up
@@ -46,7 +46,8 @@
  * The overlap is read from the winding, so an overlap with a part wound inside out is not seen, and the facing reading finds none. That reading sees a
  * part's sign in all, so one wound inside out among the outward parts it closes only together with can pass (its own bound). The grid sees a pocket only
  * under one of its lines, so one narrower than its cells that no open edge borders can be missed (Diana's open bow showed on 1 of the grid's 4,096
- * lines, and on 8 beside its open edges). The upright reading passes a face wound in that lies face to face on another part of its piece.
+ * lines, and on 8 beside its open edges); lined-up open ends that wind to an inside between them, and a pocket narrower than 0.1 mm beside an open edge,
+ * are not seen (`inwardAlong`'s bound). The upright reading passes a face wound in that lies face to face on another part of its piece.
  */
 import { Matrix3, Matrix4, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';

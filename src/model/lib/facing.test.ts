@@ -1,8 +1,9 @@
 /**
  * The facing checks (./facing.ts) on fixtures worked out by hand. `partVolumes`: a box wound outward and inside out, two boxes, a box mirrored through
- * the builder, the halves of a box that close only together, an open box, a flat membrane, a membrane whose terms cancel only to rounding and a box
- * read along a turned direction. `inwardAlong`: a box either way round, boxes sharing a top, and a slab with a recess in its top, shallower than the
- * slab and deeper, whose floor then stands out under it as a pocket.
+ * the builder, the halves of a box that close only together, an open box, a flat membrane, membranes whose terms cancel only to rounding, tilted and
+ * level, a small part wound inside out a million units from the origin, and a box read along a turned direction. `inwardAlong`: a box either way round,
+ * boxes sharing a top, two boxes read along a direction that puts a line on a shared edge, an open tube whose open ends line up, either way round (one
+ * the bound it does not see), and a slab with a recess in its top, shallower than the slab and deeper, whose floor then stands out under it as a pocket.
  * Bound: fixtures only; src/model/closure.test.ts reads the finished model's parts, and the part tests read their own parts' pockets.
  */
 import { Matrix4, TorusGeometry, Vector3 } from 'three';
@@ -104,6 +105,17 @@ describe('partVolumes', () => {
     expect(Math.abs(part?.volume ?? Infinity)).toBeLessThanOrEqual(part?.noise ?? 0);
   });
 
+  it('reads a small part wound inside out far from the origin as one, its heights from its own corner (review 2)', () => {
+    const far = new MeshBuilder();
+    const [a, b, c, d] = [new Vector3(0, 1e6, 0), new Vector3(1, 1e6 + 1, 0), new Vector3(0, 1e6, 1), new Vector3(0.001, 1e6, 0)];
+    // A tetrahedron, each face wound to look into it.
+    for (const face of [[a, b, c], [a, c, d], [a, d, b], [b, d, c]]) far.polygon(face);
+    const [part] = partVolumes(far.build(), UP);
+    expect(part).toBeDefined();
+    expect(Math.abs(part?.volume ?? 0)).toBeGreaterThan(part?.noise ?? Infinity);
+    expect(part?.volume).toBeLessThan(0);
+  });
+
   it('reads the same volume along a turned direction, the box closed along it too', () => {
     const turned = new Vector3(1, 2, -0.5).normalize();
     expect(volumes(box(), turned)).toEqual([24]);
@@ -168,6 +180,12 @@ describe('inwardAlong', () => {
     const found = inwardAlong(bow.build(), UP, 4);
     expect(found.lines).toBeGreaterThan(0);
     expect(found.worst).toBeGreaterThan(0.2);
+  });
+
+  it('sees nothing in an open tube whose lined-up open ends wind to an inside between them, the bound of its lines beside open edges (review 2)', () => {
+    const bow = new MeshBuilder();
+    bow.append(new TorusGeometry(0.3, 0.008, 4, 16, Math.PI * 1.2), new Matrix4().makeRotationZ(Math.PI * 0.4));
+    expect(inwardAlong(bow.build(), UP, 64).lines).toBe(0);
   });
 
   it('finds nothing in a slab whose recess stays inside it, and the pocket of one deeper than the slab, under the recess only', () => {
