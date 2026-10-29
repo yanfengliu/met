@@ -10,7 +10,7 @@
  * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, R5 crosses the
  * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, and R7 the
  * corridor and the court wall's opening on it.
- * Bound: steering turns the walker directly (the e2e walks steer by real keys and drags, tests/e2e/routes.spec.ts); a stall is less than 5 cm of
+ * Bound: steering turns the walker directly, never by real keys (tests/e2e/routes.spec.ts checks fixed places on the routes in the page); a stall is less than 5 cm of
  * progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts and ends within
  * one frame's two physics steps is not seen.
  */

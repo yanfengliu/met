@@ -62,7 +62,7 @@ export interface WalkHost {
 export interface WalkFacts {
   readonly mode: 'orbit' | 'walk';
   readonly preparing: boolean;
-  /** The spawn walk mode last placed the walker at. */
+  /** The spawn walk mode last placed the walker at, or `place` for a place of the query's own (./spawns.ts `placeOf`). */
   readonly spawn: string | null;
   readonly spawns: readonly string[];
   /** In walk mode, the eye and the unit look direction; null in the orbit view. */
@@ -171,10 +171,13 @@ export class WalkMode {
     };
   }
 
-  /** Enters walk mode at the spawn `id`, or where the walker last stood, or at the default spawn; an unknown id warns and is treated as none. */
-  enter(id: string | null = null): void {
-    let spawn = id === null ? undefined : spawnById(id);
-    if (id !== null && spawn === undefined) {
+  /**
+   * Enters walk mode at the spawn `id` or the place given (a spawn of the query's own, src/walk/spawns.ts `placeOf`), or where the walker last stood, or at
+   * the default spawn; an unknown id warns and is treated as none.
+   */
+  enter(id: string | Spawn | null = null): void {
+    let spawn = id === null ? undefined : typeof id === 'string' ? spawnById(id) : id;
+    if (typeof id === 'string' && spawn === undefined) {
       this.warn(`Walk spawn "${id}" names no spawn; use one of ${SPAWNS.map((s) => s.id).join(', ')}. The walk starts at ${this.placed ? 'the last place walked' : DEFAULT_SPAWN}.`);
     }
     if (spawn === undefined && !this.placed) spawn = spawnById(DEFAULT_SPAWN);

@@ -1,6 +1,6 @@
 # Gate proofs
 
-The record that each gate which retired a lesson of [lessons.md](lessons.md) was made to go red by reintroducing the defect it claims to prevent. Each entry names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
+The record that each gate which retired a lesson of [lessons.md](lessons.md) was made to go red by reintroducing the defect it claims to prevent. Each entry names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back. It also holds the red proofs of gates that retired no lesson, whose AGENTS.md line points here; those entries name the findings they answer instead.
 
 ## A cited reference photograph must be recorded as viewed
 
@@ -37,3 +37,28 @@ With the work's indexes and citations, all 7 of the file's tests pass. Its detec
 With the work's screen the gate is green: one group of 565 pieces, its lowest point on the floor.
 
 **Evidence:** `git show db1e297:docs/learning/lessons-evidence.md` reads the lesson's evidence back, and `git show db1e297:docs/learning/lessons.md` its line.
+
+## The walk through real input
+
+**Findings:** work unit 2's review 22, F66: the route walks of `3860384` took about 10 min a run at 4× CPU throttle and still failed under load, the corner settle unable to rest after the step into the Dendur pool. The owner chose fixed-position checks, pictures and one short real-key walk (2026-10-28). The proofs below carry over those AGENTS.md gave the walks (F30, F46, F54, F55 and the rest), each made red again on the new checks.
+
+**Gate:** `tests/e2e/routes.spec.ts`. One short real-key walk, at 1× and 4×: from the plaza spawn through the closed middle door and shut behind, down a Grand Staircase flight, up through R5's doorway until the Triumph of Marius's card shows, and by the view menu back to the door. Then fixed places set by `spawn=x,y,z,tx,ty,tz`, each with a picture of its view. Its bounds are in its header.
+
+**Proved red (2026-10-29):** each defect was planted in the work's tree before its first commit and undone, and the tests named ran unthrottled.
+
+- F30, the door prompt left showing once a door has shown it (`src/main.ts`, the look target's hook keeping the last door): the short walk, no frame with the card and no prompt.
+- F46, the closed doors' doorways out of the hit query (`src/viewer/doors.ts` `registerWith`), as at `0defda0`: the short walk, 89 of 186 frames walking straight at the closed door within 1.9 m with no "E Open"; the middle door from the Great Hall, 144 of 257.
+- F54, the door planted to swing open by itself toward the plaza 3 s after E shuts it (`src/viewer/doors.ts` `use`): the short walk, the door found open at −90° as the walker came back to it from the plaza.
+- F55, a hop planted on the way to Ruth Gleaning (`src/walk/walker.ts` `update`, once, 1.5 m from R6's end): its approach, 98 frames off the ground.
+- The door's hold, the middle door's leaves out of the door world (`src/walk/door-world.ts`): the short walk, held at Z −14.20 by the information desk, 12.86 m past the leaves; the middle door from the Great Hall, no stop before the plaza, at Z 25.57.
+- Walked through, the leaves' collision left closed while they swing (`door-world.ts` `pose`): the short walk, the middle door from the Great Hall, and Weston's door from the Petrie Court and from gallery 529, each stuck in its doorway.
+- Weston's door, its leaves out of the door world: from the Petrie Court, held at X −37.10 in wing B, 12.6 m past the leaves.
+- R5's doorway walled up (`src/model/hunt/stair.ts`, the cross hall's back wall with no opening): the short walk, stuck at Z −66.44 before the wall; the place in the doorway, the walker lifted 7 m onto the wall's top.
+- The Dendur pool 0.6 m deep (`POOL_FLOOR_Y`, `src/model/roche-north/plan.ts`): stuck in its north arm, no 5 cm of progress walking out.
+- The gate's rail taken away (`src/model/roche-north/sackler.ts`): the walker went on to the gate's riser, held at Z −64.68 instead of before the rail.
+- The gate's passage left unfilled: the walker from the forecourt dropped into it and could not walk back out onto the forecourt.
+- The walking eye 3 cm high (`src/walk/walker.ts` `eye`): the short walk on the landing, and the places in R5's doorway, on the landing, on the forecourt and at the head of the south flight, 2.5 to 3.0 cm off.
+- An artwork's card reach 8 m (`src/walk/look.ts`): the short walk's Triumph of Marius, and Ruth Gleaning, cards shown farther than 6 m; the Sphinx's from where its approach set off, 7.7 m out.
+- Each key let go 0.7 s late (`tests/e2e/route-keys.ts` `Keys`), past the release the door's stretch allows: the short walk, "at rest 2.43 m out from the leaves … where it can shut the door from 0.95 to 2.28 m out; it went on 1.62 m past where W was let go, 0.74 s of walking after its coast".
+
+With the work as committed, all pass: 14 tests unthrottled in 94 s, inside `npm run verify`, and 12 at 4× in __4X__, its two frame budgets skipped there.

@@ -19,7 +19,7 @@ export interface Query {
   readonly noui: boolean;
   /** `walk=1`: start in walk mode. */
   readonly walk: boolean;
-  /** A walk spawn id (src/walk/spawns.ts); resolved by the walk mode, which warns about one it does not know. */
+  /** A walk spawn id or a place `x,y,z,tx,ty,tz` (src/walk/spawns.ts `placeOf`); resolved by src/main.ts, which warns about one that names neither. */
   readonly spawn: string | null;
   /** `all` or a floor id (src/viewer/floors.ts); resolved by `startFloor`, which warns about one that names no floor. */
   readonly floor: string | null;

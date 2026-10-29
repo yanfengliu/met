@@ -19,7 +19,8 @@ import { installStyles } from './ui/styles.js';
 import { createUi } from './ui/ui.js';
 import type { UiState, WalkStatus } from './ui/ui.js';
 import { GeometryBvhs } from './walk/bvh-cache.js';
-import { DEFAULT_SPAWN, SPAWNS, spawnById } from './walk/spawns.js';
+import { SPAWNS, startOf } from './walk/spawns.js';
+import type { Spawn } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
 import { ARTWORK_QUERY, ArtLabel, artworkInstances } from './viewer/art-label.js';
 import { bindClick } from './viewer/click.js';
@@ -231,8 +232,8 @@ function boot(): void {
     const next = floorStep(floors.id, direction);
     if (next !== floors.id) chooseFloor(next);
   };
-  /** Into walk mode (at `spawn`, or as walk-mode.ts decides): the floor view ends as with All, and the follow camera and the preset in view go off, as for a move by the user. */
-  const enterWalk = (spawn: string | null): void => {
+  /** Into walk mode (at `spawn`, a spawn's id or a place, or as walk-mode.ts decides): the floor view ends as with All, and the follow camera and the preset in view go off, as for a move by the user. */
+  const enterWalk = (spawn: string | Spawn | null): void => {
     if (floors.show(null)) cutChanged();
     atFloor = false;
     follow = false;
@@ -335,9 +336,10 @@ function boot(): void {
   doors.sync(player.t, 0, true);
   performance.mark('met:doors-set');
   if (query.walk) {
-    const known = query.spawn === null || spawnById(query.spawn) !== undefined;
-    if (!known) warnings.push(`Query parameter spawn="${query.spawn}" names no walk spawn; use one of ${SPAWNS.map((sp) => sp.id).join(', ')}. The walk starts at ${DEFAULT_SPAWN}.`);
-    enterWalk(known ? query.spawn : null);
+    // A spawn's id, or a place of the query's own (src/walk/spawns.ts `startOf`).
+    const start = startOf(query.spawn);
+    if (start.warning !== null) warnings.push(start.warning);
+    enterWalk(start.spawn);
     // Capture mode shows the walker's view from its first frame.
     if (query.shot) walk.prepareNow(player.t);
     if (query.shot) performance.mark('met:walk-placed');
