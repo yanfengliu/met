@@ -16,6 +16,8 @@ export interface Query {
   readonly solo: string | null;
   /** `autoplay=0` gives false, `autoplay=1` true, absent null. */
   readonly autoplay: boolean | null;
+  /** `replay=1` gives true (open the build replay at load, paused; docs/design/spec.md, Page: Build replay), `replay=0` false, absent null; `opensReplay` gives the whole rule. */
+  readonly replay: boolean | null;
   readonly noui: boolean;
   /** `walk=1`: start in walk mode. */
   readonly walk: boolean;
@@ -84,6 +86,7 @@ export function parseQuery(search: string): Query {
     cut: number(params, 'cut', warnings, 'metres'),
     solo: text('solo'),
     autoplay: flag(params, 'autoplay', warnings),
+    replay: flag(params, 'replay', warnings),
     noui: flag(params, 'noui', warnings) === true,
     walk: flag(params, 'walk', warnings) === true,
     spawn: text('spawn'),
@@ -103,33 +106,58 @@ export interface Start {
   readonly t: number;
   /** Whether the query set a position (`step` or `t`). */
   readonly positioned: boolean;
+  /** Whether the build replay is open at load (`opensReplay`). */
+  readonly replay: boolean;
   readonly warnings: readonly string[];
 }
 
 /**
  * The start position: `step` (an id or 1-based index, meaning the end of that step) wins over `t`; `t` is clamped to [0, N]. With neither, the finished
- * building (N), or the empty site (0) when `autoplay=1` asks to watch the build.
+ * building (N), or the empty site (0) when `autoplay=1` asks to watch the build. And whether the build replay is open at load (`opensReplay`), with a
+ * warning when `replay=0` asks for it closed but the position or `autoplay=1` opens it.
  */
 export function startPosition(query: Query, stepIds: readonly string[]): Start {
-  const n = stepIds.length;
   const warnings: string[] = [];
+  const { t, by } = position(query, stepIds, warnings);
+  const replay = opensReplay(query, { positioned: by !== null });
+  if (query.replay === false && replay) {
+    // Every parameter that opens the replay on its own: t still would once a step= that won over it is left out.
+    const openers = [...(by === 'step' ? ['step'] : []), ...(query.t !== null ? ['t'] : []), ...(query.autoplay === true ? ['autoplay'] : [])];
+    const named = openers.length === 1 ? (openers[0] ?? '') : `${openers.slice(0, -1).join(', ')} and ${openers.at(-1) ?? ''}`;
+    warnings.push(`Query parameter replay asks for the build replay closed, but ${named} ${openers.length === 1 ? 'opens' : 'open'} it. Leave out ${named} to open the page on the finished building with the replay closed.`);
+  }
+  return { t, positioned: by !== null, replay, warnings };
+}
+
+/** Where the timeline starts, and the parameter that set it (null when none did). */
+function position(query: Query, stepIds: readonly string[], warnings: string[]): { readonly t: number; readonly by: 'step' | 't' | null } {
+  const n = stepIds.length;
   if (query.step !== null) {
     const byId = stepIds.indexOf(query.step);
-    if (byId !== -1) return { t: byId + 1, positioned: true, warnings };
+    if (byId !== -1) return { t: byId + 1, by: 'step' };
     if (/^\d+$/.test(query.step)) {
       const index = Number(query.step);
-      if (index >= 1 && index <= n) return { t: index, positioned: true, warnings };
+      if (index >= 1 && index <= n) return { t: index, by: 'step' };
     }
     warnings.push(`Query parameter step="${query.step}" names no step; use a step id or an index from 1 to ${String(n)}. It is ignored.`);
   }
   if (query.t !== null) {
     if (query.t < 0 || query.t > n) warnings.push(`Query parameter t=${String(query.t)} is outside [0, ${String(n)}]; it is clamped.`);
-    return { t: Math.min(Math.max(query.t, 0), n), positioned: true, warnings };
+    return { t: Math.min(Math.max(query.t, 0), n), by: 't' };
   }
-  return { t: query.autoplay === true ? 0 : n, positioned: false, warnings };
+  return { t: query.autoplay === true ? 0 : n, by: null };
 }
 
 /** Whether the page starts playing: only when `autoplay=1` asks for it, and never in shot mode. */
 export function shouldAutoplay(query: Query): boolean {
   return !query.shot && query.autoplay === true;
+}
+
+/**
+ * Whether the build replay is open at load (docs/design/spec.md, Page: Build replay): when `replay=1` asks for it, when `autoplay=1` asks to watch the
+ * build, and when `t=` or `step=` sets a position, since a part-built model shows only inside the replay. Shot mode changes none of this; it only
+ * keeps the replay from playing. Closed, the page shows the finished building, paused.
+ */
+function opensReplay(query: Query, start: Pick<Start, 'positioned'>): boolean {
+  return query.replay === true || query.autoplay === true || start.positioned;
 }

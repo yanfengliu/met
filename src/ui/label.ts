@@ -40,7 +40,7 @@ export function stepLabel(t: number, steps: readonly LabelStep[], chapters: read
   return { k, text: `Step ${String(k)} / ${String(n)} · ${year} · ${chapterTitle} — ${step.title}`, detail: step.detail ?? '' };
 }
 
-/** Index of the chapter holding the step about to play or playing at `t`, for the chapter menu; chapters without steps never are. -1 with no steps. */
+/** Index of the chapter holding the step about to play or playing at `t`, for the Build menu; chapters without steps never are. -1 with no steps. */
 export function chapterAt(t: number, ranges: readonly { readonly first: number; readonly count: number }[], n: number): number {
   const index = Math.min(Math.max(0, Math.floor(t)), Math.max(0, n - 1));
   let found = -1;

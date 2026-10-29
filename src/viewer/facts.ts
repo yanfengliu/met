@@ -51,6 +51,8 @@ export interface MetFacts {
   readonly direction: 1 | -1;
   readonly speed: Speed;
   readonly follow: boolean;
+  /** Whether the build replay is open, so the timeline shows (docs/design/spec.md, Page: Build replay); closed, the page shows the finished building, paused. */
+  readonly replay: boolean;
   /** The pose the follow camera headed for in the last frame (from the step in motion), or null when it is not under way. */
   readonly followGoal: { readonly position: Vec3; readonly target: Vec3; readonly fov: number } | null;
   readonly cut: { readonly enabled: boolean; readonly height: number };
@@ -61,7 +63,10 @@ export interface MetFacts {
   readonly floor: { readonly id: string; readonly hidden: number; readonly ownCut: { readonly enabled: boolean; readonly height: number } | null };
   /** The preset in view, or null once the user moved the camera. */
   readonly view: string | null;
-  /** `fov` is the vertical field of view in degrees and `aspect` the width over the height of the part of the canvas above the timeline bar, which the projection covers. */
+  /**
+   * `fov` is the vertical field of view in degrees and `aspect` the width over the height of the part of the canvas the projection covers: the part above
+   * the timeline bar while the bar is whole (the build replay open, in the orbit view), else the whole canvas.
+   */
   readonly camera: { readonly position: Vec3; readonly target: Vec3; readonly near: number; readonly far: number; readonly fov: number; readonly aspect: number };
   /** Walk mode (src/walk/walk-mode.ts, `WalkFacts`): the mode, the eye and look direction, the ground contact, the collision build and the spawn ids. */
   readonly walk: WalkFacts;

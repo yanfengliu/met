@@ -1,5 +1,5 @@
 /**
- * The timeline label and the chapter menu's current chapter (docs/design/spec.md, Page). Bound: pure formatting; the e2e suite reads the real label.
+ * The timeline label and the Build menu's current chapter (docs/design/spec.md, Page). Bound: pure formatting; the e2e suite reads the real label.
  */
 import { describe, expect, it } from 'vitest';
 

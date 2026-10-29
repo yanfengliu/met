@@ -16,8 +16,8 @@
  * - under a footing on the floor, looking up, a right-drag that pans the camera under the floor and a wheel notch sent at once leave the view where
  *   it looked, and the camera on the floor. Chrome hands the page the notch a frame after the drag's move (its input router waits for each mouse
  *   event's answer), so the page lifts the camera between them; the two in one frame are src/viewer/camera-floor.test.ts, through the same handlers.
- * Bound: one pointer position (the middle of the view above the bar), wheel steps of 100 pixels, and the page at t = N with no cut and no floor view,
- * which is the state ./surface.ts rebuilds.
+ * Bound: one pointer position (the middle of the view the projection covers: the whole canvas, as the page opens with the build replay closed), wheel
+ * steps of 100 pixels, and the page at t = N with no cut and no floor view, which is the state ./surface.ts rebuilds.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -63,12 +63,16 @@ async function lowerOntoFloor(page: Page, x: number, y: number): Promise<Camera>
   return camera(page);
 }
 
-/** The middle of the canvas above the timeline bar, where the view axis meets the screen. */
+/**
+ * The middle of the part of the canvas the projection covers, where the view axis meets the screen: its height is the canvas width over the published
+ * aspect, from the canvas's top (src/viewer/camera-rig.ts `resize`), the whole canvas while the build replay is closed and the part above the bar while
+ * it is open.
+ */
 async function viewCentre(page: Page): Promise<{ x: number; y: number }> {
   const canvas = await page.getByTestId('canvas').boundingBox();
-  const bar = await page.getByTestId('timeline-bar').boundingBox();
-  if (canvas === null || bar === null) throw new Error('The canvas or the timeline bar has no box.');
-  return { x: canvas.x + canvas.width / 2, y: canvas.y + (bar.y - canvas.y) / 2 };
+  if (canvas === null) throw new Error('The canvas has no box.');
+  const visible = canvas.width / (await camera(page)).aspect;
+  return { x: canvas.x + canvas.width / 2, y: canvas.y + visible / 2 };
 }
 
 /** One wheel notch (deltaY ±100) at the pointer, and the camera once the frame after it has run. */

@@ -25,13 +25,15 @@ npm run dev
 
 The dev server listens on `http://127.0.0.1:5310/`. Set `MET_PORT` to a whole number from 1024 to 65535 to use another port. The server fails instead of moving to the next port when its port is taken, so a client never reaches another worktree's server.
 
-The page opens on the finished building, paused. Press Play, or open it with `?autoplay=1`, to watch the build from the empty site. Press F, or the Walk button, to walk.
+The page opens on the finished building, paused, with no timeline. To watch the build from the empty site, open the Build menu's Build replay and press Play, press Space, or open the page with `?autoplay=1`. Press F, or the Walk button, to walk.
 
 `npm run build` writes both pages to `dist/` with relative URLs, so the built site can be served from any path. `npm run preview` serves `dist/` on the same port.
 
 ## Controls
 
-### Timeline bar
+### Build replay and the timeline bar
+
+The timeline shows only while the build replay is open. The Build menu's Build replay item opens it; so do choosing a chapter, a timeline key (see Keyboard) and the URL's `replay=1`, `autoplay=1`, `t=` and `step=`. The same item, or the close button at the bar's top right, closes it, and the page shows the finished building again. Closed, the bar is a Walk button at the bottom right.
 
 - Six buttons: Go to start, Step back, Play backward, Play or Pause, Step forward, Go to end.
 - Four speeds: 0.5×, 1×, 2× and 4×. A step of normal weight takes 3 seconds at 1×.
@@ -59,16 +61,16 @@ The keys work in two modes. W, A, S, D, Q, E and F are physical keys, so they si
 | F | Walk | Back to the orbit view |
 | Escape | Close an open menu | Free the pointer |
 
-In the orbit view, W, A, S, D, Q and E move the camera and the point it orbits together. They move faster the farther the camera is from that point, and they turn off the follow camera. A focused button keeps Space and Enter for itself, a focused slider other than the scrubber keeps its arrow keys, Home, End, Page Up and Page Down, and a text field keeps every key.
+In the orbit view, a timeline key (Space, Shift+Space, the right and left arrows, Home and End) also opens the build replay when it is closed, and acts there: Space at the finished building plays the build from the empty site. W, A, S, D, Q and E move the camera and the point it orbits together. They move faster the farther the camera is from that point, and they turn off the follow camera. A focused button keeps Space and Enter for itself, a focused slider other than the scrubber keeps its arrow keys, Home, End, Page Up and Page Down, and a text field keeps every key.
 
-### Chapters menu
+### Build menu
 
-It lists the nine chapters with their years. Choosing one jumps to the start of its first step, and the chapter you are in is marked.
+First the Build replay item, which shows or hides the timeline. Then the nine chapters with their years. Choosing one opens the build replay at the start of its first step, and the chapter you are in is marked.
 
 ### View menu
 
 - **Exterior** and **Interior**: camera presets. The ids for `view=` are in the tables below. The page opens on `aerial-ne`.
-- **Follow the build**: while the build plays, the camera frames what each step adds. It turns off as soon as you drag, zoom or move the camera yourself (a press without movement leaves it on), and the toggle turns it back on. It starts on unless the URL sets `shot=1`, a `view=` that names a preset, `cam=`, `walk=1` or a `floor=` that names a floor; a `view=` that names no preset is ignored.
+- **Follow the build**, shown while the build replay is open: while the build plays, the camera frames what each step adds. It turns off as soon as you drag, zoom or move the camera yourself (a press without movement leaves it on), and the toggle turns it back on. It starts on unless the URL sets `shot=1`, a `view=` that names a preset, `cam=`, `walk=1` or a `floor=` that names a floor; a `view=` that names no preset is ignored.
 - **Walk**: walk from the plaza, the Great Hall or the top of the Grand Staircase.
 - **Section cut**: Cut switches a horizontal cut on or off, and the slider sets its height in metres, in 0.1 m steps up to just above the model's top. Moving the slider switches the cut on. Only the building is cut: everything of it above the cut is removed, shadows included, and cut walls and slabs are drawn solid in one flat colour, as in an architect's section, while everything the site builds as landscape (trees, ground, streets, paths, rocks, walls, fences, lamps, benches, fountains and the plaza's furniture) stays whole. Use it, the floor picker or an interior preset to see inside.
 
@@ -89,7 +91,7 @@ Drag to orbit, right-drag to pan, and use the wheel, a pinch or a middle-button 
 
 ### Walk mode
 
-Press F or the Walk button, or choose a place under Walk in the View menu, to stand in the model in first person. Click the view to look around with the mouse; Esc frees the pointer again. Where the browser does not lock the pointer, or on a touch screen, drag to look. W, A, S, D or the arrow keys walk, Shift runs and Space jumps. F or the Walk button goes back to the orbit view, with the camera where you stood.
+Press F or the Walk button, or choose a place under Walk in the View menu, to stand in the model in first person. While you walk, the open build replay's bar folds into a Timeline button at the bottom right, which unfolds it. Click the view to look around with the mouse; Esc frees the pointer again. Where the browser does not lock the pointer, or on a touch screen, drag to look. W, A, S, D or the arrow keys walk, Shift runs and Space jumps. F or the Walk button goes back to the orbit view, with the camera where you stood.
 
 You walk through what is built at the current point of the timeline: walls and columns stop you, and you slide along them. You climb stairs and the front steps just by walking, since you step up edges of up to 0.35 m. You can walk up slopes of up to 40°, steeper ones stop you, and you fall off ledges. You walk through water and foliage. Neither the section cut nor a floor view changes what you collide with, and entering walk mode leaves a floor view. The first entry builds the collision for the whole finished building, in about a tenth of a second on a fast machine.
 
@@ -133,18 +135,19 @@ The first four are fitted to the model's bounds. The `ref-` presets are cameras 
 
 | Parameter | Effect |
 |---|---|
-| `t=<number>` | Start at this position in the build, from 0 to N. Values outside the range are clamped. |
-| `step=<id or 1-based index>` | Start at the end of that step. It wins over `t`. |
+| `t=<number>` | Start at this position in the build, from 0 to N, with the build replay open. Values outside the range are clamped. |
+| `step=<id or 1-based index>` | Start at the end of that step, with the build replay open. It wins over `t`. |
 | `view=<preset id>` | Open on that camera preset. |
 | `cam=px,py,pz,tx,ty,tz` | Open with this camera position and target, in metres. |
 | `cut=<metres>` | Switch the section cut on at this height. |
 | `solo=<chapter id>` | Build only that chapter, plus `site`. |
-| `autoplay=1` or `autoplay=0` | Play the build on load, from the empty site unless `t` or `step` sets a position; or do not play, which is the default. |
+| `autoplay=1` or `autoplay=0` | Open the build replay and play the build on load, from the empty site unless `t` or `step` sets a position; or do not play, which is the default. |
+| `replay=1` | Open the build replay at load, paused. `replay=0` does not close a replay that `t`, `step` or `autoplay=1` opens, and says so in a console warning. |
 | `walk=1` | Start in walk mode. |
 | `spawn=<id>` | With `walk=1`, where to start walking: `plaza` (the default), `great-hall` or `second-floor`. |
 | `floor=<id>` | Open on that floor of the floor picker: `ground`, `main`, `second` or `roof-garden` (`all` shows every floor). It is framed unless `view=` or `cam=` names a camera, and it is ignored with `walk=1`. |
 | `noui=1` | Hide the page chrome. |
-| `shot=1` | Capture mode: no autoplay, no follow camera, no animation. `window.__shotReady` becomes true once at least 5 frames have rendered at the requested state. |
+| `shot=1` | Capture mode: no autoplay, no follow camera, no animation; the build replay opens as the rest of the URL asks. `window.__shotReady` becomes true once at least 5 frames have rendered at the requested state. |
 
 Coordinates are in the world frame: metres, +Y up, +X up Fifth Avenue (Manhattan north), +Z toward Fifth Avenue. The origin is at sidewalk grade on the central entrance axis, in the plane of the Hunt facade's main wall face.
 
@@ -186,7 +189,7 @@ The list is in `src/build/chapters.ts`. `src/build/sequence.ts` composes each ch
 
 - `src/build/`: the build engine: step types, batching into instanced meshes, timeline evaluation, the player, the chapter list and the composed sequence.
 - `src/model/`: the model. `frame.ts` holds the world-frame constants, each with its source, `palette.ts` the shared materials, `lib/` the parametric parts, and `site`, `core`, `hunt`, `mmw`, `roche-north` and `roche-south` the six modelling areas.
-- `src/viewer/`: renderer, camera, zoom, presets, section cut, floors and the floor view, and URL parsing. `src/walk/`: the walk mode, its walker and its collision. `src/ui/`: the timeline bar, menus, floor picker and keys. `src/parts/`: the gallery page.
+- `src/viewer/`: renderer, camera, zoom, presets, section cut, floors and the floor view, and URL parsing. `src/walk/`: the walk mode, its walker and its collision. `src/ui/`: the timeline bar, the Build and View menus, floor picker and keys. `src/parts/`: the gallery page.
 - `scripts/`: capture tooling. `tests/e2e/`: Playwright tests.
 - `docs/design/spec.md`: the contract for the world frame, the build-step API, the page and the budgets.
 - `docs/research/`: the research behind the model. `exterior.md` has the footprint, the blocks and the dimensions, `interior.md` the interior spaces, `history.md` the chronology and the chapter list, and `exterior-images.md` and `interior-images.md` the reference photographs.
