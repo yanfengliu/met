@@ -37,3 +37,9 @@ With the work's indexes and citations, all 7 of the file's tests pass. Its detec
 With the work's screen the gate is green: one group of 565 pieces, its lowest point on the floor.
 
 **Evidence:** `git show db1e297:docs/learning/lessons-evidence.md` reads the lesson's evidence back, and `git show db1e297:docs/learning/lessons.md` its line.
+
+## The walking screen is read after the frame that applies it
+
+**Gate:** `tests/e2e/walk-screen.spec.ts` reads each state of the walking screen once the page's next frame has applied it, which the Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed` and the Build replay item's `aria-checked` report.
+
+**Proved red (at `acc0e0a`; moved here from AGENTS.md by work unit 11):** with the page's animation frames held 60 ms by a timer, the fold read failed in 5 of 6 runs and the leave read in 1. With the waits, it was still red when the bar never folded again or the orbit view's bar stayed folded.

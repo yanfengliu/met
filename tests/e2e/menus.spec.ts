@@ -1,6 +1,7 @@
 /**
- * Chapter menu and view menu through real input (docs/design/spec.md, Page): chapters in order (empty ones disabled), each chapter with steps chosen
- * in turn, every preset chosen in turn and settling on its camera, the follow camera (a drag turns it off) and the section cut (toggle and slider).
+ * Build menu and view menu through real input (docs/design/spec.md, Page): the Build replay item first, unchecked, then the chapters in order (empty ones
+ * disabled), each chapter with steps chosen in turn, the first choice opening the build replay at its start; every preset chosen in turn and settling on
+ * its camera, the follow camera (a drag turns it off) and the section cut (toggle and slider).
  * Facts come from `window.__met` and preset cameras from src/viewer/presets.ts; nothing names a step or chapter.
  * Bound: canvas checks compare coarse luminance grids, proving the drawing changed, not that the new view is right; a preset's camera is compared by
  * position, target and fov (look) or by target, direction and the model's corners in frame (fit), read from `window.__met.camera`.
@@ -19,9 +20,16 @@ test.describe('menus', () => {
     errors.expectClean();
   });
 
-  test('the chapter menu lists every chapter in order, disables empty ones and moves to the start of the chosen one', async ({ page }) => {
+  test('the Build menu holds the Build replay item, then every chapter in order, disables empty ones, and opens the replay at the start of the chosen one', async ({ page }) => {
     const f = await open(page);
+    await expect(page.getByTestId('chapter-menu-button')).toHaveAccessibleName('Build');
     await openMenu(page, 'chapter-menu');
+    const replay = page.getByTestId('chapter-menu').getByRole('menuitemcheckbox');
+    await expect(replay, 'one checkbox item: Build replay').toHaveCount(1);
+    await expect(replay).toHaveAttribute('data-testid', 'replay-toggle');
+    await expect(replay).toHaveAccessibleName('Build replay');
+    await expect(replay, 'closed at load').toHaveAttribute('aria-checked', 'false');
+    expect(await page.getByTestId('chapter-menu').locator('button').first().getAttribute('data-testid'), 'the first item').toBe('replay-toggle');
     const items = page.getByTestId('chapter-menu').getByRole('menuitem');
     await expect(items).toHaveCount(f.chapters.length);
     for (const [i, chapter] of f.chapters.entries()) {
@@ -34,18 +42,21 @@ test.describe('menus', () => {
     const withSteps = f.chapters.filter((c) => c.count > 0);
     expect(withSteps.length).toBeGreaterThan(1);
     await page.keyboard.press('Escape');
-    await press(page, 'btn-end');
+    // The page opens at the end, with no timeline; choosing a chapter opens the build replay there.
     await waitForT(page, f.n);
+    await expect(page.getByTestId('scrubber')).toBeHidden();
     // Every chapter with steps, last first, so each choice moves the build.
     for (const target of [...withSteps].reverse()) {
       await openMenu(page, 'chapter-menu');
       await press(page, `chapter-${target.id}`);
       await waitForT(page, target.first);
+      expect(await page.evaluate(() => window.__met?.replay), `the replay after choosing ${target.id}`).toBe(true);
       await expect(page.getByTestId('chapter-menu')).toBeHidden();
       await expect(page.getByTestId('scrubber')).toHaveValue(String(target.first));
       expect(await labelStep(page), `the label after choosing ${target.id}`).toBe(target.first);
       await openMenu(page, 'chapter-menu');
       await expect(page.getByTestId(`chapter-${target.id}`)).toHaveAttribute('aria-current', 'true');
+      await expect(page.getByTestId('replay-toggle'), 'the Build replay item checked').toHaveAttribute('aria-checked', 'true');
       await page.keyboard.press('Escape');
     }
   });
@@ -87,7 +98,6 @@ test.describe('menus', () => {
 
   test('view presets move the camera and mark the chosen one', async ({ page }) => {
     const f = await open(page);
-    await press(page, 'btn-end');
     await waitForT(page, f.n);
     await openMenu(page, 'view-menu');
     for (const preset of f.presets) await expect(page.getByTestId(`preset-${preset.id}`)).toBeVisible();
@@ -131,7 +141,6 @@ test.describe('menus', () => {
 
   test('the section cut toggles, its slider sets the height, and the canvas shows it', async ({ page }) => {
     const f = await open(page);
-    await press(page, 'btn-end');
     await waitForT(page, f.n);
     await openMenu(page, 'view-menu');
     await press(page, 'preset-front');

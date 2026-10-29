@@ -3,7 +3,8 @@
  * of the entrance's middle doorway within 2 m, the prompt under the crosshair says "E Open"; E swings the doorway's leaves into the building, away from
  * the walker, in canvas pixels and in `window.__met.doors`; looking at an open leaf it says "E Close", and a click while the pointer is locked closes it;
  * the timeline's scrubber, moved into the doors' step and back, draws the closed leaf and then the door open again at once (read where the render drew
- * them, `perf.lastDrawn.doors`), and taken back before the step, closed; a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
+ * them, `perf.lastDrawn.doors`), and taken back before the step, closed (the build replay opened by the Build menu while walking, its bar folded and
+ * unfolded by its Timeline button); a link door says "Locked" and stays shut by E and by a click; `doors=open` and `doors=closed` under `shot=1` stand at their angle in the
  * first frame drawn, as its render drew them, the doors set before the walker is placed and that before the first frame (the page's marks, read beside a
  * probe of the first drawn frame), and the captures stay still after ready; the prompt keeps to its band under the crosshair at 1280×720 and 390×844;
  * and with the look target on, facing into the Great Hall from the landing while the doorway opens and closes, standing and then walking to and fro
@@ -24,7 +25,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { changedCells, facts, lumaGrid, open, press, settle, watchErrors } from './helpers.js';
+import { changedCells, facts, lumaGrid, open, openReplay, press, settle, watchErrors } from './helpers.js';
 import { along, doorFacts, doorIs, entranceLeaves, face, legs, looksAt, MIDDLE_DOOR, MINUS_Z, record, still, toward, walk, walking } from './route-walk.js';
 import type { DoorFact, Facing, Sample } from './route-walk.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
@@ -250,7 +251,8 @@ test.describe('the doors', () => {
     await face(page, toward(eye, 0.62, DOOR_Z - 0.3));
     await looksAt(page, MIDDLE, 'E Close');
     // Scrubbed into the doors' step, the timeline's closed leaf stands there and the door keeps its state; scrubbed back to the end, it stands open at once.
-    await press(page, 'bar-toggle');
+    // The build replay, closed as the page opened, is opened by the Build menu, which shows its whole bar.
+    await openReplay(page);
     const step = f.steps.findIndex((s) => s.id === 'hunt-windows');
     await scrubTo(page, step + 0.5, f.n);
     await page.waitForFunction((id) => window.__met?.doors.find((d) => d.id === id)?.built === false, MIDDLE);

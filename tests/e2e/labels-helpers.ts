@@ -58,7 +58,7 @@ export function expectLaidOut(list: readonly Box[], viewport: { width: number; h
 }
 
 /** The orbit view's controls, by data-testid, that the card must keep clear of, with the card. */
-export const ORBIT_CONTROLS = ['step-label', 'step-detail', 'scrubber', 'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end', 'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'walk-toggle', 'chapter-menu-button', 'view-menu-button', 'floor-all', 'floor-ground', 'floor-main', 'floor-second', 'floor-roof-garden', 'art-card'];
+export const ORBIT_CONTROLS = ['step-label', 'step-detail', 'scrubber', 'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end', 'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'replay-close', 'walk-toggle', 'chapter-menu-button', 'view-menu-button', 'floor-all', 'floor-ground', 'floor-main', 'floor-second', 'floor-roof-garden', 'art-card'];
 export const WALK_CONTROLS = ['chapter-menu-button', 'view-menu-button', 'bar-toggle', 'walk-toggle', 'crosshair', 'walk-status', 'art-card'];
 
 /** A projection of the published camera over the canvas as the page's covers it (src/viewer/camera-rig.ts `resize`; tests/e2e/zoom.spec.ts). */

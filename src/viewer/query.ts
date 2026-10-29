@@ -16,6 +16,8 @@ export interface Query {
   readonly solo: string | null;
   /** `autoplay=0` gives false, `autoplay=1` true, absent null. */
   readonly autoplay: boolean | null;
+  /** `replay=1`: open the build replay at load, paused (docs/design/spec.md, Page: Build replay); `opensReplay` gives the whole rule. */
+  readonly replay: boolean;
   readonly noui: boolean;
   /** `walk=1`: start in walk mode. */
   readonly walk: boolean;
@@ -84,6 +86,7 @@ export function parseQuery(search: string): Query {
     cut: number(params, 'cut', warnings, 'metres'),
     solo: text('solo'),
     autoplay: flag(params, 'autoplay', warnings),
+    replay: flag(params, 'replay', warnings) === true,
     noui: flag(params, 'noui', warnings) === true,
     walk: flag(params, 'walk', warnings) === true,
     spawn: text('spawn'),
@@ -132,4 +135,13 @@ export function startPosition(query: Query, stepIds: readonly string[]): Start {
 /** Whether the page starts playing: only when `autoplay=1` asks for it, and never in shot mode. */
 export function shouldAutoplay(query: Query): boolean {
   return !query.shot && query.autoplay === true;
+}
+
+/**
+ * Whether the build replay is open at load (docs/design/spec.md, Page: Build replay): when `replay=1` asks for it, when `autoplay=1` asks to watch the
+ * build, and when `t=` or `step=` sets a position, since a part-built model shows only inside the replay. Shot mode changes none of this; it only
+ * keeps the replay from playing. Closed, the page shows the finished building, paused.
+ */
+export function opensReplay(query: Query, start: Start): boolean {
+  return query.replay || query.autoplay === true || start.positioned;
 }

@@ -17,4 +17,6 @@ export const ICONS = {
   unfold: svg('M7.4 15.4 12 10.8l4.6 4.6L18 14l-6-6-6 6z'),
   /** A chevron down: fold it again. */
   fold: svg('M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6z'),
+  /** A cross: close the build replay. */
+  close: svg('M6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z'),
 } as const;

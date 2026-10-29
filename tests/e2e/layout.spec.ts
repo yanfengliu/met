@@ -1,8 +1,9 @@
 /**
- * Page layout at 1280x720 and 390x844: every control the spec requires is on the page once and visible (checked by data-testid before any geometry,
- * so a hidden control fails rather than drops out), inside the viewport, unclipped and clear of every other control, with each menu open and closed;
- * open panels stay above the timeline bar and each of their controls can be scrolled into them. Also the build-time budget (docs/design/spec.md,
- * Budgets: all geometry in under 4 s).
+ * Page layout at 1280x720 and 390x844, on the default page and with the build replay open, by the Build menu and by a query (docs/design/spec.md, Page:
+ * Build replay): every control the spec requires in that state is on the page once and visible (checked by data-testid before any geometry, so a hidden
+ * control fails rather than drops out), inside the viewport, unclipped and clear of every other control, with each menu open and closed, and on the
+ * default page every timeline control and the follow-camera toggle are out of view; open panels stay above the timeline bar, whole or the Walk toggle's
+ * strip, and each of their controls can be scrolled into them. Also the build-time budget (docs/design/spec.md, Budgets: all geometry in under 4 s).
  * Bound: boxes are compared as rectangles from layout, so a control hidden under a translucent sibling with no overlap of boxes is not caught.
  * Bound of the build budget: it times the whole interval from navigation start to `window.__shotReady` (perf.readyMs) on the Vite dev server in
  * headless Chrome on this machine, so it covers loading the modules (with every geometry they build on import), the timeline build, starting the
@@ -12,7 +13,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { open, openMenu, watchErrors } from './helpers.js';
+import { open, openMenu, openReplay, watchErrors } from './helpers.js';
 import type { Facts } from './helpers.js';
 
 const VIEWPORTS = [
@@ -58,23 +59,35 @@ function expectLaidOut(boxes: readonly Box[], viewport: { width: number; height:
   expect(pairs, `${what}: overlapping controls`).toEqual([]);
 }
 
+/** The timeline's controls, which show only while the build replay is open: the bar's label, scrubber, transport and speeds and its close button. */
+const TIMELINE = ['step-label', 'step-detail', 'scrubber', 'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end', 'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'replay-close'];
+
 /**
- * The controls docs/design/spec.md (Page) requires, by data-testid: the timeline bar's, the two menu buttons and the floor picker's with the menus
- * closed, and each menu's items when it is open. Chapters, presets, walk spawns and floors come from `window.__met`; the rest is the spec's own list,
- * not read from the page.
+ * The controls docs/design/spec.md (Page) requires, by data-testid, with the build replay open or closed: the Walk toggle, the two menu buttons, the
+ * floor picker's and, with the replay open, the timeline's with the menus closed, and each menu's items when it is open (the follow-camera toggle only
+ * with the replay open); `away`, those that must be out of view. Chapters, presets, walk spawns and floors come from `window.__met`; the rest is the
+ * spec's own list, not read from the page.
  */
-function requiredControls(f: Facts): { readonly closed: readonly string[]; readonly 'chapter-menu': readonly string[]; readonly 'view-menu': readonly string[] } {
+function requiredControls(f: Facts, replay: boolean): { readonly closed: readonly string[]; readonly away: readonly string[]; readonly 'chapter-menu': readonly string[]; readonly 'view-menu': readonly string[] } {
   return {
     closed: [
-      'step-label', 'step-detail', 'scrubber',
-      'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end',
-      'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'walk-toggle',
+      ...(replay ? TIMELINE : []), 'walk-toggle',
       'chapter-menu-button', 'view-menu-button',
       'floor-all', ...f.floors.map((floor) => `floor-${floor.id}`),
     ],
-    'chapter-menu': f.chapters.map((c) => `chapter-${c.id}`),
-    'view-menu': [...f.presets.map((p) => `preset-${p.id}`), 'follow-toggle', ...f.walk.spawns.map((id) => `walk-spawn-${id}`), 'cut-toggle', 'cut-slider', 'cut-value'],
+    away: replay ? ['bar-toggle'] : [...TIMELINE, 'bar-toggle', 'follow-toggle'],
+    'chapter-menu': ['replay-toggle', ...f.chapters.map((c) => `chapter-${c.id}`)],
+    'view-menu': [...f.presets.map((p) => `preset-${p.id}`), ...(replay ? ['follow-toggle'] : []), ...f.walk.spawns.map((id) => `walk-spawn-${id}`), 'cut-toggle', 'cut-slider', 'cut-value'],
   };
+}
+
+/** Those of `ids` on the page that show: a box with area and not `visibility: hidden`. */
+async function inView(page: Page, ids: readonly string[]): Promise<string[]> {
+  return page.evaluate((list) => list.filter((id) => Array.from(document.querySelectorAll<HTMLElement>('[data-testid]')).some((e) => {
+    if (e.dataset['testid'] !== id) return false;
+    const r = e.getBoundingClientRect();
+    return r.width * r.height > 0 && getComputedStyle(e).visibility !== 'hidden';
+  })), ids);
 }
 
 /**
@@ -137,36 +150,63 @@ async function missingSummaries(page: Page, chapters: Facts['chapters']): Promis
   }, chapters.map((c) => ({ id: c.id, summary: c.summary })));
 }
 
+/**
+ * Every control `required` names for the build replay's state is there and visible, inside the viewport, unclipped and apart, with the menus closed and
+ * each open; `away` is out of view; each open panel fits the viewport's width, ends above the bar, whole or the strip, and scrolls each of its controls
+ * into view.
+ */
+async function expectLayout(page: Page, f: Facts, viewport: { width: number; height: number }, replay: boolean): Promise<void> {
+  expect(await page.evaluate(() => window.__met?.replay), 'the build replay').toBe(replay);
+  const required = requiredControls(f, replay);
+  expect(await missingControls(page, required.closed), 'required controls with the menus closed').toEqual([]);
+  expect(await inView(page, required.away), 'controls out of view in this state').toEqual([]);
+  const closed = [...(await controlBoxes(page, '.met-bar')), ...(await controlBoxes(page, '.met-menus')), ...(await controlBoxes(page, '.met-floors'))];
+  expect(required.closed.filter((id) => !closed.some((b) => b.id === id)), 'required controls missing from the layout check').toEqual([]);
+  expectLaidOut(closed, viewport, 'menus closed');
+  const bar = await page.getByTestId('timeline-bar').boundingBox();
+  if (bar === null) throw new Error('The timeline bar has no box.');
+  expect(bar.y + bar.height).toBeLessThanOrEqual(viewport.height + 0.5);
+  for (const menu of ['chapter-menu', 'view-menu'] as const) {
+    await openMenu(page, menu);
+    expect(await missingControls(page, required[menu]), `required controls in the open ${menu}`).toEqual([]);
+    expect(await inView(page, required.away), `controls out of view in this state, the ${menu} open`).toEqual([]);
+    const panel = await page.getByTestId(menu).boundingBox();
+    if (panel === null) throw new Error(`The ${menu} panel has no box.`);
+    expect(panel.x >= 0 && panel.x + panel.width <= viewport.width, `${menu} fits the viewport width`).toBe(true);
+    expect(panel.y + panel.height, `${menu} ends above the timeline bar`).toBeLessThanOrEqual(bar.y + 0.5);
+    const inside = (await controlBoxes(page, `[data-testid="${menu}"]`)).filter((b) => b.y >= panel.y - 0.5 && b.y + b.h <= panel.y + panel.height + 0.5);
+    expect(inside.length, `${menu}: controls in view`).toBeGreaterThan(0);
+    expectLaidOut(inside, viewport, `${menu} open`);
+    expect(await unreachable(page, menu, required[menu]), `${menu}: controls that cannot be scrolled into the panel`).toEqual([]);
+    if (menu === 'chapter-menu') expect(await missingSummaries(page, f.chapters), 'chapter items that do not show their summary').toEqual([]);
+    await page.keyboard.press('Escape');
+  }
+  expect(f.chapters.length).toBeGreaterThan(0);
+}
+
 for (const viewport of VIEWPORTS) {
   test.describe(`layout at ${String(viewport.width)}x${String(viewport.height)}`, () => {
     test.use({ viewport });
 
-    test('every required control is there and visible, inside the viewport, unclipped and apart; panels stay above the bar', async ({ page }) => {
+    test('the default page: the menus, the floor picker and the Walk toggle there and visible, inside the viewport, unclipped and apart, no timeline control; panels stay above the Walk toggle', async ({ page }) => {
+      const errors = watchErrors(page);
+      const f = await open(page, '');
+      await expectLayout(page, f, viewport, false);
+      errors.expectClean();
+    });
+
+    test('the build replay opened by the Build menu: every required control there and visible, inside the viewport, unclipped and apart; panels stay above the bar', async ({ page }) => {
+      const errors = watchErrors(page);
+      const f = await open(page, '');
+      await openReplay(page);
+      await expectLayout(page, f, viewport, true);
+      errors.expectClean();
+    });
+
+    test('the build replay opened by t= mid-step: every required control there and visible, inside the viewport, unclipped and apart; panels stay above the bar', async ({ page }) => {
       const errors = watchErrors(page);
       const f = await open(page, 'autoplay=0&t=0.5');
-      const required = requiredControls(f);
-      expect(await missingControls(page, required.closed), 'required controls with the menus closed').toEqual([]);
-      const closed = [...(await controlBoxes(page, '.met-bar')), ...(await controlBoxes(page, '.met-menus')), ...(await controlBoxes(page, '.met-floors'))];
-      expect(required.closed.filter((id) => !closed.some((b) => b.id === id)), 'required controls missing from the layout check').toEqual([]);
-      expectLaidOut(closed, viewport, 'menus closed');
-      const bar = await page.getByTestId('timeline-bar').boundingBox();
-      if (bar === null) throw new Error('The timeline bar has no box.');
-      expect(bar.y + bar.height).toBeLessThanOrEqual(viewport.height + 0.5);
-      for (const menu of ['chapter-menu', 'view-menu'] as const) {
-        await openMenu(page, menu);
-        expect(await missingControls(page, required[menu]), `required controls in the open ${menu}`).toEqual([]);
-        const panel = await page.getByTestId(menu).boundingBox();
-        if (panel === null) throw new Error(`The ${menu} panel has no box.`);
-        expect(panel.x >= 0 && panel.x + panel.width <= viewport.width, `${menu} fits the viewport width`).toBe(true);
-        expect(panel.y + panel.height, `${menu} ends above the timeline bar`).toBeLessThanOrEqual(bar.y + 0.5);
-        const inside = (await controlBoxes(page, `[data-testid="${menu}"]`)).filter((b) => b.y >= panel.y - 0.5 && b.y + b.h <= panel.y + panel.height + 0.5);
-        expect(inside.length, `${menu}: controls in view`).toBeGreaterThan(0);
-        expectLaidOut(inside, viewport, `${menu} open`);
-        expect(await unreachable(page, menu, required[menu]), `${menu}: controls that cannot be scrolled into the panel`).toEqual([]);
-        if (menu === 'chapter-menu') expect(await missingSummaries(page, f.chapters), 'chapter items that do not show their summary').toEqual([]);
-        await page.keyboard.press('Escape');
-      }
-      expect(f.chapters.length).toBeGreaterThan(0);
+      await expectLayout(page, f, viewport, true);
       errors.expectClean();
     });
   });

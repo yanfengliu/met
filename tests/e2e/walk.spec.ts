@@ -15,7 +15,7 @@ import type { Vec3 } from '../../src/build/types.js';
 import { LANDING_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEPS_BOTTOM_Z } from '../../src/model/frame.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
-import { camera, currentT, distance, expectWalkingBudget, facts, open, openMenu, press, settle, throttle, throttleRate, waitForT, walkingBudget, watchErrors } from './helpers.js';
+import { camera, currentT, distance, expectWalkingBudget, facts, open, openMenu, openReplay, press, settle, throttle, throttleRate, waitForT, walkingBudget, watchErrors } from './helpers.js';
 import type { Camera, Facts } from './helpers.js';
 
 const EYE = 1.6;
@@ -141,8 +141,9 @@ test.describe('orbit view keys', () => {
   });
 
   test('the arrows, Space, Home and End keep their timeline meaning in the orbit view', async ({ page }) => {
-    // A view= keeps the follow camera off, so the camera stays put while the timeline moves.
+    // A view= keeps the follow camera off, so the camera stays put while the timeline moves; the build replay, opened by the Build menu, shows the speeds.
     const f = await open(page, 'view=aerial-ne');
+    await openReplay(page);
     await press(page, 'speed-4');
     await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
     const cam = await camera(page);

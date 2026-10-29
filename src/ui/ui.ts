@@ -1,6 +1,6 @@
 /**
- * The page chrome: timeline bar, chapter menu, view menu, floor picker, the walk mode's crosshair and status line, and keyboard shortcuts, wired to app
- * actions. Plain DOM; `sync` is cheap to call every frame.
+ * The page chrome: timeline bar, Build menu, View menu, floor picker, the walk mode's crosshair and status line, and keyboard shortcuts, wired to app
+ * actions. Plain DOM; `sync` is cheap to call every frame. The timeline shows only while the build replay is open (docs/design/spec.md, Page: Build replay).
  * The artwork's card (src/ui/art-card.ts) shows the label of the artwork looked at or clicked.
  */
 import type { Chapter } from '../build/types.js';
@@ -11,7 +11,7 @@ import type { FloorEntry } from './floor-picker.js';
 import { bindKeys } from './keyboard.js';
 import { chapterAt } from './label.js';
 import type { LabelStep } from './label.js';
-import { ChapterMenu, ViewMenu, closeOnOutside } from './menus.js';
+import { BuildMenu, ViewMenu, closeOnOutside } from './menus.js';
 import type { ChapterEntry, PresetEntry, SpawnEntry, ViewActions, ViewState } from './menus.js';
 import { el, setAttr, setText } from './dom.js';
 import { installStyles } from './styles.js';
@@ -31,7 +31,10 @@ export interface UiInfo {
 }
 
 export interface UiActions extends BarActions, ViewActions {
+  /** Opens the build replay at the start of a chapter: its first step's index. */
   goToChapter(first: number): void;
+  /** The Build menu's Build replay item: opens the build replay, or closes it. */
+  toggleReplay(): void;
   jump(): void;
   /** E while walking: opens or closes the door the walking eye looks at (docs/design/spec.md, Doors). */
   act(): void;
@@ -60,7 +63,7 @@ export type UiState = BarState & ViewState & {
 
 export interface Ui {
   sync(state: UiState): void;
-  /** The timeline bar, whose height the camera keeps clear of in the orbit view. */
+  /** The timeline bar, whose height the camera keeps clear of in the orbit view while it is whole. */
   readonly bar: HTMLElement;
   /** The physical keys held now (src/ui/keyboard.ts). */
   readonly held: ReadonlySet<string>;
@@ -83,7 +86,7 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     { steps: info.steps, chapters: info.chapters, boundaries: info.ranges.filter((r) => r.count > 0).map((r) => ({ first: r.first, title: r.title })) },
     actions,
   );
-  const chapters = new ChapterMenu(info.ranges, (first) => { actions.goToChapter(first); });
+  const chapters = new BuildMenu(info.ranges, (first) => { actions.goToChapter(first); }, () => { actions.toggleReplay(); });
   const view = new ViewMenu(info.presets, info.spawns, info.cutMax, initial, actions);
   const floors = new FloorPicker(info.floors, (id) => { actions.chooseFloor(id); });
   const menus = document.createElement('div');
@@ -109,7 +112,8 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   closeOnOutside([chapters.disclosure, view.disclosure]);
   const held = bindKeys(actions, walking);
 
-  // Panels never reach under the bar, and the floor picker centres in the view above it: both follow the bar's height.
+  // Panels never reach under the bar, whole or a strip, and while the replay is open the floor picker centres in the view above it: both follow the bar's
+  // height (src/ui/styles.ts).
   const fit = (): void => {
     document.documentElement.style.setProperty('--met-bar-h', `${String(Math.ceil(bar.element.getBoundingClientRect().height))}px`);
   };
@@ -124,7 +128,8 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
 
   const sync = (state: UiState): void => {
     bar.sync(state);
-    chapters.sync(chapterAt(state.t, info.ranges, info.steps.length));
+    chapters.sync(chapterAt(state.t, info.ranges, info.steps.length), state.replay);
+    if (ui.hasAttribute('data-replay') !== state.replay) ui.toggleAttribute('data-replay', state.replay);
     view.sync(state);
     floors.sync(state);
     // The status line says "Preparing walk mode…", then shows how to look, move and leave only while the hint lasts.

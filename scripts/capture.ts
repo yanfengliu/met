@@ -3,7 +3,8 @@
  *   npm run shots                         the standard set: every preset at the finished state, the aerial preset at t = 0 and at each chapter boundary,
  *                                         the section cut, each floor of the floor picker (framed on its own, and from aerial-ne and top), the walker's
  *                                         view at each walk spawn, the doors (the entrance closed and open, Weston's door, a cut through the open
- *                                         entrance), and the page UI at 1280x720 and 390x844 (also walking), into .shots/shots/
+ *                                         entrance), and the page UI at 1280x720 and 390x844 (the default page with no timeline, the build
+ *                                         replay open mid-build, and walking), into .shots/shots/
  *   npm run shots -- [--solo <chapter>] [--presets id,id]
  *                                         the same set for one chapter (into .shots/shots-<chapter>/) and/or only the named presets;
  *                                         --solo must be one of the page's chapter ids (window.__met.chapters), or the run fails before writing anything
@@ -222,10 +223,12 @@ async function shots(origin: string, args: Map<string, string>): Promise<void> {
     ...(['closed', 'open'] as const).map((state) => ({ name: `doors-entrance-${state}`, query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.entrance}&doors=${state}`, viewport: MODEL_VIEWPORT })),
     { name: 'doors-weston', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.weston}`, viewport: MODEL_VIEWPORT },
     { name: 'doors-cut-open', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.cut}&cut=6.5&doors=open`, viewport: MODEL_VIEWPORT },
-    ...UI_VIEWPORTS.map((v) => ({ name: `ui-${v.name}`, query: `shot=1&t=${String(n)}`, viewport: v })),
+    // The default page sets no position, which would open the build replay (docs/design/spec.md, Page: Build replay): the finished building, no timeline.
+    ...UI_VIEWPORTS.map((v) => ({ name: `ui-${v.name}`, query: 'shot=1', viewport: v })),
+    // A position opens the build replay: its whole bar, mid-step.
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-mid-${v.name}`, query: `shot=1&t=${String(Math.floor(n / 2) + 0.5)}`, viewport: v })),
-    // The walking screen: the crosshair, the status line's hint and the folded bar.
-    ...UI_VIEWPORTS.map((v) => ({ name: `ui-walk-${v.name}`, query: `shot=1&t=${String(n)}&walk=1&spawn=great-hall`, viewport: v })),
+    // The walking screen: the crosshair, the status line's hint and the Walk toggle's strip, the build replay closed.
+    ...UI_VIEWPORTS.map((v) => ({ name: `ui-walk-${v.name}`, query: 'shot=1&walk=1&spawn=great-hall', viewport: v })),
   ];
   const scoped = list.map((s) => ({ ...s, query: `${s.query}${extra}` }));
   console.log(`Standard set${solo === undefined ? '' : ` (solo ${solo})`}: ${String(scoped.length)} images.`);

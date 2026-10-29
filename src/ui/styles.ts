@@ -41,15 +41,16 @@ const CSS = /* css */ `
   background: var(--met-panel-solid); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 .met-panel[hidden] { display: none; }
-.met-panel h2 { margin: 10px 8px 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--met-dim); }
-.met-panel h2:first-child { margin-top: 4px; }
+.met-panel h2, .met-panel .met-heading { margin: 10px 8px 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--met-dim); }
+.met-panel > h2:first-child { margin-top: 4px; }
+.met-separator { height: 1px; margin: 6px 8px; background: var(--met-line); }
 .met-item {
   display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 12px; text-align: left;
   padding: 9px 10px; border: 0; border-radius: 7px; background: transparent; cursor: pointer;
 }
 .met-item:hover, .met-item:focus-visible { background: rgba(255, 255, 255, 0.1); outline: none; }
 .met-item:disabled { color: var(--met-dim); opacity: 0.6; cursor: default; background: transparent; }
-.met-item[aria-current="true"], .met-item[aria-pressed="true"] { color: var(--met-accent); }
+.met-item[aria-current="true"], .met-item[aria-pressed="true"], .met-item[aria-checked="true"] { color: var(--met-accent); }
 .met-item .met-years { color: var(--met-dim); font-size: 12px; white-space: nowrap; }
 /* Chapter items: title and years on the first line, the summary as a wrapped line of text under them. */
 .met-chapter { flex-wrap: wrap; row-gap: 3px; }
@@ -62,7 +63,8 @@ const CSS = /* css */ `
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; box-sizing: border-box;
   padding: 10px 16px 12px; background: var(--met-panel); backdrop-filter: blur(10px); border-top: 1px solid var(--met-line);
 }
-.met-label { margin-bottom: 6px; min-width: 0; }
+.met-label-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+.met-label { flex: 1 1 auto; min-width: 0; }
 .met-title { font-weight: 600; overflow-wrap: anywhere; }
 .met-detail { color: var(--met-dim); font-size: 13px; margin-top: 2px; min-height: 1.35em; overflow-wrap: anywhere; }
 .met-scrub { position: relative; height: 28px; margin: 4px 0 8px; }
@@ -89,10 +91,13 @@ const CSS = /* css */ `
   font-size: 13px; line-height: 1.35; color: var(--met-text); pointer-events: none;
 }
 .met-walk-status[hidden] { display: none; }
-/* While walking the bar folds into a strip at the bottom right holding the Timeline button and the Walk toggle; the Timeline button unfolds it. */
+/*
+ * A strip at the bottom right unless whole: while walking with the build replay open it holds the Timeline button, which unfolds the bar, and the Walk
+ * toggle; with the replay closed, the Walk toggle alone (src/ui/timeline-bar.ts, barShape).
+ */
 .met-bar-toggle[hidden] { display: none; }
 .met-bar.met-bar-folded { left: auto; right: 12px; bottom: 12px; padding: 6px; border: 1px solid var(--met-line); border-radius: 10px; }
-.met-bar-folded .met-label, .met-bar-folded .met-scrub, .met-bar-folded .met-transport, .met-bar-folded .met-speed { display: none; }
+.met-bar-folded .met-label-row, .met-bar-folded .met-scrub, .met-bar-folded .met-transport, .met-bar-folded .met-speed { display: none; }
 .met-bar-folded .met-modes { gap: 8px; }
 /* The crosshair marks the eye's ray at the centre of the walking view; gold while a door or an artwork is within reach of it. */
 .met-crosshair { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; z-index: 1; pointer-events: none; }
@@ -110,13 +115,17 @@ const CSS = /* css */ `
   font-size: 13px; font-weight: 600; line-height: 1.35; white-space: nowrap; color: var(--met-text); pointer-events: none;
 }
 .met-door-prompt[hidden] { display: none; }
-/* The floor picker: a column at the left, centred in the view above the bar; open menu panels (z-index 3) cover it on a narrow screen. */
+/*
+ * The floor picker: a column at the left, centred in the view the camera frames, the part above the whole bar while the build replay is open and the
+ * whole canvas while it is closed; open menu panels (z-index 3) cover it on a narrow screen.
+ */
 .met-floors {
-  position: absolute; left: 12px; top: calc((100% - var(--met-bar-h)) / 2); transform: translateY(-50%); z-index: 2;
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 2;
   display: flex; flex-direction: column; gap: 4px; padding: 4px; border-radius: 10px;
   background: var(--met-panel); backdrop-filter: blur(8px); border: 1px solid var(--met-line);
 }
 .met-floors[hidden] { display: none; }
+.met-ui[data-replay] .met-floors { top: calc((100% - var(--met-bar-h)) / 2); }
 .met-floor { min-width: 66px; height: 34px; padding: 0 8px; }
 .met-speed .met-button { min-width: 44px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 
@@ -141,7 +150,7 @@ const CSS = /* css */ `
 }
 
 /*
- * The artwork's card (src/ui/art-card.ts): at the bottom left above the timeline bar, whole or folded (the folded strip stands 12 px off the bottom), and
+ * The artwork's card (src/ui/art-card.ts): at the bottom left above the timeline bar, whole or a strip (the strip stands 12 px off the bottom), and
  * in the orbit view clear of the floor picker (--met-floors-w, src/ui/ui.ts). Walking, where it could reach the middle of the view, it keeps under the
  * crosshair (16 px) and, folded, under the door prompt's place too: the band from the crosshair down to 80 px under the centre.
  */

@@ -15,6 +15,7 @@ import { DOORS } from './model/doors.js';
 import { doorLeavesOf } from './model/lib/window.js';
 import { cardContent } from './ui/art-card.js';
 import type { ArtCardContent } from './ui/art-card.js';
+import { showError } from './ui/error-panel.js';
 import { installStyles } from './ui/styles.js';
 import { createUi } from './ui/ui.js';
 import type { UiState, WalkStatus } from './ui/ui.js';
@@ -33,8 +34,7 @@ import { orbitKeyMove, orbitKeys } from './viewer/orbit-keys.js';
 import { ModelPicker } from './viewer/pick.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
 import type { CameraPose } from './viewer/presets.js';
-import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
-import { RendererError } from './viewer/renderer-error.js';
+import { opensReplay, readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
 import { capsMesh } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
 import { pointerRay } from './viewer/zoom.js';
@@ -42,20 +42,6 @@ import { pointerRay } from './viewer/zoom.js';
 const READY_FRAMES = 5;
 /** Longest wall-time step one frame may advance the player, so a stalled tab does not jump the build. */
 const MAX_FRAME_SECONDS = 0.1;
-
-function showError(error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error);
-  const panel = document.createElement('pre');
-  panel.className = 'met-error';
-  panel.dataset['testid'] = 'error';
-  // Inline, because the failure may come before the page styles are installed.
-  panel.style.cssText = 'position:fixed;inset:16px auto auto 16px;max-width:calc(100vw - 64px);margin:0;padding:14px 16px;border-radius:10px;background:#3a1514;color:#ffd9d4;white-space:pre-wrap;font:13px/1.4 ui-monospace,Consolas,monospace;';
-  // A renderer that cannot start is not the model's fault; it says so, with what to do (src/viewer/renderer-error.ts).
-  const heading = error instanceof RendererError ? 'WebGL 2 is not available.' : 'The model could not be built.';
-  panel.textContent = `${heading}\n\n${message}`;
-  document.body.appendChild(panel);
-  console.error(error);
-}
 
 /** The step the follow camera frames: the one playing, or about to play in the direction of travel. */
 function stepInMotion(steps: readonly BuiltStep[], t: number, direction: 1 | -1): BuiltStep | undefined {
@@ -164,6 +150,8 @@ function boot(): void {
 
   const player = new Player(steps.map((s) => s.weight ?? 1), start.t);
   if (shouldAutoplay(query)) player.playForward();
+  /** The build replay is open: the timeline shows. Closed, the page shows the finished building, paused (docs/design/spec.md, Page: Build replay). */
+  let replay = opensReplay(query, start);
   if (query.spawn !== null && !query.walk) warnings.push(`Query parameter spawn="${query.spawn}" takes effect only with walk=1. It is ignored.`);
 
   let changed = true;
@@ -183,6 +171,7 @@ function boot(): void {
     cutHeight: viewer.cut.height,
     walking: walk.active,
     barOpen,
+    replay,
     walkStatus: walkStatus(),
     walkHint: walk.hint,
     walkTarget: walk.lastTarget?.kind ?? null,
@@ -198,7 +187,22 @@ function boot(): void {
   viewer.renderer.domElement.addEventListener('pointerdown', (event) => {
     if (walk.active && walk.pointerLocked && event.button === 0) useDoor();
   });
+  /** Opens the build replay at the `t` in view; walking, its bar shows whole, as the visitor asked for it. */
+  const openReplay = (): void => {
+    if (replay) return;
+    replay = true;
+    if (walk.active) barOpen = true;
+  };
+  /** Closes the build replay: the timeline hides and the page shows the finished building again, paused, so a part-built model shows only in the replay. */
+  const closeReplay = (): void => {
+    if (!replay) return;
+    replay = false;
+    player.toEnd();
+    changed = true;
+  };
+  /** A timeline action, by the bar, a key or a chapter: it opens the build replay first, so a key on the default page acts there and shows the timeline. */
   const act = (action: () => void) => (): void => {
+    openReplay();
     action();
     changed = true;
   };
@@ -262,7 +266,9 @@ function boot(): void {
       toEnd: act(() => { player.toEnd(); }),
       setSpeed: (speed: Speed) => { player.setSpeed(speed); changed = true; },
       scrub: (t: number) => { player.scrub(t); changed = true; },
-      goToChapter: (first: number) => { player.scrub(first); changed = true; },
+      goToChapter: (first: number) => { act(() => { player.scrub(first); })(); },
+      toggleReplay: () => { if (replay) closeReplay(); else openReplay(); },
+      closeReplay,
       applyPreset: (id: string) => {
         const pose = presetPose(id);
         if (pose === null) return;
@@ -310,15 +316,15 @@ function boot(): void {
     // The keys route by the mode now, not the mode the last frame drew: F and then Space in one frame jump rather than play.
     () => walk.active,
   );
-  // The camera frames the part of the canvas above the timeline bar (none with noui), so set the inset before the first pose. Walking, the view is the
-  // whole canvas, centred on the crosshair, whether the bar is folded or not, so unfolding it never moves the view.
+  // The camera frames the canvas above the bar while the bar is whole (the replay open, in the orbit view), so set the inset before the first pose. Else
+  // (noui, the replay closed, walking) the view is the whole canvas; walking, it is centred on the crosshair, so unfolding the bar never moves it.
   const fitInset = (): void => {
-    viewer.setInsetBottom(query.noui || walk.active ? 0 : Math.round(ui.bar.getBoundingClientRect().height));
+    viewer.setInsetBottom(query.noui || walk.active || !replay ? 0 : Math.round(ui.bar.getBoundingClientRect().height));
     needsRender = true;
   };
   fitInset();
-  /** Whether the inset was last fitted for walking. */
-  let insetWalking = false;
+  /** What the inset was last fitted for: walking, the whole bar or the replay closed. */
+  let insetFor = replay ? 'bar' : 'closed';
   if (query.cam !== null) {
     const [px, py, pz, tx, ty, tz] = query.cam;
     rig.setPose({ position: new Vector3(px, py, pz), target: new Vector3(tx, ty, tz), fov: DEFAULT_FOV });
@@ -349,15 +355,18 @@ function boot(): void {
     atFloor = false;
     needsRender = true;
   };
-  const resized = new ResizeObserver(() => {
-    viewer.resize();
-    fitInset();
-    // A fit preset depends on the canvas's shape, so the preset in view is fitted again (a look preset comes back unchanged); so is a floor's framing.
+  /** A fit preset depends on the shape of the view, so the preset in view is fitted again (a look preset comes back unchanged); so is a floor's framing. */
+  const refit = (): void => {
     if (atPreset && view !== null) {
       const pose = presetPose(view);
       if (pose !== null) rig.setPose(pose);
     }
     if (atFloor) frameFloor();
+  };
+  const resized = new ResizeObserver(() => {
+    viewer.resize();
+    fitInset();
+    refit();
   });
   resized.observe(viewport);
   resized.observe(ui.bar);
@@ -413,10 +422,12 @@ function boot(): void {
     artLabel.frame(walk.active, drawnView);
     shownArt = artLabel.id === null ? null : (cards.get(artLabel.id) ?? null);
     ui.sync(state());
-    // Into or out of walk mode: the inset changes with it, measured after the bar has folded or unfolded.
-    if (walk.active !== insetWalking) {
-      insetWalking = walk.active;
+    // Into or out of walk mode, or the replay opened or closed: the inset changes with it, measured after the bar has changed, and the view is fitted again.
+    const inset = walk.active ? 'walk' : replay ? 'bar' : 'closed';
+    if (inset !== insetFor) {
+      insetFor = inset;
       fitInset();
+      refit();
     }
     if (needsRender || frames < READY_FRAMES) {
       viewer.render();
@@ -455,6 +466,7 @@ function boot(): void {
     get direction() { return player.direction; },
     get speed() { return player.speed; },
     get follow() { return follow; },
+    get replay() { return replay; },
     get followGoal() {
       const g = followGoal;
       return g === null ? null : snapshot({ position: vec(g.position), target: vec(g.target), fov: g.fov });

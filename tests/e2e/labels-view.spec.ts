@@ -2,7 +2,8 @@
  * The orbit view's card against the view's own controls, through real input at gallery 600's preset on the finished building (docs/design/spec.md,
  * Collection: Labels; review 6 of work unit 2, F25 to F27):
  * - F25: a 2 px click on the Triumph of Marius shows its card and moves nothing, at the preset (which stays in view) and with the follow camera on
- *   (which stays on): the camera is where it was, to 0.1 mm;
+ *   (which stays on): the camera is where it was, to 0.1 mm; the build replay is opened by the Build menu first, as the follow-camera toggle shows only
+ *   while it is open (docs/design/spec.md, Page: Build replay);
  * - F26: a camera preset chosen from the view menu hides the card, Esc never pressed;
  * - F27: the cut slider, dragged by hand under the painting, hides its card (a cut through it does not), and so does the main floor's view, whose cut
  *   lies under the second floor's painting;
@@ -18,7 +19,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import { SECOND_FLOOR_Y } from '../../src/model/frame.js';
-import { cameraGap, choosePreset, distance, facts, open, openMenu, press, settle, settledCamera, watchErrors } from './helpers.js';
+import { cameraGap, choosePreset, distance, facts, open, openMenu, openReplay, press, settle, settledCamera, watchErrors } from './helpers.js';
 import type { Camera } from './helpers.js';
 import { PRESET, TRIUMPH, triumph, triumphPixel } from './labels-helpers.js';
 
@@ -55,6 +56,7 @@ test.describe('the orbit view’s card and the view’s controls', () => {
   test('F25: a 2 px click on the painting shows its card and moves nothing, at the preset and with the follow camera on', async ({ page }) => {
     const errors = watchErrors(page);
     await open(page, `autoplay=0&view=${PRESET}`);
+    await openReplay(page);
     const start = await settledCamera(page);
     const p = await triumphPixel(page, start);
     await nudge(page, p.x, p.y, 2);
