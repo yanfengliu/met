@@ -40,18 +40,28 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 
 ## A barrel vault's coffers keep their floors
 
-**Finding:** work unit 7's F39 (review 2, Claude N8): `barrelVault` built coffers whose ribs left no floor. A coffer's floor is its cell inset 0.8 ribs from each side, so where 1.6 ribs reach the cell's width on the inner face or its length, the floor's sides cross and it faces out, away from the vault's axis. On N8's vault (span 4 m, length 3 m, thickness 0.3 m, ten coffers across, one along, depth 0.05 m, rib 0.5 m), built at `8a6a0c2`, all 20 floor faces faced away from the axis, each floor 0.17 m wide the wrong way round, and nothing refused it.
+**Finding:** work unit 7's F39 (review 2, Claude N8): `barrelVault` built coffers whose ribs left no floor. A coffer's floor is its cell inset 0.8 ribs from each side, so where 1.6 ribs reach the cell's width on the inner face or its length, the floor's sides meet, and past it they cross; where only one of the two is passed, the floor faces away from the vault's axis. On N8's vault (span 4 m, length 3 m, thickness 0.3 m, ten coffers across, one along, depth 0.05 m, rib 0.5 m), built at `8a6a0c2`, all 20 floor faces faced away from the axis, each floor 0.17 m wide the wrong way round, and nothing refused it. Work unit 9's review 0 added that a floor short of crossing can still be lost: `MeshBuilder.polygon` leaves out a face under 5e-13 m², and Float32 positions could close a floor under a micrometre (F0). So the refusal asks each floor to keep 1 mm across and along.
 
-**Gate:** `src/model/lib/dome.test.ts`, "refuses ribs that leave a coffer no floor, naming a rib that passes: just short of where the floors close, read off vaults that build, they face the axis" (work unit 9). On vaults of 2 m radius whose floors close across (ten cells, 0.6283 m wide on the inner face) or along (ten cells, 0.3 m long), it reads the floors' width or length off the built faces of two vaults that build, ribs 0.05 and 0.1 m, and finds the rib at which they close where that line meets zero (0.3926987 and 0.1875000 m). A rib 0.1 mm short of it must build every floor, each face toward the axis and under 0.2 mm across. A rib 0.1 mm past it must be refused, naming a rib that builds floors facing the axis within 0.2 mm of the closing. N8's vault must be refused with its whole message. The fixtures stand 0.1 mm either side of the closing, so the test does not tell `<` from `≤` at the closing itself, where a floor has no width and `MeshBuilder.polygon` leaves it out.
+**Gate:** `src/model/lib/dome.test.ts`, work unit 9, two tests.
 
-**Proved red (2026-10-29):** each mutation was made on the finished work's `src/model/lib/dome.ts` and undone, the file restored byte for byte.
+- "refuses ribs that leave a coffer less than 1 mm of floor: just short of that, read off vaults that build, the floors face the axis". On three vaults it reads the floors' width or length off the built faces of two vaults that build, ribs 0.05 and 0.1 m. Two are semicircles of 2 m radius, whose floors close across (ten cells, 0.6283 m wide on the inner face) or along (ten cells, 0.3 m long). The third is segmental, rise 1 m, with its inner face 2.5 m in radius about an axis 1.5 m below its springing (review 0, F6). It finds the rib at which that line gives 1 mm of floor: 0.3920737, 0.1868750 and 0.2891548 m. A rib 0.1 mm short of it must build every floor, each face toward the axis, 1 to 1.2 mm across. A rib 0.1 mm past it must be refused, naming a rib that builds every floor facing the axis, 1 to 1.4 mm across.
+- "names a rib that builds: with the thickness it needs, before the shell is read, and none where no rib can". Two shells that the rib named would leave too thin must also name the thickness it needs, and the two named must build (F1). The second shell is also too thin at its own rib, so it pins the rib refusal's place before the thickness refusal. N8's vault must be refused with its whole message. So must Codex's floor 1.6e-14 m long (F0). A rib left at its default must say so (F7), and cells under 1 mm must be told that no rib passes (F3).
 
-- The refusal deleted: red, "width: expected '' to match /^barrelVault: coffers\.rib …/": the vault 0.1 mm past the closing builds.
-- The refusal at 1.5 ribs: red, the same.
-- The refusal at 1.7 ribs: red, the vault 0.1 mm short of the closing refused ("coffers.rib 0.39259872078346986 m leaves the coffers no floor …").
-- The cell's chord taken for its width, 0.6257 m for 0.6283 m: red, the same, naming "at most 0.391 m".
-- `buildVault`'s floors alone inset 1.7 half-ribs, the refusal left at 1.6: red, the vault 0.1 mm past the closing read off the geometry builds; the thickness refusal's test, whose floor corners stayed at 1.6, read 424 lines through pockets.
+The fixtures stand 0.1 mm of rib either side of the least floor, so the test does not tell `<` from `≤` there.
 
-With the work's `dome.ts` the file's 9 tests pass.
+**Proved red (2026-10-29):** each mutation was made on the repaired `src/model/lib/dome.ts` and undone, the file restored byte for byte.
+
+- The refusal deleted: red, both tests: "width, rise 2: expected '' to match /^barrelVault: coffers\.rib …/", the vault 0.1 mm past the least floor building, and no rib or thickness named.
+- Floors allowed down to none (`FLOOR_LEAST` 0), F39's own bound: red, both: the vault 0.1 mm past builds, and N8's message names 0.3926 m for 0.392 m.
+- The refusal at 1.5 ribs: red, both: the vault 0.1 mm past builds, and so does Codex's sliver ("expected '' to match /less than 1 mm of floor/").
+- The refusal at 1.7 ribs: red, both: the vault 0.1 mm short refused, and the named rib, 0.1868 m, refused in turn.
+- The cell's chord taken for its width, 0.6257 m for 0.6283 m: red, both: the vault 0.1 mm short refused, naming "at most 0.3904 m".
+- Half the span taken for the radius: red, the segmental vault 0.1 mm short refused, its cells read as 0.3709 m wide for 0.4636 m.
+- π taken for the arc: red, the segmental vault 0.1 mm past builds.
+- `buildVault`'s floors alone inset 1.7 half-ribs, the refusal left at 1.6: red, both: the vault 0.1 mm past the least floor read off the geometry builds, and all 40 floor faces of a named vault face away from the axis. The thickness refusal's test, whose floor corners stayed at 1.6, read 424 lines through pockets.
+- No thickness named with the rib: red, the advice "make coffers.rib at most 0.1868 m." alone.
+- The shell read before the rib (a copy of the thickness refusal put in front): red, the second shell refused for its thickness ("barrelVault: thickness first"), not its rib.
+
+With the repaired `dome.ts` the file's 10 tests pass.
 
 **Evidence:** `docs/work/7_faces-out/reviews/2_implementation.md` (N8, F39) and `docs/work/9_barrel-rib-refusal/plan.md`.

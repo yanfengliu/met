@@ -37,22 +37,22 @@ function oddEdges(geometry: THREE.BufferGeometry): number {
 }
 
 /**
- * The coffer floors of a vault whose inner face is a circle of `radius` about the Z axis, the floors `depth` farther out: the faces whose three corners
- * stand radius + depth from the axis. Each face is half a floor, split along a diagonal, so it spans its floor's width and length. Returns their number,
- * how many face away from the axis, the narrowest one's width on the inner face (the angle its corners span about the axis, times `radius`) and the
- * shortest one's length.
+ * The coffer floors of a vault whose inner face is a circle of `radius` about an axis along Z at height `axis`, the floors `depth` farther out: the faces
+ * whose three corners stand radius + depth from the axis. Each face is half a floor, split along a diagonal, so it spans its floor's width and length.
+ * Returns their number, how many face away from the axis, the narrowest one's width on the inner face (the angle its corners span about the axis, times
+ * `radius`) and the shortest one's length.
  */
-function floorsOf(geometry: THREE.BufferGeometry, radius: number, depth: number): { faces: number; away: number; width: number; length: number } {
+function floorsOf(geometry: THREE.BufferGeometry, radius: number, depth: number, axis = 0): { faces: number; away: number; width: number; length: number } {
   const position = geometry.getAttribute('position');
   const index = geometry.getIndex();
   const found = { faces: 0, away: 0, width: Infinity, length: Infinity };
   for (let k = 0; k + 2 < (index?.count ?? position.count); k += 3) {
     const [a, b, c] = [0, 1, 2].map((i) => new Vector3().fromBufferAttribute(position, index === null ? k + i : index.getX(k + i)));
-    if (a === undefined || b === undefined || c === undefined || ![a, b, c].every((p) => Math.abs(Math.hypot(p.x, p.y) - radius - depth) < 1e-5)) continue;
+    if (a === undefined || b === undefined || c === undefined || ![a, b, c].every((p) => Math.abs(Math.hypot(p.x, p.y - axis) - radius - depth) < 1e-5)) continue;
     found.faces += 1;
     const normal = new Vector3().subVectors(b, a).cross(new Vector3().subVectors(c, a));
-    if (normal.x * (a.x + b.x + c.x) + normal.y * (a.y + b.y + c.y) > 0) found.away += 1;
-    const angles = [a, b, c].map((p) => Math.atan2(p.y, p.x));
+    if (normal.x * (a.x + b.x + c.x) + normal.y * (a.y + b.y + c.y - 3 * axis) > 0) found.away += 1;
+    const angles = [a, b, c].map((p) => Math.atan2(p.y - axis, p.x));
     found.width = Math.min(found.width, (Math.max(...angles) - Math.min(...angles)) * radius);
     found.length = Math.min(found.length, Math.max(a.z, b.z, c.z) - Math.min(a.z, b.z, c.z));
   }
@@ -154,32 +154,57 @@ describe('barrel vault', () => {
     );
   });
 
-  it('refuses ribs that leave a coffer no floor, naming a rib that passes: just short of where the floors close, read off vaults that build, they face the axis (work unit 9)', () => {
-    const radius = 2;
+  it('refuses ribs that leave a coffer less than 1 mm of floor: just short of that, read off vaults that build, the floors face the axis (work unit 9)', () => {
     const depth = 0.05;
-    // Ten cells across, 0.6283 m wide on the inner face, close their floors across, as in unit 7's F39 (Claude N8); ten along, 0.3 m long, along.
-    for (const { across, along, side } of [
-      { across: 10, along: 1, side: 'width' },
-      { across: 2, along: 10, side: 'length' },
+    // Ten cells across a 2 m radius, 0.6283 m wide on the inner face, as in unit 7's F39 (Claude N8), keep the least floor across; ten along, 0.3 m long,
+    // along; and ten across a segmental vault, rise 1 m, whose inner face is 2.5 m in radius about an axis 1.5 m below its springing (review 0, F6).
+    for (const { rise, across, along, side } of [
+      { rise: 2, across: 10, along: 1, side: 'width' },
+      { rise: 2, across: 2, along: 10, side: 'length' },
+      { rise: 1, across: 10, along: 1, side: 'width' },
     ] as const) {
-      const vault = (rib: number): THREE.BufferGeometry => barrelVault({ span: 2 * radius, length: 3, thickness: 0.3, coffers: { across, along, depth, rib } });
-      // A floor's width and length fall in step with the rib, so two vaults that build give the rib at which the floors close.
-      const floor = (rib: number): number => floorsOf(vault(rib), radius, depth)[side];
-      const closing = 0.05 + (0.05 * floor(0.05)) / (floor(0.05) - floor(0.1));
-      const short = floorsOf(vault(closing - 1e-4), radius, depth);
-      expect([short.faces, short.away], side).toEqual([2 * across * along, 0]);
-      expect(short[side], side).toBeGreaterThan(0);
-      expect(short[side], side).toBeLessThan(2e-4);
-      const message = refusal(() => vault(closing + 1e-4));
-      expect(message, side).toMatch(/^barrelVault: coffers\.rib [\d.]+ m leaves the coffers no floor, their sides meeting or crossing: .*; make coffers\.rib at most [\d.]+ m\.$/);
-      // The rib it names builds floors facing the axis, within 0.2 mm of where they close.
-      const named = Number(/at most ([\d.]+) m\.$/.exec(message)?.[1]);
-      expect(named, side).toBeGreaterThan(closing - 2e-4);
-      const passes = floorsOf(vault(named), radius, depth);
-      expect([passes.away, passes[side] > 0], side).toEqual([0, true]);
+      const radius = (4 + rise * rise) / (2 * rise);
+      const floors = (rib: number): ReturnType<typeof floorsOf> =>
+        floorsOf(barrelVault({ span: 4, rise, length: 3, thickness: 0.3, coffers: { across, along, depth, rib } }), radius, depth, rise - radius);
+      const name = `${side}, rise ${String(rise)}`;
+      // A floor's width and length fall in step with the rib, so two vaults that build give the rib at which the floors keep 1 mm.
+      const [wide, narrower] = [floors(0.05)[side], floors(0.1)[side]];
+      const least = 0.05 + (0.05 * (wide - 0.001)) / (wide - narrower);
+      const short = floors(least - 1e-4);
+      expect([short.faces, short.away], name).toEqual([2 * across * along, 0]);
+      expect(short[side], name).toBeGreaterThan(0.001);
+      expect(short[side], name).toBeLessThan(0.0012);
+      const message = refusal(() => floors(least + 1e-4));
+      expect(message, name).toMatch(/^barrelVault: coffers\.rib [\d.]+ m leaves the coffers less than 1 mm of floor across or along: .*; make coffers\.rib at most [\d.]+ m\.$/);
+      // The rib it names builds every floor, facing the axis, within 0.2 mm of the least (review 0, F2).
+      const named = floors(Number(/at most ([\d.]+) m\.$/.exec(message)?.[1]));
+      expect([named.faces, named.away], name).toEqual([2 * across * along, 0]);
+      expect(named[side], name).toBeGreaterThan(0.001);
+      expect(named[side], name).toBeLessThan(0.0014);
     }
-    expect(() => barrelVault({ span: 4, length: 3, thickness: 0.3, coffers: { across: 10, along: 1, depth, rib: 0.5 } })).toThrow(
-      /^barrelVault: coffers\.rib 0\.5 m leaves the coffers no floor, their sides meeting or crossing: a floor stands 0\.8 ribs in from each side of its cell, which is 0\.6283 m wide on the inner face and 3 m long; make coffers\.rib at most 0\.3926 m\.$/,
+  });
+
+  it('names a rib that builds: with the thickness it needs, before the shell is read, and none where no rib can (work unit 9, review 0)', () => {
+    // The rib named would leave these shells too thin, so the thickness it needs is named too (F1). The second is too thin at its own rib as well, and
+    // the rib is named first.
+    for (const vault of [
+      { span: 4, length: 3, thickness: 0.055, coffers: { across: 2, along: 10, depth: 0.05, rib: 0.5 } },
+      { span: 4, length: 3, thickness: 0.055, coffers: { across: 20, along: 1, depth: 0.05, rib: 0.25 } },
+    ]) {
+      const message = refusal(() => barrelVault(vault));
+      const [, rib, thickness] = /; make coffers\.rib at most ([\d.]+) m, and thickness at least ([\d.]+) m, which coffers of that rib need\.$/.exec(message) ?? [];
+      expect([rib, thickness], message).not.toContain(undefined);
+      const built = barrelVault({ ...vault, thickness: Number(thickness), coffers: { ...vault.coffers, rib: Number(rib) } });
+      expect(floorsOf(built, 2, 0.05)).toMatchObject({ faces: 2 * vault.coffers.across * vault.coffers.along, away: 0 });
+    }
+    // Unit 7's F39 vault, whole; a floor 1.6e-14 m long, which the builder would leave out (F0); a rib left at its default (F7); cells under 1 mm (F3).
+    expect(refusal(() => barrelVault({ span: 4, length: 3, thickness: 0.3, coffers: { across: 10, along: 1, depth: 0.05, rib: 0.5 } }))).toBe(
+      'barrelVault: coffers.rib 0.5 m leaves the coffers less than 1 mm of floor across or along: a floor stands 0.8 ribs in from each side of its cell, which is 0.6283 m wide on the inner face and 3 m long, and its sides cross where 1.6 ribs reach either; make coffers.rib at most 0.392 m.',
+    );
+    expect(refusal(() => barrelVault({ span: 4, length: 3, thickness: 0.3, coffers: { across: 2, along: 10, depth: 0.05, rib: 0.18749999999999 } }))).toMatch(/less than 1 mm of floor/);
+    expect(refusal(() => barrelVault({ span: 8, length: 12, coffers: { across: 45, along: 8 } }))).toMatch(/^barrelVault: coffers\.rib 0\.2 m \(span \/ 40, the default\) leaves .*; make coffers\.rib at most 0\.1739 m\.$/);
+    expect(refusal(() => barrelVault({ span: 4, length: 0.0008, thickness: 0.3, coffers: { across: 2, along: 1, depth: 0.05, rib: 0.01 } }))).toMatch(
+      /0\.0008 m long, .*; no rib leaves cells that small a floor; make them larger, with fewer coffers or a larger vault\.$/,
     );
   });
 });

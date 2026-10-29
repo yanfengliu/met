@@ -209,10 +209,19 @@ export interface BarrelVaultParams {
   detail?: Detail;
 }
 
-/** A coffer's floor is its cell inset this many half-ribs from each side, so the floor takes this many ribs off its cell's width and its length. */
+/**
+ * A coffer's floor is its cell inset this many half-ribs from each side, so the floor takes this many ribs off its cell's width and its length. It
+ * stays above 1, so that a floor closes before its opening does.
+ */
 const FLOOR_INSET = 1.6;
 
-/** `x` rounded down to four significant digits and kept below it, so that a value named as "at most" it passes. */
+/**
+ * The least width and length a coffer's floor keeps, metres. Less is as good as none: `MeshBuilder.polygon` leaves out a face whose area is under
+ * 5e-13 m², and Float32 positions, a micrometre apart 10 m out, could close a narrower floor or turn it round.
+ */
+const FLOOR_LEAST = 0.001;
+
+/** `x` rounded down to four significant digits and kept below it, so that a value named as "at most" it passes; for x from 1e-300 up. */
 function below(x: number): number {
   const unit = 10 ** (Math.floor(Math.log10(x)) - 3);
   return Number((Math.floor(x / unit - 1e-6) * unit).toPrecision(4));
@@ -235,15 +244,6 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     const { across, along, depth, rib } = full.coffers;
     const radius = (span * span) / (8 * rise) + rise / 2;
     const arc = 2 * Math.asin(Math.min(1, span / 2 / radius));
-    // A floor keeps a width and a length only while FLOOR_INSET ribs fall short of its cell's width, the cell's arc on the inner face, and of its
-    // length: at that its sides meet, and past it they cross and the floor faces out, away from the axis.
-    const cell = { width: (radius * arc) / across, length: full.length / along };
-    const shown = (x: number): string => String(Number(x.toPrecision(4)));
-    require(
-      'barrelVault',
-      FLOOR_INSET * rib < Math.min(cell.width, cell.length),
-      `coffers.rib ${String(rib)} m leaves the coffers no floor, their sides meeting or crossing: a floor stands ${String(FLOOR_INSET / 2)} ribs in from each side of its cell, which is ${shown(cell.width)} m wide on the inner face and ${shown(cell.length)} m long; make coffers.rib at most ${String(below(Math.min(cell.width, cell.length) / FLOOR_INSET))} m.`,
-    );
     // Each coffer must stay inside the shell, whose outer face runs along the chords of its facets as buildVault divides it. A coffer's points farthest
     // out are the corners of its opening, half a rib in from its cell on the inner face, and of its floor, FLOOR_INSET half-ribs in and `depth` out; a
     // corner under a facet's middle has the least room.
@@ -251,28 +251,51 @@ export function barrelVault(params: BarrelVaultParams): THREE.BufferGeometry {
     const facet = arc / facets;
     // How far out the chord above a point at angle `at` from the face's first edge lies, as a share of the outer radius.
     const chord = (at: number): number => Math.cos(facet / 2) / Math.cos(at - (Math.min(facets - 1, Math.max(0, Math.floor(at / facet))) + 0.5) * facet);
-    // The thickness each kind of corner needs, and the depth the floors may have in this shell.
-    const need = { openings: 0, floors: 0 };
-    let room = Infinity;
-    for (let i = 0; i < across; i += 1) {
-      for (const [kind, inset, out] of [
-        ['openings', rib / 2 / radius, 0],
-        ['floors', (FLOOR_INSET * rib) / 2 / radius, depth],
-      ] as const) {
-        for (const at of [(arc * i) / across + inset, (arc * (i + 1)) / across - inset]) {
-          need[kind] = Math.max(need[kind], (radius + out) / chord(at) - radius);
-          if (kind === 'floors') room = Math.min(room, (radius + full.thickness) * chord(at) - radius);
+    // The thickness each kind of corner needs with ribs `r` wide, and the depth the floors may have in this shell.
+    const shell = (r: number): { openings: number; floors: number; room: number } => {
+      const found = { openings: 0, floors: 0, room: Infinity };
+      for (let i = 0; i < across; i += 1) {
+        for (const [kind, inset, out] of [
+          ['openings', r / 2 / radius, 0],
+          ['floors', (FLOOR_INSET * r) / 2 / radius, depth],
+        ] as const) {
+          for (const at of [(arc * i) / across + inset, (arc * (i + 1)) / across - inset]) {
+            found[kind] = Math.max(found[kind], (radius + out) / chord(at) - radius);
+            if (kind === 'floors') found.room = Math.min(found.room, (radius + full.thickness) * chord(at) - radius);
+          }
         }
       }
+      return found;
+    };
+    // The thickness a shell needs, rounded up so that following the advice passes.
+    const enough = (need: { openings: number; floors: number }): string => (Math.ceil(Math.max(need.openings, need.floors) * 1e4 + 1e-6) / 1e4).toFixed(4);
+    // A floor keeps FLOOR_LEAST across and along only while FLOOR_INSET ribs fall that much short of its cell's width, the cell's arc on the inner
+    // face, and of its length. Where they reach either, the floor's sides meet; past it they cross, and where only one of the two is passed the floor
+    // faces away from the axis.
+    const cell = { width: (radius * arc) / across, length: full.length / along };
+    const least = Math.min(cell.width, cell.length);
+    if (least - FLOOR_INSET * rib < FLOOR_LEAST) {
+      const most = (least - FLOOR_LEAST) / FLOOR_INSET;
+      let advice = 'no rib leaves cells that small a floor; make them larger, with fewer coffers or a larger vault';
+      if (most > 0) {
+        // The rib named passes this refusal; where it would leave the shell too thin, the thickness it needs is named too.
+        const named = below(most);
+        const need = shell(named);
+        advice = `make coffers.rib at most ${String(named)} m${Math.max(need.openings, need.floors) >= full.thickness ? `, and thickness at least ${enough(need)} m, which coffers of that rib need` : ''}`;
+      }
+      const shown = (x: number): string => String(Number(x.toPrecision(4)));
+      throw new Error(
+        `barrelVault: coffers.rib ${String(rib)} m${c?.rib === undefined ? ' (span / 40, the default)' : ''} leaves the coffers less than ${String(FLOOR_LEAST * 1000)} mm of floor across or along: a floor stands ${String(FLOOR_INSET / 2)} ribs in from each side of its cell, which is ${shown(cell.width)} m wide on the inner face and ${shown(cell.length)} m long, and its sides cross where ${String(FLOOR_INSET)} ribs reach either; ${advice}.`,
+      );
     }
+    const need = shell(rib);
     const kind = need.openings >= full.thickness ? 'openings' : 'floors';
     // Rounded so that following the advice passes: the thickness up, the depth down.
-    const thick = Math.ceil(Math.max(need.openings, need.floors) * 1e4 + 1e-6) / 1e4;
-    const deep = Math.floor(room * 1e4 - 1e-6) / 1e4;
+    const deep = Math.floor(need.room * 1e4 - 1e-6) / 1e4;
     require(
       'barrelVault',
       Math.max(need.openings, need.floors) < full.thickness,
-      `thickness ${String(full.thickness)} m lets the coffers' ${kind} stand out of the shell's outer face, which runs along the chords of its facets, as pockets wound inside out (coffers.depth ${String(depth)} m, coffers.rib ${String(rib)} m); make thickness at least ${thick.toFixed(4)} m${kind === 'floors' && deep > 0 ? ` or coffers.depth at most ${deep.toFixed(4)} m` : ''}.`,
+      `thickness ${String(full.thickness)} m lets the coffers' ${kind} stand out of the shell's outer face, which runs along the chords of its facets, as pockets wound inside out (coffers.depth ${String(depth)} m, coffers.rib ${String(rib)} m); make thickness at least ${enough(need)} m${kind === 'floors' && deep > 0 ? ` or coffers.depth at most ${deep.toFixed(4)} m` : ''}.`,
     );
   }
   return cached('barrelVault', full, () => buildVault(full));
