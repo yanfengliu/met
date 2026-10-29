@@ -2,6 +2,16 @@
 
 Defects the owner reported, each with the symptom as they saw it, what the investigation found, the cause, and the check that covers the defect's class from now on. An entry stays after its gate lands: this is the list of what the gates could not see, which is where the next defect comes from.
 
+## AGENTS.md outgrows what Codex reads (2026-10-29)
+
+**Reported symptom:** The owner asked why so much is kept in AGENTS.md and directed: "There are other documents that can be used. You should also follow progressive disclosure." At `8a6a0c2` the file held 69,223 bytes, and Codex reads only the first 32 KiB of a project doc, so its reviews of met saw less than half of it.
+
+**Investigation:** By section the file held the preamble's 1,126 bytes, the generated canon's 14,419, Gates' 52,793 (76%), Invariants' 801 and Conventions' 84. The Gates section's 80 sentences carried each gate's whole evidence: bounds, red proofs with commit hashes, measurements and finding numbers. A check of its 327 clauses by their facts found 156 already held by the tests' headers, the spec, this register or the work units' reviews (work unit 12).
+
+**Cause:** Every work unit and review round wrote its gates' detail into AGENTS.md, the one file every session reads, and nothing bounded the file's size.
+
+**Check:** `src/repo-conventions.test.ts` fails an AGENTS.md over 30,000 bytes counted with CRLF line endings, so any checkout of a passing file is under Codex's 32 KiB (red with `8a6a0c2`'s, 69,357 bytes; `docs/learning/gate-proofs.md`). It bounds the class, AGENTS.md outgrowing what its readers read; what belongs in the file is `../fleet/FLEET.md`'s "Repo file shape" and review's to judge.
+
 ## Parts face in (2026-10-28)
 
 **Reported symptom:** The owner asked to "fix them here" for work unit 6's two open findings, with a check that every closed part faces out: the Arms and Armor Court's gables were wound inside out, so a section cut through them showed their lit inner faces, and the Hunt arches' and Great Hall arches' coffered soffits held coffers deeper than their shells, each standing 4 cm out of its vault as a pocket whose faces looked in.
