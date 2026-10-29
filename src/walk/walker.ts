@@ -13,7 +13,8 @@
  * Off an edge higher than STEP the body falls under gravity and lands on the first surface below;
  * a jump starts at the speed that rises JUMP_HEIGHT. On the ground every push from the walls is level, and the velocity into a wall is removed,
  * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`, where a body stands when nothing is built under it.
- * After the world is built again, `settle` moves a body that new pieces bury or embed onto the lowest walkable surface over it where it stands clear.
+ * After the world is built again, `settle` moves a body that new pieces bury or embed onto the lowest walkable surface over it where it stands clear,
+ * and on out of a groove there onto its rims.
  *
  * Time. Physics runs in fixed steps of 1/120 s, the remainder carried to the next frame, so a run is the same at any frame rate; a snap up or down a
  * stair is eased out over about 0.1 s for the eye only, and the eye is the eased eye of the last two steps, interpolated between them.
@@ -23,7 +24,9 @@
 import { Line3, MathUtils, Vector3 } from 'three';
 
 import type { GroundHit, LineCrossings } from './collision.js';
-import { Footing } from './footing.js';
+import { Footing, insideBetween } from './footing.js';
+
+export { insideBetween };
 
 /** What the walker collides with: ./collision.ts `CollisionWorld`, ./door-world.ts `DoorWorld`, or any stand-in with the same queries. */
 export interface WalkWorld {
@@ -39,16 +42,6 @@ export type Settled = 'kept' | 'moved' | 'lost';
 
 /** A surface less than this above the feet is the one they stand on, metres. */
 export const STANDING = 1e-3;
-
-/**
- * Whether a piece crossed at `heights` (lowest first) along a vertical line holds some of that line between `low` and `high` inside it: between its first
- * and second crossings, its third and fourth, and so on. A piece crossed an odd number of times is open along the line and has no inside there.
- */
-export function insideBetween(heights: readonly number[], low: number, high: number): boolean {
-  if (heights.length % 2 !== 0) return false;
-  for (let i = 0; i + 1 < heights.length; i += 2) if ((heights[i] ?? 0) < high && (heights[i + 1] ?? 0) > low) return true;
-  return false;
-}
 
 /** The body, in metres. */
 export const BODY = Object.freeze({ radius: 0.35, height: 1.75, eye: 1.6, step: 0.35, maxSlopeDeg: 40 });
@@ -127,7 +120,8 @@ export class Walker {
 
   /**
    * Puts the feet on the first surface below (x, y + 1 m, z), or on the workspace ground where there is none, and on out of a groove narrower than the
-   * body there onto its rims (`ontoRims`), as onto a floor's tiles either side of a joint; facing `yaw` and `pitch`, at rest.
+   * body there onto its rims (`ontoRims`), as onto a floor's tiles either side of a joint; where the first surface lies more than a step under y, the
+   * centre having passed through a gap or a seam, first onto rims within a step of y, as the walking step at y would stand; facing `yaw` and `pitch`, at rest.
    */
   place(x: number, y: number, z: number, yaw: number, pitch = 0): void {
     this.feet.set(x, Math.max(y, this.floorY), z);
@@ -138,7 +132,8 @@ export class Walker {
     const found = this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit);
     this.feet.y = found ? Math.max(this.hit.y, this.floorY) : this.floorY;
     this.onGround = this.feet.y <= this.floorY || this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
-    if (this.ontoRims()) this.onGround = true;
+    const bridged = this.feet.y < y - BODY.step && this.ontoRims(y - BODY.step, y + BODY.step + PROBE_EPSILON);
+    if (bridged || this.ontoRims(this.feet.y, this.feet.y + BODY.step + PROBE_EPSILON)) this.onGround = true;
     for (let k = 0; k < 4; k += 1) if (this.walls(false) < 1e-4) break;
     this.before.copy(this.feet);
   }
@@ -159,26 +154,27 @@ export class Walker {
     const buried = heights.length > 0 && heights.every((y) => y > base);
     const embedded = lines.some((p) => p.instance >= from && !p.sheet && insideBetween(p.heights, base, feet.y + BODY.height));
     if (!buried && !embedded) {
-      if (!this.footing.builtUnder(feet.x, feet.z, base, feet.y + BODY.step + PROBE_EPSILON, from) || !this.ontoRims(lines)) return 'kept';
+      if (!this.footing.builtUnder(feet.x, feet.z, base, feet.y + BODY.step + PROBE_EPSILON, from) || !this.ontoRims(feet.y, feet.y + BODY.step + PROBE_EPSILON, lines)) return 'kept';
     } else {
       const surfaces = lines.flatMap((p) => p.heights.filter((y, i) => y > base && (p.normalYs[i] ?? 0) >= MIN_WALKABLE_NORMAL_Y)).sort((a, b) => a - b);
       const y = surfaces.find((s) => this.clearAt(lines, s));
       if (y === undefined) return 'lost';
       feet.y = y;
-      this.ontoRims(lines);
+      this.ontoRims(y, y + BODY.step + PROBE_EPSILON, lines);
     }
     this.rest(true);
     return 'moved';
   }
 
   /**
-   * Lifts the feet out of a groove narrower than the body onto the lower rim of two opposite sides (./footing.ts `rims`), where that stands over them
-   * within STEP, walkable, and the body stands clear there by the centre's crossings (`clearAt`); the centre stays on the ground its feet stand on.
+   * Lifts the feet out of a groove narrower than the body onto the lower rim of two opposite sides read from `top` down to `low` (./footing.ts `rims`):
+   * the highest over `low` whose probes stand on top of what they meet, walkable, where the body stands clear by the centre's crossings (`clearAt`).
    */
-  private ontoRims(lines?: readonly LineCrossings[]): boolean {
+  private ontoRims(low: number, top: number, lines?: readonly LineCrossings[]): boolean {
     const { feet, hit } = this;
-    if (!this.footing.rims(feet.x, feet.z, feet.y + BODY.step + PROBE_EPSILON, BODY.step + PROBE_EPSILON, hit, feet.y + STANDING)) return false;
-    if (hit.normalY < MIN_WALKABLE_NORMAL_Y || !this.clearAt(lines ?? this.world.crossings(feet.x, feet.z, this.floorY, Number.POSITIVE_INFINITY), hit.y)) return false;
+    let centre = lines;
+    const stands = (rim: GroundHit): boolean => rim.normalY >= MIN_WALKABLE_NORMAL_Y && this.clearAt((centre ??= this.world.crossings(feet.x, feet.z, this.floorY, Number.POSITIVE_INFINITY)), rim.y);
+    if (!this.footing.rims(feet.x, feet.z, top, top - low, hit, low + STANDING, stands)) return false;
     feet.y = hit.y;
     return true;
   }

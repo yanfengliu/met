@@ -201,8 +201,8 @@ export class Reach {
 }
 
 /**
- * Fills the floor reachable from the walker put down at (x, y, z) as `Walker.place` puts it (on the first surface under 1 m over that point, else on the
- * workspace ground at `floorY`), facing `yaw`.
+ * Fills the floor reachable from the walker put down at (x, y, z) as `Walker.place` puts it (on the first surface under 1 m over that point, or on the
+ * rims of a groove there, else on the workspace ground at `floorY`), facing `yaw`.
  */
 export function reach(world: WalkWorld, floorY: number, x: number, y: number, z: number, yaw: number, options: ReachOptions = {}): Reach {
   const cell = options.cell ?? 0.5;
