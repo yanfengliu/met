@@ -1,10 +1,12 @@
 /**
  * The floor picker through real input (docs/design/spec.md, Page: Floor picker): each floor clicked sets the cut to its height, hides the landscape
- * over it, frames the floor from above from the side the user orbited to and changes the canvas, and All gives back the cut the user had; Page Up and
- * Page Down go up and down a floor; moving the cut slider or pressing the cut toggle by hand leaves the floor view; walk mode leaves it too, with the
- * same collision; `floor=` at load; no floor view shows a plate of the cut colour; each of the four flights the Main floor view cuts through shows
- * the cut colour across its section, close up and a small orbit step away, where the cap pass once z-fought with the floor or landing it meets
- * (section-cut.ts, CAP_DEPTH_BIAS); a roof wholly under a cut keeps its own colour where the depth buffer is coarse (cap-pass.ts).
+ * over it, frames the floor from above at 65° from the side the user orbited to and changes the canvas, and All gives back the cut the user had; Page
+ * Up and Page Down go up and down a floor; moving the cut slider or pressing the cut toggle by hand leaves the floor view; walk mode leaves it too,
+ * hides the picker, ignores the floor keys and builds the same collision as a page that never chose a floor; `floor=` at load; no floor view shows a
+ * plate of the cut colour (under 3% of the canvas); each of the four flights the Main floor view cuts through shows the cut colour across its
+ * section, close up and a small orbit step away, where the cap pass once z-fought with the floor or landing it meets (section-cut.ts,
+ * CAP_DEPTH_BIAS); a roof wholly under a cut keeps its own colour where the depth buffer is coarse (cap-pass.ts).
+ * ./layout.spec.ts lays the picker out with the other controls at both sizes.
  * Facts come from `window.__met` (floors, floor, cut, camera, walk); nothing names a floor's height but the facts.
  * Bound: canvas checks compare coarse luminance grids (the drawing changed) and count pixels of the cut colour (no plate of it, all of a flight's
  * section, none of an intact roof); what each floor shows is judged in the floor captures (npm run shots). The close-ups are this machine's GPU (an RTX
@@ -63,8 +65,11 @@ async function cutColourAtCentre(page: Page, half: number): Promise<number> {
  * (src/model/core/wings-walls.ts, C_STAIR) and the Engelhard Court's stair to the mezzanine (src/model/roche-north/engelhard.ts), whose undersides lie
  * on the floor under them; the Grand Staircase's lower flight (src/model/hunt/stair.ts), whose top meets its landing and whose sides meet the
  * staircase's walls; and the upper flight of the north Vaux iron U-stair (src/model/core/vaux-shell.ts), whose underside stands over the main floor.
+ * Close up, the middle of each of the four flights the Main floor view cuts through is at least 97% cut colour, which the cap pass's depth bias
+ * gives.
  * From 50 m above, the Grand flight's top riser, 19 cm over the cut and seen edge on, shows one antialiasing sample of its stone along a row across
- * the square, with or without the cap pass (the clip is tested once per pixel, not per sample), so that flight is framed from 15 m only (`farthest`).
+ * the square, with or without the cap pass (the clip is tested once per pixel, not per sample), so the Grand flight is framed from 15 m only
+ * (`farthest`).
  */
 const CUT_FLIGHTS = [
   { name: "Wing C's stair", middle: [31.5, -117.375], climbs: [-1, 0], farthest: 50 },
@@ -72,7 +77,10 @@ const CUT_FLIGHTS = [
   { name: "the Grand Staircase's lower flight", middle: [0, -46.445], climbs: [0, -1], farthest: 15 },
   { name: 'the north Vaux iron stair', middle: [12.55, -131.6], climbs: [0, 1], farthest: 50 },
 ] as const;
-/** Cameras on a flight's middle at the cut: from above (from the side of its foot) and from over its top looking down it, with the square measured. */
+/**
+ * Cameras on a flight's middle at the cut: from above at 50 m and 15 m (from the side of its foot) and down the flight from 15 m over its top, each
+ * also a small orbit step away (ORBIT_STEP), with the square measured.
+ */
 const CLOSE_UPS = [
   { name: 'from above at 50 m', distance: 50, elevation: 88, toward: -1, half: 6 },
   { name: 'from above at 15 m', distance: 15, elevation: 88, toward: -1, half: 20 },
@@ -81,10 +89,10 @@ const CLOSE_UPS = [
 /** The small orbit step taken from each close-up, degrees of azimuth and of elevation. */
 const ORBIT_STEP = { azimuth: 1.5, elevation: 0.75 };
 /**
- * The least share of a close-up's square in the cut colour. Measured on 2026-10-22: with the cap's depth bias every view reads 98.8 to 100% (the lowest,
- * the Engelhard stair from 50 m after the step, has 2 of 169 pixels holding one antialiasing sample of the lit floor, the same with a bias of 4, 6 or 8
- * steps); without it, 11 of the 22 views read 0 to 96% (Wing C's 4, the Engelhard stair's 5, the Grand flight's 2, the Vaux flight's none: its
- * underside stands clear of the floor, so the view checks only that the flight is closed).
+ * The least share of a close-up's square in the cut colour, 97%, which the cap pass's depth bias gives. Measured on 2026-10-22: with the cap's depth
+ * bias every view reads 98.8 to 100% (the lowest, the Engelhard stair from 50 m after the step, has 2 of 169 pixels holding one antialiasing sample
+ * of the lit floor, the same with a bias of 4, 6 or 8 steps); without it, 11 of the 22 views read 0 to 96% (Wing C's 4, the Engelhard stair's 5, the
+ * Grand flight's 2, the Vaux flight's none: its underside stands clear of the floor, so the view checks only that the flight is closed).
  */
 const FLIGHT_CUT_SHARE = 0.97;
 /**

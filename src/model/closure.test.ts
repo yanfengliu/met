@@ -6,39 +6,44 @@
  * Pieces: every piece of every mesh the walk collides with (src/walk/collision.ts `collisionMeshes`, the doors' closed leaves among them) or the cut caps
  * (src/viewer/section-cut.ts `capsMesh`, as src/main.ts picks them), as its step's mesh draws it, and each door's leaves apart, as the door layer's
  * stand-ins draw them (src/model/lib/window.ts `doorLeavesOf`), but the sheets their builders declare (src/model/lib/sheet.ts), which SHEETS counts by
- * step and material so that a new one is seen; the walk reads no inside in a sheet, whatever its crossings, and the cut leaves it out. Pieces read alike
- * form a shape: one geometry with one direction of world vertical in its frame.
+ * step and material so that a new one is seen (10,028 sheet pieces in 53 pairs: glass, paving, roads, paths, the terrain, the pad and the upright
+ * surfaces); the walk reads no inside in a sheet, whatever its crossings (`LineCrossings.sheet`, from `build` and `buildPieces` alike), and the cut
+ * leaves it out. Pieces read alike form a shape: one geometry with one direction of world vertical in its frame. Counted at dc1a7dc: 870 shapes of
+ * 16,766 pieces.
  * Five readings. The mesh's own, exact: along world vertical in each shape's frame (src/model/lib/check.ts `openAlong`); a shape every face of which
- * stands upright gives no crossing to read, so it must be a declared sheet. The walk's: its crossing query (`CollisionWorld.crossings`) on a collision
- * world of the walked meshes, along four lines through each of up to FACES faces of each walked shape that are not vertical (one inside the face, one
- * near each corner), each meeting its piece at that face an even number of times. The faces' winding on the same lines: as many look up as look down, so
- * a face wound the wrong way or doubled fails, and no stretch where more look down than up above it, a pocket wound inside out where a surface folds
- * through itself or stands out of its part; and where parts of one piece overlap, which the parity rule reads as outside, no line runs through them for
- * as long as settle's span (BODY.height less STANDING), read on the shape's first walked piece and scaled to its walked piece that stretches the lines
- * most, so a walker built into a piece is found, but on a line the crossing rule reads once (its bound, src/walk/collision.ts). And each upright face's
- * inside: at seven points of every upright face of every shape (the lines' four and one near the middle of each edge), BEHIND behind it and in front of
- * it, the faces above wind to more inside behind it than in front, or to the same inside on both sides, as within an overlap or where it lies face to
- * face on another part of its piece, so a part with no top and no bottom, whose open rims cancel along vertical lines, fails, and so does a face wound
- * in, unless the face lies back to back on another, one side of a two-sided membrane, which has no inside to lose. A face stands upright when lines along
- * vertical see it at most BEHIND wide, twice its area in plan over its longest edge in plan, in its frame. And each closed part's facing as drawn: its
- * volume read along vertical by its faces (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one, signed
- * by its piece's matrix, which an instanced mesh does not turn back; no pocket on a grid of GRID lines a side over each shape and each door's leaves, nor
- * on two lines beside each of their open edges (`inwardAlong`), which read a part whose open ends line up along vertical lines and wind inside out
- * between them, as `openAlong` reads such a part closed; and no piece of the model mirrored.
+ * stands upright gives no crossing to read, so it must be a declared sheet (window and door panes, banners, the site's curbs and retaining walls
+ * are). The walk's: its crossing query (`CollisionWorld.crossings`) on a collision world of the walked meshes, along four lines through each of up to
+ * FACES (24) faces of each walked shape that are not vertical (one inside the face, one near each corner; 56,168 lines at 3165aa5), each meeting its
+ * piece at that face an even number of times. The faces' winding on the same lines: as many look up as look down, so a face wound the wrong way or
+ * doubled fails, and no stretch where more look down than up above it, a pocket wound inside out where a surface folds through itself or stands out
+ * of its part; and where parts of one piece overlap, which the parity rule reads as outside, no line runs through them for as long as settle's span
+ * (BODY.height less STANDING), read on the shape's first walked piece and scaled to its walked piece that stretches the lines most (the most is
+ * 0.76 m, a Hunt facade medallion's bust in its disc), so a walker built into a piece is found, but on a line the crossing rule reads once (its
+ * bound, src/walk/collision.ts). And each upright face's inside: at seven points of every upright face of every shape (the lines' four and one near
+ * the middle of each edge), BEHIND behind it and in front of it, the faces above wind to more inside behind it than in front, or to the same inside
+ * on both sides, as within an overlap or where it lies face to face on another part of its piece, so a part with no top and no bottom, whose open
+ * rims cancel along vertical lines, fails, and so does a face wound in, unless the face lies back to back on another, one side of a two-sided
+ * membrane, which has no inside to lose. A face stands upright when lines along vertical see it at most BEHIND (0.1 mm) wide, twice its area in plan
+ * over its longest edge in plan, in its frame. And each closed part's facing as drawn: its volume read along vertical by its faces
+ * (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one (4,774 parts: 4,726 of the shapes, 48 of
+ * the doors' leaves), signed by its piece's matrix, which an instanced mesh does not turn back; no pocket on a grid of GRID (64) lines a side over
+ * each shape and each door's leaves, nor on two lines beside each of their open edges (`inwardAlong`, each line cast again a hair aside where it
+ * meets an edge), which read a part whose open ends line up along vertical lines and wind inside out between them, as `openAlong` reads such a part
+ * closed; and no piece of the model, all 27,043, mirrored by its matrix.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
- * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage), with main's crossing rule, which counted hits within 1 µm once (206
- * shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside turned up
- * (src/model/lib/fittings.ts: 169 lines unbalanced), with the medieval piers' half shafts made whole cylinders, half in the core (3.9 m of overlap), with
- * one Hunt medallion of each pair three times as tall (2.27 m, which the piece measured reads as 0.76 m), with the piers' core left with no top and no
- * bottom (38 points of upright faces with no inside), with the moon gate panel's foot, top and ends left out (504), with the Great Hall pendentives'
- * spandrels on their old points, apart from the curved faces' (8), with UNIT_TILE no sheet (2,008 shapes open, 7 SHEETS counts off), with the
- * window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off), with `upright`'s rule of review 3 (its own check: a
- * point read as not upright), with `extrudeOutline` taking the armour court gables' clockwise outline as given (src/model/mmw/facade-parts.ts: 2 parts
- * facing in, 48 lines through pockets), with the Dendur rolls' ends reversed (src/model/roche-north/temple.ts: 2 pieces mirrored, facing in), with the
- * Hunt arches' and Great Hall arches' soffits back on their 0.06 and 0.08 m shells and `barrelVault`'s refusal off (58 lines), with the acanthus
- * leaves' quads split along one diagonal (src/model/lib/acanthus.ts: 2 lines, and 3 shapes on the grid), with Diana's bow left open
- * (src/model/roche-north/figures.ts: 9 lines, 0.74 m long) and with `prism`'s side walls wound in (src/model/roche-south/shapes.ts `sideQuads`: upright
- * faces in 22 shapes).
+ * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage in `grand-stair-vault`), with main's crossing rule, which counted hits
+ * within 1 µm once (206 shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside
+ * turned up (src/model/lib/fittings.ts: 169 lines unbalanced), with the medieval piers' half shafts made whole cylinders, half in the core (3.9 m of
+ * overlap), with one Hunt medallion of each pair three times as tall (2.27 m, which the piece measured reads as 0.76 m), with the piers' core left
+ * with no top and no bottom (38 points of upright faces with no inside), with the moon gate panel's foot, top and ends left out (504), with the Great
+ * Hall pendentives' spandrels on their old points, apart from the curved faces' (8), with UNIT_TILE no sheet (2,008 shapes open, 7 SHEETS counts
+ * off), with the window panes of src/model/lib/window.ts no sheet (19 upright shapes, 10 SHEETS counts off), with `upright`'s rule of review 3 (its
+ * own check: a point read as not upright), with `extrudeOutline` taking the armour court gables' clockwise outline as given
+ * (src/model/mmw/facade-parts.ts: 2 parts facing in, 48 lines through pockets), with the Dendur rolls' ends reversed
+ * (src/model/roche-north/temple.ts: 2 pieces mirrored, facing in), with the Hunt arches' and Great Hall arches' soffits back on their 0.06 and 0.08 m
+ * shells and `barrelVault`'s refusal off (58 lines), with the acanthus leaves' quads split along one diagonal (src/model/lib/acanthus.ts: 2 lines,
+ * and 3 shapes on the grid), with Diana's bow left open (src/model/roche-north/figures.ts: 9 lines, 0.74 m long) and with `prism`'s side walls wound
+ * in (src/model/roche-south/shapes.ts `sideQuads`: upright faces in 22 shapes).
  * Bound: `openAlong` joins ends nearer than 0.1 mm and leaves out open boundary under 1 mm in all, each in the geometry's own frame, so an opening
  * narrower or with less boundary is not seen; a piece its matrix scales up sees both larger (up to 99 times, the Hunt foundations' unit boxes). The
  * other readings try up to FACES faces a shape, spread evenly over those that are not vertical, on its first walked piece, and seven points of each

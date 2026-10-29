@@ -263,10 +263,11 @@ const CARD_REACH = 6;
  * Approaches artwork `id` (its Met object ID; its box from the collection's placements, ./labels-helpers.ts) as a visitor does: from where the eye stands,
  * farther from it than an artwork's 6 m reach (CARD_REACH), aimed at its box's middle by drags, and walked toward it at a walk with W held until its
  * card shows, watched in the page at every frame; then turned by drags to `away` (a yaw) until the card goes. At every frame recorded the card follows the
- * look target (`cardApart`), and no frame shows it while the eye stands farther than 6 m from the artwork's box. Fails unless the card showed before the
- * eye came within NEAR of the box, and went once the walker turned away. It records its own frames (`watchScreens`) and ends the record when done; the
- * walk's own frames (./route-walk.ts `record`), from before the aim to after the turn, go into `samples`, and none may be off the ground (review 20, F55:
- * the next walk dropped them, so the airborne check never saw this walk). Returns the first frame with the card.
+ * look target (`cardApart`), and no frame shows it while the eye stands farther than the spec's 6 m from the artwork's box. Fails unless the card
+ * shows before the eye comes within NEAR (3 m) of the box, and went once the walker turned away. It records its own frames (`watchScreens`) and ends
+ * the record when done; the walk's own frames (./route-walk.ts `record`), from before the aim to after the turn, go into `samples`, and none may be
+ * off the ground, so the walk toward the artwork and the turn away keep the walker on it (review 20, F55: the next walk dropped them, so the airborne
+ * check never saw this walk). Returns the first frame with the card.
  */
 export async function approach(page: Page, id: number, away: number, where: string, samples: Sample[]): Promise<Screen> {
   const box = artworkBounds().get(id);

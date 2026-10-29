@@ -10,16 +10,16 @@
  * - a click only from a press with no other pointer down from its press to its release, of the primary button, its buttons unchanged, its capture
  *   kept and its travel under CLICK_SLOP, at its release point; every such press a click; the camera and its target within 1 nm of where they were
  *   before its press (the controls' update rounds them by up to 1e-14 m).
- * A failure names the seed, its first problems and the events up to the first. Red with the gate, the zoom and the rig of 42722e9 (review 11), 308
- * of the 400 seeds failing; with each alone: its gate 44 (seed 29, a click from a press whose buttons changed, F38; seed 76, a mouse click while a
- * finger whose capture was lost was down, F37), its zoom 250 (seed 34, a zoom on one finger's move, a finger released over another element left
- * behind; seed 45, a zoom on a left drag, a cancelled middle drag left behind), its rig 145 (seed 1, the controls never hearing a finger's cancel
- * over another element; 61 seeds then threw in the controls). The sequences made 339 clicks, 695 button changes, 546 capture losses, 451 ends over
- * another element, 674 cancels, 337 pinch steps, 119 middle-drag steps and 357 presses of a mouse or pen while a finger was down.
- * Bound: SEEDS sequences of STEPS actions; the stand-in page's (src/viewer/pointer-testing.ts); the controls' damping off and a frame after each
- * event; no pointer mixing that throws inside three's OrbitControls with or without the click (review 11, F39, deferred): a finger pressing or ending
- * while a mouse or pen is down, a mouse and a pen down together, or a middle-button press while a finger is down (the controls keep the finger's
- * turn and read the mouse as a second finger).
+ * A failure prints the failing seed, its first problems and its events up to the first. Red with the gate, the zoom and the rig of 42722e9 (review
+ * 11), 308 of the 400 seeds failing; with each alone: its gate 44 (seed 29, a click from a press whose buttons changed, F38; seed 76, a mouse click
+ * while a finger whose capture was lost was down, F37), its zoom 250 (seed 34, a zoom on one finger's move, a finger released over another element
+ * left behind; seed 45, a zoom on a left drag, a cancelled middle drag left behind), its rig 145 (seed 1, the controls never hearing a finger's
+ * cancel over another element; 61 seeds then threw in the controls). The sequences made 339 clicks, 695 button changes, 546 capture losses, 451 ends
+ * over another element, 674 cancels, 337 pinch steps, 119 middle-drag steps and 357 presses of a mouse or pen while a finger was down.
+ * Bound: SEEDS (400) sequences of STEPS (40) actions; the stand-in page's (src/viewer/pointer-testing.ts); the controls' damping off and a frame
+ * after each event; no pointer mixing that throws inside three's OrbitControls with or without the click (review 11, F39, deferred): a finger
+ * pressing or ending while a mouse or pen is down, a mouse and a pen down together, or a middle-button press while a finger is down (the controls
+ * keep the finger's turn and read the mouse as a second finger).
  */
 import { Vector3 } from 'three';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';

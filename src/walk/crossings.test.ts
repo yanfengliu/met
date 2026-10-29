@@ -8,6 +8,13 @@
  * tops where they are shorter than it and missed wholly inside a taller one (the bound src/model/closure.test.ts keeps on the model), or on a line along
  * edges both parts have in one of those planes, which reads them once (the crossing rule's bound, src/walk/collision.ts); and a rusticated wall whose
  * window's sill lies on a channel's floor and head on a channel's ceiling lays one face at each, not two.
+ * Among the fixtures: a block on a block crossed four times through a face, an edge and a corner; a single surface with no inside, a walker in it
+ * kept; a declared sheet whose panes overlap, two panes 2 cm apart and a hipped skylight over its hip, keeping a walker built through it, which the
+ * same panes undeclared do not, its mark the same in a world of moving pieces (red without settle's reading of sheets: the panes' walker moved); two
+ * overlapping parts whose faces share planes crossed at each, a walker in them found by their tops 1.2 m up and missed wholly inside them 3 m tall,
+ * and a line along both parts' bottom diagonals read once there, so a walker on it is missed even 1.2 m up, the crossing rule's bound; and the
+ * rusticated wall's window crossed once at its sill and once at its head (red with main's rule in 5 of the 8, and the wall's red without
+ * `intervalsAt`'s edge mode in src/model/lib/wall.ts; no wall in the model puts an opening's edge on a channel's).
  * Bound: fixtures only; src/model/closure.test.ts checks that every piece of the model is closed along vertical lines.
  */
 import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Vector3 } from 'three';

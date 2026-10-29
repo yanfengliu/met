@@ -1,8 +1,9 @@
 /**
  * The generated catalogue, offline (src/model/collection/catalogue.ts, from scripts/met-catalogue.ts): one CC0 record per pick, in the picks' order, each
- * with its fields, a size inside the rules, a kind and display the rules allow, a gallery of its space (or its pick's override), sRGB colours with a
- * grid for each sampled painting, and its provenance (the API URL, the fetch date, the record's and image's hashes). It also states the rules the
- * placeholders rely on: frames hang on walls, objects under 0.6 m stand in vitrines, and only a public-domain record with an image is sampled.
+ * with its fields, a size inside the rules (5 mm..25 m) and each dimension's source, a kind and display the rules allow, a gallery of its space (or
+ * its pick's override), sRGB colours with a grid for each sampled painting, and its provenance (the API URL, the fetch date, the record's and image's
+ * hashes). It also states the rules the placeholders rely on: frames hang on walls, objects under 0.6 m stand in vitrines, and only a public-domain
+ * record with an image is sampled.
  * Bound: it reads the file as committed; that its values match the API today is the script's to establish when it is run (docs/research/collection.md).
  */
 import { describe, expect, it } from 'vitest';

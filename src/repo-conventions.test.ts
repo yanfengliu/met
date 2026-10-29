@@ -14,6 +14,11 @@
  *
  *   3. Anti-vacuity. Each of the three roots must exist and hold at least one text file, so a renamed root or a broken walk fails instead of reporting "passed" for "did not run". The detectors are also run on synthetic input below, so each has been seen to fail.
  *
+ *   4. AGENTS.md bound. AGENTS.md at the repository's root holds at most 30,000 bytes, counted as Git stores it: UTF-8, with CRLF read as LF.
+ *      - Why: Codex reads only the first 32 KiB (32,768 bytes) of a project doc, and the fleet canon generated into the file may grow to its 15,000-byte ceiling. AGENTS.md holds what every session needs, each gate as one line, and links the rest (../fleet/FLEET.md, "Repo file shape"; docs/work/12_agents-md-disclosure).
+ *      - The bound is inclusive: 30,000 bytes pass, 30,001 fail. A checkout with CRLF line endings adds a byte a line, about 140 here, still under Codex's limit.
+ *      - A missing AGENTS.md fails rather than passing unread; a failure names the size, the excess and where the detail goes instead.
+ *
  * This file reads the repository's own sources from disk and imports nothing from the app. It needs no browser.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -41,6 +46,8 @@ const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([
 const BINARY_PROBE_BYTES = 8000;
 /** Escaped, so this file's own source matches neither pattern and needs no exemption from itself. */
 const ENV_PATTERNS: readonly RegExp[] = [/import\.meta\.env/, /process\.env/];
+/** AGENTS.md's ceiling in bytes as Git stores it: under Codex's 32 KiB, with room for the canon to grow. See the header. */
+const MAX_AGENTS_BYTES = 30_000;
 
 interface SourceFile {
   /** Repository-relative, always with `/` separators. */
@@ -122,6 +129,20 @@ function describeEnvRead({ path, line, text }: EnvRead): string {
   return `${path}:${String(line)} reads the build or process environment (${text}): src/ takes runtime inputs only from the page URL (docs/design/spec.md, Query contract); put the input in that contract, or read the environment in a root config outside src/.`;
 }
 
+/** A text's size as Git stores it here: its UTF-8 bytes, with CRLF read as LF. */
+function storedBytes(text: string): number {
+  return new TextEncoder().encode(text.replace(/\r\n/g, '\n')).length;
+}
+
+function describeAgentsSize(bytes: number): string {
+  return `AGENTS.md holds ${String(bytes)} bytes, ${String(bytes - MAX_AGENTS_BYTES)} over the ${String(MAX_AGENTS_BYTES)}-byte bound, and Codex reads only its first 32 KiB: keep each gate there to one line on what it checks and link where its detail lives, its bounds in its test's header, its red proofs in docs/learning/gate-proofs.md, its design in docs/design/spec.md.`;
+}
+
+function agentsSizeProblems(text: string): string[] {
+  const bytes = storedBytes(text);
+  return bytes > MAX_AGENTS_BYTES ? [describeAgentsSize(bytes)] : [];
+}
+
 // Each test that reads the roots reads about 280 files (3 MB): 40 ms warm, 6.5 s on first reads in a fresh worktree under load, inside the 10 s the suite's timeout leaves it under the headroom check (`vitest.config.ts`).
 describe('repository conventions', () => {
   it('keeps every file under src/, scripts/ and tests/ within 500 lines', () => {
@@ -131,6 +152,12 @@ describe('repository conventions', () => {
 
   it('reads no build or process environment under src/', () => {
     expect(envReads(loadRoot('src')).map(describeEnvRead)).toEqual([]);
+  });
+
+  it('keeps AGENTS.md within 30,000 bytes', () => {
+    const path = join(REPO_ROOT, 'AGENTS.md');
+    if (!existsSync(path)) throw new Error('AGENTS.md is missing from the repository root, so this gate would read nothing: restore it.');
+    expect(agentsSizeProblems(readFileSync(path, 'utf8'))).toEqual([]);
   });
 });
 
@@ -160,6 +187,16 @@ describe('repository convention detectors', () => {
       'src/over-by-one.ts has 501 lines, 1 over the 500-line bound: split it into modules of one concern each.',
       'tests/e2e/far-over.spec.ts has 612 lines, 112 over the 500-line bound: split it into modules of one concern each.',
     ]);
+  });
+
+  it('passes AGENTS.md at exactly 30,000 bytes, fails 30,001, and counts CRLF as LF and characters as their UTF-8 bytes', () => {
+    const atBound = 'x'.repeat(MAX_AGENTS_BYTES);
+    expect(agentsSizeProblems(atBound)).toEqual([]);
+    expect(agentsSizeProblems(`${atBound}x`)).toEqual([describeAgentsSize(30_001)]);
+    expect(storedBytes('x\r\n'.repeat(15_000))).toBe(30_000);
+    expect(agentsSizeProblems('x\r\n'.repeat(15_000))).toEqual([]);
+    expect(storedBytes('×')).toBe(2);
+    expect(describeAgentsSize(30_001)).toMatch(/^AGENTS\.md holds 30001 bytes, 1 over the 30000-byte bound, and Codex reads only its first 32 KiB: /);
   });
 
   it('finds both environment reads under src/ and ignores everything else', () => {

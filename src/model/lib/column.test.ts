@@ -1,5 +1,7 @@
 /**
  * Columns, pilasters and their pieces: sound attributes, outward winding, bounds that match the parameters, cache identity and triangle budgets.
+ * Every Corinthian capital, round and flat, at every detail, is read on a grid of its own of 240 lines a side (`inwardAlong`, ./facing.ts), red with
+ * the acanthus leaves' quads split along one diagonal (at medium, 29 lines through the round capital and 40 through the flat).
  * Bound: checks geometry arrays only; whether a capital reads as Corinthian is judged on the gallery captures against photographs.
  */
 import { Vector3 } from 'three';

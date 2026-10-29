@@ -4,6 +4,13 @@
  * real model, holding W walks from the plaza up the front steps; a drag turns the view; F returns to the orbit view where the walker stood; a key
  * pressed in the same frame as the F before it already has the new mode's meaning, both ways.
  * Facts come from `window.__met.walk` and `window.__met.camera`; spawn positions from src/walk/spawns.ts; levels from src/model/frame.ts.
+ * F followed by Space or ArrowLeft within one frame (sent back to back through CDP, a probe's frame count confirming they shared a frame) gives the
+ * second key the new mode's meaning, both ways. A drag turns the view the way the pointer moves, LOOK_PER_PIXEL a pixel, and only a press that
+ * travels under CLICK_SLOP (5 px) asks for pointer lock (a probe counts the requests). At t = N the collision builds within 2 s, and frames keep the
+ * median work and the mean GPU-synced render under 16.7 ms and the median frame interval under 18.37 ms (16.7 ms plus 10%, ./helpers.ts
+ * `expectWalkingBudget`) with the look target on: walking on the plaza, running up the front steps, walking from the Great Hall and second-floor
+ * spawns, and, unthrottled, walking and then running at the ends of R3 and R4 in the Temple of Dendur hall and the Leon Levy and Shelby White Court
+ * (./routes.spec.ts).
  * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2), W held until the eye has climbed 2 m and the eye read once the
  * walker stands still, so a loaded machine changes how long it takes, not where it ends, within a timeout of 60 s times the CPU throttle; frame times are this machine's (an RTX 4090 in headless Chrome);
  * "the same frame" is checked by a probe's requestAnimationFrame count at each keydown, and a run whose keys never shared a frame fails, not passes.
