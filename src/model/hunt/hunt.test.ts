@@ -8,7 +8,9 @@
  * The walk routes (plan docs/work/1_first-person-walk, M2; the whole walks are in routes.test.ts): the central doors' glazing is passable to the walk mode
  * and looks like the palette's, while the palette and the other glazing stay solid; the floor is whole behind the three arches' screens and under the
  * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's walk collision at t = N,
- * src/walk/collision.ts).
+ * src/walk/collision.ts). `archedPassage` (./shapes.ts), the gallery 600 passage in `grand-stair-vault`, is closed along vertical lines and the faces
+ * its feet stand on look down (`levelFaces`), as src/model/core/core.test.ts reads `openWall` with each kind of hole and `holeLining` (red with
+ * `openWall`'s bottom or the passage's feet wound up).
  */
 import { Box3, Vector3 } from 'three';
 import type { Material } from 'three';

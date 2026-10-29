@@ -1,20 +1,18 @@
 /**
  * Where a vertical line crosses a piece (src/walk/collision.ts `crossings`), which the walk's settle reads by parity (docs/design/spec.md, Walk mode:
- * When the build moves), on fixtures built through the page's collision path: one surface met through an edge or a corner of its triangles counts once,
- * two faces back to back in one piece count twice, and so do a face looking up and one looking down meeting at the line, so a closed piece is crossed an
- * even number of times; a walker that a piece of two parts is built through is found inside the upper part; and a declared sheet has no inside even
- * where its panes overlap, as a hipped skylight's do over a hip, so one built through a walker leaves it be, which the same panes undeclared do not.
- * Two pins: two overlapping parts whose faces share planes are crossed at each, so their overlap reads as outside, and a walker in it is found by their
- * tops where they are shorter than it and missed wholly inside a taller one (the bound src/model/closure.test.ts keeps on the model), or on a line along
- * edges both parts have in one of those planes, which reads them once (the crossing rule's bound, src/walk/collision.ts); and a rusticated wall whose
- * window's sill lies on a channel's floor and head on a channel's ceiling lays one face at each, not two.
- * Among the fixtures: a block on a block crossed four times through a face, an edge and a corner; a single surface with no inside, a walker in it
- * kept; a declared sheet whose panes overlap, two panes 2 cm apart and a hipped skylight over its hip, keeping a walker built through it, which the
- * same panes undeclared do not, its mark the same in a world of moving pieces (red without settle's reading of sheets: the panes' walker moved); two
- * overlapping parts whose faces share planes crossed at each, a walker in them found by their tops 1.2 m up and missed wholly inside them 3 m tall,
- * and a line along both parts' bottom diagonals read once there, so a walker on it is missed even 1.2 m up, the crossing rule's bound; and the
- * rusticated wall's window crossed once at its sill and once at its head (red with main's rule in 5 of the 8, and the wall's red without
- * `intervalsAt`'s edge mode in src/model/lib/wall.ts; no wall in the model puts an opening's edge on a channel's).
+ * When the build moves), on fixtures built through the page's collision path: one surface met through an edge or a corner of its triangles counts
+ * once, a block on a block is crossed four times through a face, an edge and a corner, as two faces back to back in one piece count twice, and so do
+ * a face looking up and one looking down meeting at the line, so a closed piece is crossed an even number of times; a walker that a piece of two
+ * parts is built through is found inside the upper part; a single surface with no inside keeps a walker in it; and a declared sheet has no inside
+ * even where its panes overlap, as two panes 2 cm apart and a hipped skylight's over its hip do, so one built through a walker leaves it be, which
+ * the same panes undeclared do not, its mark the same in a world of moving pieces (red without settle's reading of sheets: the panes' walker moved).
+ * Two pins: two overlapping parts whose faces share planes are crossed at each, so their overlap reads as outside, and a walker in it is found by
+ * their tops 1.2 m up where they are shorter than it and missed wholly inside a taller one, 3 m tall (the bound src/model/closure.test.ts keeps on
+ * the model), or on a line along edges both parts have in one of those planes, as their bottom diagonals, which reads them once there, so a walker on
+ * it is missed even 1.2 m up (the crossing rule's bound, src/walk/collision.ts); and a rusticated wall whose window's sill lies on a channel's floor
+ * and head on a channel's ceiling lays one face at each, not two, so the window is crossed once at each (red without `intervalsAt`'s edge mode in
+ * src/model/lib/wall.ts; no wall in the model puts an opening's edge on a channel's).
+ * Red with main's crossing rule in 5 of these 8 tests.
  * Bound: fixtures only; src/model/closure.test.ts checks that every piece of the model is closed along vertical lines.
  */
 import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Vector3 } from 'three';

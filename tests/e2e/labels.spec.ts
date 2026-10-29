@@ -10,7 +10,7 @@
  *   16.7 ms, the median frame interval under 18.37 ms: ./helpers.ts `expectWalkingBudget`), and the link, clicked, opens the object's page in a new
  *   tab, its request stopped in the test's browser so nothing leaves the machine.
  * - Orbit view, at gallery 600's preset (`int-european-paintings-600`): a drag that starts on the painting shows no card; a click on it shows the
- *   card, moving neither the camera nor the preset in view, as does a press that travels under CLICK_SLOP (4 px), both pixels checked by a cast
+ *   card, moving neither the camera nor the preset in view, as does a press that travels 4 px, under CLICK_SLOP (5 px), both pixels checked by a cast
  *   through the finished model in the test process; a click on a wall hides it; Esc hides it; the card sits above the bar, clear of the floor picker
  *   and every control. A clicked card goes when walk mode begins and does not come back when it ends.
  * The painting's place comes from the collection's placements (src/model/collection/spaces-b.ts), the pixel a click goes to from the published camera,

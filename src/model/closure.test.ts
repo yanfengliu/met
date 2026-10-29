@@ -25,11 +25,11 @@
  * rims cancel along vertical lines, fails, and so does a face wound in, unless the face lies back to back on another, one side of a two-sided
  * membrane, which has no inside to lose. A face stands upright when lines along vertical see it at most BEHIND (0.1 mm) wide, twice its area in plan
  * over its longest edge in plan, in its frame. And each closed part's facing as drawn: its volume read along vertical by its faces
- * (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one (4,774 parts: 4,726 of the shapes, 48 of
- * the doors' leaves), signed by its piece's matrix, which an instanced mesh does not turn back; no pocket on a grid of GRID (64) lines a side over
- * each shape and each door's leaves, nor on two lines beside each of their open edges (`inwardAlong`, each line cast again a hair aside where it
- * meets an edge), which read a part whose open ends line up along vertical lines and wind inside out between them, as `openAlong` reads such a part
- * closed; and no piece of the model, all 27,043, mirrored by its matrix.
+ * (src/model/lib/facing.ts `partVolumes`), each part on its own and those that close only together as one (4,774 parts at 3ac62d7: 4,726 of the
+ * shapes, 48 of the doors' leaves), signed by its piece's matrix, which an instanced mesh does not turn back; no pocket on a grid of GRID (64) lines
+ * a side over each shape and each door's leaves, nor on two lines beside each of their open edges (`inwardAlong`, each line cast again a hair aside
+ * where it meets an edge), which read a part whose open ends line up along vertical lines and wind inside out between them, as `openAlong` reads such
+ * a part closed; and no piece of the model, all 27,043 at 3ac62d7, mirrored by its matrix.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
  * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage in `grand-stair-vault`), with main's crossing rule, which counted hits
  * within 1 µm once (206 shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside

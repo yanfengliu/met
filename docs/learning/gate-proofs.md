@@ -4,7 +4,7 @@ The record that each gate was made to go red by reintroducing the defect it clai
 
 The first entries are the gates that retired a lesson of [lessons.md](lessons.md). Each names the gate, the mutation, the failure it produced, and the last commit before the lesson's deletion, from which `git show <sha>:docs/learning/lessons-evidence.md` reads the lesson's evidence back.
 
-Under [Red proofs by gate](#red-proofs-by-gate), each gate's other red proofs are filed under its test. Most came from AGENTS.md's Gates section, where each work unit wrote them until work unit 12 moved them here; a gate's new red proofs go there too, or in its test's header. Each names the mutation and the failure it produced, and the commit it was red at where the record does. Their review rounds and finding IDs (review 17, F46) are work unit 2's, in `docs/work/2_doors-and-collection/reviews/`.
+Under [Red proofs by gate](#red-proofs-by-gate), each gate's other red proofs are filed under its test. Most came from AGENTS.md's Gates section, where each work unit wrote them until work unit 12 moved them here; a gate's new red proofs go there too, or in its test's header. Each names the mutation, and the failure and the commit it was red at where the record gives them. Their review rounds and finding IDs (review 17, F46) are work unit 2's, in `docs/work/2_doors-and-collection/reviews/`.
 
 ## A cited reference photograph must be recorded as viewed
 
@@ -46,7 +46,7 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 
 ### `src/repo-conventions.test.ts`
 
-- AGENTS.md within 30,000 bytes (work unit 12, 2026-10-29): with `8a6a0c2`'s AGENTS.md put back, the last before work unit 12, red: "AGENTS.md holds 69223 bytes, 39223 over the 30000-byte bound, and Codex reads only its first 32 KiB: …"; with work unit 12's, green. Its detector test passes 30,000 bytes of synthetic text and fails 30,001.
+- AGENTS.md within 30,000 bytes (work unit 12, 2026-10-29): with `8a6a0c2`'s AGENTS.md put back, the last before work unit 12, red: "AGENTS.md holds 69357 bytes with CRLF line endings, 39357 over the 30000-byte bound, and Codex reads only its first 32 KiB: …" (69,223 bytes with LF endings, 134 lines); with work unit 12's, green. Its detector test passes 30,000 bytes of synthetic text and fails 30,001, read with LF endings or CRLF.
 
 ### `tests/e2e/walk-screen.spec.ts`
 
@@ -90,6 +90,10 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 
 - No request but to the page's own host: red with a planted fetch of a Collection API record.
 
+### `tests/e2e/labels-view.spec.ts`
+
+- A 2 px click on the painting shows its card and moves nothing, the preset staying in view and the follow camera on: red at `86bdf0c`, where the camera moved 0.514 m (review 6, F25).
+
 ### `tests/e2e/doors.spec.ts`
 
 - `doors=open` and `doors=closed` under `shot=1`, the doors set before the walker is placed and both before the first frame drawn: red with the set-up moved after the placement, after the first frame, marked at load but done after the first frame, or done after the first render in the same callback, which the probe of `7b7fe94`, reading the doors' state at the callback's end, passed.
@@ -98,15 +102,6 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 ### `src/build/window-parts.test.ts`
 
 - Every role of a door, each leaf apart among them, placed with the rest: red with a leaf left out of the closed leaves.
-
-### `src/model/lib/door.test.ts`
-
-- No leaf meets its frame, transom bar or fanlight glass through its whole swing either way: red at `d4d716d`: the entrance's leaves met the frame in all 146 sampled poses, 41 mm into the transom bar; red too with only the mid-plane pivot put back, its hinge corner sweeping into the jamb.
-
-### `src/model/door-fit.test.ts`
-
-- Every leaf of each door that opens, every 2.5° either way, meets no other piece of the finished model, and no door's frame passes through one: red at `7b7fe94`: four entrance leaves through the screen columns' plinths in all 73 poses, the frames through the plinths, the shafts' feet and the capitals; its controls stay red: a block round a doorway and its swing, a 1 cm cube in a leaf, a leaf moved 12 mm into its partner, which the check of `6198d1a` passed.
-- With Weston's door tagged, red with its stone lining's opening 2 cm narrower or 2 cm lower than its square-headed frame or the 528/529 wall in its doorway.
 
 ### `src/walk/door-world.test.ts`
 
@@ -122,16 +117,11 @@ With the work's screen the gate is green: one group of 565 pieces, its lowest po
 - The timeline's state byte for byte a timeline's without the door layer, the layer hiding by layer masks only: red when it hides by `visible`.
 - A door's piece that the step's resting pieces leave out, a locked door's included, refused naming the door and the piece: red with the silent skip of `0defda0` (review 17, F47).
 
-### `src/model/doors.test.ts`
-
-- The middle door the look target where its pair's leaves meet, from the plaza spawn by W alone, the zoom's pick passing its seam on the same ray: red at `1f3d7c9`: stopped 1.16 m off at the box (review 18, F50).
-- Each locked door the look target on its axis and on a leaf 0.3 m across, "Locked": red at `0defda0`: nothing at the meeting line (review 17, F46 and F48).
-
 ### `src/viewer/pick.test.ts` and `src/walk/look.test.ts`
 
 - A tagged glass piece found when accepted and stopping the ray when not, as a glazed door out of reach does: red at `a9f6f5a`, which passed a glass door out of reach; in the look target, the glass door red at `a9f6f5a` too.
 
 ### `src/model/lib/dome.test.ts`
 
-- The Great Hall pendentives' seams, read at every detail: with the spandrels on their old points, apart from the curved faces', `src/model/lib/dome.test.ts` reads their seams at every detail, red then with 48, 96 and 160 edges borne by an odd number of faces.
+- The Great Hall pendentives' seams, read at every detail: red with the spandrels on their old points, apart from the curved faces', with 48, 96 and 160 edges borne by an odd number of faces.
 - `barrelVault` refusing coffers whose openings' or floors' corners would stand out of the chords of its outer face's facets above them: red with the refusal off, with one share for every corner, or with the openings unread.

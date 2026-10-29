@@ -14,12 +14,11 @@
  *   less a click's own moves; it reports a user move (which turns the follow camera off and clears the preset in view) only where it moves the view,
  *   and none from a click's press to its release.
  *   Red with the gate of 86bdf0c (the taps and the pen turned the camera 0.37 to 0.59 m and reported user moves, review 6, F25), of e06cc70 (the
- *   sub-slop pinch's first factor 44/39 for 40/39, review 7, F29) and of 1fd3a50 (the drag then a pinch zoomed first by 136/39 for 40/39, the camera
- *   75 m off: the move held before the drag passed the slop went on again as the second finger landed, review 10, F36); red too with the right
- *   button counted (the pan a click) and with the travel taken from the press point (the out-and-back drag a click). Red with the gate and the zoom
- *   of 42722e9 (review 11): the two buttons pressed and let go in turn a click (F38), the mouse a click while the finger was down, and the finger's
- *   drag a pinch (F37). As decimals, the sub-slop pinch's first factor 44/39 is 1.128 for 1.026, and the drag then a pinch's 136/39, the camera 75 m
- *   off, is 3.487 for 1.026.
+ *   sub-slop pinch's first factor 44/39 (1.128) for 40/39 (1.026), review 7, F29) and of 1fd3a50 (the drag then a pinch zoomed first by 136/39
+ *   (3.487) for 40/39, the camera 75 m off: the move held before the drag passed the slop went on again as the second finger landed, review 10, F36);
+ *   red too with the right button counted (the pan a click) and with the travel taken from the press point (the out-and-back drag a click). Red with
+ *   the gate and the zoom of 42722e9 (review 11): the two buttons pressed and let go in turn a click (F38), the mouse a click while the finger was
+ *   down, and the finger's drag a pinch (F37).
  * Random sequences of the same input are in src/viewer/click-random.test.ts.
  * Bound: the stand-in page's (src/viewer/pointer-testing.ts); the rig runs undamped, a frame after each event.
  */

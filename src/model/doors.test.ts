@@ -1,16 +1,17 @@
 /**
  * The model's doors on the real sequence (src/model/doors.ts; docs/design/spec.md, Doors), headless: every door of the list is tagged, in one step,
  * and every door tag names one of them; the door layer (src/viewer/doors.ts) builds over the real timeline, with stand-ins for the doors that open and
- * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's stand-ins and doorways counted (17; review 0, F9); no leaf of
- * a door that opens casts a shadow, so no swing asks for a shadow pass (review 5, F23); with the layer attached and the doors used between random
- * positions, the timeline's state stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door from
- * 2.5 m in front at t = N through the page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors' pieces
- * held shut in the door world), stops against its leaves (red with the locked doors' parts left out of the door world: 4.52 m past the north link
- * door's leaves; review 17, F47), as it does in a static world of every solid piece, where without the leaves it walks on through. Weston's door
+ * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's stand-ins and doorways counted (17 together; review 0, F9);
+ * no leaf of a door that opens casts a shadow, so no swing asks for a shadow pass (review 5, F23); with the layer attached and the doors used between
+ * random positions, the timeline's state stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door
+ * from 2.5 m in front at t = N through the page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors'
+ * pieces held shut in the door world), stops against its leaves (red with the locked doors' parts left out of the door world: 4.52 m past the north
+ * link door's leaves; review 17, F47), as it does in a static world of every solid piece, where without the leaves it walks on through. Weston's door
  * against the walker: src/model/core/weston-door.test.ts.
  * Each door is the look target through the page's picker where a pair's leaves meet: the middle door, "E Open", from the plaza spawn by W alone at
- * 30, 60 and 144 frames a second, walking and running, the zoom's pick passing its seam on the same ray, and each locked door on its axis and on a
- * leaf 0.3 m across, "Locked", E doing nothing.
+ * 30, 60 and 144 frames a second, walking and running, the zoom's pick passing its seam on the same ray (red at 1f3d7c9, the doorways in both
+ * queries: stopped at the box 1.3 m off, 1.16 m short; review 18, F50), and each locked door on its axis and on a leaf 0.3 m across, "Locked", E
+ * doing nothing (red at 0defda0: nothing at the meeting line; review 17, F46 and F48).
  * Bound: the walker walks at the middle of each door, facing it square on, at 60 frames a second; positions are the feet's.
  */
 import { Box3, Layers, Matrix4, Ray, Vector3 } from 'three';
