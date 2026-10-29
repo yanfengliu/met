@@ -31,7 +31,7 @@ import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import type { GroundHit, LineCrossings } from '../../walk/collision.js';
 import { BODY } from '../../walk/walker.js';
-import { GATE_BASE } from '../core/choir-screen.js';
+import { GATE_CLEAR } from '../core/choir-screen.js';
 import { SCREEN_Z } from '../core/constants.js';
 import { INNER_EAST_Z } from '../core/layout.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
@@ -85,8 +85,8 @@ const ZONES: readonly Zone[] = [
   // The passages through the party walls on Z −96.0 (into the Engelhard Court) and Z −69.0 (into the Petrie Court's wing), 6 m out each side, as Weston's.
   { name: 'Engelhard Court passage', y: MAIN_FLOOR_Y, min: [ENGELHARD_PASSAGE.a, MORGAN.z0 - 6], max: [ENGELHARD_PASSAGE.b, MORGAN.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
   { name: 'Petrie Court passage', y: MAIN_FLOOR_Y, min: [PETRIE_PASSAGE.a, SOUTH_LINK.z0 - 6], max: [PETRIE_PASSAGE.b, SOUTH_LINK.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
-  // The Valladolid choir screen's open gate, between its base's ends (core/choir-screen.ts), 6 m out each side, as Weston's.
-  { name: 'choir screen gate', y: MAIN_FLOOR_Y, min: [-GATE_BASE, SCREEN_Z - 6], max: [GATE_BASE, SCREEN_Z + 6], margin: CLEARANCE + BODY.radius },
+  // The Valladolid choir screen's open gate, between its jambs (core/choir-screen.ts), 6 m out each side, as Weston's.
+  { name: 'choir screen gate', y: MAIN_FLOOR_Y, min: [-GATE_CLEAR, SCREEN_Z - 6], max: [GATE_CLEAR, SCREEN_Z + 6], margin: CLEARANCE + BODY.radius },
 ];
 
 /** One piece of an artwork as its step's mesh draws it at t = N. */
