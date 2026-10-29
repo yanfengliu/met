@@ -99,12 +99,15 @@ describe('barrel vault', () => {
     expect(() => barrelVault({ span: 4, length: 3, rise: 3 })).toThrow(/more than half the span/);
   });
 
-  it("refuses coffers that reach the shell's outer face, which would stand out of it as pockets wound inside out, and keeps those it holds", () => {
-    // The Hunt arches' soffit as it was: 0.1 m coffers in a 0.06 m shell, each standing 4 cm out of it.
-    const was = { span: 4.6, length: 1.2, coffers: { across: 11, along: 1, depth: 0.1, rib: 0.16 } };
-    expect(() => barrelVault({ ...was, thickness: 0.06 })).toThrow(/barrelVault: coffers\.depth 0\.1 reaches the shell's outer face: a shell 0\.06 thick leaves 0\.05\d+ m inside its facets/);
-    // Just thick enough at its facets' chords, and thicker: no line along vertical crosses a pocket.
-    expect(() => barrelVault({ ...was, thickness: 0.1 })).toThrow(/reaches the shell's outer face/);
-    expect(inwardAlong(barrelVault({ ...was, thickness: 0.14 }), new Vector3(0, 1, 0), 160)).toEqual({ lines: 0, worst: 0, at: null });
+  it("refuses coffers whose floors would stand out of the shell as pockets wound inside out, and keeps those it holds (review 0, F16)", () => {
+    // The Hunt arches' soffit, 8.14 m across: its 0.1 m coffers in the 0.06 m shell it had stood 4 cm out of it.
+    const hunt = { span: 8.14, length: 0.8, coffers: { across: 11, along: 1, depth: 0.1, rib: 0.16 } };
+    expect(() => barrelVault({ ...hunt, thickness: 0.06 })).toThrow(/^barrelVault: coffers\.depth 0\.1 leaves no shell behind the coffers' floors: a shell 0\.06 thick keeps 0\.0528 m inside its outer face where their corners lie, .* make the shell thicker than 0\.1073 m or the coffers shallower than 0\.0528 m\.$/);
+    // A shell as thick as its coffers are deep is refused too: its facets' chords dip toward the floors' corners.
+    expect(() => barrelVault({ ...hunt, thickness: 0.1 })).toThrow(/thicker than 0\.1073 m/);
+    expect(inwardAlong(barrelVault({ ...hunt, thickness: 0.14 }), new Vector3(0, 1, 0), 160)).toEqual({ lines: 0, worst: 0, at: null });
+    // Coffers whose floors' corners clear the facets above them by 18 mm build, though a corner under a facet's middle would not.
+    const fits = barrelVault({ span: 4, length: 3, thickness: 0.1, detail: 'low', coffers: { across: 2, along: 1, depth: 0.08, rib: 0.01 } });
+    expect(inwardAlong(fits, new Vector3(0, 1, 0), 200)).toEqual({ lines: 0, worst: 0, at: null });
   });
 });

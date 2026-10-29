@@ -104,13 +104,17 @@ function intradosAt(dx: number): number {
   return Math.sqrt(Math.max(0, HALF * HALF - dx * dx));
 }
 
-/** The coffered soffit of each arch's inner order, from the outer order's face back to the screen (S10: deep coffers in the soffit), its shell deep enough to hold them. */
-const SOFFIT_LENGTH = -SCREEN_Z - ARCH_SKIN - 0.05;
+/**
+ * The coffered soffit of each arch's inner order, from just behind the outer order's face back to the screen (S10: deep coffers in the soffit), its shell
+ * deep enough to hold them. Its front stands SOFFIT_SET back, so that the shell's outer face, wider than the wall's opening, lies in the wall, not in its face.
+ */
+const SOFFIT_SET = 0.01;
+const SOFFIT_LENGTH = -SCREEN_Z - ARCH_SKIN - 0.05 - SOFFIT_SET;
 
 function arch(kit: Kit, x: number, order: number): void {
   kit.add(archivolt({ span: ARCH_OUTER_SPAN, band: ARCHIVOLT_BAND, projection: 0.22 }), palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z), order);
   const soffit = barrelVault({ span: ARCH_INNER_SPAN - 0.16, length: SOFFIT_LENGTH, thickness: 0.14, coffers: { across: 11, along: 1, depth: 0.1, rib: 0.16 } });
-  kit.add(soffit, palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z - ARCH_SKIN - SOFFIT_LENGTH / 2), order);
+  kit.add(soffit, palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z - ARCH_SKIN - SOFFIT_SET - SOFFIT_LENGTH / 2), order);
   const impost = moulding({
     profile: 'cornice-plain',
     path: [

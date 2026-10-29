@@ -123,7 +123,7 @@ describe('pilaster', () => {
 });
 
 describe('Corinthian capitals', () => {
-  // The acanthus tips curl down past level; on too few rows a tip's edge folded through itself (medium detail had 3: 42 and 44 lines here).
+  // The acanthus tips curl down past level, and split along one diagonal a tip's edge folded through itself: at medium detail, 24 lines here through the round capital and 36 through the flat one.
   it.each(['low', 'medium', 'high'] as const)('fold nowhere at %s detail, round and flat: no line along vertical crosses a pocket wound inside out', (detail) => {
     for (const capital of [columnParts({ order: 'corinthian', detail }).capital, pilasterParts({ order: 'corinthian', width: 1, detail }).capital]) {
       expect(inwardAlong(capital, new Vector3(0, 1, 0), 240)).toEqual({ lines: 0, worst: 0, at: null });

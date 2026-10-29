@@ -102,7 +102,6 @@ export function sweepInto(builder: MeshBuilder, profile: Profile, path: readonly
   const ring = ringOf(profile, options.profileCreaseDeg ?? DEFAULT_CREASE_DEG);
   const st = stations(points, closed, up, options.pathCreaseDeg ?? 30, options.maxMitre ?? 6);
   const segCount = closed ? st.length : st.length - 1;
-  foldProblem(st, closed, ring.verts, up);
   const position = new THREE.Vector3();
   const normal = new THREE.Vector3();
   // Ring vertex ids per station when that station is smooth (shared by both segments).
@@ -135,33 +134,6 @@ export function sweepInto(builder: MeshBuilder, profile: Profile, path: readonly
     if (first !== undefined && last !== undefined) {
       capInto(builder, profile.points, first, up, true);
       capInto(builder, profile.points, last, up, false);
-    }
-  }
-}
-
-/**
- * Refuses a path that bends tighter than the profile reaches across it: on the bend's inside, the profile's points from one station to the next would
- * run back along the segment, folding the surface through itself and turning a pocket of it inside out.
- */
-function foldProblem(st: readonly Station[], closed: boolean, verts: readonly { readonly d: number }[], up: THREE.Vector3): void {
-  const t = new THREE.Vector3();
-  for (let k = 0; k < (closed ? st.length : st.length - 1); k++) {
-    const a = st[k];
-    const b = st[(k + 1) % st.length];
-    if (a === undefined || b === undefined) continue;
-    t.subVectors(b.p, a.p);
-    t.addScaledVector(up, -t.dot(up));
-    const length = t.length();
-    t.divideScalar(length);
-    // A ring point d across the path moves along the segment by its length, less what the mitres at its two ends take from it.
-    const take = b.scale * b.m.dot(t) - a.scale * a.m.dot(t);
-    for (const { d } of verts) {
-      const advance = length + d * take;
-      if (advance < 0) {
-        throw new Error(
-          `sweep: the path bends too tightly for the profile at points ${String(k)} and ${String((k + 1) % st.length)}: the profile's point ${d.toFixed(4)} across the path runs ${(-advance).toFixed(4)} m back along that ${length.toFixed(4)} m segment, folding the surface inside out; ease the bend, or keep the profile nearer the path on the bend's inside.`,
-        );
-      }
     }
   }
 }

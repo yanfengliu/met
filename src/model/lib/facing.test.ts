@@ -1,7 +1,8 @@
 /**
  * The facing checks (./facing.ts) on fixtures worked out by hand. `partVolumes`: a box wound outward and inside out, two boxes, a box mirrored through
- * the builder, the halves of a box that close only together, an open box, a flat membrane and a box read along a turned direction. `inwardAlong`: a box
- * either way round, and a slab with a recess in its top, shallower than the slab and deeper, whose floor then stands out under it as a pocket.
+ * the builder, the halves of a box that close only together, an open box, a flat membrane, a membrane whose terms cancel only to rounding and a box
+ * read along a turned direction. `inwardAlong`: a box either way round, boxes sharing a top, and a slab with a recess in its top, shallower than the
+ * slab and deeper, whose floor then stands out under it as a pocket.
  * Bound: fixtures only; src/model/closure.test.ts reads the finished model's parts, and the part tests read their own parts' pockets.
  */
 import { Matrix4, Vector3 } from 'three';
@@ -83,6 +84,16 @@ describe('partVolumes', () => {
     expect(part?.noise).toBe(0);
   });
 
+  it('reads a membrane of two faces back to back as no volume within its noise, though its terms cancel only to rounding (review 0, F15)', () => {
+    const [a, b, c] = [new Vector3(-74, -14, -43), new Vector3(-34, -42, 39), new Vector3(-46, 96, 94)];
+    const membrane = new MeshBuilder();
+    membrane.polygon([a, b, c]);
+    membrane.polygon([a, c, b]);
+    const [part] = partVolumes(membrane.build(), new Vector3(1, 2, -0.5).normalize());
+    expect(part).toBeDefined();
+    expect(Math.abs(part?.volume ?? Infinity)).toBeLessThanOrEqual(part?.noise ?? 0);
+  });
+
   it('reads the same volume along a turned direction, the box closed along it too', () => {
     const turned = new Vector3(1, 2, -0.5).normalize();
     expect(volumes(box(), turned)).toEqual([24]);
@@ -125,9 +136,17 @@ describe('inwardAlong', () => {
     expect([turned.lines, Number(turned.worst.toFixed(6))]).toEqual([100, 2]);
   });
 
+  it('finds nothing in boxes that share a top or stand apart, its lines off every edge laid out in round measures (review 0, F14)', () => {
+    const b = new MeshBuilder();
+    b.box([0, 1, 0], [1, 2, 1]);
+    b.box([0, 0, 0], [1, 2, 1]);
+    b.box([0, -2, 0], [1, -1, 1]);
+    expect(inwardAlong(b.build(), UP, 10)).toEqual({ lines: 0, worst: 0, at: null });
+  });
+
   it('finds nothing in a slab whose recess stays inside it, and the pocket of one deeper than the slab, under the recess only', () => {
     expect(inwardAlong(recessed(0.06).build(), UP, 10).lines).toBe(0);
-    // On a grid of 10, the lines at 0.35, 0.45, 0.55 and 0.65 m each way pass through the recess: 16 of them, each 4 cm in the pocket under the slab.
+    // On a grid of 10, four lines each way pass through the recess, 0.3 to 0.7 m: 16 of them, each 4 cm in the pocket under the slab.
     const deep = inwardAlong(recessed(0.14).build(), UP, 10);
     expect([deep.lines, Number(deep.worst.toFixed(6))]).toEqual([16, 0.04]);
     expect(deep.at?.y).toBe(0);

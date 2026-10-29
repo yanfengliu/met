@@ -28,6 +28,29 @@ function limb(builder: MeshBuilder, a: readonly [number, number, number], b: rea
   builder.append(geometry, new Matrix4().makeTranslation(a[0], a[1], a[2]).multiply(m));
 }
 
+/**
+ * Appends an arc of a torus (`TorusGeometry`'s parameters), placed by `matrix`, with its two open ends capped, each facing along the arc out of it:
+ * the arc alone is an open tube, which reads closed along vertical lines where its two ends line up and wound inside out between them.
+ */
+function torusArc(builder: MeshBuilder, radius: number, tube: number, radial: number, tubular: number, arc: number, matrix: Matrix4): void {
+  builder.append(new TorusGeometry(radius, tube, radial, tubular, arc), matrix);
+  for (const [u, out] of [
+    [0, -1],
+    [arc, 1],
+  ] as const) {
+    // The end's ring as TorusGeometry places it, rounded as its float32 positions are, so the cap shares the tube's corners.
+    const ring = Array.from({ length: radial }, (_, j) => {
+      const v = (j / radial) * Math.PI * 2;
+      const r = radius + tube * Math.cos(v);
+      return new Vector3(Math.fround(r * Math.cos(u)), Math.fround(r * Math.sin(u)), Math.fround(tube * Math.sin(v))).applyMatrix4(matrix);
+    });
+    const along = new Vector3(-Math.sin(u), Math.cos(u), 0).multiplyScalar(out).transformDirection(matrix);
+    const [p0, p1, p2] = ring;
+    if (p0 === undefined || p1 === undefined || p2 === undefined) continue;
+    builder.polygon(new Vector3().subVectors(p1, p0).cross(new Vector3().subVectors(p2, p0)).dot(along) > 0 ? ring : ring.reverse());
+  }
+}
+
 export const DIANA: BufferGeometry = (() => {
   const b = new MeshBuilder();
   b.append(new SphereGeometry(0.05, 10, 6).translate(0, 0.05, 0));
@@ -60,6 +83,6 @@ export const DIANA: BufferGeometry = (() => {
   limb(b, [-0.07, 0.74, 0], [-0.42, 0.78, 0], 0.025, 0.018);
   limb(b, [0.07, 0.74, 0], [-0.12, 0.8, 0.04], 0.025, 0.018);
   // The bow: an arc in the vertical plane of the arrow, its grip in her outstretched hand and its limbs curving back toward her.
-  b.append(new TorusGeometry(0.3, 0.008, 4, 16, Math.PI * 0.8), new Matrix4().makeTranslation(-0.14, 0.78, 0).multiply(new Matrix4().makeRotationZ(Math.PI * 0.6)));
+  torusArc(b, 0.3, 0.008, 4, 16, Math.PI * 0.8, new Matrix4().makeTranslation(-0.14, 0.78, 0).multiply(new Matrix4().makeRotationZ(Math.PI * 0.6)));
   return b.build();
 })();
