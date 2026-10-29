@@ -2,9 +2,10 @@
  * Mixed mouse and touch on the orbit view through the browser's own input (docs/design/spec.md, Camera; work unit 10; work unit 2, review 11, F39):
  * the mouse by Playwright's (CDP Input.dispatchMouseEvent), the fingers by CDP Input.dispatchTouchEvent, at the aerial-ne preset.
  * - A finger lands during a mouse drag, moves and lifts, and the mouse drags on: no uncaught exception or console error, and the camera ends where the
- *   same mouse drag alone puts it (red at 8a6a0c2: OrbitControls threw "Cannot read properties of undefined (reading 'x')" as the finger landed).
+ *   same mouse drag alone puts it.
  * - A mouse presses during a finger's drag, the finger drags on and lifts first, and the mouse drags and is released: none either, and the camera ends
- *   where the same finger drag alone puts it (red at 8a6a0c2 as the finger lifted).
+ *   where the same finger drag alone puts it.
+ * Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input").
  * Bound: 1280×720 with touch; each drag starts from the preset chosen again from the view menu; cameras compared within 1 cm once settled, where the
  * drags themselves move the camera hundreds of metres.
  */

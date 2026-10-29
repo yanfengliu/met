@@ -4,15 +4,17 @@
  * takes every pointer it hears for one of its own. So a mouse and a finger down together threw inside it (`Cannot read properties of undefined
  * (reading 'x')`, work unit 2, review 11, F39), and so did a mouse and a pen, a middle button pressed while a finger turned the view, and a finger
  * released elsewhere on the page while a mouse dragged; and a pen hovering while a mouse dragged turned the view by the pen.
- * So one kind of input holds the camera at a time, the fingers on the screen, any number, or one mouse or pen:
+ * So one kind of pointer holds the camera at a time, the fingers on the screen, any number, or one mouse or pen (the wheel is no pointer):
  * - a press on the canvas in the orbit view is passed on when nothing holds the camera, or when it is a finger and fingers hold it;
- * - every other press is refused: a pointer of another type, a second mouse or pen, and every press while walking;
+ * - every other press is refused: a pointer of another type, a second pen, and every press while walking;
  * - each consumer hears a passed press, then that pointer's moves and its end (its release or cancel) wherever they land, and nothing else: nothing of
  *   a refused pointer, nor of a pointer pressed elsewhere, nor of a hover. A passed pointer keeps its whole life in every consumer, through a change of
  *   mode; a refused one stays refused to its end, even once the camera is free;
- * - the camera is free again once every consumer has heard the end of every pointer it was passed, so no consumer ever holds two kinds of input.
+ * - the camera is free again once every consumer has heard the end of every pointer it was passed, so no consumer ever holds two kinds of pointer.
  * Each press is decided once, by the first consumer that hears it, so every consumer hears the same presses whatever the order of their listeners.
- * Bound: a pointer whose end a consumer never hears (Pointer Events 3 gives every press one) holds the camera until it presses again.
+ * Bound: a pointer whose end a consumer never hears holds the camera until the same pointer presses again, as a mouse does; a finger's or a pen's id
+ * may never come back, as with Chrome's touches, so a lost end of one would hold it until the page reloads. Pointer Events 3 gives every press an end,
+ * and on this page every end reaches the document, a cancel landing off the canvas being relayed to the controls (src/viewer/camera-rig.ts).
  */
 
 /** A pointer listener as a consumer adds it. */

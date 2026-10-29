@@ -6,17 +6,19 @@
  * page and released while a mouse drags, a pen hovering while a mouse drags, a finger pressed while walking and released after a mouse press back in
  * the orbit view, a mouse a finger refused that outlives it while the next finger holds the camera, and a pinch a mouse joins. Each row names the
  * pointers that hold the camera; then a mouse drags once more. Each sequence throws nothing and leaves the camera, its target, the zoom's factors and
- * the user moves as a rig sent only the events of the pointers that hold the camera leaves them, and makes no click.
- * Red with the rig, the zoom and the click of 8a6a0c2: eight rows threw inside OrbitControls (`Cannot read properties of undefined (reading 'x')`),
- * with the click bound and without; the pen's hover turned the view, the camera ending 6.07 m off; and the pinch a mouse joined ended 6 cm off.
+ * the user moves as a rig sent only the events of the pointers that hold the camera leaves them, and makes no click. The rig refuses OrbitControls it
+ * cannot put through the arbiter, naming what it found. Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's
+ * camera input").
  * Bound: the stand-in page's; the rig runs undamped, a frame after each event; every move of a pointer that holds the camera is 5 px or more, so the
  * click holds none of them and a row's outcome is the same with the click bound and without.
  */
-import { Vector3 } from 'three';
+import { PerspectiveCamera, Vector3 } from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { CameraRig } from './camera-rig.js';
+import { CameraRig, hearThrough } from './camera-rig.js';
 import { bindClick } from './click.js';
+import type { Hear } from './pointer-arbiter.js';
 import { Page, Pointer } from './pointer-testing.js';
 import type { PointerInit } from './pointer-testing.js';
 
@@ -215,5 +217,19 @@ describe('mixed pointer input on the real rig', () => {
       }
     }
     expect(problems).toEqual([]);
+  });
+
+  it('refuses OrbitControls it cannot put through the arbiter, connected already or missing a listener, naming what it found and what to do', () => {
+    const page = new Page();
+    const camera = new PerspectiveCamera();
+    const pass: Hear = (listener) => listener;
+    expect(() => {
+      hearThrough(new OrbitControls(camera, page.canvas as unknown as HTMLElement), pass);
+    }).toThrow(/^OrbitControls is already connected to an element, .* Build it with no element, put its listeners through the arbiter, then connect it\.$/);
+    const bare = new OrbitControls(camera);
+    delete (bare as unknown as Record<string, unknown>)['_onPointerMove'];
+    expect(() => {
+      hearThrough(bare, pass);
+    }).toThrow(/^three\.js r\d+: OrbitControls has no _onPointerMove listener, .* List in CONTROLS_LISTENERS \(src\/viewer\/camera-rig\.ts\) every instance field/);
   });
 });

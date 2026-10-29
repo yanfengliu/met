@@ -2,12 +2,13 @@
  * The arbiter of mixed pointer input on its own (src/viewer/pointer-arbiter.ts; docs/design/spec.md, Camera), each consumer a recorder of what its
  * listeners hear, the events plain objects:
  * - the first press holds the camera, fingers join fingers, and every other press is refused while it is held: a pointer of another type and a second
- *   mouse or pen; the camera is free once every consumer has heard the end of each pointer it was passed, and not before;
+ *   pen; the camera is free once every consumer has heard the end of each pointer it was passed, and not before;
  * - every press while walking is refused, and a passed pointer keeps its whole life through walk mode; a refused pointer stays refused to its end,
  *   once the camera is free and back in the orbit view, and holds nothing;
  * - each consumer hears a passed pointer's press, moves and end once, and nothing of a pointer it never heard press (pressed elsewhere, or hovering);
  * - a press is decided once, by the first consumer that hears it, so every consumer hears the same presses whatever the order of their listeners.
  * The arbiter on the real rig, mixed input that threw inside OrbitControls among it, is src/viewer/mixed-pointers.test.ts.
+ * Red proofs: docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input").
  * Bound: the arbiter's own rules, with no DOM: each listener called with the event, as a dispatch would call it.
  */
 import { describe, expect, it } from 'vitest';
@@ -125,7 +126,7 @@ describe('the pointer arbiter', () => {
     expect([a.heard, b.heard]).toEqual([['down 1'], ['down 1']]);
   });
 
-  it('frees the camera only once every consumer has heard the end of each pointer it was passed, so none ever holds two kinds of input', () => {
+  it('frees the camera only once every consumer has heard the end of each pointer it was passed, so none ever holds two kinds of pointer', () => {
     const arbiter = new PointerArbiter(() => true);
     const [a, b] = [consumer(arbiter.consumer()), consumer(arbiter.consumer())];
     const both = (event: PointerEvent): void => {

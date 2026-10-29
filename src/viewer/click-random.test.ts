@@ -16,19 +16,13 @@
  *   from its press to its release, of the primary button, its buttons unchanged, its capture kept and its travel under CLICK_SLOP, at its release
  *   point; every such press a click; the camera and its target within 1 nm of where they were before its press (the controls' update rounds them by
  *   up to 1e-14 m).
- * A failure names the seed, its first problems and the events up to the first. Red with the rig, the zoom and the click of 8a6a0c2, before the arbiter:
- * 237 of the 400 seeds threw inside OrbitControls (`Cannot read properties of undefined (reading 'x')`), with the click bound and without. Before
- * work unit 10 these sequences pressed nothing while a mouse or a pen was down, ended no finger while one was and pressed no middle button while a
- * finger was, by construction, F39 being deferred; with only those rules lifted, 284 of their 400 seeds threw at 8a6a0c2. Red with the click of
- * 42722e9 (review 11): 19 seeds, clicks from a press another pointer was down during, a finger whose capture was lost among them (F37), or whose
- * buttons changed (F38), and held moves dropped at a release; with its zoom: 268 of the 800 runs (F37); with the rig's relay of cancels left out:
- * 110 runs, none throwing, since the camera is free only once both consumers have heard an end (F37); with the click of 8a6a0c2 alone: 3 seeds, a
- * press released while walking dropping its held move. Over the 800 runs the sequences made 146 clicks, 1,876 button changes, 1,156 capture losses,
- * 1,436 ends over another element, 1,844 cancels, 208 pinch steps, 60 middle-drag steps, 4,050 presses while another pointer was down, 1,336 presses
- * refused while another kind held the camera, 452 presses that held it while a refused pointer was down, 862 presses elsewhere, 1,538 hovers, 1,596
- * changes of mode and 2,000 presses while walking.
+ * A failure names the seed, its first problems and the events up to the first. The red proofs, and why these sequences missed F39 before work unit
+ * 10, are in docs/learning/gate-proofs.md ("Mixed pointer input reaches the orbit view's camera input"); the counts of each case they make, in work
+ * unit 10's review 1.
  * Bound: SEEDS sequences of STEPS actions, each with the click bound and without; the stand-in page's (src/viewer/pointer-testing.ts); the controls'
- * damping off and a frame after each event; a finger pressed on another element keeps its events there, as its capture does in the browser.
+ * damping off and a frame after each event; a finger pressed on another element keeps its events there, as its capture does in the browser; the mode
+ * changes by the rig's `setWalking` alone, no walk mode running, so walk mode's own listeners (which take a press's capture while walking) are not
+ * in the page; each kind of case made more than 20 times over the 800 runs.
  */
 import { Vector3 } from 'three';
 import type * as Controls from 'three/addons/controls/OrbitControls.js';
@@ -69,7 +63,7 @@ vi.mock('three/addons/controls/OrbitControls.js', async (importOriginal) => {
       const own = this as unknown as Record<string, ((event: PointerEvent) => void) | undefined>;
       for (const key of ['_onPointerDown', '_onPointerMove', '_onPointerUp']) {
         const listener = own[key];
-        if (listener === undefined) throw new Error(`OrbitControls has no ${key} listener to hear.`);
+        if (listener === undefined) throw new Error(`OrbitControls has no ${key} listener, so this test cannot hear what the controls hear: name here the pointer listener fields the three.js release adds, as CONTROLS_LISTENERS does (src/viewer/camera-rig.ts).`);
         own[key] = (event) => {
           heard.by?.('controls', event as unknown as Pointer);
           listener(event);
@@ -174,7 +168,7 @@ function play(seed: number, gate: boolean): Outcome {
   const problem = (kind: string, text: string, seq = page.current): void => {
     problems.push({ kind, text, seq });
   };
-  const seen: Record<string, number> = { clicks: 0, chords: 0, losses: 0, outside: 0, cancels: 0, pinches: 0, middles: 0, nested: 0, refused: 0, outlived: 0, elsewhere: 0, hovers: 0, walks: 0, walked: 0 };
+  const seen: Record<string, number> = { clicks: 0, chords: 0, losses: 0, outside: 0, cancels: 0, pinches: 0, middles: 0, nested: 0, refused: 0, second: 0, outlived: 0, elsewhere: 0, hovers: 0, walks: 0, walked: 0 };
   const count = (what: string): void => {
     seen[what] = (seen[what] ?? 0) + 1;
   };
@@ -277,7 +271,7 @@ function play(seed: number, gate: boolean): Outcome {
     if (live.size > 0) count('nested');
     if (elsewhere) count('elsewhere');
     else if (walking) count('walked');
-    else if (!holds) count('refused');
+    else if (!holds) count(holders.every((q) => q.device === device) ? 'second' : 'refused');
     if (holds && all((q) => !q.holds && !q.elsewhere).length > 0) count('outlived');
     const id = device === 'mouse' ? 1 : device === 'pen' ? (live.has(2) ? 3 : 2) : (nextFinger += 1);
     // The first pointer of its type down is the primary one: a mouse always, a pen or a finger with none of its type down.

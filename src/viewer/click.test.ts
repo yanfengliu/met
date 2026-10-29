@@ -6,7 +6,7 @@
  *   another button, one that a second pointer joins, one the browser cancels, and one pressed or released while walking.
  * - A click's moves never reach a listener after the click's own. A drag's latest held move goes on once, as the move or the release that passes the
  *   slop arrives, then every move after it; a second pointer landing sends the first's held move on before its own press, and so does a release
- *   while walking, which is no click (red at 8a6a0c2, which dropped the held move there as a click's).
+ *   while walking, which is no click (red proof in docs/learning/gate-proofs.md).
  * - One table of presses on the real CameraRig (OrbitControls and the zoom's input): a tap, a drag, a sub-slop pinch, a drag then a pinch, a pinch
  *   with one finger lifted then a tap, an out-and-back drag, the right-button pan, a pen, two buttons pressed and let go in turn, a mouse click while a
  *   finger whose capture was lost is down, and a finger's drag after one whose capture was lost was released over another element. Each makes the

@@ -1,7 +1,7 @@
 /**
  * Camera and OrbitControls, tuned for both a 1 km aerial view and a 3 m interior close-up, plus the follow camera's smoothing, the keyboard moves of
  * the orbit view (`translate`), the zoom toward the pointer (src/viewer/zoom.ts; the controls' own zoom is off) and the first-person pose of walk mode.
- * The controls and the zoom hear pointers through one arbiter (src/viewer/pointer-arbiter.ts), so one kind of input holds the camera at a time.
+ * The controls and the zoom hear pointers through one arbiter (src/viewer/pointer-arbiter.ts), so one kind of pointer holds the camera at a time.
  * Depth precision: the near plane follows the distance to the orbit target (1%, from 3 cm to 20 m) and never exceeds half the camera's height above the
  * workspace ground, so a 24-bit depth buffer resolves about 1 cm at 1 km from an aerial view and well under 1 mm across a hall seen from inside.
  * The far plane is fixed beyond the haze, which hides the edge of the workspace ground.
@@ -40,16 +40,21 @@ const CONTROLS_LISTENERS = ['_onPointerDown', '_onPointerMove', '_onPointerUp'] 
 
 /**
  * Puts the pointer listeners of `controls`, not yet connected to an element, through `hear`, so that once connected they hear only what the arbiter
- * passes (src/viewer/pointer-arbiter.ts). Throws, naming the listener, where a release of three.js has no such listener, rather than leave the
- * controls hearing every pointer.
+ * passes (src/viewer/pointer-arbiter.ts). Throws, naming what it found, where the controls are already connected or a release of three.js has no
+ * such listener, rather than leave the controls hearing every pointer.
  */
-function hearThrough(controls: OrbitControls, hear: Hear): void {
+export function hearThrough(controls: OrbitControls, hear: Hear): void {
+  if (controls.domElement !== null) {
+    throw new Error(
+      'OrbitControls is already connected to an element, so its pointer listeners would hear every pointer, past the arbiter (src/viewer/pointer-arbiter.ts). Build it with no element, put its listeners through the arbiter, then connect it.',
+    );
+  }
   const own = controls as unknown as Record<string, unknown>;
   for (const key of CONTROLS_LISTENERS) {
     const listener = own[key];
     if (typeof listener !== 'function') {
       throw new Error(
-        `three.js r${REVISION}: OrbitControls has no ${key} listener, so the camera rig cannot put its pointer input through the arbiter (src/viewer/pointer-arbiter.ts). Put the pointer listeners this release's connect() adds through it in CONTROLS_LISTENERS (src/viewer/camera-rig.ts).`,
+        `three.js r${REVISION}: OrbitControls has no ${key} listener, so the camera rig cannot put its pointer input through the arbiter (src/viewer/pointer-arbiter.ts). List in CONTROLS_LISTENERS (src/viewer/camera-rig.ts) every instance field this release adds as a pointer listener, in connect() or on a press.`,
       );
     }
     own[key] = hear(listener as PointerListener);
