@@ -2,7 +2,7 @@
 
 ## Target
 
-Repository `met`, branch `orbit`: everything changed since review 0's target (`c5a0c92`), as the patch `tmp/review-runs/u10-r1/target.patch` (ignored; SHA-256 `4b71594c14311ccc77e32df5474f751719e1ce38b2a885a9186bcb61536faa11`; 12 files, 83 lines in and 42 out), rebuilt afterwards as the commit object `0b8f6ec` (tree `4dc085f`): the repairs of review 0's F0 to F10, and the documentation moves the coordinator asked for while review 0 ran (each gate in AGENTS.md as a clause or one short line, the red proofs in `docs/learning/gate-proofs.md`, test headers keeping their bounds and pointing there). Its code was committed in `02db823`, with this round's wording repairs on top: 8 files, 14 lines in and 13 out, comments and docs only.
+Repository `met`, branch `orbit`: everything changed since review 0's target (`c5a0c92`), as the patch `snapshots/1_target.patch.txt` (SHA-256 `4b71594c14311ccc77e32df5474f751719e1ce38b2a885a9186bcb61536faa11`; 12 files, 83 lines in and 42 out), rebuilt afterwards as the commit object `0b8f6ec` (tree `4dc085f`): the repairs of review 0's F0 to F10, and the documentation moves the coordinator asked for while review 0 ran (each gate in AGENTS.md as a clause or one short line, the red proofs in `docs/learning/gate-proofs.md`, test headers keeping their bounds and pointing there). Its code was committed in `02db823`, with this round's wording repairs on top: 8 files, 14 lines in and 13 out, comments and docs only.
 
 ## Reviewers and coverage
 

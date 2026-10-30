@@ -44,6 +44,18 @@
     {
       "id": 10,
       "theme": "mixed-pointer-input"
+    },
+    {
+      "id": 11,
+      "theme": "replay-on-request"
+    },
+    {
+      "id": 12,
+      "theme": "agents-md-disclosure"
+    },
+    {
+      "id": 13,
+      "theme": "joint-footing"
     }
   ]
 }

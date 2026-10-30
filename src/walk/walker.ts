@@ -6,13 +6,15 @@
  * capsule that starts STEP (0.35 m) above the feet, so anything lower than that is stepped onto rather than walked into: vertical probes from
  * STEP above the feet find the ground, and the feet snap to it when it lies within STEP above or below and is walkable (no steeper than 40°);
  * a rise is taken only where the raised capsule meets nothing overhead, else the move is refused as at a wall (a step under a low ceiling).
- * The ground is the surface under the body's centre or, over a gap or groove there, the lower rim of two opposite sides STRADDLE (0.3 m) out,
- * whichever is higher: a body bridges a gap narrower than itself, yet falls off an edge as soon as its centre passes it. A steeper surface is
+ * The ground is the surface under the body's centre or, over a gap or groove there, the lower rim of two opposite sides 0.3 m out, whichever is
+ * higher (./footing.ts), read while walking only where the centre finds nothing at the feet, so a body keeps to its ground; one set down (`place`)
+ * or settled is lifted out of a groove narrower than itself onto its rims, as onto a floor's tiles either side of a joint. A steeper surface is
  * met like a wall from the ground, and where the body lands on one it slides down it with only air control, the keys unable to push it uphill.
  * Off an edge higher than STEP the body falls under gravity and lands on the first surface below;
  * a jump starts at the speed that rises JUMP_HEIGHT. On the ground every push from the walls is level, and the velocity into a wall is removed,
  * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`, where a body stands when nothing is built under it.
- * After the world is built again, `settle` moves a body that new pieces bury or embed onto the lowest walkable surface over it where it stands clear.
+ * After the world is built again, `settle` moves a body that new pieces bury or embed onto the lowest walkable surface over it where it stands clear,
+ * and on out of a groove there onto its rims.
  *
  * Time. Physics runs in fixed steps of 1/120 s, the remainder carried to the next frame, so a run is the same at any frame rate; a snap up or down a
  * stair is eased out over about 0.1 s for the eye only, and the eye is the eased eye of the last two steps, interpolated between them.
@@ -22,6 +24,9 @@
 import { Line3, MathUtils, Vector3 } from 'three';
 
 import type { GroundHit, LineCrossings } from './collision.js';
+import { Footing, insideBetween } from './footing.js';
+
+export { insideBetween };
 
 /** What the walker collides with: ./collision.ts `CollisionWorld`, ./door-world.ts `DoorWorld`, or any stand-in with the same queries. */
 export interface WalkWorld {
@@ -37,16 +42,6 @@ export type Settled = 'kept' | 'moved' | 'lost';
 
 /** A surface less than this above the feet is the one they stand on, metres. */
 export const STANDING = 1e-3;
-
-/**
- * Whether a piece crossed at `heights` (lowest first) along a vertical line holds some of that line between `low` and `high` inside it: between its first
- * and second crossings, its third and fourth, and so on. A piece crossed an odd number of times is open along the line and has no inside there.
- */
-export function insideBetween(heights: readonly number[], low: number, high: number): boolean {
-  if (heights.length % 2 !== 0) return false;
-  for (let i = 0; i + 1 < heights.length; i += 2) if ((heights[i] ?? 0) < high && (heights[i + 1] ?? 0) > low) return true;
-  return false;
-}
 
 /** The body, in metres. */
 export const BODY = Object.freeze({ radius: 0.35, height: 1.75, eye: 1.6, step: 0.35, maxSlopeDeg: 40 });
@@ -81,11 +76,6 @@ const JUMP_BUFFER = 0.15;
 /** The raised body may meet something overhead by this much and still fit under it, metres. */
 const HEADROOM_SLOP = 1e-3;
 const MAX_STEPS_PER_UPDATE = 30;
-/** How far out the side probes stand, metres: a gap narrower than twice this is bridged. */
-export const STRADDLE = 0.3;
-const DIAGONAL = STRADDLE * Math.SQRT1_2;
-/** One of each pair of opposite side probes; the other is its negative. */
-const SIDES: readonly (readonly [number, number])[] = [[STRADDLE, 0], [0, STRADDLE], [DIAGONAL, DIAGONAL], [DIAGONAL, -DIAGONAL]];
 
 /** What the keys ask for: `forward` and `right` in [-1, 1] (back and left are negative), running, nothing else. */
 export interface WalkInput {
@@ -118,38 +108,32 @@ export class Walker {
   private readonly segment = new Line3();
   private readonly push = new Vector3();
   private readonly hit: GroundHit = { y: 0, normalY: 1, normalX: 0, normalZ: 0 };
-  private readonly sideA: GroundHit = { y: 0, normalY: 1, normalX: 0, normalZ: 0 };
-  private readonly sideB: GroundHit = { y: 0, normalY: 1, normalX: 0, normalZ: 0 };
+  private readonly footing: Footing;
 
   constructor(
     private readonly world: WalkWorld,
     /** The workspace ground: the walker never goes below it. */
     private readonly floorY: number,
-  ) {}
+  ) {
+    this.footing = new Footing(world);
+  }
 
-  /** Puts the feet on the first surface below (x, y + 1 m, z), or on the workspace ground where there is none, facing `yaw` and `pitch`, at rest. */
+  /**
+   * Puts the feet on the first surface below (x, y + 1 m, z), or on the workspace ground where there is none, and on out of a groove narrower than the
+   * body there onto its rims (`ontoRims`), as onto a floor's tiles either side of a joint; where the first surface lies more than a step under y, the
+   * centre having passed through a gap or a seam, first onto rims within a step of y, as the walking step at y would stand; facing `yaw` and `pitch`, at rest.
+   */
   place(x: number, y: number, z: number, yaw: number, pitch = 0): void {
     this.feet.set(x, Math.max(y, this.floorY), z);
-    this.velocity.set(0, 0, 0);
     this.yaw = yaw;
     this.pitch = MathUtils.clamp(pitch, -MOTION.maxPitch, MOTION.maxPitch);
-    this.onGround = false;
-    this.slide = null;
-    this.jumpTimer = 0;
-    this.accumulator = 0;
-    this.ease = 0;
-    this.easeBefore = 0;
-    if (this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit)) {
-      this.feet.y = this.hit.y;
-      this.onGround = this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
-    } else {
-      // Nothing built under the place (t = 0, for one): the workspace ground, at once rather than after a fall to it.
-      this.feet.y = this.floorY;
-    }
-    if (this.feet.y <= this.floorY) {
-      this.feet.y = this.floorY;
-      this.onGround = true;
-    }
+    this.rest(false);
+    // Nothing built under the place (t = 0, for one), or only below the workspace ground: that ground, at once rather than after a fall to it.
+    const found = this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit);
+    this.feet.y = found ? Math.max(this.hit.y, this.floorY) : this.floorY;
+    this.onGround = this.feet.y <= this.floorY || this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
+    const bridged = this.feet.y < y - BODY.step && this.ontoRims(y - BODY.step, y + BODY.step + PROBE_EPSILON);
+    if (bridged || this.ontoRims(this.feet.y, this.feet.y + BODY.step + PROBE_EPSILON)) this.onGround = true;
     for (let k = 0; k < 4; k += 1) if (this.walls(false) < 1e-4) break;
     this.before.copy(this.feet);
   }
@@ -158,7 +142,9 @@ export class Walker {
    * Checks the walker against a world just built (docs/design/spec.md, Walk mode: When the build moves). It stays where it is unless it is buried,
    * the model over it with nothing but the workspace ground under it, or embedded, the line from just over its feet to its head inside a piece
    * numbered `from` or later (the pieces added since it was last checked), a sheet having no inside (src/model/lib/sheet.ts). Then it moves, at rest,
-   * to the lowest walkable surface over its feet where its body stands clear (`clearAt`). Returns 'lost' when no surface over it will do.
+   * to the lowest walkable surface over its feet where its body stands clear (`clearAt`), and on onto the rims of a groove there (`ontoRims`). One
+   * that stays moves only where such pieces cross the lines under its sides within STEP over its feet (./footing.ts `builtUnder`) and it then
+   * stands in a groove, as on a floor's slab when its tiles are laid round it on their joint. Returns 'lost' when no surface over it will do.
    */
   settle(from: number): Settled {
     const { feet } = this;
@@ -167,20 +153,42 @@ export class Walker {
     const heights = lines.flatMap((p) => p.heights);
     const buried = heights.length > 0 && heights.every((y) => y > base);
     const embedded = lines.some((p) => p.instance >= from && !p.sheet && insideBetween(p.heights, base, feet.y + BODY.height));
-    if (!buried && !embedded) return 'kept';
-    const surfaces = lines.flatMap((p) => p.heights.filter((y, i) => y > base && (p.normalYs[i] ?? 0) >= MIN_WALKABLE_NORMAL_Y)).sort((a, b) => a - b);
-    const y = surfaces.find((s) => this.clearAt(lines, s));
-    if (y === undefined) return 'lost';
-    feet.y = y;
+    if (!buried && !embedded) {
+      if (!this.footing.builtUnder(feet.x, feet.z, base, feet.y + BODY.step + PROBE_EPSILON, from) || !this.ontoRims(feet.y, feet.y + BODY.step + PROBE_EPSILON, lines)) return 'kept';
+    } else {
+      const surfaces = lines.flatMap((p) => p.heights.filter((y, i) => y > base && (p.normalYs[i] ?? 0) >= MIN_WALKABLE_NORMAL_Y)).sort((a, b) => a - b);
+      const y = surfaces.find((s) => this.clearAt(lines, s));
+      if (y === undefined) return 'lost';
+      feet.y = y;
+      this.ontoRims(y, y + BODY.step + PROBE_EPSILON, lines);
+    }
+    this.rest(true);
+    return 'moved';
+  }
+
+  /**
+   * Lifts the feet out of a groove narrower than the body onto the lower rim of two opposite sides read from `top` down to `low` (./footing.ts `rims`):
+   * the highest over the feet whose probes stand on top of what they meet, walkable, where the body stands clear by the centre's crossings (`clearAt`).
+   */
+  private ontoRims(low: number, top: number, lines?: readonly LineCrossings[]): boolean {
+    const { feet, hit } = this;
+    let centre = lines;
+    const stands = (rim: GroundHit): boolean => rim.normalY >= MIN_WALKABLE_NORMAL_Y && this.clearAt((centre ??= this.world.crossings(feet.x, feet.z, this.floorY, Number.POSITIVE_INFINITY)), rim.y);
+    if (!this.footing.rims(feet.x, feet.z, top, top - low, hit, feet.y + STANDING, stands)) return false;
+    feet.y = hit.y;
+    return true;
+  }
+
+  /** Stops the walker where its feet stand, on the ground or not: no velocity, slide, jump, carried time or ease, and the step before at the feet. */
+  private rest(onGround: boolean): void {
+    this.onGround = onGround;
     this.velocity.set(0, 0, 0);
-    this.onGround = true;
     this.slide = null;
     this.jumpTimer = 0;
     this.accumulator = 0;
     this.ease = 0;
     this.easeBefore = 0;
-    this.before.copy(feet);
-    return 'moved';
+    this.before.copy(this.feet);
   }
 
   /**
@@ -423,23 +431,9 @@ export class Walker {
     this.slide = null;
   }
 
-  /**
-   * The ground under the body from height `top` down `length`, into `hit`: under the centre, or the lower rim of a pair of opposite side probes
-   * where that is higher (a gap or groove under the centre). The side probes run only when the centre finds nothing at the feet's level or above.
-   */
+  /** The ground under the body from `top` down `length`, into `hit` (./footing.ts `ground`), its sides read only where the centre finds none at the feet. */
   private support(top: number, length: number): boolean {
-    const { feet, hit, sideA, sideB } = this;
-    let found = this.world.groundBelow(feet.x, top, feet.z, length, hit);
-    if (found && hit.y >= feet.y - 1e-3) return true;
-    for (const [dx, dz] of SIDES) {
-      if (!this.world.groundBelow(feet.x + dx, top, feet.z + dz, length, sideA) || !this.world.groundBelow(feet.x - dx, top, feet.z - dz, length, sideB)) continue;
-      const rim = sideA.y <= sideB.y ? sideA : sideB;
-      if (!found || rim.y > hit.y) {
-        Object.assign(hit, rim);
-        found = true;
-      }
-    }
-    return found;
+    return this.footing.ground(this.feet.x, this.feet.z, top, length, this.feet.y - 1e-3, this.hit);
   }
 
   /**

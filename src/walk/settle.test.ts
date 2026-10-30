@@ -8,11 +8,30 @@
  * 1.2 m wall built through it, onto a desk built in a room rather than the roof, past a surface with too little room, lost in a piece with no
  * walkable top, the nearest spawn, and on the real sequence Weston's facade built through a walker in its pavilion's brick, which lifts it onto the
  * coping: red with `openWall`'s bottom face left out, the walker kept in the brick.
- * Bound: fixtures are closed boxes. Every piece of the model is closed along vertical lines or a declared sheet (src/model/closure.test.ts); a sheet has
- * no inside, so the build does not lift a walker out of one, which src/walk/crossings.test.ts checks.
+ * A floor's joint under the centre (work unit 4's F-owner-8, work unit 13): tiles 6 cm deep on a slab with 8 mm joints, as the Medieval Sculpture Hall's,
+ * where the walker is set down on a joint and where two cross, on the tiles, and walks 9 m or more along a joint on them; is lifted onto the tiles laid
+ * round it on the slab, and onto them when the whole floor is built over it; and, a control, still steps down into a channel 1.2 m wide, set down,
+ * settled or walking. Red with the walker of 897a4b4, which read only the line under the body's centre: set down on the slab 6 cm down, on the joint
+ * and where two cross; walked 9.9 m along the joint on the slab; "kept" on the slab when the tiles were laid round it; moved onto the slab, not the
+ * tiles, when the floor was built over it. The control is green with both.
+ * The rims it stands on (work unit 13, review 0): between two seats 0.32 m up, whose undersides the X probes meet, it stays on the floor, set down,
+ * settled, checked as a spawn is and walking; between two plinths 0.45 m high, higher than a step, set down or settled, too; blocks under the X probes
+ * and a ceiling 1.8 m up leave it on the tiles by the diagonal probes; no rim too steep to stand on lifts it; a walker that walked from the channel onto
+ * a joint keeps to the slab when a step completes 15 m off; and set down at 1 m over a deck of sheets whose seam its centre passes through, it stands
+ * on the deck, and walks along the seam on it, while a gap 1.2 m wide drops it. Red with the walker of 36ca301: the seats' undersides lifted it to
+ * 0.32 m, set down or settled, and a check as for a spawn on to their tops, 0.45 m; the joint under the blocks left it on the slab 6 cm down; the deck
+ * left it on the workspace ground 2 m down. Red too with the rims read over `place`'s whole drop (the plinths' and the seats' tops, 0.45 m), with
+ * no walkable check (the ramps, 0.296 m), with `builtUnder` always true (the kept walker "moved") and with no check that a probe stands on a top
+ * (the seats "moved"). Review 1: either side of a joint, pieces of two overlapping parts, whose overlap the parity of their crossings reads as outside,
+ * leave it on the floor (red with parity in place of the winding: "moved", onto the upper part's bottom); and asked 0.3495 m over the deck it stands
+ * on it, 0.36 m over it it falls through the seam, the bound (red with the rise counted from the window's foot, not the feet: through it at 0.3495).
+ * Bound: fixtures are closed boxes and the deck's sheets, their joints along X and Z, as the hall's. Every piece of the model is closed along vertical
+ * lines or a declared sheet (src/model/closure.test.ts); a sheet has no inside, so the build does not lift a walker out of one, which
+ * src/walk/crossings.test.ts checks, and a probe's hit on a sheet is not told from its underside, as a closed piece's is by its inside.
+ * A walker that walks into a groove at the level of its floor keeps to that floor, as the walking step keeps to the ground it stands on.
  * Walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.
  */
-import { BoxGeometry, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { CHAPTERS } from '../build/chapters.js';
@@ -22,6 +41,8 @@ import type { Kit, StepDef } from '../build/types.js';
 import { B_SOUTH_X, COPING_TOP_Y } from '../model/core/constants.js';
 import { WALL_BASE_Y } from '../model/core/vaux-front.js';
 import { WESTON_DOOR } from '../model/core/weston-facade.js';
+import { MeshBuilder } from '../model/lib/builder.js';
+import { sheet } from '../model/lib/sheet.js';
 import { workspaceGroundY } from '../viewer/environment.js';
 import { GeometryBvhs } from './bvh-cache.js';
 import { CollisionWorld, collisionMeshes, instancesBefore } from './collision.js';
@@ -181,5 +202,193 @@ describe('the walker when the build moves under it', () => {
     const plaza = SPAWNS.find((s) => s.id === 'plaza');
     if (plaza === undefined) throw new Error('No plaza spawn.');
     expect(nearestSpawn(plaza.feet[0] + 3, plaza.feet[1] - 5, plaza.feet[2] + 2).id).toBe('plaza');
+  });
+});
+
+/**
+ * A floor's tiles 6 cm deep on a slab, 1.4 m square with 8 mm joints, as the Medieval Sculpture Hall's (src/model/core/medieval-hall.ts `hallFloor`):
+ * columns X −2.8..0 and 0..2.8 either side of a joint on X 0, rows from Z −7 to 7, then a channel 1.2 m wide with no tiles, X 2.8..4.0, wider than the body.
+ */
+const JOINT = 0.008;
+const slab = step('slab', (kit) => { block(kit, [-20, -0.26, -20], [20, -0.06, 20]); });
+const tiles = step('tiles', (kit) => {
+  for (const x of [-2.8, -1.4, 0, 1.4, 4]) for (let z = -7; z < 7 - 1e-9; z += 1.4) block(kit, [x + JOINT / 2, -0.06, z + JOINT / 2], [x + 1.4 - JOINT / 2, 0, z + 1.4 - JOINT / 2]);
+});
+const W = { forward: 1, right: 0, run: false } as const;
+
+/** Walks `seconds` forward at 60 frames a second; returns the lowest and highest the feet stood. */
+function along(walker: Walker, seconds: number): [number, number] {
+  let [low, high] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+  for (let i = 0; i < Math.round(seconds * 60); i += 1) {
+    walker.update(1 / 60, W);
+    [low, high] = [Math.min(low, walker.feet.y), Math.max(high, walker.feet.y)];
+  }
+  return [low, high];
+}
+
+describe("a floor's joint under the walker's centre (work unit 13, F-owner-8)", () => {
+  // Yaw π faces +Z, along the joint on X 0.
+  const ALONG = Math.PI;
+
+  it('sets the walker down on the tiles either side of the joint, not on the slab 6 cm down in it, and walks it along the joint on the tiles', () => {
+    const { walker } = site([slab, tiles], 2);
+    for (const [x, z, what] of [[0, -6.3, 'on the joint'], [0, -5.6, 'where two joints cross'], [0.2, -6.3, 'on a tile']] as const) {
+      walker.place(x, 0, z, ALONG);
+      expect(walker.feet.y, `set down ${what} at X ${String(x)}, Z ${String(z)}`).toBeCloseTo(0, 6);
+    }
+    walker.place(0, 0, -6.3, ALONG);
+    const [low, high] = along(walker, 5);
+    expect(walker.feet.z, 'walked 9 m or more along the joint').toBeGreaterThan(2.7);
+    expect([low, high], 'on the tiles all the way, over the joints across it').toEqual([expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+  });
+
+  it('lifts a walker that stood on the slab onto the tiles laid round it on their joint, and one the whole floor is built over', () => {
+    const laid = site([slab, tiles], 1);
+    laid.walker.place(0, -0.06, -6.3, ALONG);
+    expect(laid.walker.feet.y, 'on the slab before the tiles').toBeCloseTo(-0.06, 6);
+    expect(laid.to(2), 'the tiles laid round it').toBe('moved');
+    expect(laid.walker.feet.y, 'on the tiles').toBeCloseTo(0, 6);
+    expect(along(laid.walker, 2), 'and on them walking along the joint').toEqual([expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+    const built = site([slab, tiles], 0);
+    built.walker.place(0, 0, -6.3, ALONG);
+    expect(built.walker.feet.y, 'on the workspace ground').toBe(FLOOR_Y);
+    expect(built.to(2), 'the floor built over it').toBe('moved');
+    expect(built.walker.feet.y, 'on the tiles').toBeCloseTo(0, 6);
+  });
+
+  it('still drops a walker into a channel wider than its body, set down, settled or walking, as soon as its centre passes the edge', () => {
+    const { walker, to } = site([slab, tiles], 1);
+    walker.place(3.4, -0.06, -6.3, ALONG);
+    expect(to(2), 'the tiles laid either side of the 1.2 m channel').toBe('kept');
+    expect(walker.feet.y, 'on the slab in the channel').toBeCloseTo(-0.06, 6);
+    for (const x of [3.4, 2.9]) {
+      walker.place(x, 0, -6.3, ALONG);
+      expect(walker.feet.y, `set down in the channel at X ${String(x)}, its centre 0.1 m or more past its edge at X 2.796`).toBeCloseTo(-0.06, 6);
+    }
+    // Yaw −π/2 faces +X: east off the tiles into the channel.
+    walker.place(2.4, 0, -6.3, -Math.PI / 2);
+    for (let i = 0; i < 120 && walker.feet.x < 3.3; i += 1) walker.update(1 / 60, W);
+    expect([walker.feet.x, walker.feet.y], 'walked into the channel, 0.5 m past its edge').toEqual([expect.closeTo(3.3, 1), expect.closeTo(-0.06, 6)]);
+  });
+});
+
+/** Two seats 0.32 to 0.45 m over the floor, 0.52 m apart, where the walker stands between them: the X probes start inside them (review 0, F0). */
+const seats = step('seats', (kit) => {
+  for (const sx of [-1, 1]) block(kit, [sx > 0 ? 0.26 : -0.66, 0.32, -1], [sx > 0 ? 0.66 : -0.26, 0.45, 1]);
+});
+
+/** Either side of an 8 mm joint, one piece of two overlapping parts, 0.1 to 0.4 and 0.2 to 0.5 m up: a probe meets the upper part's bottom inside the lower (review 1, F6). */
+const overlaps = step('overlaps', (kit) => {
+  for (const sx of [-1, 1]) {
+    const b = new MeshBuilder();
+    const [x0, x1] = sx > 0 ? [JOINT / 2, 2] : [-2, -JOINT / 2];
+    b.box([x0, 0.1, -2], [x1, 0.4, 2]);
+    b.box([x0, 0.2, -2], [x1, 0.5, 2]);
+    kit.add(b.build(), stone, new Matrix4());
+  }
+});
+
+/** Two plinths 0.45 m high standing 0.5 m apart, higher than a step, where the walker stands between them on the floor (review 0, F3). */
+const plinths = step('plinths', (kit) => {
+  for (const sx of [-1, 1]) block(kit, [sx > 0 ? 0.25 : -1, 0, -1], [sx > 0 ? 1 : -0.25, 0.45, 1]);
+});
+
+/** Over the joint's tiles, blocks 0.2 m high under the X probes and a ceiling 1.8 m up: the highest rim, on the blocks, leaves the body no room (F1). */
+const blocks = step('blocks', (kit) => {
+  for (const sx of [-1, 1]) block(kit, [sx * 0.3 - 0.05, 0, -6.35], [sx * 0.3 + 0.05, 0.2, -6.25]);
+  block(kit, [-20, 1.8, -20], [20, 2, 20]);
+});
+
+/** Two ramps rising 45 degrees from an 8 mm groove along X on Z 0: rims too steep to stand on (F3). */
+const ramps = step('ramps', (kit) => {
+  // Each a box 4 by 0.2 by 1.2 m turned about X, its top face's low edge on the floor 4 mm off Z 0.
+  for (const sz of [-1, 1]) {
+    const centre = [0, 0.35355, sz * 0.49897] as const;
+    block(kit, [-2, centre[1] - 0.1, centre[2] - 0.6], [2, centre[1] + 0.1, centre[2] + 0.6], (-sz * Math.PI) / 4);
+  }
+});
+
+/** An unrelated step: a block 15 m off. */
+const far = step('far', (kit) => { block(kit, [14, 0, 14], [15, 1, 15]); });
+
+/** A pane at `y` over X x0..x1 and Z −5..5, looking up, declared a sheet. */
+function pane(x0: number, x1: number, y: number): BufferGeometry {
+  const g = new BufferGeometry();
+  g.setAttribute('position', new Float32BufferAttribute([x0, y, -5, x0, y, 5, x1, y, 5, x1, y, -5], 3));
+  g.setAttribute('normal', new Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+  g.setIndex([0, 1, 2, 0, 2, 3]);
+  return sheet(g);
+}
+
+/** A deck of sheets 1 m up over nothing: two panes meeting on X 0 at a 2 µm seam a ray down the centre passes through, then a gap 1.2 m wide, X 2..3.2 (F2). */
+const deck = step('deck', (kit) => {
+  for (const [x0, x1] of [[-2, -1e-6], [1e-6, 2], [3.2, 6]] as const) kit.add(pane(x0, x1, 1), stone, new Matrix4());
+});
+
+describe('the rims a walker set down or settled stands on (work unit 13, review 0)', () => {
+  const ALONG = Math.PI;
+
+  it("never stands on a piece's underside: between two seats 0.32 m up, whose undersides the X probes meet, it stays on the floor", () => {
+    const { walker, to } = site([floor, seats], 1);
+    walker.place(0, 0, 0, ALONG);
+    expect(to(2), 'the seats built either side of it').toBe('kept');
+    expect(walker.feet.y, 'on the floor').toBeCloseTo(0, 6);
+    walker.place(0, 0, 0, ALONG);
+    expect(walker.feet.y, 'set down between the seats').toBeCloseTo(0, 6);
+    expect(walker.settle(0), 'checked with every piece new to it, as walk mode checks a spawn').toBe('kept');
+    expect(along(walker, 0.5)[1], 'and walking on between them').toBeCloseTo(0, 6);
+    const parts = site([floor, overlaps], 1);
+    parts.walker.place(0, 0, 0, ALONG);
+    expect(parts.to(2), 'pieces of two overlapping parts built either side of a joint').toBe('kept');
+    parts.walker.place(0, 0, 0, ALONG);
+    expect(parts.walker.feet.y, "set down between them, not on the upper part's bottom inside the lower").toBeCloseTo(0, 6);
+  });
+
+  it('reads rims within a step over the feet: between two plinths 0.45 m high it stays on the floor, set down or settled', () => {
+    const { walker, to } = site([floor, plinths], 1);
+    walker.place(0, 0, 0, ALONG);
+    expect(to(2), 'the plinths built either side of it').toBe('kept');
+    walker.place(0, 0, 0, ALONG);
+    expect(walker.feet.y, 'set down between the plinths').toBeCloseTo(0, 6);
+  });
+
+  it('takes the highest rim the body stands clear on: blocks under the X probes and a ceiling 1.8 m up leave it on the tiles by the diagonals', () => {
+    const { walker } = site([slab, tiles, blocks], 3);
+    walker.place(0, 0, -6.3, ALONG);
+    expect(walker.feet.y, 'set down on the joint').toBeCloseTo(0, 6);
+    const laid = site([slab, tiles, blocks], 1);
+    laid.walker.place(0, -0.06, -6.3, ALONG);
+    expect(laid.to(3), 'the tiles, blocks and ceiling laid round it').toBe('moved');
+    expect(laid.walker.feet.y, 'on the tiles').toBeCloseTo(0, 6);
+  });
+
+  it('stands on no rim too steep to stand on: in a groove between two 45 degree ramps it stays on the floor', () => {
+    const { walker } = site([floor, ramps], 2);
+    walker.place(0, 0, 0, -Math.PI / 2);
+    expect(walker.feet.y, 'set down in the groove').toBeCloseTo(0, 6);
+  });
+
+  it('moves a walker it keeps only for pieces built under its probes: walked from the channel onto a joint, it keeps to the slab when another step completes', () => {
+    const { walker, to } = site([slab, tiles, far], 2);
+    // Yaw π/2 faces −X: west out of the channel along the joint on Z −5.6, where walking keeps to the ground it stands on.
+    walker.place(3.4, -0.06, -5.6, Math.PI / 2);
+    along(walker, 1);
+    expect([walker.feet.x, walker.feet.y], 'on the joint, on the slab').toEqual([expect.closeTo(1.5, 0), expect.closeTo(-0.06, 6)]);
+    expect(to(3), 'a step completed 15 m off').toBe('kept');
+    expect(walker.feet.y).toBeCloseTo(-0.06, 6);
+  });
+
+  it('stands on a deck of sheets over a seam its centre passes through, at the height asked, and walks along it; a gap wider than the body still drops it', () => {
+    const { walker } = site([deck], 1);
+    walker.place(0, 1, 0, ALONG);
+    expect([walker.feet.y, walker.onGround], 'on the deck, not on the workspace ground 2 m under it').toEqual([expect.closeTo(1, 6), true]);
+    expect(walker.settle(0), 'checked with every piece new to it, as walk mode checks a spawn').toBe('kept');
+    expect(along(walker, 1), 'walking along the seam').toEqual([expect.closeTo(1, 6), expect.closeTo(1, 6)]);
+    walker.place(0, 1.3495, 0, ALONG);
+    expect(walker.feet.y, 'asked 0.3495 m over the deck, within a step of it').toBeCloseTo(1, 6);
+    walker.place(0, 1.36, 0, ALONG);
+    expect(walker.feet.y, 'asked 0.36 m over the deck, more than a step: through the seam, the bound').toBe(FLOOR_Y);
+    walker.place(2.6, 1, 0, ALONG);
+    expect(walker.feet.y, 'set down in the middle of the 1.2 m gap').toBe(FLOOR_Y);
   });
 });

@@ -57,6 +57,8 @@ export interface LineCrossings {
   readonly instance: number;
   readonly heights: readonly number[];
   readonly normalYs: readonly number[];
+  /** Which way each crossing's face looks: 1 up, −1 down, so a closed piece's inside lies where more faces below look down than up (its winding). */
+  readonly facings: readonly number[];
   /** Its builder declared it a sheet (src/model/lib/sheet.ts): a surface with no inside, whatever its crossings. */
   readonly sheet: boolean;
 }
@@ -197,15 +199,7 @@ export class CollisionWorld {
         tmpMatrix.fromArray(source, i * 16);
         this.matrices.set(tmpMatrix.elements, k * 16);
         this.inverses.set(tmpMatrix.invert().elements, k * 16);
-        tmpBox.copy(local).applyMatrix4(tmpMatrix.fromArray(source, i * 16));
-        const b = this.boxes;
-        const o = k * 6;
-        b[o] = tmpBox.min.x;
-        b[o + 1] = tmpBox.min.y;
-        b[o + 2] = tmpBox.min.z;
-        b[o + 3] = tmpBox.max.x;
-        b[o + 4] = tmpBox.max.y;
-        b[o + 5] = tmpBox.max.z;
+        this.setBox(k, tmpBox.copy(local).applyMatrix4(tmpMatrix.fromArray(source, i * 16)));
         world.union(tmpBox);
         this.bvhs.push(bvh);
         triangles += perInstance;
@@ -250,16 +244,12 @@ export class CollisionWorld {
     this.matrices.set(matrix.elements, k * 16);
     this.inverses.set(tmpMatrix.copy(matrix).invert().elements, k * 16);
     const local = this.local[k];
-    if (local === undefined) return;
-    tmpBox.copy(local).applyMatrix4(matrix);
-    const b = this.boxes;
-    const o = k * 6;
-    b[o] = tmpBox.min.x;
-    b[o + 1] = tmpBox.min.y;
-    b[o + 2] = tmpBox.min.z;
-    b[o + 3] = tmpBox.max.x;
-    b[o + 4] = tmpBox.max.y;
-    b[o + 5] = tmpBox.max.z;
+    if (local !== undefined) this.setBox(k, tmpBox.copy(local).applyMatrix4(matrix));
+  }
+
+  /** Writes `box` as piece k's world box. */
+  private setBox(k: number, box: Box3): void {
+    this.boxes.set([box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z], k * 6);
   }
 
   /** Whether the capsule round `segment` with `radius` meets any solid triangle, nearer its segment than the radius; it moves nothing. */
@@ -482,6 +472,7 @@ export class CollisionWorld {
       found.sort((a, b) => a[0] - b[0]);
       const heights: number[] = [];
       const normalYs: number[] = [];
+      const facings: number[] = [];
       // The hits kept at the height being read.
       let level: (typeof found)[number][] = [];
       for (const hit of found) {
@@ -491,8 +482,9 @@ export class CollisionWorld {
         level.push(hit);
         heights.push(y);
         normalYs.push(ny);
+        facings.push(facing);
       }
-      if (heights.length > 0) out.push({ instance: k, heights, normalYs, sheet: this.sheets[k] === 1 });
+      if (heights.length > 0) out.push({ instance: k, heights, normalYs, facings, sheet: this.sheets[k] === 1 });
     }
     return out;
   }

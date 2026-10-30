@@ -1,7 +1,8 @@
 /**
  * Walk spawns (docs/design/spec.md, Walk mode): where walk mode can put the walker, by id, for the view menu and `?walk=1&spawn=<id>`, and a place of
  * the query's own, `?walk=1&spawn=x,y,z,tx,ty,tz`, for tests and captures (`placeOf`).
- * Each is the feet's position, the level direction the walker faces and a pitch; walk mode drops the feet onto the first surface below 1 m above them.
+ * Each is the feet's position, the level direction the walker faces and a pitch; walk mode drops the feet onto the first surface below 1 m above them,
+ * or onto the rims of a groove there (src/walk/walker.ts `place`).
  * Levels and the plaza come from src/model/frame.ts; the Great Hall's and the Grand Staircase's plan positions are the hunt area's reading of the
  * floor map (src/model/hunt/dims.ts, from docs/research/interior.md), which frame.ts does not hold.
  */
@@ -40,9 +41,9 @@ export function spawnById(id: string): Spawn | undefined {
 export const PLACE_ID = 'place';
 
 /**
- * The place `spawn=x,y,z,tx,ty,tz` names (docs/design/spec.md, Query contract): the feet at (x, y, z), which walk mode drops onto the first surface below
- * 1 m above them as it drops a spawn's, facing and looking at (tx, ty, tz) from an eye BODY.eye over the given feet. Null unless the text is six finite
- * numbers and the target lies off the vertical through the feet, so that the walker has a level direction to face.
+ * The place `spawn=x,y,z,tx,ty,tz` names (docs/design/spec.md, Query contract): the feet at (x, y, z), which walk mode drops as it drops a spawn's,
+ * facing and looking at (tx, ty, tz) from an eye BODY.eye over the given feet. Null unless the text is six finite numbers and the target lies off the
+ * vertical through the feet, so that the walker has a level direction to face.
  */
 export function placeOf(text: string): Spawn | null {
   const values = text.split(',').map((v) => (v.trim() === '' ? Number.NaN : Number(v)));
