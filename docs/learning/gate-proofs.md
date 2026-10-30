@@ -197,6 +197,16 @@ Mouse-look and Esc (work unit 14, 2026-10-29): each mutation made on the work an
 - The old hint rules, a look and the lock ending the hint: the fifth unit test red ("the hint once walking, the pointer locked: expected false to be true").
 - An open menu not taking Esc (`menus.ts` without its `preventDefault`): `mouse-look.spec`'s third test red ("the menu closed, still walking": "orbit").
 - A free move with no button held turning the view (planted): `mouse-look.spec`'s second test red ("a free move with no button held").
+- Review 0's repairs (work unit 14), each made on the repaired work and undone:
+  - A finger's press under the mouse's lock asking for pointer capture (F0): `walk-lock.test.ts`'s second test red ("captures asked for under the lock…: expected 1 to be +0"); the touch test red in Chrome itself ("uncaught exception: Failed to execute 'setPointerCapture' on 'Element': InvalidStateError").
+  - A drag under the lock turned by its clientX travel, which Chrome freezes at the lock's place for every pointer: the second unit test red ("a finger dragged 60 px…: expected +0 to be close to -0.078"); the touch test red ("a finger dragged 80 px to the right with the mouse locked": 0).
+  - A drag's end heard on the canvas alone: the second unit test red ("the next pen drag, 20 px: expected +0").
+  - A key not counted as the entering input (F1): the first unit test red ("entered by a key after a finger's press: expected 2 to be 3").
+  - No lock asked again when walk mode is entered before the page's own release is told (F2): the fourth unit test red ("and the lock asked for again (F2): expected 1 to be 2").
+  - Leaving with the last frame's target, no fresh find, or the fresh find with no null told after it (F3): the fifth unit test red either way ("turned to nothing, then left: no card kept (F3): expected '11013' to be null").
+  - A held Esc's repeats dismissing the card (F4): `labels.spec`'s locked test red at both sizes ("the card kept in the orbit view": null).
+  - A menu left open when F locks the pointer (F6): `mouse-look.spec`'s first test red ("the menu once the pointer locks": visible).
+  - The locked card's place (F7), with a 400 px tall hint planted: `labels.spec`'s locked test red at 390×844 ("art-card clips its content"); at 1280×720, where the card grows instead of scrolling and stays clear, green.
 
 ### `tests/e2e/labels.spec.ts` and `src/viewer/art-label.test.ts`
 

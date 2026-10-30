@@ -3,13 +3,15 @@
  * 2026-10-28: "in first person the camera moves as the mouse moves. Pressing ESC cancels first person mode."), through real input in the system
  * Chrome, which grants pointer lock to a request made in a user's gesture:
  * - entered by the Walk toggle, F or a view-menu spawn, the pointer is locked and the mouse turns the view as it moves with no button held,
- *   LOOK_PER_PIXEL a pixel, right for right and down for down, a move of up to 160 px taken whole by the next frame (CDP Input.dispatchMouseEvent;
- *   the browser gives a locked move's movementX and movementY from the mouse's travel); the status line says so;
+ *   LOOK_PER_PIXEL a pixel, right for right and down for down, a move of up to 160 px taken whole, read two frames after it (CDP
+ *   Input.dispatchMouseEvent; the browser gives a locked move's movementX and movementY from the mouse's travel); the status line says so; a menu open
+ *   when F locks the pointer closes, as the locked pointer cannot reach it (review 0, F6);
  * - entered at load (`walk=1`), with no gesture, the pointer stays free and a move with no button held turns nothing, until a click locks it;
  * - Esc leaves walk mode to the orbit view at the eye, as F does, the pointer locked or free; the lock lost while walking leaves it too; with a menu
  *   open, Esc closes the menu and the walk goes on, and the next Esc leaves;
  * - by touch at 390×844, a tap on the Walk toggle walks with no request for the lock (a probe counts the page's requests and passes them on), and a
- *   finger's drag turns the view LOOK_PER_PIXEL a pixel the way it moves.
+ *   finger's drag turns the view LOOK_PER_PIXEL a pixel the way it moves, the same once a mouse's click has locked the pointer, with no page error
+ *   (review 0, F0: the browser refuses pointer capture under a lock).
  * Bound: headless Chrome hands Esc to the page and keeps the lock, where a desktop Chrome frees the lock on Esc and tells the page only that the lock
  * went; so the browser's own release is stood in for by `document.exitPointerLock()`, which the browser answers with the same `pointerlockchange`.
  * Where a move first meets the locked view its travel from the mouse's last place turns it too, so each turn is read from the view after a first move.
@@ -86,9 +88,12 @@ test.describe('mouse-look and Esc', () => {
     await page.keyboard.press('KeyF');
     await orbiting(page);
     await lockedIs(page, false);
+    // F with the View menu open: the pointer locks, and the menu closes (F6).
+    await openMenu(page, 'view-menu');
     await page.keyboard.press('KeyF');
     await walking(page);
     await lockedIs(page, true);
+    await expect(page.getByTestId('view-menu'), 'the menu once the pointer locks').toBeHidden();
     await moveBy(page, 600, 440, 100, -60);
     await page.keyboard.press('Escape');
     await orbiting(page);
@@ -188,6 +193,13 @@ test.describe('by touch at 390×844', () => {
     const down = await angles(page);
     expect(down.pitch - right.pitch, 'dragged 60 px down, it looks down by 60 × LOOK_PER_PIXEL').toBeCloseTo(-60 * LOOK_PER_PIXEL, 3);
     expect(await page.evaluate(() => (window as unknown as { lockRequests: number }).lockRequests), 'requests for the lock after the drags').toBe(0);
+    // A mouse's click of the view locks the pointer; a finger still drags to look, the browser refusing it pointer capture under the lock (F0).
+    await page.mouse.click(300, 300);
+    await lockedIs(page, true);
+    const locked = await angles(page);
+    await swipe(100, 500, 80, 0);
+    const swiped = await angles(page);
+    expect(swiped.yaw - locked.yaw, 'a finger dragged 80 px to the right with the mouse locked').toBeCloseTo(-80 * LOOK_PER_PIXEL, 3);
     await cdp.detach();
     errors.expectClean();
   });

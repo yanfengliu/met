@@ -118,9 +118,8 @@ function boot(): void {
     const canvas = viewer.renderer.domElement;
     artLabel.click(picker.hit(new Ray(rig.camera.position.clone(), pointerRay(canvas, rig.camera, x, y)), ARTWORK_QUERY));
   }, () => !walk.active);
-  window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') artLabel.dismiss();
-  });
+  // Esc hides the orbit view's card, but not a held Esc's repeats, which would hide the card that leaving walk mode keeps (review 0, F4).
+  window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !event.repeat) artLabel.dismiss(); });
   /** The door the walking eye looks at within reach, as the look target last changed (`onLookTarget`), for the prompt under the crosshair. */
   let doorInView: string | null = null;
   walk.onLookTarget((target) => { doorInView = target?.kind === 'door' ? target.id : null; });

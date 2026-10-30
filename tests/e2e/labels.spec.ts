@@ -18,7 +18,8 @@
  *   the whole bar while the build replay is open, clear of the floor picker and every control. A clicked card goes when walk mode begins and does not
  *   come back when it ends.
  * - The pointer locked (work unit 14): placed 4 m before the painting, a click of the view locks the pointer, and the card says "Press Esc, then click
- *   the link."; Esc leaves walk mode and keeps the card in the orbit view, laid out with its controls, the hint gone, and its link, clicked, opens the
+ *   the link.", laid out above the strip as walking shows it, clear of every control and the door prompt's band (review 0, F7); Esc, held so that it
+ *   repeats, leaves walk mode and keeps the card in the orbit view (F4), laid out with its controls, the hint gone, and its link, clicked, opens the
  *   object's page; Esc again hides it.
  * The painting's place comes from the collection's placements (src/model/collection/spaces-b.ts), the pixel a click goes to from the published camera,
  * and both are checked apart from the page (./labels-helpers.ts). ./labels-view.spec.ts drives the card through the follow camera, presets and the cut.
@@ -283,9 +284,21 @@ for (const viewport of VIEWPORTS) {
       await page.waitForFunction(() => window.__met?.walk.pointerLocked === true);
       await expectTriumphCard(page);
       await expect(page.getByTestId('art-hint')).toHaveText(LOCKED_HINT);
-      // Esc: the orbit view at the eye, the card kept, the hint gone, laid out with the orbit view's controls.
-      await page.keyboard.press('Escape');
+      // With the hint, the card keeps its walking place: above the strip, at the bottom left or across the narrow screen, clear of the band (F7).
+      await settle(page);
+      const card = expectLaidOut(await boxes(page, WALK_CONTROLS), viewport, 'walking, the pointer locked');
+      const strip = (await boxes(page, ['timeline-bar']))[0];
+      if (strip === undefined) throw new Error('No strip.');
+      expect(card.y + card.h, 'the locked card ends above the strip').toBeLessThanOrEqual(strip.y + 0.5);
+      const band: Box = { id: 'band', x: viewport.width / 2 - BAND.halfWidth, y: viewport.height / 2 - BAND.above, w: 2 * BAND.halfWidth, h: BAND.above + BAND.below, clipped: false };
+      expect(overlaps(card, band), 'the locked card stays out of the door prompt’s band').toBe(false);
+      // Esc, held so that the browser repeats it: the orbit view at the eye, the card kept through the repeats (F4), the hint gone.
+      await page.keyboard.down('Escape');
       await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
+      await settle(page);
+      await page.keyboard.down('Escape');
+      await page.keyboard.down('Escape');
+      await page.keyboard.up('Escape');
       await settle(page);
       expect((await facts(page)).label, 'the card kept in the orbit view').toEqual({ id: String(TRIUMPH), title: entryOf(TRIUMPH).title });
       await expectTriumphCard(page);

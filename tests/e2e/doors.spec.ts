@@ -3,8 +3,8 @@
  * of the entrance's middle doorway within 2 m, the prompt under the crosshair says "E Open"; E swings the doorway's leaves into the building, away from
  * the walker, in canvas pixels and in `window.__met.doors`; looking at an open leaf it says "E Close"; the timeline's scrubber, moved into the doors'
  * step and back, draws the closed leaf and then the door open again at once (read where the render drew them, `perf.lastDrawn.doors`, 90° from the
- * stand-ins' matrices), and taken back before the step, closed (the build replay opened by the Build menu while walking, its bar unfolded and
- * folded by its Timeline button); opened by E again, a click while the pointer is locked closes it; a link door says "Locked" and stays shut by E and
+ * stand-ins' matrices), and taken back before the step, closed (the build replay opened by the Build menu while walking, which shows its whole bar,
+ * then folded by its Timeline button); opened by E again, a click while the pointer is locked closes it; a link door says "Locked" and stays shut by E and
  * by a locked click; `doors=open` and `doors=closed`
  * under `shot=1` stand at their angle in the first frame drawn, as its render drew them, the doors set before the walker is placed and that before
  * the first frame (the page's marks `met:doors-set` and `met:walk-placed`, read beside a probe of the first drawn frame that writes nothing), and the

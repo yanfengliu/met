@@ -136,6 +136,8 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     if (ui.hasAttribute('data-replay') !== state.replay) ui.toggleAttribute('data-replay', state.replay);
     view.sync(state);
     floors.sync(state);
+    // A menu open when the pointer locks closes: the locked pointer cannot reach it, and the browser keeps the Esc that would (review 0, F6).
+    if (state.walkStatus === 'locked') for (const d of [chapters.disclosure, view.disclosure]) if (d.open) d.setOpen(false);
     // The status line says "Preparing walk mode…", then shows how to look, move and leave only while the hint lasts.
     const shown = state.walkStatus === 'preparing' || (state.walkHint && state.walkStatus !== 'off');
     setText(status, shown ? WALK_STATUS[state.walkStatus] : '');

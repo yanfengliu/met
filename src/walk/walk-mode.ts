@@ -119,8 +119,13 @@ export class WalkMode {
   private locked = false;
   /** Set while a release of the lock the page asked for itself is on its way, so its `pointerlockchange` does not leave walk mode. */
   private releasing = false;
-  /** The kind of pointer of the last press anywhere on the page: a finger's or a pen's tap that enters walk mode asks for no lock. */
-  private lastPress = 'mouse';
+  /** Set when walk mode is entered while that release is on its way: the lock is asked for again once the release is told (review 0, F2). */
+  private relock = false;
+  /**
+   * The last input anywhere on the page: a press's pointer type, or `keyboard` for a key. A finger's or a pen's tap that enters walk mode asks for no
+   * lock; a key, F among them, asks, whatever pointer pressed last (review 0, F1).
+   */
+  private lastInput = 'mouse';
   private drag: { id: number; x: number; y: number; moved: number } | null = null;
   /** Seconds left of the status line's hint. */
   private hintLeft = 0;
@@ -170,9 +175,10 @@ export class WalkMode {
   }
 
   /**
-   * Calls `listener` with the look target, or null, each time its kind or id changes as walking frames find it, and with null when walk mode is left
-   * or entered again while a target was seen; a fresh read (`target()`) calls nothing, the next frame does. It hears changes from now on (`lastTarget`
-   * is the current one). Returns the call that stops it.
+   * Calls `listener` with the look target, or null, each time its kind or id changes as walking frames find it; with null when walk mode is entered
+   * again while a target was seen; and when walk mode is left, with the target as the view stands then, if it changed, and then with null, always. A
+   * fresh read (`target()`) calls nothing, the next frame does. It hears changes from now on (`lastTarget` is the current one). Returns the call that
+   * stops it.
    */
   onLookTarget(listener: LookTargetListener): () => void {
     this.lookListeners.add(listener);
@@ -207,15 +213,21 @@ export class WalkMode {
     if (this.on && this.prepare) this.build(t);
   }
 
-  /** Back to the orbit view, at the walker's eye looking where it looked. */
+  /**
+   * Back to the orbit view, at the walker's eye looking where it looked. The listeners hear the target as the view stands now, if it changed since
+   * the last frame (a locked mouse's move turns the view between frames), and then null, always, so a card kept on leaving is the artwork the orbit
+   * view looks at (src/viewer/art-label.ts; review 0, F3).
+   */
   exit(): void {
     if (!this.on) return;
+    if (!this.prepare) this.tell(this.find());
     this.on = false;
     this.prepare = false;
     this.drag = null;
     this.hintLeft = 0;
+    this.relock = false;
     this.seen = null;
-    this.tell(null);
+    this.tell(null, true);
     this.freePointer();
     const rig = this.host.rig;
     rig.setWalking(false);
@@ -301,10 +313,10 @@ export class WalkMode {
     };
   }
 
-  /** Tells the listeners `target` when its kind or id is not what they last heard. */
-  private tell(target: LookTarget | null): void {
+  /** Tells the listeners `target` when its kind or id is not what they last heard, or `always`. */
+  private tell(target: LookTarget | null, always = false): void {
     const key = target === null ? null : `${target.kind}:${target.id}`;
-    if (key === this.heard) return;
+    if (key === this.heard && !always) return;
     this.heard = key;
     for (const listener of [...this.lookListeners]) listener(target);
   }
@@ -373,24 +385,34 @@ export class WalkMode {
     return this.locked && event.pointerType === 'mouse';
   }
 
+  /**
+   * A drag starts on the view; its moves and its end are heard on the document, where they bubble from the canvas that captures the pointer, or, while
+   * the document holds pointer lock, which no capture may be set under (Pointer Events 3), from wherever they land: a finger has its own implicit
+   * capture, and a pen lifted off the view still ends its drag (review 0, F0). The locked mouse's moves come to the canvas.
+   */
   private bindPointer(canvas: HTMLCanvasElement): void {
-    document.addEventListener('pointerdown', (event) => { this.lastPress = event.pointerType; }, { capture: true, passive: true });
+    document.addEventListener('pointerdown', (event) => { this.lastInput = event.pointerType; }, { capture: true, passive: true });
+    document.addEventListener('keydown', () => { this.lastInput = 'keyboard'; }, { capture: true, passive: true });
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement === canvas;
       const lost = this.locked && !locked && !this.releasing;
+      const told = this.releasing && !locked;
       this.locked = locked;
       this.releasing = false;
       // A lock that came once walk mode was left (F pressed again before the browser gave it): the orbit view keeps its pointer.
       if (locked && !this.on) this.freePointer();
       // Lost while walking: the browser frees the pointer on Esc and tells the page only that the lock went, so walk mode is left, as Esc leaves it.
       else if (lost && this.on) this.exit();
+      // The page's own release told after walk mode was entered again: the lock that entry wanted is asked for now, the entry's gesture still fresh.
+      else if (told && this.relock && this.on) this.requestLock(canvas);
+      this.relock = false;
     });
     canvas.addEventListener('pointerdown', (event) => {
       if (!this.on || this.lockedMouse(event) || this.drag !== null) return;
       this.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: 0 };
-      canvas.setPointerCapture(event.pointerId);
+      if (document.pointerLockElement === null) canvas.setPointerCapture(event.pointerId);
     });
-    canvas.addEventListener('pointermove', (event) => {
+    document.addEventListener('pointermove', (event) => {
       if (!this.on || this.prepare) return;
       if (this.lockedMouse(event)) {
         this.turnBy(event.movementX, event.movementY);
@@ -398,8 +420,10 @@ export class WalkMode {
       }
       const drag = this.drag;
       if (drag?.id !== event.pointerId) return;
-      const dx = event.clientX - drag.x;
-      const dy = event.clientY - drag.y;
+      // While the document holds pointer lock the browser gives every pointer the lock's place, and its travel in movementX and movementY (Chrome 156).
+      const frozen = document.pointerLockElement !== null;
+      const dx = frozen ? event.movementX : event.clientX - drag.x;
+      const dy = frozen ? event.movementY : event.clientY - drag.y;
       drag.x = event.clientX;
       drag.y = event.clientY;
       drag.moved += Math.abs(dx) + Math.abs(dy);
@@ -412,19 +436,21 @@ export class WalkMode {
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
       if (!cancelled && this.on && event.pointerType === 'mouse' && event.button === 0 && drag.moved < CLICK_SLOP) this.requestLock(canvas);
     };
-    canvas.addEventListener('pointerup', (event) => { release(event, false); });
-    canvas.addEventListener('pointercancel', (event) => { release(event, true); });
+    document.addEventListener('pointerup', (event) => { release(event, false); });
+    document.addEventListener('pointercancel', (event) => { release(event, true); });
   }
 
   /**
-   * On entering: asks for pointer lock where the browser can give it now, in a user's gesture (the F key, a click of the Walk toggle or a spawn) whose
-   * last press was not a finger's or a pen's. Without a gesture, as at load with `walk=1`, the browser would refuse, so the first click asks.
+   * On entering: asks for pointer lock where the browser can give it now, in a user's gesture (the F key, a click of the Walk toggle or a spawn) that
+   * was not a finger's or a pen's tap. Without a gesture, as at load with `walk=1`, the browser would refuse, so the first click asks. While the page's
+   * own release of the lock is on its way, it asks once that release is told (`relock`).
    */
   private askLock(): void {
     // A browser without the User Activation API (Safari before 16.4) is asked anyway; it refuses without a gesture.
     const activation = (navigator as { readonly userActivation?: UserActivation }).userActivation;
-    if (this.locked || this.lastPress !== 'mouse' || activation?.isActive === false) return;
-    this.requestLock(this.host.canvas);
+    if (this.lastInput === 'touch' || this.lastInput === 'pen' || activation?.isActive === false) return;
+    if (this.releasing) this.relock = true;
+    else if (!this.locked) this.requestLock(this.host.canvas);
   }
 
   /** Frees the pointer if the page holds it locked, so the `pointerlockchange` that tells it is the page's own and leaves nothing. */
