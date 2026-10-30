@@ -22,7 +22,9 @@
  * 0.32 m, set down or settled, and a check as for a spawn on to their tops, 0.45 m; the joint under the blocks left it on the slab 6 cm down; the deck
  * left it on the workspace ground 2 m down. Red too with the rims read over `place`'s whole drop (the plinths' and the seats' tops, 0.45 m), with
  * no walkable check (the ramps, 0.296 m), with `builtUnder` always true (the kept walker "moved") and with no check that a probe stands on a top
- * (the seats "moved").
+ * (the seats "moved"). Review 1: either side of a joint, pieces of two overlapping parts, whose overlap the parity of their crossings reads as outside,
+ * leave it on the floor (red with parity in place of the winding: "moved", onto the upper part's bottom); and asked 0.3495 m over the deck it stands
+ * on it, 0.36 m over it it falls through the seam, the bound (red with the rise counted from the window's foot, not the feet: through it at 0.3495).
  * Bound: fixtures are closed boxes and the deck's sheets, their joints along X and Z, as the hall's. Every piece of the model is closed along vertical
  * lines or a declared sheet (src/model/closure.test.ts); a sheet has no inside, so the build does not lift a walker out of one, which
  * src/walk/crossings.test.ts checks, and a probe's hit on a sheet is not told from its underside, as a closed piece's is by its inside.
@@ -39,6 +41,7 @@ import type { Kit, StepDef } from '../build/types.js';
 import { B_SOUTH_X, COPING_TOP_Y } from '../model/core/constants.js';
 import { WALL_BASE_Y } from '../model/core/vaux-front.js';
 import { WESTON_DOOR } from '../model/core/weston-facade.js';
+import { MeshBuilder } from '../model/lib/builder.js';
 import { sheet } from '../model/lib/sheet.js';
 import { workspaceGroundY } from '../viewer/environment.js';
 import { GeometryBvhs } from './bvh-cache.js';
@@ -274,6 +277,17 @@ const seats = step('seats', (kit) => {
   for (const sx of [-1, 1]) block(kit, [sx > 0 ? 0.26 : -0.66, 0.32, -1], [sx > 0 ? 0.66 : -0.26, 0.45, 1]);
 });
 
+/** Either side of an 8 mm joint, one piece of two overlapping parts, 0.1 to 0.4 and 0.2 to 0.5 m up: a probe meets the upper part's bottom inside the lower (review 1, F6). */
+const overlaps = step('overlaps', (kit) => {
+  for (const sx of [-1, 1]) {
+    const b = new MeshBuilder();
+    const [x0, x1] = sx > 0 ? [JOINT / 2, 2] : [-2, -JOINT / 2];
+    b.box([x0, 0.1, -2], [x1, 0.4, 2]);
+    b.box([x0, 0.2, -2], [x1, 0.5, 2]);
+    kit.add(b.build(), stone, new Matrix4());
+  }
+});
+
 /** Two plinths 0.45 m high standing 0.5 m apart, higher than a step, where the walker stands between them on the floor (review 0, F3). */
 const plinths = step('plinths', (kit) => {
   for (const sx of [-1, 1]) block(kit, [sx > 0 ? 0.25 : -1, 0, -1], [sx > 0 ? 1 : -0.25, 0.45, 1]);
@@ -323,6 +337,11 @@ describe('the rims a walker set down or settled stands on (work unit 13, review 
     expect(walker.feet.y, 'set down between the seats').toBeCloseTo(0, 6);
     expect(walker.settle(0), 'checked with every piece new to it, as walk mode checks a spawn').toBe('kept');
     expect(along(walker, 0.5)[1], 'and walking on between them').toBeCloseTo(0, 6);
+    const parts = site([floor, overlaps], 1);
+    parts.walker.place(0, 0, 0, ALONG);
+    expect(parts.to(2), 'pieces of two overlapping parts built either side of a joint').toBe('kept');
+    parts.walker.place(0, 0, 0, ALONG);
+    expect(parts.walker.feet.y, "set down between them, not on the upper part's bottom inside the lower").toBeCloseTo(0, 6);
   });
 
   it('reads rims within a step over the feet: between two plinths 0.45 m high it stays on the floor, set down or settled', () => {
@@ -365,6 +384,10 @@ describe('the rims a walker set down or settled stands on (work unit 13, review 
     expect([walker.feet.y, walker.onGround], 'on the deck, not on the workspace ground 2 m under it').toEqual([expect.closeTo(1, 6), true]);
     expect(walker.settle(0), 'checked with every piece new to it, as walk mode checks a spawn').toBe('kept');
     expect(along(walker, 1), 'walking along the seam').toEqual([expect.closeTo(1, 6), expect.closeTo(1, 6)]);
+    walker.place(0, 1.3495, 0, ALONG);
+    expect(walker.feet.y, 'asked 0.3495 m over the deck, within a step of it').toBeCloseTo(1, 6);
+    walker.place(0, 1.36, 0, ALONG);
+    expect(walker.feet.y, 'asked 0.36 m over the deck, more than a step: through the seam, the bound').toBe(FLOOR_Y);
     walker.place(2.6, 1, 0, ALONG);
     expect(walker.feet.y, 'set down in the middle of the 1.2 m gap').toBe(FLOOR_Y);
   });

@@ -13,7 +13,7 @@ export const STRADDLE = 0.3;
 const DIAGONAL = STRADDLE * Math.SQRT1_2;
 /** One of each pair of opposite side probes; the other is its negative. */
 const SIDES: readonly (readonly [number, number])[] = [[STRADDLE, 0], [0, STRADDLE], [DIAGONAL, DIAGONAL], [DIAGONAL, -DIAGONAL]];
-/** A probe's hit is on top of what it meets unless a closed piece's inside lies over it within this, metres. */
+/** A probe's hit is on top of what it meets unless a closed piece holds the line over it within this, metres. */
 const OVER = 2e-3;
 
 /**
@@ -44,7 +44,7 @@ export class Footing {
 
   /**
    * Into `hit`, the highest lower rim of a pair of opposite side probes of a body at (x, z), from `top` down `length`, higher than `above`. Given `accept`,
-   * a pair counts only where it takes the rim and both probes stand on top of what they meet, no closed piece's inside lying just over either probe's
+   * a pair counts only where it takes the rim and both probes stand on top of what they meet, no closed piece holding the line just over either probe's
    * hit, as one does over the underside a probe finds when it starts inside a piece; each pair is judged so, and the highest that passes is kept.
    */
   rims(x: number, z: number, top: number, length: number, hit: GroundHit, above = Number.NEGATIVE_INFINITY, accept?: (rim: GroundHit) => boolean): boolean {
@@ -67,8 +67,12 @@ export class Footing {
     return SIDES.some(([dx, dz]) => meets(x + dx, z + dz) || meets(x - dx, z - dz));
   }
 
-  /** Whether a closed piece's inside lies just over height `y` on the vertical line through (x, z), as over an underside a probe met there. */
+  /**
+   * Whether a closed piece holds the vertical line through (x, z) just over height `y`, as over an underside a probe met there: more of its faces below
+   * look down than up (its winding), which counts the overlap of two of its parts as inside, where the parity of its crossings reads it as outside.
+   */
   private under(x: number, z: number, y: number): boolean {
-    return this.world.crossings(x, z, y, y + OVER).some((p) => !p.sheet && insideBetween(p.heights, y + OVER / 2, y + OVER));
+    const at = y + OVER / 2;
+    return this.world.crossings(x, z, y, y + OVER).some((p) => !p.sheet && p.heights.reduce((w, h, i) => (h < at ? w - (p.facings[i] ?? 0) : w), 0) > 0);
   }
 }

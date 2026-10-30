@@ -230,7 +230,7 @@ const where = (m: Matrix4): string => `(${[m.elements[12], m.elements[13], m.ele
 
 describe('a piece meeting an artwork along a vertical line', () => {
   it('holds it inside between two crossings, but a sheet, which has none, does not', () => {
-    const panes: LineCrossings = { instance: 0, heights: [1, 3], normalYs: [1, 1], sheet: false };
+    const panes: LineCrossings = { instance: 0, heights: [1, 3], normalYs: [1, 1], facings: [-1, 1], sheet: false };
     expect(meets(panes, 1.5, 2), 'a solid from 1 to 3 m').toBe('encloses it');
     expect(meets({ ...panes, sheet: true }, 1.5, 2), 'a sheet at 1 and 3 m').toBeNull();
     expect(meets({ ...panes, sheet: true }, 0.5, 2), 'the sheet crossing it at 1 m').toBe('crosses it');

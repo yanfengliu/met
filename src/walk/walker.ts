@@ -168,13 +168,13 @@ export class Walker {
 
   /**
    * Lifts the feet out of a groove narrower than the body onto the lower rim of two opposite sides read from `top` down to `low` (./footing.ts `rims`):
-   * the highest over `low` whose probes stand on top of what they meet, walkable, where the body stands clear by the centre's crossings (`clearAt`).
+   * the highest over the feet whose probes stand on top of what they meet, walkable, where the body stands clear by the centre's crossings (`clearAt`).
    */
   private ontoRims(low: number, top: number, lines?: readonly LineCrossings[]): boolean {
     const { feet, hit } = this;
     let centre = lines;
     const stands = (rim: GroundHit): boolean => rim.normalY >= MIN_WALKABLE_NORMAL_Y && this.clearAt((centre ??= this.world.crossings(feet.x, feet.z, this.floorY, Number.POSITIVE_INFINITY)), rim.y);
-    if (!this.footing.rims(feet.x, feet.z, top, top - low, hit, low + STANDING, stands)) return false;
+    if (!this.footing.rims(feet.x, feet.z, top, top - low, hit, feet.y + STANDING, stands)) return false;
     feet.y = hit.y;
     return true;
   }
