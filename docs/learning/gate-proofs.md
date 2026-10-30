@@ -207,6 +207,11 @@ Mouse-look and Esc (work unit 14, 2026-10-29): each mutation made on the work an
   - A held Esc's repeats dismissing the card (F4): `labels.spec`'s locked test red at both sizes ("the card kept in the orbit view": null).
   - A menu left open when F locks the pointer (F6): `mouse-look.spec`'s first test red ("the menu once the pointer locks": visible).
   - The locked card's place (F7), with a 400 px tall hint planted: `labels.spec`'s locked test red at 390×844 ("art-card clips its content"); at 1280×720, where the card grows instead of scrolling and stays clear, green.
+- Review 1's repairs (work unit 14), each made on the repaired work and undone:
+  - Menus closed on every frame the pointer is locked, as round 0's repair did (F12): `mouse-look.spec`'s first test red ("the menu the keyboard opened, five frames on": hidden).
+  - A drag under the lock that the lock leaves mid-way, taken from the lock's place (F14): `walk-lock.test.ts`'s drag test red ("30 px under the lock and 20 px after it: expected 0.195 to be close to -0.065").
+  - A held key's repeat counted as the keyboard (F15): the first unit test red ("entered by a tap with a key held: expected 4 to be 3").
+  - The locked card planted 40 px in from the left while its hint shows (F18): `labels.spec`'s locked test red at both sizes ("the locked card at the bottom left": 40; at 390×844 "art-card inside the viewport").
 
 ### `tests/e2e/labels.spec.ts` and `src/viewer/art-label.test.ts`
 

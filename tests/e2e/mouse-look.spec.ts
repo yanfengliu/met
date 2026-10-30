@@ -5,13 +5,15 @@
  * - entered by the Walk toggle, F or a view-menu spawn, the pointer is locked and the mouse turns the view as it moves with no button held,
  *   LOOK_PER_PIXEL a pixel, right for right and down for down, a move of up to 160 px taken whole, read two frames after it (CDP
  *   Input.dispatchMouseEvent; the browser gives a locked move's movementX and movementY from the mouse's travel); the status line says so; a menu open
- *   when F locks the pointer closes, as the locked pointer cannot reach it (review 0, F6);
+ *   when F locks the pointer closes, as the locked pointer cannot reach it (review 0, F6), and one opened by the keyboard while it is locked stays,
+ *   its item acting on Enter (review 1, F12);
  * - entered at load (`walk=1`), with no gesture, the pointer stays free and a move with no button held turns nothing, until a click locks it;
  * - Esc leaves walk mode to the orbit view at the eye, as F does, the pointer locked or free; the lock lost while walking leaves it too; with a menu
  *   open, Esc closes the menu and the walk goes on, and the next Esc leaves;
  * - by touch at 390×844, a tap on the Walk toggle walks with no request for the lock (a probe counts the page's requests and passes them on), and a
  *   finger's drag turns the view LOOK_PER_PIXEL a pixel the way it moves, the same once a mouse's click has locked the pointer, with no page error
- *   (review 0, F0: the browser refuses pointer capture under a lock).
+ *   (review 0, F0: the browser refuses pointer capture under a lock); under the lock a finger's tap on the Walk toggle clicks nothing, as Chrome 156
+ *   gives a tap under a mouse's lock no click (a CDP touch: the spec's claim that a locked pointer leaves the keyboard alone to the controls).
  * Bound: headless Chrome hands Esc to the page and keeps the lock, where a desktop Chrome frees the lock on Esc and tells the page only that the lock
  * went; so the browser's own release is stood in for by `document.exitPointerLock()`, which the browser answers with the same `pointerlockchange`.
  * Where a move first meets the locked view its travel from the mouse's last place turns it too, so each turn is read from the view after a first move.
@@ -103,6 +105,16 @@ test.describe('mouse-look and Esc', () => {
     await walking(page);
     await lockedIs(page, true);
     await moveBy(page, 640, 360, -90, 30);
+    // The keyboard opens a menu while the pointer is locked, focused on its button as Tab would: it stays (F12), and Enter on its first item acts.
+    await page.getByTestId('view-menu-button').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('view-menu')).toBeVisible();
+    for (let k = 0; k < 5; k += 1) await settle(page);
+    await expect(page.getByTestId('view-menu'), 'the menu the keyboard opened, five frames on').toBeVisible();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+    await orbiting(page);
+    expect((await facts(page)).view, 'the item chosen by the keyboard: a preset, which leaves walk mode').not.toBeNull();
   });
 
   test('entered at load with walk=1 the pointer stays free and a move turns nothing, until a click of the view locks it', async ({ page }) => {
@@ -200,6 +212,13 @@ test.describe('by touch at 390×844', () => {
     await swipe(100, 500, 80, 0);
     const swiped = await angles(page);
     expect(swiped.yaw - locked.yaw, 'a finger dragged 80 px to the right with the mouse locked').toBeCloseTo(-80 * LOOK_PER_PIXEL, 3);
+    // A finger's tap on the Walk toggle under the mouse's lock clicks nothing: walking goes on.
+    const toggle = await page.getByTestId('walk-toggle').boundingBox();
+    if (toggle === null) throw new Error('The Walk toggle has no box.');
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: toggle.x + toggle.width / 2, y: toggle.y + toggle.height / 2 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    for (let k = 0; k < 5; k += 1) await settle(page);
+    expect((await facts(page)).walk.mode, 'a tap on the Walk toggle under the lock').toBe('walk');
     await cdp.detach();
     errors.expectClean();
   });

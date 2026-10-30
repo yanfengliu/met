@@ -6,7 +6,8 @@
  * - Walk mode: W A S D and the arrow keys walk while held, Shift runs, Space jumps, E opens or closes the door looked at (docs/design/spec.md, Doors),
  *   F and Esc return to the orbit view; the timeline and floor keys are off. E is taken before the held keys, so in walk mode it is never held. With the
  *   pointer locked the browser takes Esc to free it, and walk mode, told the lock went, leaves (src/walk/walk-mode.ts); with the pointer free an open
- *   menu takes Esc first (src/ui/menus.ts), so the next one leaves, and a menu open when the pointer locks closes (src/ui/ui.ts).
+ *   menu takes Esc first (src/ui/menus.ts), so the next one leaves, and a menu open when the pointer locks closes (src/ui/ui.ts), though one the keyboard
+ *   opens while it is locked stays.
  * Held keys are physical keys (`event.code`), so W A S D sit in the same place on any layout; `bindKeys` returns the set of those held, which the
  * frame loop reads, and empties it when the page loses focus. A focused button keeps Space and Enter for itself, a focused slider other than the
  * scrubber keeps the keys it moves by (arrows, Home, End, Page Up and Page Down), and a text field keeps every key.

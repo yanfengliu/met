@@ -130,14 +130,18 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   new ResizeObserver(fitPicker).observe(floors.element);
   fitPicker();
 
+  /** The walk status the last sync showed, so a menu closes when the pointer locks and not after. */
+  let shownStatus = initial.walkStatus;
   const sync = (state: UiState): void => {
     bar.sync(state);
     chapters.sync(chapterAt(state.t, info.ranges, info.steps.length), state.replay);
     if (ui.hasAttribute('data-replay') !== state.replay) ui.toggleAttribute('data-replay', state.replay);
     view.sync(state);
     floors.sync(state);
-    // A menu open when the pointer locks closes: the locked pointer cannot reach it, and the browser keeps the Esc that would (review 0, F6).
-    if (state.walkStatus === 'locked') for (const d of [chapters.disclosure, view.disclosure]) if (d.open) d.setOpen(false);
+    // A menu open when the pointer locks closes: the locked pointer cannot reach it, and the browser keeps the Esc that would (review 0, F6). One
+    // the keyboard opens while it is locked stays (review 1, F12).
+    if (state.walkStatus === 'locked' && shownStatus !== 'locked') for (const d of [chapters.disclosure, view.disclosure]) if (d.open) d.setOpen(false);
+    shownStatus = state.walkStatus;
     // The status line says "Preparing walk mode…", then shows how to look, move and leave only while the hint lasts.
     const shown = state.walkStatus === 'preparing' || (state.walkHint && state.walkStatus !== 'off');
     setText(status, shown ? WALK_STATUS[state.walkStatus] : '');

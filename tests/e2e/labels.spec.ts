@@ -290,6 +290,8 @@ for (const viewport of VIEWPORTS) {
       const strip = (await boxes(page, ['timeline-bar']))[0];
       if (strip === undefined) throw new Error('No strip.');
       expect(card.y + card.h, 'the locked card ends above the strip').toBeLessThanOrEqual(strip.y + 0.5);
+      if (viewport.width > 640) expect(card.x, 'the locked card at the bottom left').toBeCloseTo(12, 0);
+      else expect([card.x, card.w], 'the locked card full width, 8 px in from each side').toEqual([8, viewport.width - 16]);
       const band: Box = { id: 'band', x: viewport.width / 2 - BAND.halfWidth, y: viewport.height / 2 - BAND.above, w: 2 * BAND.halfWidth, h: BAND.above + BAND.below, clipped: false };
       expect(overlaps(card, band), 'the locked card stays out of the door prompt’s band').toBe(false);
       // Esc, held so that the browser repeats it: the orbit view at the eye, the card kept through the repeats (F4), the hint gone.

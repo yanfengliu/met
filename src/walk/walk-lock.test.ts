@@ -6,9 +6,10 @@
  * the document, a key to the document; while the document holds a lock, every pointer at the lock's place, its travel in movementX and movementY, as
  * Chrome 156 reports a finger's moves under a locked mouse (a probe of CDP touch events, 2026-10-29).
  * - Entering in a user's gesture by a mouse or the keyboard asks for the lock once; without a gesture (as at load with `walk=1`), or after a finger's
- *   or a pen's press, it asks for none; a key after a finger's press asks (review 0, F1).
+ *   or a pen's press, it asks for none; a key after a finger's press asks (review 0, F1), but not a held key's repeat (review 1, F15).
  * - The locked mouse turns the view by its movement, `LOOK_PER_PIXEL` a pixel, right for right and up for up, with no button held; a finger still
- *   drags to look while the mouse is locked, by its movement, setting no capture, and its drag ends wherever it lifts (review 0, F0).
+ *   drags to look while the mouse is locked, by its movement, setting no capture, and its drag ends wherever it lifts (review 0, F0); a drag the lock
+ *   leaves mid-way picks up from where the finger is, with no jump (review 1, F14).
  * - The lock lost while walking leaves walk mode, the orbit camera at the eye, as the browser's Esc does; the page's own release when walk mode is left
  *   leaves nothing more, and walk mode entered again before that release is told asks for the lock once it is (review 0, F2); a lock that comes once
  *   walk mode was left is freed.
@@ -156,6 +157,32 @@ describe('pointer lock in walk mode', () => {
     doc.dispatchEvent(new Event('keydown'));
     walk.enter('plaza');
     expect(canvas.requests, 'entered by a key after a finger’s press').toBe(3);
+    walk.exit();
+    // A held key's repeat between a finger's press and its tap's click is no key's gesture (F15).
+    doc.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    doc.dispatchEvent(Object.assign(new Event('keydown'), { repeat: true }));
+    walk.enter('plaza');
+    expect(canvas.requests, 'entered by a tap with a key held').toBe(3);
+  });
+
+  it('picks a drag up from where the finger is when the lock goes mid-way, with no jump', () => {
+    walk.enter('plaza');
+    ready();
+    doc.lock(canvas);
+    // Left and entered again before the page's own release is told (F2's window): a finger pressed then drags under the lock, by its movement.
+    walk.exit();
+    walk.enter();
+    ready();
+    const look = (): readonly number[] => walk.facts().look ?? [Number.NaN, 0, 0];
+    const start = look();
+    press({ pointerId: 5, pointerType: 'touch', clientX: 300, clientY: 300 });
+    bubble('pointermove', { pointerId: 5, pointerType: 'touch', clientX: 300, clientY: 300, movementX: 30, movementY: 0 });
+    doc.release();
+    // The lock gone, the browser gives the finger's real place again, 200 px from the lock's: the first move there turns nothing, the next its travel (F14).
+    bubble('pointermove', { pointerId: 5, pointerType: 'touch', clientX: 100, clientY: 300, movementX: 0, movementY: 0 });
+    bubble('pointermove', { pointerId: 5, pointerType: 'touch', clientX: 120, clientY: 300, movementX: 20, movementY: 0 });
+    ready();
+    expect(yawOf(look()) - yawOf(start), '30 px under the lock and 20 px after it').toBeCloseTo(-50 * LOOK_PER_PIXEL, 9);
   });
 
   it('turns the view by the locked mouse’s movement with no button held, right for right and up for up; a finger still drags, capturing nothing', () => {

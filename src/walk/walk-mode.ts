@@ -8,7 +8,7 @@
  * held; where the browser gives no lock (no user gesture, as at load with `walk=1`), a click of the view asks again. A drag with an unlocked mouse, a
  * finger or a pen turns the view the way the pointer moves, as the locked mouse does. Losing the lock while walking leaves walk mode: the browser
  * frees the pointer on Esc and tells the page only that the lock went. Leaving puts the orbit camera at the walker's eye, its target 5 m ahead. The
- * status line's hint shows how to look, move and leave until the visitor first walks, at most `HINT_SECONDS`. Every walking frame, and afresh
+ * status line's hint shows how to look, move and leave until the visitor first walks or jumps, at most `HINT_SECONDS`. Every walking frame, and afresh
  * whenever something reads it, the look target (./look.ts) is found along the eye's ray; `onLookTarget` is the one hook that hears it change, for
  * doors and labels alike. The doors that open collide where the door layer stands them, their swings moved on in the walker's own physics steps
  * (./door-world.ts), and after every check of the walker's place a door whose leaves a build left in the walker is put clear of it. The walk mode
@@ -44,8 +44,8 @@ export const LOOK_PER_PIXEL = 0.0013;
  */
 export const CLICK_SLOP = 5;
 /**
- * Seconds the status line shows how to look, move and leave after walking starts, unless the visitor walks first. A look does not end it: entering
- * locks the pointer, and the mouse's first twitch would take the hint away before it is read.
+ * Seconds the status line shows how to look, move and leave after walking starts, unless the visitor walks or jumps first. A look does not end it:
+ * entering locks the pointer, and the mouse's first twitch would take the hint away before it is read.
  */
 export const HINT_SECONDS = 6;
 /** Walking frames whose work times `frameMs` takes the median of. */
@@ -126,7 +126,8 @@ export class WalkMode {
    * lock; a key, F among them, asks, whatever pointer pressed last (review 0, F1).
    */
   private lastInput = 'mouse';
-  private drag: { id: number; x: number; y: number; moved: number } | null = null;
+  /** The drag under way: its pointer, its last place, its travel, and whether the document held pointer lock at its last move. */
+  private drag: { id: number; x: number; y: number; moved: number; frozen: boolean } | null = null;
   /** Seconds left of the status line's hint. */
   private hintLeft = 0;
   /** The look target the last walking frame found. */
@@ -387,12 +388,13 @@ export class WalkMode {
 
   /**
    * A drag starts on the view; its moves and its end are heard on the document, where they bubble from the canvas that captures the pointer, or, while
-   * the document holds pointer lock, which no capture may be set under (Pointer Events 3), from wherever they land: a finger has its own implicit
-   * capture, and a pen lifted off the view still ends its drag (review 0, F0). The locked mouse's moves come to the canvas.
+   * the document holds pointer lock, which no capture may be set under (Pointer Events 3), from wherever they land, so a drag ends wherever it lifts
+   * (review 0, F0). The locked mouse's moves come to the canvas.
    */
   private bindPointer(canvas: HTMLCanvasElement): void {
     document.addEventListener('pointerdown', (event) => { this.lastInput = event.pointerType; }, { capture: true, passive: true });
-    document.addEventListener('keydown', () => { this.lastInput = 'keyboard'; }, { capture: true, passive: true });
+    // Not a held key's repeats: one landing between a finger's tap and its click would make the tap ask for the lock (review 1, F15).
+    document.addEventListener('keydown', (event) => { if (!event.repeat) this.lastInput = 'keyboard'; }, { capture: true, passive: true });
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement === canvas;
       const lost = this.locked && !locked && !this.releasing;
@@ -409,7 +411,7 @@ export class WalkMode {
     });
     canvas.addEventListener('pointerdown', (event) => {
       if (!this.on || this.lockedMouse(event) || this.drag !== null) return;
-      this.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: 0 };
+      this.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: 0, frozen: document.pointerLockElement !== null };
       if (document.pointerLockElement === null) canvas.setPointerCapture(event.pointerId);
     });
     document.addEventListener('pointermove', (event) => {
@@ -421,9 +423,12 @@ export class WalkMode {
       const drag = this.drag;
       if (drag?.id !== event.pointerId) return;
       // While the document holds pointer lock the browser gives every pointer the lock's place, and its travel in movementX and movementY (Chrome 156).
+      // A lock that goes mid-drag leaves the last place the lock's: the drag picks up from where the pointer is, turning nothing (review 1, F14).
       const frozen = document.pointerLockElement !== null;
-      const dx = frozen ? event.movementX : event.clientX - drag.x;
-      const dy = frozen ? event.movementY : event.clientY - drag.y;
+      const unfrozen = drag.frozen && !frozen;
+      drag.frozen = frozen;
+      const dx = frozen ? event.movementX : unfrozen ? 0 : event.clientX - drag.x;
+      const dy = frozen ? event.movementY : unfrozen ? 0 : event.clientY - drag.y;
       drag.x = event.clientX;
       drag.y = event.clientY;
       drag.moved += Math.abs(dx) + Math.abs(dy);
