@@ -11,13 +11,19 @@
  * tops 1.2 m up where they are shorter than it and missed wholly inside a taller one, 3 m tall (the bound src/model/closure.test.ts keeps on the model).
  * On a line along edges of both parts' faces in one of those planes, as their bottom diagonals, which cross there, the line is read again off them, so
  * each part's face counts and a walker on it is found 1.2 m up too; and so it is for review 2's piece of two parts turned half round X, its tops in one
- * plane, and for the same parts upright, the shorter's top inside the taller, the faces' facings read as built (work unit 13, review 2, F8). Red at
- * c2a9bcc, which read hits at one height facing one way on edges once whatever the edges: [0, 3, 3] along both bottoms' diagonals and the walker on
- * that line kept; [0, 0, 0.25] facings [−1, −1, 1] turned and [0, 0.25, 0.5] facings [−1, 1, 1] upright. A part doubled, the faces of its two copies on
- * one another, is read once along an edge both have (a pin of the rule's bound). And a rusticated wall whose window's sill lies on a channel's floor
- * and head on a channel's ceiling lays one face at each, not two, so the window is crossed once at each (red without `intervalsAt`'s edge mode in
- * src/model/lib/wall.ts; no wall in the model puts an opening's edge on a channel's).
- * Red with main's crossing rule, which counted hits within 1 µm once, in 8 of these 11 tests.
+ * plane, and for the same parts upright, the shorter's top inside the taller, the faces' facings read as built (work unit 13, review 2, F8), each also
+ * without an index, and the turned piece tilted 20° about Z, whose line read again reads its sloped tops 5.8 µm higher. Red at c2a9bcc, which read hits
+ * at one height facing one way on edges once whatever the edges: [0, 3, 3] along both bottoms' diagonals and the walker on that line kept; [0, 0, 0.25]
+ * facings [−1, −1, 1] turned and [0, 0.25, 0.5] facings [−1, 1, 1] upright; three crossings tilted. On a piece's own outline a line in doubt still reads
+ * the piece, not a line read off it (review 3, F10): two boxes, one's corner on the other's edge, at their sides' plane, and two boxes whose sides cross;
+ * red at f6fa16a, which read nothing there. With a sliver sloped 100 in 1 beside that outline, which the first line read off meets alone, it reads the
+ * boxes (review 4, F16; red at 1d9eb63, whose match by slope read the sliver). Pins of the rule's bound: a part doubled, the faces of its copies on one
+ * another, is read once along an edge both have, two prisms once along the ridge they share (review 3, F13), a line along a piece's own outer corner
+ * or edge reads its faces as it did, and review 4's prism, its corner on a line in doubt, keeps its own five crossings, its graze of a face the line read
+ * again leaves standing as before review 2 (F17). And a rusticated wall whose window's sill lies on a channel's floor and head on a channel's ceiling
+ * lays one face at each, not two, so the window is crossed once at each (red without `intervalsAt`'s edge mode in src/model/lib/wall.ts; no wall in
+ * the model puts an opening's edge on a channel's). The rule's match of a line in doubt to the line read again is in src/walk/crossing-rule.test.ts.
+ * Red with main's crossing rule, which counted hits within 1 µm once, in 9 of these 14 tests.
  * Bound: fixtures only; src/model/closure.test.ts checks that every piece of the model is closed along vertical lines.
  */
 import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
@@ -84,6 +90,21 @@ const step = (id: string, geometry: BufferGeometry, matrix = new Matrix4()): Ste
     kit.add(geometry, stone, matrix);
   },
 });
+
+/**
+ * Review 3's two boxes 0.25 to 0.375 m up, one's corner on the other's edge at (0.5, 0), both their sides in the plane X 0.5, and with them review 4's
+ * sliver: X 0.5 + u, Y v + 100 u, Z w, for u from 1 µm to 1 cm, v the boxes' heights and w from −1 to 1, sheared from a box (its determinant positive).
+ */
+function edgedWithSliver(): BufferGeometry {
+  const b = new MeshBuilder();
+  b.box([0.375, 0.25, -1], [0.5, 0.375, 0]);
+  b.box([0.40625, 0.25, -0.5], [0.5, 0.375, 0.5]);
+  const mark = b.vertexCount;
+  b.box([0, 0, 0], [1, 1, 1]);
+  const [u0, u1] = [1e-6, 0.01];
+  b.transform(mark, new Matrix4().set(u1 - u0, 0, 0, 0.5 + u0, 100 * (u1 - u0), 0.125, 0, 0.25 + 100 * u0, 0, 0, 2, -1, 0, 0, 0, 1));
+  return b.build();
+}
 
 /** The collision world of `steps`, all complete. */
 function world(steps: readonly StepDef[]): CollisionWorld {
@@ -274,6 +295,27 @@ describe('where a vertical line crosses a piece', () => {
       edged: [[0.25, 0.375], [-1, 1]],
       crossed: [[0, 1], [-1, 1]],
     });
+    // Review 4, F16: with a third part, a sliver sloped 100 in 1 from 1 µm past X 0.5, which the first line read off meets alone, its faces 1.6 mm
+    // over the boxes'. Red at 1d9eb63, whose match by slope let the sliver keep the boxes' crossings: [0.2516, 0.3766].
+    const slivered = edgedWithSliver();
+    expect(along(slivered, 0.5, 0), "the boxes, not the sliver, on the piece's outline").toEqual([[0.25, 0.375], [-1, 1]]);
+  });
+
+  it("keeps a line in doubt that grazes a face the line read again leaves as it reads itself, the rule's bound (review 4, F17)", () => {
+    // Review 4's two boxes, overlapping, their bottoms in one plane with crossing diagonals at (0, 0), and a prism along X whose section's corner lies on
+    // the line, one face nearly upright from it: 0.5 m of the boxes' bottoms merged, and a graze of that face 0 m up, which the line read again misses.
+    const b = new MeshBuilder();
+    b.box([-2, -0.5, -2], [2, 0.5, 2]);
+    b.box([-1, -0.5, -1], [3, 1.5, 3]);
+    const section = [[-1, 0], [-1, 1], [1, 1], [1, 0.00001], [0, 0]].map(([y, z]) => new Vector3(0, y, z));
+    section.forEach((p, k) => {
+      const q = section[(k + 1) % section.length] ?? p;
+      b.polygon([p.clone().setX(2), q.clone().setX(2), q.clone().setX(-2), p.clone().setX(-2)]);
+    });
+    b.polygon([...section].reverse().map((p) => p.clone().setX(2)));
+    b.polygon(section.map((p) => p.clone().setX(-2)));
+    const w = world([step('grazed', b.build())]);
+    expect([heightsAt(w, 0, 0), w.crossings(0, 0, -10, 10)[0]?.facings], 'its own five crossings, one part of the boxes lost, as before review 2').toEqual([[-1, -0.5, 0, 0.5, 1.5], [-1, -1, 1, 1, 1]]);
   });
 
   it("reads a part doubled once along an edge both its copies' faces have, and two parts once along a ridge they share, the crossing rule's bound", () => {

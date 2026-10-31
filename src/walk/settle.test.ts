@@ -33,6 +33,12 @@
  * `top − length` rounds it: kept on the floor under the tops, and set down there; moved onto the shorter part's top inside the taller, and set down
  * there, 0.25 m up; through the decks at 0.75 and 0.875 m. Red too with the line in doubt not read again, with every merge taken for one edge, and
  * with no slack at the window's foot; a slack of 1.1 cm turns the 0.36 m refusal red.
+ * Reviews 3 and 4: one piece of two boxes 0.25 to 0.375 m up, one's corner on the other's edge, whose bottoms the X probe meets on the piece's own
+ * outline, keeps the walker on the floor, set down or settled (F10), and so it does with a sliver sloped 100 in 1 beside the outline in the piece,
+ * which the first line read off meets alone (F16). Red at f6fa16a, which read the outline off the piece, and at 1d9eb63, whose match by slope took the
+ * sliver for the boxes: moved onto the bottoms 0.25 m up, and set down there. And a walker set down from a step over a floor 0.75, 0.875, 1, 2.5 or
+ * 10.875 m up stands on it, not on plinths 0.45 m high on it, which the read about the height asked reaches (F12; red at c2a9bcc and f6fa16a, whose
+ * branch test let rounding take the floor for more than a step under: on the plinths at 1.2 m from 0.75 m).
  * Bound: fixtures are closed boxes and the deck's sheets, their joints along X and Z, as the hall's. Every piece of the model is closed along vertical
  * lines or a declared sheet (src/model/closure.test.ts); a sheet has no inside, so the build does not lift a walker out of one, which
  * src/walk/crossings.test.ts checks, and a probe's hit on a sheet is not told from its underside, as a closed piece's is by its inside.
@@ -352,15 +358,23 @@ const crossed = (turned: boolean): StepDef =>
 
 /**
  * One piece of two boxes 0.25 to 0.375 m up, one's corner on the other's edge at (0.5, 0), both their sides in the plane X 0.5, so the X probe of a
- * walker at (0.2, 0) meets their bottoms on the piece's own outline, with the same block under the other X probe (review 3, F10).
+ * walker at (0.2, 0) meets their bottoms on the piece's own outline, with the same block under the other X probe (review 3, F10); and, `slivered`, with a
+ * third part in the piece, a sliver sloped 100 in 1 from 1 µm past X 0.5, which the first line read off the outline meets alone (review 4, F16).
  */
-const edged = step('edged', (kit) => {
-  const b = new MeshBuilder();
-  b.box([0.375, 0.25, -1], [0.5, 0.375, 0]);
-  b.box([0.40625, 0.25, -0.5], [0.5, 0.375, 0.5]);
-  kit.add(b.build(), stone, new Matrix4());
-  block(kit, [-0.125, 0, -0.125], [-0.075, 0.25, 0.125]);
-});
+const edgedPiece = (slivered: boolean): StepDef =>
+  step(slivered ? 'slivered' : 'edged', (kit) => {
+    const b = new MeshBuilder();
+    b.box([0.375, 0.25, -1], [0.5, 0.375, 0]);
+    b.box([0.40625, 0.25, -0.5], [0.5, 0.375, 0.5]);
+    if (slivered) {
+      const mark = b.vertexCount;
+      b.box([0, 0, 0], [1, 1, 1]);
+      const [u0, u1] = [1e-6, 0.01];
+      b.transform(mark, new Matrix4().set(u1 - u0, 0, 0, 0.5 + u0, 100 * (u1 - u0), 0.125, 0, 0.25 + 100 * u0, 0, 0, 2, -1, 0, 0, 0, 1));
+    }
+    kit.add(b.build(), stone, new Matrix4());
+    block(kit, [-0.125, 0, -0.125], [-0.075, 0.25, 0.125]);
+  });
 
 /** A floor 0.2 m deep whose top is `y` up, and on it the plinths 0.45 m high, more than a step, 0.5 m apart (review 3, F12). */
 const raisedAt = (y: number): StepDef =>
@@ -457,27 +471,27 @@ describe('the rims a walker set down or settled stands on (work unit 13, reviews
   });
 
   it("never stands on the underside a probe meets on a piece's own outline, where its line is in doubt, settled or set down", () => {
-    expect(between(edged), 'kept on the floor, and set down on it, not on the bottoms 0.25 m up').toEqual(['kept', expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+    expect(between(edgedPiece(false)), 'kept on the floor, and set down on it, not on the bottoms 0.25 m up').toEqual(['kept', expect.closeTo(0, 6), expect.closeTo(0, 6)]);
   });
 
+  it("never stands on that underside when another face near the line keeps no crossing it does not lie on: the piece's sliver, settled or set down", () => {
+    expect(between(edgedPiece(true)), 'kept on the floor, and set down on it, not on the bottoms 0.25 m up').toEqual(['kept', expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+  });
+
+  /** The heights the exact edge is tried at; the feet of a walker set down `over` over the floor or deck `piece` lays `y` up. */
+  const HEIGHTS = [0.75, 0.875, 1, 2.5, 10.875];
+  const setDown = (piece: (y: number) => StepDef, y: number, over: number): number => {
+    const { walker } = site([piece(y)], 1);
+    walker.place(0, y + over, 0, Math.PI);
+    return walker.feet.y;
+  };
+
   it('stands on a floor exactly a step under the height asked, not on rims over a step above it that a read about that height would reach', () => {
-    const heights = [0.75, 0.875, 1, 2.5, 10.875];
-    const set = heights.map((y) => {
-      const { walker } = site([raisedAt(y)], 1);
-      walker.place(0, y + BODY.step, 0, Math.PI);
-      return walker.feet.y;
-    });
-    expect(set, "on the floor, not on the plinths' tops 0.45 m over it").toEqual(heights.map((y): unknown => expect.closeTo(y, 6)));
+    expect(HEIGHTS.map((y) => setDown(raisedAt, y, BODY.step)), "on the floor, not on the plinths' tops 0.45 m over it").toEqual(HEIGHTS.map((y): unknown => expect.closeTo(y, 6)));
   });
 
   it('stands on a deck exactly a step under the height asked, at any height, and falls through its seam from 0.36 m over it', () => {
-    const at = (y: number, over: number): number => {
-      const { walker } = site([deckAt(y)], 1);
-      walker.place(0, y + over, 0, Math.PI);
-      return walker.feet.y;
-    };
-    const heights = [0.75, 0.875, 1, 2.5, 10.875];
-    expect(heights.map((y) => at(y, BODY.step)), 'decks asked from a step over them, on them').toEqual(heights.map((y): unknown => expect.closeTo(y, 6)));
-    expect(heights.map((y) => at(y, 0.36)), 'decks asked from 0.36 m over them: through the seam, the bound').toEqual(heights.map(() => FLOOR_Y));
+    expect(HEIGHTS.map((y) => setDown(deckAt, y, BODY.step)), 'decks asked from a step over them, on them').toEqual(HEIGHTS.map((y): unknown => expect.closeTo(y, 6)));
+    expect(HEIGHTS.map((y) => setDown(deckAt, y, 0.36)), 'decks asked from 0.36 m over them: through the seam, the bound').toEqual(HEIGHTS.map(() => FLOOR_Y));
   });
 });

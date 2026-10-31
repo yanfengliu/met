@@ -475,7 +475,7 @@ export class CollisionWorld {
       const n = local.face?.normal;
       if (n === undefined) normal.set(0, 1, 0);
       else normal.set((e[o] ?? 0) * n.x + (e[o + 1] ?? 0) * n.y + (e[o + 2] ?? 0) * n.z, (e[o + 4] ?? 0) * n.x + (e[o + 5] ?? 0) * n.y + (e[o + 6] ?? 0) * n.z, (e[o + 8] ?? 0) * n.x + (e[o + 9] ?? 0) * n.y + (e[o + 10] ?? 0) * n.z).normalize();
-      hits.push(lineHit(point.y, normal.y, local));
+      hits.push(lineHit(point.y, normal, local));
     }
     return hits.sort((a, b) => a.y - b.y);
   }
