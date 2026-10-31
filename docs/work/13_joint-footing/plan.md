@@ -3,7 +3,7 @@
 Status: complete
 Owner: joint, a worker of the met coordinator
 Created: 2026-10-29
-Updated: 2026-10-29
+Updated: 2026-10-30
 
 ## Problem and outcome
 
@@ -56,3 +56,41 @@ Complete. Landed on origin/main at `c2a9bcc`, a fast-forward of `edf76fc`: `36ca
 - Review: round 0 with both lanes, Codex and Claude, and round 1, Codex alone, focused on round 0's repairs (`reviews/`). Their eight findings, F0 to F7, are all accepted and repaired.
 - Shots: no render changed. The spawns, the route ends and `routes.spec`'s fixed places stand where they stood, by the scan's probe, and the standard set's walk shots are the spawns' views, so the owner's render gallery needs no rebuild.
 - Limitations: the bounds under Approach. Two older ones stand. `settle` reads burial and embedding on the centre's line, so a floor built over a walker on the workspace ground with a seam right over its centre leaves the walker under it. The walking step keeps to whatever ground its centre finds at its feet, so a walker that walks into a groove at the groove's floor level keeps to that floor.
+
+## Follow-up: reviews 2 to 5 (2026-10-29 and 30)
+
+Review 1's repairs, F6 (the winding in `Footing.under`, from `LineCrossings.facings`) and F7 (the rise counted from the feet), changed logic after review. So the coordinator ran a focused Codex review of `c2a9bcc`, review 2 (`reviews/2_implementation.md`). It found F8, major, and F9, minor. Worker `jointfix` repaired both under the owner's standing approval of follow-up work. Review 3, with Codex and Claude, found F10 to F15 in the repairs. Reviews 4 and 5 were focused Codex checks of the repairs that followed.
+
+- **F8.** The crossing query counted hits at one height facing one way on edges once, whatever the edges. Where the edges of two overlapping parts' faces in one plane cross at the line, one part's crossing was lost and the winding went wrong both ways. It refused a valid top, or stood the walker on a part's top inside another, which parity did too. And no test read `facings` on the real model.
+- **F9.** A rim exactly a step under the height `place` asks was in its window or out by the rounding of `top − length`: decks 0.75 and 0.875 m up asked from a step over them were fallen through.
+- **Measured first**, over this unit's scan of 486,052 places (Approach), every line `place` reads:
+  - The probes' lines (`Footing.under`): 37,010 reads of 14,476 distinct lines. Of these, 4,407 met an edge and 3,998 merged hits at one height, and none of those merges joined faces that share no edge or corner at the line.
+  - The centre's line: 10,806 reads of 3,857 distinct lines. Of these, 5,651 merged hits, and 3 merged unshared faces: T-junctions within one welded part of a floor at Z −69, not two parts.
+  - So F8 does not occur at the scan's places, and its fixtures are what guard it. None of the closure gate's 57,352 lines through the model is in doubt either.
+- **Repair** (`f6fa16a`; `1d9eb63` for review 3; `af04654` for review 4):
+  - The crossing rule moves to `src/walk/crossing-rule.ts`, and `collision.ts` keeps each piece's raycast (`hitsAlong`). A merge counts where the hits lie on one edge or corner of their triangles, by the places of its ends.
+  - Where they lie on edges that are not one, the line is in doubt. It is read again at the first of three offsets, 30 to 42 µm off, whose line meets no edge and keeps every crossing of the line's own reading: each kept by a hit of the line read again that faces its way and lies within 1 µm of the plane of a face merged into it, each hit keeping one, by a complete matching (`keeps`). Every hit there counts. Else the line's own reading stands, as before review 2.
+  - What each round found in the second reading: with no check, a line along a piece's own outline was read off the piece, so a probe stood on its underside (review 3, F10). With a check by slope, a steep sliver near the line kept the boxes' crossings (review 4, F16). And a greedy match refused whole matches (F17). Two rounds running found the second reading's acceptance at fault, so the rule was reassessed (fleet canon R11): a reading is replaced only where the faces' own planes keep every crossing, and falls back to the old reading everywhere else.
+  - `Walker.ontoRims` reads its window 1 µm past its foot, and `place`'s branch test takes ground within that of a step under the height asked as within a step (`FOOT_SLACK`; F9, and review 3's F12). The walking step reads no crossings and keeps its own windows.
+  - The closure gate's walk reading checks the walk's facings on its 57,352 lines: one per crossing, as many up as down, and inside where the faces' own winding is, within 1e-5 m of the line (`insideApart`). Review 3's F11 replaced a comparison of total lengths.
+- **Tradeoffs**, each measured on the scan with `settle(0)` read after each `place`:
+  - Reading again every line that merges hits changed `settle(0)` at 10,234 places: by up to 1.05 cm on sloped faces, and 8 kept walkers by Z −138 lifted 15.19 m.
+  - Reading again every line that meets an edge changed 10,302 places, and `place` at 2.
+  - Reading again only lines in doubt changed none.
+  - Bounds: hits whose triangles have the edge or corner they lie on at the same places count once whatever their faces, so a part doubled, or two parts sharing a ridge or an apex, read once along it. A line in doubt that grazes a face the line read again leaves keeps its own reading. A line read again reads its heights where it lies, tens of micrometres times its faces' slope off, and may meet faces within its offset that the line does not. Each has a pin in `src/walk/crossings.test.ts`.
+- **Acceptance.**
+  - [x] Both F8 directions, set down and settled, and their crossings and facings: red at `c2a9bcc`.
+  - [x] Decks at five heights asked from exactly a step over them, and from 0.36 m (the refusal): red at `c2a9bcc` at 0.75 and 0.875 m. Floors at five heights with plinths over a step above them: red at `c2a9bcc` and `f6fa16a`.
+  - [x] Review 3's outline and review 4's sliver beside it, set down and settled, and their crossings: red at `f6fa16a` and `1d9eb63`, green at `c2a9bcc`. The matching on hits made by hand: red with the first pick kept and with only the kept face's plane.
+  - [x] The closure gate checks the walk's facings on the model.
+  - [x] Every other result kept. On the scan, `place` and `settle(0)` match `c2a9bcc`'s code at all 486,052 places, and the spawns, route places and `routes.spec`'s fixed places (237) stand where they stood. The walking step gives the same 175,217 frames of routes R1 to R7, byte for byte, with no crossing query while walking. Checked on each repair commit.
+  - [x] This unit's fixtures and red proofs stay green.
+  - [x] `npm run verify` green on each repair commit, and the Load rule's three runs at 4×.
+  - [x] One review round with both lanes, review 3, its findings repaired; focused re-reviews of the repairs, reviews 4 and 5, the last finding nothing new.
+  - [x] Landed through the slot.
+- **Result.** The code is `f6fa16a` (review 2's repairs), `1d9eb63` (review 3's) and `af04654` (review 4's), landed on origin/main with this record, a fast-forward of `1002016`.
+  - Verified through the gate lock with `MET_PORT=5367`. `npm run verify` passed on each repair commit's tree: 724, 728 and 732 unit tests in 80, 80 and 81 files, typecheck, lint, build and 125 e2e tests, 10.1 to 10.4 min. The Load rule's three runs of `routes.spec` and `walk.spec` at 4× passed in a row on each: 21 passed each, the 2 unthrottled budget walks skipped, 129 to 136 s.
+  - Reviews 2 to 5 (`reviews/`): F8 to F17, all accepted and repaired, review 5 finding nothing new.
+  - Red proofs: in the headers of `src/walk/settle.test.ts`, `src/walk/crossings.test.ts`, `src/walk/crossing-rule.test.ts` and `src/model/closure.test.ts`.
+  - Shots: no render changed. The spawns, route places and fixed places stand where they stood, so the owner's render gallery needs no rebuild.
+  - Limitations: the bounds under Tradeoffs.
