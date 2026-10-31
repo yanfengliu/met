@@ -8,7 +8,7 @@ Non-goals: no imported meshes, scans or photo textures; no runtime network asset
 
 Stack: Vite + TypeScript (strict) + Vitest + three.js, Playwright for capture and control tests. Node 24 (`.nvmrc`).
 
-Read `docs/design/spec.md` before substantial work: it is the contract for the world frame, the build-step API and the page. Repo-specific rules: `docs/policies/local-rules.md`. Research and reference images: `docs/research/`.
+Read the section map at the top of `docs/design/spec.md` before substantial work, then the sections the work needs: it is the contract for the world frame, the build-step API and the page. Repo-specific rules: `docs/policies/local-rules.md`. Research and reference images: `docs/research/`.
 
 <!-- FLEET-CANON:BEGIN sha=e54f2a9ae007 generated from ../fleet/FLEET.md by `npm run sync-canon` — do not edit inside this block; this repo's own rules go in docs/policies/local-rules.md -->
 ## Fleet constitution
