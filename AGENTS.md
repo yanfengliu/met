@@ -87,7 +87,7 @@ The e2e specs:
 - `floors.spec`: the floor picker by mouse and Page Up and Page Down: each floor's cut, landscape and framing, All, the cut by hand, walk mode, `floor=`, and the cut colour across stairs and none on a roof.
 - `network.spec`: the pages ask nothing of any host but their own, nothing of metmuseum.org and nothing under `/research/`.
 - `labels.spec`, `labels-view.spec`: an artwork's card in walk mode and on a click in the orbit view, its fields and link, its place at both sizes, what hides it, and with the pointer locked its hint and place and Esc, held or not, keeping it for its link.
-- `doors.spec`, `door-look.spec`: a door's prompt, E and the locked click, the scrubber through the doors' step, `doors=` in the first frame, the prompt's band, a swing's frame budget, and the prompt between a pair's leaves.
+- `doors.spec`, `door-look.spec`: at fixed places set by `spawn=x,y,z,tx,ty,tz`, a door's prompt, E and the locked click, the scrubber through the doors' step, the prompt's band, a swing's frame budget, and the prompt between a pair's leaves; `doors=` in the first frame.
 - `mixed-pointers.spec`: a finger joining a mouse drag, and a mouse joining a finger's drag that lifts first, through the browser's own mouse and touch, throw nothing and turn the view as the pointer that holds the camera alone does.
 
 The unit gates, in `npm test`:

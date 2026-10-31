@@ -15,7 +15,7 @@
  *   3. Anti-vacuity. Each of the three roots must exist and hold at least one text file, so a renamed root or a broken walk fails instead of reporting "passed" for "did not run". The detectors are also run on synthetic input below, so each has been seen to fail.
  *
  *   4. AGENTS.md bound. AGENTS.md at the repository's root holds at most 30,000 bytes of UTF-8 counted with CRLF line endings, the larger of the two forms a checkout holds; with LF endings, as Git stores it, it holds a byte a line less.
- *      - Why: Codex reads only the first 32 KiB (32,768 bytes) of a project doc, and the fleet canon generated into the file may grow to its 15,000-byte ceiling. AGENTS.md holds what every session needs, each gate as one line, and links the rest (../fleet/FLEET.md, "Repo file shape").
+ *      - Why: Codex reads only the first 32 KiB (32,768 bytes) of a project doc, and the fleet canon's core generated into the file may grow to its 8,704-byte ceiling as rendered, which fleet's `scripts/test/canon-budget.test.mjs` holds (fleet work unit 28). AGENTS.md holds what every session needs, each gate as one line, and links the rest (../fleet/FLEET.md, "Repo file shape").
  *      - The bound is inclusive: 30,000 bytes pass, 30,001 fail, however the file's lines end when it is read, so a checkout of a passing file is under Codex's limit either way.
  *      - It bounds the whole file, so the canon's room is not reserved: when this gate landed the file left the canon room to reach its ceiling, but a canon sync that grows the canon past what met's own sections leave trips this gate, and then those sections must shrink.
  *      - A missing AGENTS.md fails rather than passing unread; a failure names the size, the excess and where the detail goes instead.

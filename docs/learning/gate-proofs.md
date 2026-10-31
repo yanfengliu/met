@@ -84,6 +84,8 @@ Work unit 2's follow-up (reviews 23 to 27) replaced the route walks of `3860384`
 
 With the work as committed, all pass: 14 tests unthrottled in 94 s, inside `npm run verify`, and 12 at 4× in 109, 111 and 106 s in three runs in a row, its two frame budgets skipped there.
 
+The late keys planted again on 2026-10-30, once work unit 2's next follow-up (reviews 28 on) had taken the lag learning and the stops out of `tests/e2e/route-keys.ts` and left `Keys` there: the short walk red, "at rest 2.45 m out from the leaves … where it can shut the door from 0.95 to 2.28 m out; it went on 1.64 m past where W was let go, 0.75 s of walking after its coast".
+
 ### `src/model/roche-north/walk.test.ts`
 
 - No trap at Dendur, from every start 2 m apart over the pool's water: red with the 0.6 m pool: 89 starts trapped.
@@ -108,6 +110,14 @@ With the work as committed, all pass: 14 tests unthrottled in 94 s, inside `npm 
 - `doors=open` and `doors=closed` under `shot=1`, the doors set before the walker is placed and both before the first frame drawn: red with the set-up moved after the placement, after the first frame, marked at load but done after the first frame, or done after the first render in the same callback, which the probe of `7b7fe94`, reading the doors' state at the callback's end, passed.
 - The slowest frame of each swing under 16.7 ms of work: the walked cycles red at 147.8 ms with 12 ms planted in each swing check while walking; red with 40 µs of work planted for each object drawn on a swing's frames: 30.3 ms facing in, which the gate of `d4d716d`, facing out only, passed at 11.5 ms.
 - The locked click now the browser's own lock, taken by a click of the view (work unit 14): with the click while locked using no door (`src/main.ts`), the entrance test red, the wait for the closing swing timing out.
+
+Work unit 2's follow-up (reviews 28 on) moved this file's walks up to the doors onto fixed places set by `spawn=x,y,z,tx,ty,tz` (2026-10-30). Each proof above was planted again on that work's tree and undone, the tests named running unthrottled:
+
+- The `shot=1` test: with the set-up moved after the placement, red, "the page marks the door set-up, then the walk placement". With the set-up and its mark moved after the first frame, with the mark at load and the set-up after the first frame, and with the set-up right after the first render in the first frame's callback, each red, "doors=closed: the first frame drew the doors as at ready": four doors drawn by the timeline's closed leaves where ready drew the stand-ins.
+- 12 ms planted in each swing check while the walker moves (`src/walk/door-world.ts` `advance`): the walked cycles red at 155.1 ms; the swings standing, which the plant leaves alone, at 10.0 and 11.3 ms.
+- 40 µs planted for each draw call on a swing's frames (`src/main.ts`, after the render): the first swing facing in red at 41.8 ms.
+- The locked click using no door: the entrance test red, the wait for the closing swing timing out.
+- New with the places: the walking eye 3 cm high (`src/walk/walker.ts` `eye`): every test of this file and `tests/e2e/door-look.spec.ts` that stands at a place red at the place's check (`tests/e2e/route-places.ts` `standAt`), 3.0 cm off; the `shot=1` test, which places none, green. `door-look.spec`'s own proof is in its header.
 
 ### `src/build/window-parts.test.ts`
 

@@ -1,13 +1,9 @@
 /**
- * Walking the real model through real input: walk mode entered as a visitor enters it, then only held keys (W, A, S, D, Shift) and mouse drags move the
- * walker, its eye read from the read-only `window.__met.walk` at every frame. `walk` follows plan lines whose segments run along an axis or at 45° to one
- * (./doors.spec.ts, ./door-look.spec.ts): facing along an axis, W, S, A or D walks a straight segment and two of them a diagonal one; drags turn the walker.
- * A leg lets go where the walker, going on for the release lag a key takes to reach the page under load, ends at its end (./route-keys.ts), and at a
- * corner it walks onto the corner until it rests within 0.25 m of it along the axis it stops on, or fails; ./route-holds.ts holds keys without either,
- * for ./routes.spec.ts. The doors on the way (docs/design/spec.md, Doors) are read from the read-only `window.__met.doors` and used by E, as a visitor
- * uses them.
+ * The walker on the real model, read and moved through real input: its eye read from the read-only `window.__met.walk` at every frame, mouse drags that
+ * turn it (`face`), and the doors (docs/design/spec.md, Doors) read from the read-only `window.__met.doors` and used by E, as a visitor uses them. Keys
+ * are held by ./route-holds.ts, which bounds where a walker let go comes to rest; ./route-places.ts sets the fixed places walks start from.
  */
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { Box3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -15,12 +11,7 @@ import type { BufferGeometry } from 'three';
 import type { Vec3 } from '../../src/build/types.js';
 import { ENTRANCE_DOOR_Z, entranceDoor } from '../../src/model/hunt/arches.js';
 import { LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
-import { MOTION } from '../../src/walk/walker.js';
 import { throttleRate } from './helpers.js';
-import { bounded, Keys, lag, learnLag, startKeyLog, travel, watch, WATCH_MS } from './route-keys.js';
-import type { Stop, Watched } from './route-keys.js';
-
-export type { Stop } from './route-keys.js';
 
 export type XZ = readonly [number, number];
 /** A level unit direction along an axis, as [x, z]. */
@@ -29,9 +20,6 @@ export const MINUS_Z: Facing = [0, -1];
 export const PLUS_Z: Facing = [0, 1];
 export const MINUS_X: Facing = [-1, 0];
 export const PLUS_X: Facing = [1, 0];
-/** How far the walker coasts once a key is let go at a run: straight ahead, and sideways on a diagonal. */
-export const COAST = MOTION.run * MOTION.groundTau;
-export const SIDE_COAST = (MOTION.run / Math.SQRT2) * MOTION.groundTau;
 
 export interface Sample {
   readonly eye: Vec3;
@@ -100,179 +88,6 @@ export async function still(page: Page): Promise<Sample> {
 
 export const fmt = (v: Vec3): string => `(${v.map((c) => c.toFixed(2)).join(', ')})`;
 export const along = (eye: Vec3, d: Facing): number => eye[0] * d[0] + eye[2] * d[1];
-
-export type Move = 'KeyW' | 'KeyA' | 'KeyS' | 'KeyD';
-
-/** Where a leg turns a corner: the axis its stopping motion ran along, the corner, and the keys that walk along that axis and back. */
-export interface Corner {
-  readonly axis: Facing;
-  readonly end: Vec3;
-  readonly on: Move;
-  readonly back: Move;
-}
-
-/**
- * One leg: the movement keys held, with Shift at a run; the level axis it ends on and its end's place along it; what the motion along that axis does once
- * the keys change, its coast (0 when it goes on) and its speed, so a walk lets go `coast` and the speed times the release lag before `at`; its corner.
- */
-export interface Leg {
-  readonly label: string;
-  readonly keys: readonly Move[];
-  /** Whether Shift is held with the keys: a run, or else a walk. */
-  readonly run: boolean;
-  readonly axis: Facing;
-  readonly at: number;
-  readonly coast: number;
-  readonly speed: number;
-  readonly length: number;
-  readonly corner: Corner | undefined;
-}
-
-export const scale = (v: Facing, k: number): Facing => [v[0] * k, v[1] * k];
-
-/**
- * The legs that walk `points` facing `facing` (along an axis): each segment must run along the facing, across it or at 45° to them, so W, S, A or D, alone
- * or two together, walk it. A leg ends on the axis of the key the next leg lets go, early by that motion's coasting distance; one whose keys all stop, as
- * the last one's do, ends along its own direction a coast early; one whose keys all go on ends as the eye passes its end; and each lets go earlier again
- * by its speed times the release lag (./route-keys.ts). `pace` walks them at a run (Shift held) or at a walk, which coasts 0.14 m to a run's 0.35 m and
- * goes on 2.5 times less far over a lag, for corners near an unguarded edge.
- */
-export function legs(points: readonly XZ[], facing: Facing, pace: 'run' | 'walk' = 'run'): Leg[] {
-  const straight = pace === 'run' ? COAST : MOTION.walk * MOTION.groundTau;
-  // The walker's right when it faces `facing` (src/walk/walker.ts: yaw 0 faces −Z, and its right is then +X).
-  const right: Facing = [-facing[1], facing[0]];
-  const level = (u: number): boolean => Math.abs(u) < 1e-6;
-  const plan = points.slice(1).map((q, k) => {
-    const p = points[k] ?? q;
-    const d: Facing = [q[0] - p[0], q[1] - p[1]];
-    const ahead = d[0] * facing[0] + d[1] * facing[1];
-    const across = d[0] * right[0] + d[1] * right[1];
-    const label = `(${p[0].toFixed(2)}, ${p[1].toFixed(2)}) to (${q[0].toFixed(2)}, ${q[1].toFixed(2)})`;
-    if ((level(ahead) && level(across)) || (!level(ahead) && !level(across) && Math.abs(Math.abs(ahead) - Math.abs(across)) > 1e-6)) {
-      throw new Error(`Segment ${label} runs neither along nor across [${facing.join(', ')}] nor at 45° to them; W, A, S and D walk only those.`);
-    }
-    const keys: Move[] = [];
-    if (!level(ahead)) keys.push(ahead > 0 ? 'KeyW' : 'KeyS');
-    if (!level(across)) keys.push(across > 0 ? 'KeyD' : 'KeyA');
-    return { label, q, d, ahead, across, keys };
-  });
-  return plan.map((s, k) => {
-    const next = plan[k + 1]?.keys ?? [];
-    const dropped = s.keys.filter((key) => !next.includes(key));
-    const length = Math.hypot(s.d[0], s.d[1]);
-    let axis: Facing = [s.d[0] / length, s.d[1] / length];
-    let coast = dropped.length === 0 ? 0 : straight;
-    let speed = pace === 'run' ? MOTION.run : MOTION.walk;
-    if (s.keys.length === 2 && dropped.length === 1) {
-      axis = dropped[0] === 'KeyW' || dropped[0] === 'KeyS' ? scale(facing, Math.sign(s.ahead)) : scale(right, Math.sign(s.across));
-      coast = pace === 'run' ? SIDE_COAST : straight / Math.SQRT2;
-      speed /= Math.SQRT2;
-    }
-    const end: Vec3 = [s.q[0], 0, s.q[1]];
-    // A corner where one motion stops along an axis of the facing (every stop but a diagonal's last): the keys along that axis and back.
-    const onFacing = Math.abs(along([axis[0], 0, axis[1]], facing)) > 0.99;
-    const onRight = Math.abs(along([axis[0], 0, axis[1]], right)) > 0.99;
-    const sense = along([axis[0], 0, axis[1]], onFacing ? facing : right) > 0;
-    const keysOn: readonly [Move, Move] = onFacing ? ['KeyW', 'KeyS'] : ['KeyD', 'KeyA'];
-    const corner: Corner | undefined = dropped.length > 0 && (onFacing || onRight) ? { axis, end, on: sense ? keysOn[0] : keysOn[1], back: sense ? keysOn[1] : keysOn[0] } : undefined;
-    return { label: s.label, keys: s.keys, run: pace === 'run', axis, at: along(end, axis), coast, speed, length, corner };
-  });
-}
-
-/** Why a watch on `leg` of `route` ended without its line: walk mode left, or no end within its ceiling; with the eye last seen. */
-const lost = (route: string, leg: string, seen: Watched): Error =>
-  new Error(`${route}: on the leg ${leg}, ${seen.kind === 'gone' ? 'walk mode was left' : `no end came within ${String(seen.t)} ms (at most ${String(WATCH_MS)} ms times the throttle, less the test's margin)`}; the eye last seen at ${seen.eye === null ? 'none' : fmt(seen.eye)}.`);
-
-/** How near its corner a walk brings the walker to rest before the next leg, metres along the corner's axis; the walks onto it it may take; and the run-up a walk onto it starts from, to come up to speed (95% in 0.29 m). */
-const CORNER = 0.25;
-const SETTLE_WALKS = 8;
-const RUN_UP = 0.3;
-
-/**
- * Walks the legs at their pace with real key presses, adding every sample to `samples`; stops for the frames asked for, the first time the eye stands in
- * each stop's box. Each leg's line is watched in the page at every frame; a leg that comes no 5 cm nearer its line for 1.5 s fails with where it stands.
- * At a corner the walker comes to rest and, if it rests more than CORNER off it, walks onto it at a walk, letting go its coast and lag before it; nearer
- * than a stop at a walk can make, it first walks back the way the leg came. It fails, naming every rest, if SETTLE_WALKS walks do not bring it there.
- */
-export async function walk(page: Page, route: string, list: readonly Leg[], samples: Sample[], stops: readonly Stop[] = []): Promise<Sample> {
-  await startKeyLog(page);
-  const pending = [...stops];
-  const keys = new Keys(page);
-  /** The keys a leg holds: its movement keys, with Shift at a run. */
-  const keysOf = (leg: Leg | undefined): string[] => (leg === undefined ? [] : leg.run ? ['Shift', ...leg.keys] : [...leg.keys]);
-  /** Where along its axis a leg lets go: its end, early by what the walker covers once the keys change. */
-  const lineOf = (leg: Leg): number => leg.at - travel(page, leg.speed, leg.coast);
-  // Frames from before this walk (turns, earlier walks) are not its own.
-  let last = (await record(page)).at(-1) ?? (await sample(page));
-  const take = async (): Promise<void> => {
-    const frames = await record(page);
-    samples.push(...frames);
-    last = frames.at(-1) ?? last;
-  };
-  const settle = async (c: Corner, label: string): Promise<void> => {
-    await keys.hold([]);
-    const rests: string[] = [];
-    for (let k = 0; ; k += 1) {
-      last = await still(page);
-      const at = along(c.end, c.axis);
-      const error = along(last.eye, c.axis) - at;
-      rests.push(error.toFixed(2));
-      if (Math.abs(error) <= CORNER) return;
-      if (k === SETTLE_WALKS) {
-        throw new Error(`${route}: after the leg ${label} the walker came to rest no nearer than ${String(CORNER)} m to its corner ${fmt(c.end)} along [${c.axis.join(', ')}] in ${String(SETTLE_WALKS)} walks onto it: it rested ${rests.join(', ')} m past it, the release lag taken ${lag(page).toFixed(3)} s.`);
-      }
-      // The leg came along +axis, so the way back is walkable: from past the corner, or too near it to stop on it, walk back that way first.
-      const go = travel(page, MOTION.walk, MOTION.walk * MOTION.groundTau);
-      const near = Math.abs(error) < go + RUN_UP;
-      const dir: 1 | -1 = near || error > 0 ? -1 : 1;
-      await keys.hold([dir === 1 ? c.on : c.back]);
-      const seen = await watch(page, c.axis, near ? at - go - RUN_UP : at - dir * go, dir);
-      if (seen.kind === 'gone' || seen.kind === 'late') {
-        await bounded(keys.hold([]));
-        throw lost(route, `${label}, walking onto its corner`, seen);
-      }
-      await keys.hold([]);
-      if (seen.kind === 'line') await learnLag(page, seen.t);
-      await take();
-      if (seen.kind === 'stuck' && !near) throw new Error(`${route}: after the leg ${label}, walking onto its corner ${fmt(c.end)}, the walker stuck at ${seen.eye === null ? 'none' : fmt(seen.eye)}, ${error.toFixed(2)} m past it at the start.`);
-    }
-  };
-  for (const [i, leg] of list.entries()) {
-    if (along(last.eye, leg.axis) >= lineOf(leg)) {
-      if (leg.corner !== undefined) await settle(leg.corner, leg.label);
-      continue;
-    }
-    await keys.hold(keysOf(leg));
-    for (;;) {
-      // The leg's line is watched in the page; once the eye passes it, the keys change at once to what comes next: none at a corner, else the next leg's.
-      const seen = await watch(page, leg.axis, lineOf(leg), 1, pending);
-      if (seen.kind === 'line') {
-        await keys.hold(leg.corner !== undefined ? [] : keysOf(list[i + 1]));
-        await learnLag(page, seen.t);
-        await take();
-        break;
-      }
-      if (seen.kind === 'gone' || seen.kind === 'late') {
-        await bounded(keys.hold([]));
-        throw lost(route, leg.label, seen);
-      }
-      if (seen.kind === 'stuck' && seen.eye !== null) {
-        await keys.hold([]);
-        await take();
-        throw new Error(`${route}: stuck on the leg ${leg.label}, the eye at ${fmt(seen.eye)} (on the ground: ${String(last.onGround)}), ${(lineOf(leg) - along(seen.eye, leg.axis)).toFixed(2)} m short.`);
-      }
-      const [stop] = pending.splice(seen.stop, 1);
-      await keys.hold([]);
-      await take();
-      last = await still(page);
-      await page.screenshot({ path: test.info().outputPath(`${stop?.name ?? 'stop'}.png`) });
-      await keys.hold(keysOf(leg));
-    }
-    if (leg.corner !== undefined) await settle(leg.corner, leg.label);
-  }
-  await keys.hold([]);
-  return still(page);
-}
 
 /** The walker's yaw from its look direction (src/walk/walker.ts: yaw 0 looks toward −Z and grows turning left). */
 export const yawOf = (look: Vec3): number => Math.atan2(-look[0], -look[2]);

@@ -3,7 +3,7 @@
 Status: complete
 Owner: Coordinator (Claude Code desktop session, 2026-10-14)
 Created: 2026-10-25
-Updated: 2026-10-29
+Updated: 2026-10-30
 
 ## Problem and outcome
 
@@ -185,3 +185,35 @@ F66 was left open at the close. The browser walks of every route took about 10 m
   - All 14 red proofs are red on the new checks.
   - Reviews 23 to 27: Codex and Claude, then four focused Codex checks. F67 to F83 are closed, the last check accepting.
   - F66 is resolved.
+
+## Follow-up: fixed places for the door specs (2026-10-30)
+
+The route-walk worker proposed it after work unit 14, and the coordinator approved it: `tests/e2e/doors.spec.ts` and `door-look.spec.ts` still walked up to their doors by long real-key walks from the plaza spawn, the last users of `route-walk.ts`'s corner settle and `route-keys.ts`'s release-lag learning. Worker `doorspawn` moved them onto fixed places, reviewed in rounds 28 on.
+
+- **Outcome.** Both specs stand the walker at fixed places set by `walk=1&spawn=x,y,z,tx,ty,tz`, entered at load with the pointer free (`tests/e2e/route-places.ts` `standAt`, its feet on the floor the finished model has there, `feetOn`).
+  - `doors.spec`: on the entrance's axis 1.3 m before the middle doorway, on the doorway's second step, looking 8° up at a leaf, as the walk from the plaza spawn looked; on the plaza 1.44 m before the north link door; and, for the budget test's swings facing out, a second page in the entrance bay 1.4 m behind the doors, opened with `doors=open`, as E from before them leaves them.
+  - `door-look.spec`: on the plaza spawn's line 1.3 m before the middle doorway, looking along it at the spawn's pitch, where W alone from the spawn brings the walker, the pointer then locked by a click of the view (`tests/e2e/helpers.ts` `lockPointer`); and on the north link door's axis 1.3 m before its leaves, looking at their meeting line.
+  - Retired: `route-walk.ts`'s `walk`, `legs` and corner settle; `route-keys.ts`'s key log, lag learning (`learnLag`, `lag`, `travel`) and stops. `route-keys.ts` keeps the line watch and `Keys`, which `route-holds.ts` uses.
+  - `src/repo-conventions.test.ts`'s header names the canon core's 8,704-byte ceiling (fleet work unit 28) for its old 15,000.
+- **Acceptance.**
+  - Every check the specs made is kept, but the walks themselves (below).
+  - Every red proof `docs/learning/gate-proofs.md` and door-look's header give the specs is red again on the new form.
+  - `npm run verify` is green, and routes.spec with walk.spec passes three runs in a row at 4×.
+- **Proof map.** Each was planted on 2026-10-30 and undone (`docs/learning/gate-proofs.md`, `tests/e2e/doors.spec.ts`; door-look's header).
+  - The `shot=1` order, four plants: still `doors.spec`'s `shot=1` test, which places nothing and did not change. Red each time, at the marks' order or at the first frame's doors.
+  - 12 ms in each swing check while walking: the budget test's walked cycles, from the place before the doors. Red at 155.1 ms (147.8 ms when first recorded).
+  - 40 µs for each object drawn on a swing's frames: the budget test's first swing facing in, from the same place. Red at 41.8 ms (30.3 ms).
+  - The locked click using no door: the entrance test, from the same place. Red, the closing swing's wait timing out.
+  - F46, the closed doors' doorways out of the hit query (red at `0defda0`): both door-look tests, from their places. Red, the look target null.
+  - New, for the places: the walking eye 3 cm high fails every place's check, in all six placed tests.
+  - routes.spec's late keys, whose `Keys` stays in the rewritten `route-keys.ts`: still red.
+- **Checks moved or dropped.**
+  - The walks up to the doors: from the plaza spawn up the front steps (all five walking tests), along the plaza to the north link door (both specs), and through the open doorway into the entrance bay (the budget test). routes.spec walks up to the middle door and through it both ways. `src/model/doors.test.ts` walks W alone from the plaza spawn to the meeting line, headless, at 30, 60 and 144 frames a second.
+  - Where each walk came to rest: the place's own check now (within 1 cm across, the eye 1.6 m over the floor within 2 cm, on the ground). The bands it had to rest in stay as checks.
+  - The turns by drags onto the leaves (`face`, `tiltToward`, `aimAt`): each place looks at its point. `doors.spec` still turns by drags onto an open leaf.
+  - The plaza spawn on the axis, read in the page after the Walk toggle: the place on the spawn's line is now read against the door's meeting line from the finished model. walk.spec reads where the toggle puts the walker.
+  - The Walk toggle's lock at door-look's middle door: a click of the view takes it there now. mouse-look.spec holds the toggle's lock.
+  - The bay page opens all three entrance doorways (`doors=open`); the side ones stand out of the view.
+- **Result.** Gated on the work's tree before review:
+  - `npm run verify`: 732 unit tests in 81 files and 125 e2e in 10.5 min. The two door specs took 28.1 s of it, against 93.7 s in work unit 13's last verify run.
+  - routes.spec with walk.spec at 4×, three runs in a row: 21 passed and routes.spec's 2 frame budgets skipped each time, in 2.7, 3.4 and 3.2 min, against 2.1 to 2.2 min for work unit 13. The short walk took 54.3, 45.5 and 74.4 s, and 46.6 s in a fourth run alone, against 43 to 46 s for work unit 13: the slow runs were the machine's load, since nothing routes.spec runs changed but the line watch's empty stops.

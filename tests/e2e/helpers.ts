@@ -49,6 +49,20 @@ export async function noPointerLock(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Locks the pointer to the walking view as a person does where entering gave no lock (at load with `walk=1`, no gesture): the mouse goes to the
+ * canvas's centre with no button down, so the free view does not turn, and a click there, which uses no door, asks for the lock, which the headless
+ * system Chrome grants. Waits until the page says the pointer is locked; from then on the mouse turns the view as it moves (work unit 14).
+ */
+export async function lockPointer(page: Page): Promise<void> {
+  const canvas = await page.getByTestId('canvas').boundingBox();
+  if (canvas === null) throw new Error('The canvas has no box.');
+  await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForFunction(() => window.__met?.walk.pointerLocked === true);
+}
+
 /** The CPU throttle MET_CPU_THROTTLE asks for: a factor above 1, or 1. */
 export function throttleRate(): number {
   const rate = Number(process.env['MET_CPU_THROTTLE'] ?? '1');

@@ -2,39 +2,36 @@
  * The door prompt where the eye looks between a pair's leaves (docs/design/spec.md, Doors: Use; work unit 2, review 17, F46), through real input on the
  * finished building. A door's leaves meet 8 mm apart and keep 4 mm off their frame, so the eye's one ray can slip between them; each closed door's
  * doorway, a box over its leaves and those gaps that the picker reads and no camera draws (src/viewer/doorways.ts), makes the door the look target there.
- * - From the plaza, where the Walk toggle puts the walker on the entrance's axis facing the facade, W alone, held at a walk, let go 4 m before the middle
- *   doorway's leaves to learn how late a key goes up (./route-keys.ts) and held again and let go 1.3 m before them, early by a walk's coast and that lag's
- *   travel, brings the walker to rest with the crosshair on the line where the pair meet; with no drag the prompt says "E Open", and E opens the door.
- * - At the north link door, met on its axis: from the plaza spawn, entered at load (`walk=1`), with no gesture, so the pointer stays free and drags
- *   turn the view (the Walk toggle's click would lock it), walked by D out along the plaza to its line, 27 m off, turned there by drags toward its leaves' meeting line,
- *   run at by W and Shift to about 1.3 m before the leaves, let go early by a run's coast and the travel of the lag the walk out learnt, and turned again
- *   onto that line, the eye's ray crossing the leaves' whole depth within 3 mm of
- *   it, the prompt says "Locked", and E leaves the door shut.
+ * The walker stands at fixed places set by the query (`walk=1&spawn=x,y,z,tx,ty,tz`, src/walk/spawns.ts `placeOf`; ./route-places.ts `standAt`):
+ * - On the plaza spawn's line 1.3 m before the entrance's middle doorway, looking along it at the spawn's pitch, where W alone from the spawn would bring
+ *   it (src/model/doors.test.ts walks there headless): the spawn standing on the entrance axis, facing along it, the crosshair is on the line where the
+ *   pair meet. With the pointer locked by a click of the view, which turns nothing, and no drag, the prompt says "E Open", and E opens the door.
+ * - On the north link door's axis 1.3 m before its leaves, looking at their meeting line in their mid-plane, the eye's ray crossing the leaves' whole
+ *   depth within 3 mm of it: the prompt says "Locked", and E leaves the door shut.
  * Red at 0defda0, whose look target was the centre ray's alone: through the gap it met nothing, so neither prompt showed (the waits for them time out).
- * A ray more than about 4° off a door's axis meets a leaf's edge inside the gap, which is why the link door is run at from far out along its line.
+ * Planted again on these places (2026-10-30), the closed doors' doorways out of the hit query (src/viewer/doors.ts `registerWith`): both red, each door
+ * "not the look target within 3000 ms", the look target found null (the entrance's eye at (0.00, 5.55, −0.42), the link door's at (69.00, 2.17, −1.03)).
+ * A ray more than about 4° off a door's axis meets a leaf's edge inside the gap, which is why both places stand on their door's axis.
  * Bound: where the ray crosses the leaves is worked out from the published eye and look and the door's pieces in the finished model built in the test
- * process; a drag turns the view LOOK_PER_PIXEL a pixel, so an aim is good to half a pixel, under 1 mm at the link door. The walk to the middle door
- * enters by the Walk toggle, which locks the pointer (work unit 14), and moves no mouse after it, so the view turns by nothing.
+ * process; the query sets the place to 0.1 mm. Each place enters walk mode at load, with no gesture, so the pointer stays free until the click that locks
+ * it, after which the mouse moves no more, so the view turns by nothing (work unit 14).
  */
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import { Box3, Matrix4, Vector3 } from 'three';
 
-import { SEQUENCE } from '../../src/build/sequence.js';
-import { Timeline } from '../../src/build/timeline.js';
-import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
-import { MOTION } from '../../src/walk/walker.js';
-import { open, press, watchErrors } from './helpers.js';
-import { Keys, learnLag, startKeyLog, travel, watch } from './route-keys.js';
-import { COAST, doorFacts, doorIs, entranceLeaves, fmt, legs, looksAt, MIDDLE_DOOR, MINUS_Z, still, walk, walking, wrap, yawOf } from './route-walk.js';
+import type { Vec3 } from '../../src/build/types.js';
+import { GRADE_Y, MAIN_FLOOR_Y } from '../../src/model/frame.js';
+import { spawnById } from '../../src/walk/spawns.js';
+import { BODY } from '../../src/walk/walker.js';
+import { lockPointer, watchErrors } from './helpers.js';
+import { doorPlan, feetOn, standAt } from './route-places.js';
+import { doorFacts, doorIs, entranceLeaves, looksAt, MIDDLE_DOOR, still } from './route-walk.js';
 import type { Sample } from './route-walk.js';
+import { finishedTimeline } from './surface.js';
 
-/** Where the plaza spawn stands (src/walk/spawns.ts) and the north link's door (src/model/mmw/facade.ts: on X 69, its leaves at Z −2.38). */
-const PLAZA: readonly [number, number] = [0, 24.46];
 const LINK = 'mmw-north-link';
-const LINK_X = 69;
-/** How far a walk coasts once W is let go. */
-const WALK_COAST = MOTION.walk * MOTION.groundTau;
+/** How far before a door's leaves each place stands, metres: within a door's 2 m reach, clear of its leaves. */
+const BEFORE = 1.3;
 
 /** Door `id`'s closed leaves in the finished model: their meeting line's middle on their front face, their depth, the door's front laid level, and across. */
 interface Leaves {
@@ -45,9 +42,7 @@ interface Leaves {
 }
 
 function leavesOf(id: string): Leaves {
-  const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
-  for (const step of timeline.steps) {
+  for (const step of finishedTimeline().steps) {
     for (const [m, tags] of step.tags.entries()) {
       const slot = tags?.findIndex((tag) => tag?.id === id) ?? -1;
       const mesh = step.meshes[m];
@@ -72,70 +67,25 @@ function offLine(at: Sample, leaves: Leaves, back = 0): number {
   return crossing.sub(plane).dot(leaves.across);
 }
 
-/** A drag of (dx, dy) pixels on the canvas, which turns the walking view the way it moves; one that travels under CLICK_SLOP goes out 20 px and back. */
-async function drag(page: Page, dx: number, dy: number): Promise<void> {
-  const box = await page.getByTestId('canvas').boundingBox();
-  if (box === null) throw new Error('The canvas has no box.');
-  const x = Math.round(box.x + box.width / 2);
-  const y = Math.round(box.y + box.height / 2);
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  if (Math.abs(dx) + Math.abs(dy) < 2 * CLICK_SLOP) await page.mouse.move(x + 20, y);
-  for (let k = 1; k <= 5; k += 1) await page.mouse.move(x + Math.round((dx * k) / 5), y + Math.round((dy * k) / 5));
-  await page.mouse.up();
-}
-
-/** Turns the walker by drags until its eye's ray points at `p`, to the nearest pixel, at most six drags. */
-async function aimAt(page: Page, p: Vector3): Promise<Sample> {
-  for (let k = 0; k < 6; k += 1) {
-    const now = await still(page);
-    const [ex, ey, ez] = now.eye;
-    const yaw = Math.atan2(-(p.x - ex), -(p.z - ez));
-    const pitch = Math.atan2(p.y - ey, Math.hypot(p.x - ex, p.z - ez));
-    const dx = Math.round(-wrap(yaw - yawOf(now.look)) / LOOK_PER_PIXEL);
-    const dy = Math.round(-(pitch - Math.asin(now.look[1])) / LOOK_PER_PIXEL);
-    if (dx === 0 && dy === 0) return now;
-    await drag(page, dx, dy);
-  }
-  return still(page);
-}
-
-/** Waits in the page, at every frame, until the eye stands at most `d` metres in front of the leaves' front face. */
-async function within(page: Page, leaves: Leaves, d: number): Promise<void> {
-  await page.waitForFunction(
-    ([x, z, fx, fz, most]) => {
-      const eye = window.__met?.walk.eye;
-      return eye != null && (eye[0] - x) * fx + (eye[2] - z) * fz <= most;
-    },
-    [leaves.middle.x, leaves.middle.z, leaves.front.x, leaves.front.z, d] as const,
-    { polling: 'raf', timeout: 30_000 },
-  );
-}
-
 test.describe('the door prompt between a pair’s leaves', () => {
-  test('from the plaza spawn, W alone up to the entrance’s middle door: E Open with no turn, and E opens it', async ({ page }) => {
-    // About 15 s here (14.7 to 15.0 s in three full runs, 2026-10-27); four times that for a loaded machine.
-    test.setTimeout(60_000);
+  test('on the plaza spawn’s line before the entrance’s middle door, the pointer locked: E Open with no turn, and E opens it', async ({ page }) => {
     const errors = watchErrors(page);
-    await open(page, '');
-    await press(page, 'walk-toggle');
-    const start = await walking(page);
-    expect([start.eye[0], start.look[0]], 'the plaza spawn stands on the entrance axis, facing along it').toEqual([expect.closeTo(0, 9), expect.closeTo(0, 9)]);
+    const plaza = spawnById('plaza');
+    if (plaza === undefined) throw new Error('src/walk/spawns.ts has no plaza spawn.');
+    const door = doorPlan(MIDDLE_DOOR);
+    // The spawn's line, its feet's X and its facing, followed to BEFORE metres out from the leaves' middle plane, looking along it at the spawn's pitch.
+    const level = Math.hypot(...plaza.facing);
+    const ahead = [plaza.facing[0] / level, plaza.facing[1] / level] as const;
+    const feet = feetOn(plaza.feet[0], door.middle[1] + door.normal[1] * BEFORE, MAIN_FLOOR_Y + 1);
+    const target: Vec3 = [feet[0] + ahead[0] * BEFORE, feet[1] + BODY.eye + BEFORE * Math.tan((plaza.pitch * Math.PI) / 180), feet[2] + ahead[1] * BEFORE];
+    const { at } = await standAt(page, 'on the plaza spawn’s line before the middle door', feet, target);
     const front = entranceLeaves().front;
-    await startKeyLog(page);
-    const keys = new Keys(page);
-    for (const before of [4, 1.3]) {
-      await keys.hold(['KeyW']);
-      const seen = await watch(page, MINUS_Z, -(front + before + travel(page, MOTION.walk, WALK_COAST)), 1);
-      await keys.hold([]);
-      if (seen.kind !== 'line') throw new Error(`W held from the plaza spawn, the watch ended ${seen.kind} with the eye at ${seen.eye === null ? 'none' : fmt(seen.eye)}, short of ${String(before)} m before the leaves.`);
-      await learnLag(page, seen.t);
-      await still(page);
-    }
-    const at = await still(page);
-    expect(at.eye[2] - front, 'at rest about 1.3 m before the leaves').toBeGreaterThan(1);
+    expect(at.eye[2] - front, 'about 1.3 m before the leaves').toBeGreaterThan(1);
     expect(at.eye[2] - front).toBeLessThan(1.6);
-    expect(Math.abs(at.eye[0]) + Math.abs(at.look[0]), 'still on the axis, looking along it: the crosshair on the line where the leaves meet').toBeLessThan(1e-6);
+    const offAxis = (s: Sample): number => Math.abs(s.eye[0] - door.middle[0]) + Math.abs(s.look[0]);
+    expect(offAxis(at), 'on the plaza spawn’s line, the entrance axis, looking along it: the crosshair on the line where the leaves meet').toBeLessThan(1e-6);
+    await lockPointer(page);
+    expect(offAxis(await still(page)), 'the pointer locked by a click that turned nothing: still on the axis, looking along it').toBeLessThan(1e-6);
     await looksAt(page, MIDDLE_DOOR, 'E Open');
     await page.keyboard.press('KeyE');
     expect((await doorIs(page, MIDDLE_DOOR, 'open')).angle, 'a quarter turn into the building').toBe(90);
@@ -143,22 +93,12 @@ test.describe('the door prompt between a pair’s leaves', () => {
   });
 
   test('at the north link door, met on its axis with the crosshair on its leaves’ meeting line: Locked, and E leaves it shut', async ({ page }) => {
-    // About 22 s here (21.8 to 22.4 s in three full runs, 2026-10-27), most of it the walk out along the plaza; four times that for a loaded machine.
-    test.setTimeout(90_000);
     const errors = watchErrors(page);
-    await open(page, 'walk=1&spawn=plaza');
-    await walking(page);
     const leaves = leavesOf(LINK);
-    // The meeting line in the leaves' mid-plane, which the ray is aimed at so it crosses their depth evenly.
+    // The meeting line in the leaves' mid-plane, which the ray is aimed at so it crosses their depth evenly, from the door's axis BEFORE metres out.
     const line = leaves.middle.clone().addScaledVector(leaves.front, -leaves.depth / 2);
-    await walk(page, 'out to the north link door’s line', legs([PLAZA, [LINK_X, PLAZA[1]]], MINUS_Z), []);
-    await aimAt(page, line);
-    await page.keyboard.down('Shift');
-    await page.keyboard.down('KeyW');
-    await within(page, leaves, 1.3 + travel(page, MOTION.run, COAST));
-    await page.keyboard.up('KeyW');
-    await page.keyboard.up('Shift');
-    const at = await aimAt(page, line);
+    const stand = leaves.middle.clone().addScaledVector(leaves.front, BEFORE);
+    const { at } = await standAt(page, 'on the north link door’s axis', feetOn(stand.x, stand.z, GRADE_Y + 2), [line.x, line.y, line.z]);
     const offs = [0, leaves.depth].map((back) => offLine(at, leaves, back));
     const mm = offs.map((o) => (o * 1000).toFixed(1)).join(' and ');
     expect(Math.max(...offs.map(Math.abs)), `the ray ${mm} mm off the meeting line at the leaves' front and back faces: within the 8 mm between them`).toBeLessThan(0.003);

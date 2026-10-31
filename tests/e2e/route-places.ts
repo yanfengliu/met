@@ -1,6 +1,8 @@
 /**
  * What the walks of ./routes.spec.ts meet on their way, beside the walking itself (./route-walk.ts), each read apart from the page or used through real
  * input:
+ * - a fixed place for the walker, set by the query (`spawn=x,y,z,tx,ty,tz`), its feet on the floor the finished model has there (`feetOn`, `standAt`),
+ *   which ./doors.spec.ts and ./door-look.spec.ts stand at too;
  * - a door's closed leaves where the finished model places them, read from the timeline built in the test's own process (./surface.ts): the planes of
  *   their faces, their hinges and how far a leaf reaches from a hinge, so a walk can be held at them, look at a leaf and stand clear of their swing;
  * - the eye aimed at a point by drags, across for its yaw and up or down for its pitch, `LOOK_PER_PIXEL` a pixel;
@@ -17,13 +19,40 @@ import { doorLeavesOf } from '../../src/model/lib/window.js';
 import { LOOK_REACH } from '../../src/walk/look.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
 import { BODY } from '../../src/walk/walker.js';
-import { throttleRate } from './helpers.js';
+import { open, throttleRate } from './helpers.js';
+import type { Facts } from './helpers.js';
 import { artworkBounds } from './labels-helpers.js';
-import { inTime, promptly } from './route-holds.js';
+import { inTime, promptly, rest } from './route-holds.js';
 import { bounded } from './route-keys.js';
-import { airborne, DRAG_STEP, face, fmt, record, still, toward, wrap, yawOf } from './route-walk.js';
+import { airborne, DRAG_STEP, face, fmt, record, still, toward, walking, wrap, yawOf } from './route-walk.js';
 import type { Facing, Sample, XZ } from './route-walk.js';
-import { finishedTimeline } from './surface.js';
+import { finishedTimeline, firstSurface } from './surface.js';
+
+/** The feet at the plan point (x, z), on the first surface of the finished model under (x, over, z), read apart from the page (./surface.ts `firstSurface`). */
+export function feetOn(x: number, z: number, over: number): Vec3 {
+  const down = firstSurface([x, over, z], [0, -1, 0]);
+  if (down === null) throw new Error(`No surface of the finished model, nor the workspace ground, lies under (${String(x)}, ${String(over)}, ${String(z)}).`);
+  return [x, over - down, z];
+}
+
+/**
+ * Opens the finished building in walk mode at a place of the query's own, `walk=1&spawn=x,y,z,tx,ty,tz` (src/walk/spawns.ts `placeOf`), with `query`
+ * after it: the feet at `feet`, the eye looking at `target`. Entered at load, with no gesture, so the pointer stays free (work unit 14). Checks that the
+ * page put the walker there at rest (./route-holds.ts `rest`): no warning, placed by the query, within 1 cm across, its eye BODY.eye over the floor
+ * `feet` names within 2 cm, on the ground. Returns the page's facts at load and where the walker stands. ./routes.spec.ts `openAt` does the same with
+ * the CPU throttle, the page's records and a picture.
+ */
+export async function standAt(page: Page, where: string, feet: Vec3, target: Vec3, query = ''): Promise<{ readonly facts: Facts; readonly at: Sample }> {
+  const facts = await open(page, `walk=1&spawn=${[...feet, ...target].map((v) => v.toFixed(4)).join(',')}${query}`);
+  expect(facts.warnings, `${where}: the page's warnings`).toEqual([]);
+  await walking(page);
+  expect(await page.evaluate(() => window.__met?.walk.spawn), `${where}: placed by the query`).toBe('place');
+  const at = await rest(page);
+  expect(Math.hypot(at.eye[0] - feet[0], at.eye[2] - feet[2]), `${where}: metres across from the place, standing at ${fmt(at.eye)}`).toBeLessThan(0.01);
+  expect(Math.abs(at.eye[1] - (feet[1] + BODY.eye)), `${where}: metres off the eye over the floor, at ${fmt(at.eye)}`).toBeLessThan(0.02);
+  expect(at.onGround, `${where}: on the ground`).toBe(true);
+  return { facts, at };
+}
 
 /** A door's closed leaves in plan, where the finished model places them (docs/design/spec.md, Doors). */
 export interface DoorPlan {

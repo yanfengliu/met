@@ -1,7 +1,7 @@
 /**
- * Holding keys until something stops the walker or its eye passes a line, and no more (./routes.spec.ts), beside the walking of ./route-walk.ts: no lag
- * is learnt and no corner is settled on, so where a walker let go comes to rest is bounded by the caller, not chosen. Every wait that a page with a frozen
- * main thread could hold is bounded in the test's process (`inTime`).
+ * Holding keys until something stops the walker or its eye passes a line, and no more (./routes.spec.ts), with the walker read as ./route-walk.ts reads
+ * it: where a walker let go comes to rest is bounded by the caller, not chosen (./route-keys.ts). Every wait that a page with a frozen main thread could
+ * hold is bounded in the test's process (`inTime`).
  */
 import type { Page } from '@playwright/test';
 
