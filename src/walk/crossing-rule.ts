@@ -4,11 +4,13 @@
  * ends, count once, as a line through an edge or a corner that triangles of one surface share meets each of them. Every other hit counts on its own,
  * so two faces back to back (one part's top under the bottom of the part on it) are two crossings, and a closed piece is crossed an even number of
  * times (src/model/closure.test.ts). Where hits at one height facing one way lie on edges that are not one, as where the edges of two overlapping parts'
- * faces in one plane cross at the line, how many faces it meets there is in doubt (work unit 13, review 2, F8): the line is read again OFF_EDGE off,
- * where it meets no edge, and every hit there counts.
- * Bound: faces that lie on one another along an edge or at a corner they both have, as the faces of a part doubled, count once there. A line read again
- * reads its heights where it lies, tens of micrometres off, so a sloped face reads that much times its slope higher or lower, and what is narrower than
- * that is missed. Where every try meets an edge, the line's own hits count, once at one height facing one way on edges.
+ * faces in one plane cross at the line, how many faces it meets there is in doubt (work unit 13, review 2, F8): the line is read again at the first of
+ * OFF_EDGE's offsets where it meets no edge and keeps every crossing the line's own reading has, so a line along a piece's own edge is not read off
+ * the piece (review 3, F10), and every hit there counts.
+ * Bound: hits facing one way whose triangles have the edge or corner they lie on at the same places count once, whatever their faces: a part doubled
+ * reads once along an edge its copies' faces both have, and two overlapping parts once along a ridge or at an apex they share (review 3, F13). A line
+ * read again reads its heights where it lies, tens of micrometres off, so a sloped face reads that much times its slope higher or lower, and what is
+ * narrower than that is missed. Where no offset will do, the line's own hits count, once at one height facing one way on edges.
  */
 import type { BufferAttribute, InterleavedBufferAttribute, Intersection } from 'three';
 
@@ -68,9 +70,26 @@ export function crossingsAlong(read: (x: number, z: number) => readonly LineHit[
   if (!inDoubt) return line;
   for (const [dx, dz] of OFF_EDGE) {
     const moved = read(x + dx, z + dz);
-    if (!moved.some((hit) => hit.edge)) return counted(moved, places).line;
+    if (moved.some((hit) => hit.edge)) continue;
+    const again = counted(moved, places).line;
+    if (keeps(again, line, Math.hypot(dx, dz))) return again;
   }
   return line;
+}
+
+/**
+ * Whether `again`, the line read `offset` off, holds every crossing of `line`, the line's own reading: one facing its way at a height within what
+ * the slope of either face makes of the offset, so the line read again has left no part the line met, as off a piece's own edge (review 3, F10).
+ */
+function keeps(again: PieceLine, line: PieceLine, offset: number): boolean {
+  const used = new Set<number>();
+  const rise = (normalY: number): number => (offset * Math.sqrt(Math.max(0, 1 - normalY * normalY))) / Math.max(normalY, 1e-9);
+  return line.heights.every((y, i) => {
+    const k = again.heights.findIndex((h, j) => !used.has(j) && again.facings[j] === line.facings[i] && Math.abs(h - y) <= SAME_HEIGHT + Math.max(rise(line.normalYs[i] ?? 1), rise(again.normalYs[j] ?? 1)));
+    if (k < 0) return false;
+    used.add(k);
+    return true;
+  });
 }
 
 /** The crossings among `hits` (lowest first), and whether hits at one height facing one way lay on edges that are not one. */

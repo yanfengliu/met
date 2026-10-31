@@ -229,23 +229,74 @@ describe('where a vertical line crosses a piece', () => {
       const w = world([step('crossed', geometry, matrix)]);
       return [heightsAt(w, 0.5, 0), w.crossings(0.5, 0, -10, 10)[0]?.facings];
     };
+    const [turnedMatrix, uprightMatrix] = [
+      new Matrix4().compose(new Vector3(0.484375, 0.25, 0.015625), new Quaternion(), new Vector3(0.03125, -0.125, -0.03125)),
+      new Matrix4().compose(new Vector3(0.484375, 0, -0.015625), new Quaternion(), new Vector3(0.03125, 0.25, 0.03125)),
+    ];
+    // Each as built and without an index, as three's non-indexed geometries (the Astor Court's rocks) are.
     const both = {
-      turned: read(turned.build(), new Matrix4().compose(new Vector3(0.484375, 0.25, 0.015625), new Quaternion(), new Vector3(0.03125, -0.125, -0.03125))),
-      upright: read(upright.build(), new Matrix4().compose(new Vector3(0.484375, 0, -0.015625), new Quaternion(), new Vector3(0.03125, 0.25, 0.03125))),
+      turned: read(turned.build(), turnedMatrix),
+      upright: read(upright.build(), uprightMatrix),
+      'turned, not indexed': read(turned.build().toNonIndexed(), turnedMatrix),
+      'upright, not indexed': read(upright.build().toNonIndexed(), uprightMatrix),
     };
-    expect(both, "the heights where both faces' diagonals cross, and which way each face looks").toEqual({
-      turned: [[0, 0, 0.25, 0.25], [-1, -1, 1, 1]],
-      upright: [[0, 0, 0.25, 0.5], [-1, -1, 1, 1]],
+    const [tops, bottoms] = [[[0, 0, 0.25, 0.25], [-1, -1, 1, 1]], [[0, 0, 0.25, 0.5], [-1, -1, 1, 1]]];
+    expect(both, "the heights where both faces' diagonals cross, and which way each face looks").toEqual({ turned: tops, upright: bottoms, 'turned, not indexed': tops, 'upright, not indexed': bottoms });
+  });
+
+  it("reads each part's face where their edges cross on a piece tilted 20° about Z too, its faces read again a few micrometres higher or lower (review 3)", () => {
+    const turned = new MeshBuilder();
+    turned.box([-2, 0, -2], [2, 2, 2]);
+    turned.box([-1, 0, -1], [3, 2, 3]);
+    const matrix = new Matrix4().compose(new Vector3(0.484375, 0.25, 0.015625), new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 9), new Vector3(0.03125, -0.125, -0.03125));
+    // Where both parts' diagonals cross, their tops' corner as built, in the world.
+    const at = new Vector3(0.5, 0, 0.5).applyMatrix4(matrix);
+    const line = world([step('tilted', turned.build(), matrix)]).crossings(at.x, at.z, -10, 10)[0];
+    // In through each part's tilted side, out through both tops where their diagonals cross, read 5.8 µm higher 30 µm off on their 20° slope.
+    expect(line?.facings, 'which way each face looks: both parts read').toEqual([-1, -1, 1, 1]);
+    expect(line?.heights.slice(2), "both tops, where their diagonals cross").toEqual([expect.closeTo(at.y, 4), expect.closeTo(at.y, 4)]);
+  });
+
+  it("keeps reading a piece along its own outline where the line is in doubt, never a line read off it (work unit 13, review 3, F10)", () => {
+    // Review 3's two boxes, one's corner on the other's edge at (0.5, 0), both their sides in the plane X 0.5; and two boxes whose sides on X 0 and on
+    // Z 0 cross at (0, 0), three quarters round it inside one of them. Red at f6fa16a, which took the first line read off that met no edge: none.
+    const edged = new MeshBuilder();
+    edged.box([0.375, 0.25, -1], [0.5, 0.375, 0]);
+    edged.box([0.40625, 0.25, -0.5], [0.5, 0.375, 0.5]);
+    const crossed = new MeshBuilder();
+    crossed.box([-4, 0, -4], [0, 1, 1]);
+    crossed.box([-4, 0, -4], [1, 1, 0]);
+    const along = (geometry: BufferGeometry, x: number, z: number): [number[], readonly number[] | undefined] => {
+      const w = world([step('outline', geometry)]);
+      return [heightsAt(w, x, z), w.crossings(x, z, -10, 10)[0]?.facings];
+    };
+    expect({ edged: along(edged.build(), 0.5, 0), crossed: along(crossed.build(), 0, 0) }, 'the piece read on its outline, and which way each face looks').toEqual({
+      edged: [[0.25, 0.375], [-1, 1]],
+      crossed: [[0, 1], [-1, 1]],
     });
   });
 
-  it("reads a part doubled once along an edge both its copies' faces have, the crossing rule's bound", () => {
+  it("reads a part doubled once along an edge both its copies' faces have, and two parts once along a ridge they share, the crossing rule's bound", () => {
     const b = new MeshBuilder();
     b.box([-2, 0, -2], [2, 3, 2]);
     b.box([-2, 0, -2], [2, 3, 2]);
     const w = world([step('doubled', b.build())]);
     expect(heightsAt(w, 0.3, 0.1), 'inside both copies').toEqual([0, 0, 3, 3]);
     expect(heightsAt(w, 0.5, 0.5), "along both bottoms' diagonal, one edge of the same places").toEqual([0, 3, 3]);
+    // Two prisms along X, their bases on Z ±1 and Z ±0.5 and their ridges one, 2 m up on Z 0 (review 3, F13).
+    const roofs = new MeshBuilder();
+    for (const half of [1, 0.5]) {
+      const section = [new Vector3(0, 0, -half), new Vector3(0, 0, half), new Vector3(0, 2, 0)];
+      section.forEach((p, k) => {
+        const q = section[(k + 1) % 3] ?? p;
+        roofs.polygon([p.clone().setX(2), q.clone().setX(2), q.clone().setX(-2), p.clone().setX(-2)]);
+      });
+      roofs.polygon([...section].reverse().map((p) => p.clone().setX(2)));
+      roofs.polygon(section.map((p) => p.clone().setX(-2)));
+    }
+    const ridge = world([step('ridge', roofs.build())]);
+    expect(heightsAt(ridge, 0.5, 0.2), 'off the ridge, through both roofs').toEqual([0, 0, 1.2, 1.6]);
+    expect(heightsAt(ridge, 0.5, 0), 'along the ridge both roofs have').toEqual([0, 0, 2]);
   });
 
   it("finds a walker that two overlapping parts shorter than it are built through, by their tops, along both bottoms' diagonals too, and misses one wholly inside a taller overlap", () => {

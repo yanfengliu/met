@@ -105,13 +105,8 @@ export function backed(geometry: BufferGeometry, face: number, p: Vector3, norma
   return false;
 }
 
-/**
- * Along the vertical line through (x, z), the triangles' crossings read by their winding as drawn (faces looking up entering, those looking down
- * leaving): the sum of their facings, the length inside (where more faces above look up than down), the length where their parity and their winding
- * disagree on what is inside, where parts overlap, and the length where more faces look down than up above it, wound inside out. Hits within 1 µm of
- * height are read together.
- */
-export function windingAlong(tris: Float64Array, x: number, z: number): { sum: number; inside: number; overlap: number; inward: number } {
+/** The faces the vertical line through (x, z) crosses among `tris`, as drawn: each one's height there and which way it looks (1 up, −1 down), highest first. */
+export function facesAlong(tris: Float64Array, x: number, z: number): [number, number][] {
   const hits: [number, number][] = [];
   for (let o = 0; o < tris.length; o += 9) {
     const [ax, ay, az, bx, by, bz, cx, cy, cz] = [tris[o] ?? 0, tris[o + 1] ?? 0, tris[o + 2] ?? 0, tris[o + 3] ?? 0, tris[o + 4] ?? 0, tris[o + 5] ?? 0, tris[o + 6] ?? 0, tris[o + 7] ?? 0, tris[o + 8] ?? 0];
@@ -123,10 +118,17 @@ export function windingAlong(tris: Float64Array, x: number, z: number): { sum: n
     if (u < -1e-12 || w < -1e-12 || u + w > 1 + 1e-12) continue;
     hits.push([ay + u * (by - ay) + w * (cy - ay), Math.sign(d)]);
   }
-  hits.sort((p, q) => q[0] - p[0]);
+  return hits.sort((p, q) => q[0] - p[0]);
+}
+
+/**
+ * A line's crossings (`facesAlong`) read by their winding as drawn (faces looking up entering, those looking down leaving): the sum of their facings,
+ * the length where their parity and their winding disagree on what is inside, where parts overlap, and the length where more faces look down than up
+ * above it, wound inside out. Hits within 1 µm of height are read together.
+ */
+export function windingAlong(hits: readonly (readonly [number, number])[]): { sum: number; overlap: number; inward: number } {
   let winding = 0;
   let parity = 0;
-  let inside = 0;
   let overlap = 0;
   let inward = 0;
   for (let k = 0; k < hits.length; ) {
@@ -135,24 +137,23 @@ export function windingAlong(tris: Float64Array, x: number, z: number): { sum: n
     for (; k < hits.length && top - (hits[k]?.[0] ?? 0) < 1e-6; k += 1, n += 1) winding += hits[k]?.[1] ?? 0;
     parity = (parity + n) % 2;
     const next = hits[k]?.[0];
-    if (next !== undefined && winding > 0) inside += top - next;
     if (next !== undefined && winding !== 0 !== (parity === 1)) overlap += top - next;
     if (next !== undefined && winding < 0) inward += top - next;
   }
-  return { sum: winding, inside, overlap, inward };
+  return { sum: winding, overlap, inward };
 }
 
 /**
- * The length of a line inside a piece by the walk's own reading of it (src/walk/collision.ts `crossings`): its crossings' `heights`, lowest first, and
- * their `facings`, inside where more of the crossings below look down than up, as src/walk/footing.ts `under` reads them.
+ * The length of a vertical line where two readings of its crossings, each `[height, facing]` in any order, disagree on what is inside: inside where
+ * more of a reading's crossings below look down than up, as src/walk/footing.ts `under` reads the walk's own (src/walk/collision.ts `crossings`).
  */
-export function insideAlong(heights: readonly number[], facings: readonly number[]): number {
-  let winding = 0;
-  let inside = 0;
-  heights.forEach((y, i) => {
-    winding -= facings[i] ?? 0;
-    const next = heights[i + 1];
-    if (next !== undefined && winding > 0) inside += next - y;
-  });
-  return inside;
+export function insideApart(a: readonly (readonly [number, number])[], b: readonly (readonly [number, number])[]): number {
+  const inside = (reading: readonly (readonly [number, number])[], y: number): boolean => reading.reduce((w, [h, facing]) => (h < y ? w - facing : w), 0) > 0;
+  const cuts = [...a, ...b].map(([h]) => h).sort((p, q) => p - q);
+  let apart = 0;
+  for (let i = 0; i + 1 < cuts.length; i += 1) {
+    const [low, high] = [cuts[i] ?? 0, cuts[i + 1] ?? 0];
+    if (high > low && inside(a, (low + high) / 2) !== inside(b, (low + high) / 2)) apart += high - low;
+  }
+  return apart;
 }

@@ -15,11 +15,12 @@
  * are). The walk's: its crossing query (`CollisionWorld.crossings`) on a collision world of the walked meshes, along four lines through each of up to
  * FACES (24) faces of each walked shape that are not vertical (one inside the face, one near each corner; 56,168 lines at 3165aa5), each meeting its
  * piece at that face an even number of times, with the walk's facings (`LineCrossings.facings`, which src/walk/footing.ts reads) one a crossing, as
- * many looking up as down, and inside for as long as the faces' own winding is (work unit 13, review 2: red with the facings turned over, all 0 or
- * none, on all 57,352 lines, and with the normals taken out by the matrix rather than its inverse transpose, on 342). The faces' winding on the same
- * lines: as many look up as look down, so a face wound the wrong way or doubled fails, and no stretch where more look down than up above it, a
- * pocket wound inside out where a surface folds through itself or stands out of its part; and where parts of one piece overlap, which the parity
- * rule reads as outside, no line runs through them for as long as settle's span
+ * many looking up as down, and holding the line inside where the faces' own winding does, to within 1e-5 m of the line (`insideApart`; work unit 13,
+ * reviews 2 and 3: red with the facings turned over, all 0 or none, on all 57,352 lines, with the normals taken out by the matrix rather than its
+ * inverse transpose, on 342, and with review 3's facings planted on one line of `vaux-west-front/core.granite`, on that line, which the comparison of
+ * inside lengths this replaced passed). The faces' winding on the same lines: as many look up as look down, so a face wound the wrong way or doubled
+ * fails, and no stretch where more look down than up above it, a pocket wound inside out where a surface folds through itself or stands out of its
+ * part; and where parts of one piece overlap, which the parity rule reads as outside, no line runs through them for as long as settle's span
  * (BODY.height less STANDING), read on the shape's first walked piece and scaled to its walked piece that stretches the lines most (the most is
  * 0.76 m, a Hunt facade medallion's bust in its disc), so a walker built into a piece is found, but on a line the crossing rule reads once (its
  * bound, src/walk/crossing-rule.ts). And each upright face's inside: at seven points of every upright face of every shape (the lines' four and one near
@@ -51,7 +52,10 @@
  * narrower or with less boundary is not seen; a piece its matrix scales up sees both larger (up to 99 times, the Hunt foundations' unit boxes). The
  * other readings try up to FACES faces a shape, spread evenly over those that are not vertical, on its first walked piece, and seven points of each
  * upright face; they see an opening, a wrong winding, an overlap, a pocket or a missing inside only under one of their lines or at one of their points.
- * The overlap is read from the winding, so an overlap with a part wound inside out is not seen, and the facing reading finds none. That reading sees a
+ * The walk's reading takes its heights within 0.1 mm of the face and its inside within 1e-5 m, both read where the line lies, but the walk reads a
+ * line in doubt 30 to 42 µm off (src/walk/crossing-rule.ts), where a face steeper than about 2.4, or 1 in 4 for the inside, would stray past them;
+ * none of its 57,352 lines is in doubt for a piece it meets (measured for review 3). The overlap is read from the winding, so an overlap with a part
+ * wound inside out is not seen, and the facing reading finds none. That reading sees a
  * part's sign in all, so one wound inside out among the outward parts it closes only together with can pass (its own bound). The grid sees a pocket only
  * under one of its lines, so one narrower than its cells that no open edge borders can be missed (Diana's open bow showed on 1 of the grid's 4,096
  * lines, and on 8 beside its open edges); lined-up open ends that wind to an inside between them, and a pocket narrower than 0.1 mm beside an open edge,
@@ -67,7 +71,7 @@ import { cappedBySection, capsMesh } from '../viewer/section-cut.js';
 import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../walk/collision.js';
 import { BODY, STANDING } from '../walk/walker.js';
-import { BEHIND, backed, faceAcross, insideAlong, upright, windingAbove, windingAlong, worldTriangles } from './closure-readings.js';
+import { BEHIND, backed, faceAcross, facesAlong, insideApart, upright, windingAbove, windingAlong, worldTriangles } from './closure-readings.js';
 import { openAlong } from './lib/check.js';
 import { inwardAlong, partVolumes } from './lib/facing.js';
 import { isSheet } from './lib/sheet.js';
@@ -388,12 +392,13 @@ describe('the pieces the walk and the section cut read', () => {
           const heights = line?.heights ?? [];
           const wrong = !heights.some((h) => Math.abs(h - p.y) < 1e-4) ? 'misses the face it was drawn through' : heights.length % 2 !== 0 ? 'is crossed an odd number of times' : null;
           if (wrong !== null && (bad += 1) === 1) first = `by X ${p.x.toFixed(2)}, Z ${p.z.toFixed(2)} ${wrong}: ${heights.map((h) => h.toFixed(3)).join(', ') || 'no crossing'}`;
-          const wound = windingAlong(tris, p.x, p.z);
+          const faces = facesAlong(tris, p.x, p.z);
+          const wound = windingAlong(faces);
           const where = `${piece.step}/${piece.material} by X ${p.x.toFixed(2)}, Z ${p.z.toFixed(2)}`;
-          // The walk's own facings (src/walk/footing.ts `under` reads them): one a crossing, as many up as down, inside as long as the faces wind to.
+          // The walk's own facings (src/walk/footing.ts `under` reads them): one a crossing, as many up as down, inside where the faces wind to it.
           const facings = line?.facings ?? [];
-          const within = insideAlong(heights, facings);
-          if (facings.length !== heights.length || facings.reduce((sum, f) => sum + f, 0) !== 0 || Math.abs(within - wound.inside) > 1e-5) misfaced.push(`${where}: facings ${facings.join(', ') || 'none'} at ${heights.map((h) => h.toFixed(3)).join(', ') || 'no crossing'}, inside ${within.toFixed(4)} m, the faces' winding ${wound.inside.toFixed(4)} m`);
+          const apart = insideApart(heights.map((h, i): [number, number] => [h, facings[i] ?? 0]), faces);
+          if (facings.length !== heights.length || facings.reduce((sum, f) => sum + f, 0) !== 0 || apart > 1e-5) misfaced.push(`${where}: facings ${facings.join(', ') || 'none'} at ${heights.map((h) => h.toFixed(3)).join(', ') || 'no crossing'}, inside apart from the faces' winding over ${apart.toFixed(4)} m`);
           if (wound.sum !== 0) unbalanced.push(`${where}: its faces looking up and looking down differ by ${String(wound.sum)}`);
           if (wound.inward > 0) inward.push(`${where}: ${wound.inward.toFixed(4)} m with more faces looking down than up above it`);
           if (wound.overlap * stretch > worst.length) worst = { length: wound.overlap * stretch, where: `${where}${tallest === piece ? '' : `, scaled ${stretch.toFixed(2)} times to ${tallest.step}/${tallest.material} piece ${String(tallest.slot)}`}` };

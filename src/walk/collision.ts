@@ -52,7 +52,10 @@ export function instancesBefore(steps: readonly BuiltStep[], complete: number, l
   return collisionMeshes(steps, complete, leaveOut).reduce((sum, mesh) => sum + mesh.count, 0);
 }
 
-/** Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and up-turned normal's Y, and whether it is a sheet. */
+/**
+ * Where the vertical line through a point crosses one solid piece, lowest first: each crossing's height and up-turned normal's Y, and whether it is a
+ * sheet. A line in doubt is read 30 to 42 µm off (./crossing-rule.ts), so its heights are that line's.
+ */
 export interface LineCrossings {
   readonly instance: number;
   readonly heights: readonly number[];

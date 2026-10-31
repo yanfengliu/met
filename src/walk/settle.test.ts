@@ -350,6 +350,25 @@ const crossed = (turned: boolean): StepDef =>
     block(kit, [-0.125, 0, -0.125], [-0.075, 0.25, 0.125]);
   });
 
+/**
+ * One piece of two boxes 0.25 to 0.375 m up, one's corner on the other's edge at (0.5, 0), both their sides in the plane X 0.5, so the X probe of a
+ * walker at (0.2, 0) meets their bottoms on the piece's own outline, with the same block under the other X probe (review 3, F10).
+ */
+const edged = step('edged', (kit) => {
+  const b = new MeshBuilder();
+  b.box([0.375, 0.25, -1], [0.5, 0.375, 0]);
+  b.box([0.40625, 0.25, -0.5], [0.5, 0.375, 0.5]);
+  kit.add(b.build(), stone, new Matrix4());
+  block(kit, [-0.125, 0, -0.125], [-0.075, 0.25, 0.125]);
+});
+
+/** A floor 0.2 m deep whose top is `y` up, and on it the plinths 0.45 m high, more than a step, 0.5 m apart (review 3, F12). */
+const raisedAt = (y: number): StepDef =>
+  step(`raised-${String(y)}`, (kit) => {
+    block(kit, [-20, y - 0.2, -20], [20, y, 20]);
+    for (const sx of [-1, 1]) block(kit, [sx > 0 ? 0.25 : -1, y, -1], [sx > 0 ? 1 : -0.25, y + 0.45, 1]);
+  });
+
 describe('the rims a walker set down or settled stands on (work unit 13, review 0)', () => {
   const ALONG = Math.PI;
 
@@ -418,10 +437,10 @@ describe('the rims a walker set down or settled stands on (work unit 13, review 
   });
 });
 
-describe('the rims a walker set down or settled stands on (work unit 13, review 2)', () => {
-  /** The walker at (0.2, 0) settled as the piece is built round it, and then set down there: what settle did, and the feet's height each time. */
-  const between = (turned: boolean): [Settled, number, number] => {
-    const { walker, to } = site([floor, crossed(turned)], 1);
+describe('the rims a walker set down or settled stands on (work unit 13, reviews 2 and 3)', () => {
+  /** The walker at (0.2, 0) settled as `piece` is built round it, and then set down there: what settle did, and the feet's height each time. */
+  const between = (piece: StepDef): [Settled, number, number] => {
+    const { walker, to } = site([floor, piece], 1);
     walker.place(0.2, 0, 0, 0);
     const settled = to(2);
     const after = walker.feet.y;
@@ -430,11 +449,25 @@ describe('the rims a walker set down or settled stands on (work unit 13, review 
   };
 
   it('stands on the tops of two parts in one plane whose edges cross under a probe, settled or set down', () => {
-    expect(between(true), 'moved onto the tops 0.25 m up, and set down on them').toEqual(['moved', expect.closeTo(0.25, 6), expect.closeTo(0.25, 6)]);
+    expect(between(crossed(true)), 'moved onto the tops 0.25 m up, and set down on them').toEqual(['moved', expect.closeTo(0.25, 6), expect.closeTo(0.25, 6)]);
   });
 
   it("never stands on the shorter part's top inside the taller where their bottoms' edges cross under a probe, settled or set down", () => {
-    expect(between(false), 'kept on the floor, and set down on it').toEqual(['kept', expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+    expect(between(crossed(false)), 'kept on the floor, and set down on it').toEqual(['kept', expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+  });
+
+  it("never stands on the underside a probe meets on a piece's own outline, where its line is in doubt, settled or set down", () => {
+    expect(between(edged), 'kept on the floor, and set down on it, not on the bottoms 0.25 m up').toEqual(['kept', expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+  });
+
+  it('stands on a floor exactly a step under the height asked, not on rims over a step above it that a read about that height would reach', () => {
+    const heights = [0.75, 0.875, 1, 2.5, 10.875];
+    const set = heights.map((y) => {
+      const { walker } = site([raisedAt(y)], 1);
+      walker.place(0, y + BODY.step, 0, Math.PI);
+      return walker.feet.y;
+    });
+    expect(set, "on the floor, not on the plinths' tops 0.45 m over it").toEqual(heights.map((y): unknown => expect.closeTo(y, 6)));
   });
 
   it('stands on a deck exactly a step under the height asked, at any height, and falls through its seam from 0.36 m over it', () => {

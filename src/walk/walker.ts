@@ -75,7 +75,10 @@ const EASE_TAU = 0.09;
 const JUMP_BUFFER = 0.15;
 /** The raised body may meet something overhead by this much and still fit under it, metres. */
 const HEADROOM_SLOP = 1e-3;
-/** `ontoRims` reads this far past its window's foot, so a rim exactly there is in it whatever the rounding of `top − low` (work unit 13, review 2, F9), metres. */
+/**
+ * A step's slack, metres: `ontoRims` reads this far past its window's foot, so a rim exactly there is in it whatever the rounding of `top − low`, and
+ * `place` takes ground exactly a step under the height asked as within a step, whatever the rounding of `y − STEP` (work unit 13, reviews 2 and 3).
+ */
 const FOOT_SLACK = 1e-6;
 const MAX_STEPS_PER_UPDATE = 30;
 
@@ -134,7 +137,7 @@ export class Walker {
     const found = this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit);
     this.feet.y = found ? Math.max(this.hit.y, this.floorY) : this.floorY;
     this.onGround = this.feet.y <= this.floorY || this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
-    const bridged = this.feet.y < y - BODY.step && this.ontoRims(y - BODY.step, y + BODY.step + PROBE_EPSILON);
+    const bridged = this.feet.y < y - BODY.step - FOOT_SLACK && this.ontoRims(y - BODY.step, y + BODY.step + PROBE_EPSILON);
     if (bridged || this.ontoRims(this.feet.y, this.feet.y + BODY.step + PROBE_EPSILON)) this.onGround = true;
     for (let k = 0; k < 4; k += 1) if (this.walls(false) < 1e-4) break;
     this.before.copy(this.feet);
