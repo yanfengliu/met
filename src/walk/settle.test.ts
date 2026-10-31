@@ -25,6 +25,14 @@
  * (the seats "moved"). Review 1: either side of a joint, pieces of two overlapping parts, whose overlap the parity of their crossings reads as outside,
  * leave it on the floor (red with parity in place of the winding: "moved", onto the upper part's bottom); and asked 0.3495 m over the deck it stands
  * on it, 0.36 m over it it falls through the seam, the bound (red with the rise counted from the window's foot, not the feet: through it at 0.3495).
+ * Review 2: one piece of two overlapping parts whose faces in one plane have edges that cross on the line of the walker's X probe, with a block 0.25 m
+ * high under the other: with the piece turned half round X, its parts' tops in one plane 0.25 m up, it is moved onto them when the piece is built round
+ * it and set down on them; with the parts upright, their bottoms in the floor's plane and the shorter's top inside the taller, it is kept on the floor
+ * and set down on it (F8). And decks 0.75, 0.875, 1, 2.5 and 10.875 m up asked from exactly a step over them are stood on, and from 0.36 m over them
+ * fallen through (F9). Red at c2a9bcc, which read hits on edges at one height facing one way once whatever the edges and the window to its foot as
+ * `top − length` rounds it: kept on the floor under the tops, and set down there; moved onto the shorter part's top inside the taller, and set down
+ * there, 0.25 m up; through the decks at 0.75 and 0.875 m. Red too with the line in doubt not read again, with every merge taken for one edge, and
+ * with no slack at the window's foot; a slack of 1.1 cm turns the 0.36 m refusal red.
  * Bound: fixtures are closed boxes and the deck's sheets, their joints along X and Z, as the hall's. Every piece of the model is closed along vertical
  * lines or a declared sheet (src/model/closure.test.ts); a sheet has no inside, so the build does not lift a walker out of one, which
  * src/walk/crossings.test.ts checks, and a probe's hit on a sheet is not told from its underside, as a closed piece's is by its inside.
@@ -47,7 +55,7 @@ import { workspaceGroundY } from '../viewer/environment.js';
 import { GeometryBvhs } from './bvh-cache.js';
 import { CollisionWorld, collisionMeshes, instancesBefore } from './collision.js';
 import { SPAWNS, nearestSpawn } from './spawns.js';
-import { NO_INPUT, Walker } from './walker.js';
+import { BODY, NO_INPUT, Walker } from './walker.js';
 import type { Settled } from './walker.js';
 
 const FLOOR_Y = -1;
@@ -320,10 +328,27 @@ function pane(x0: number, x1: number, y: number): BufferGeometry {
   return sheet(g);
 }
 
-/** A deck of sheets 1 m up over nothing: two panes meeting on X 0 at a 2 µm seam a ray down the centre passes through, then a gap 1.2 m wide, X 2..3.2 (F2). */
-const deck = step('deck', (kit) => {
-  for (const [x0, x1] of [[-2, -1e-6], [1e-6, 2], [3.2, 6]] as const) kit.add(pane(x0, x1, 1), stone, new Matrix4());
-});
+/** A deck of sheets `y` up (1 m) over nothing: two panes meeting on X 0 at a 2 µm seam a ray down the centre passes through, then a gap 1.2 m wide, X 2..3.2 (F2). */
+const deckAt = (y: number): StepDef =>
+  step(`deck-${String(y)}`, (kit) => {
+    for (const [x0, x1] of [[-2, -1e-6], [1e-6, 2], [3.2, 6]] as const) kit.add(pane(x0, x1, y), stone, new Matrix4());
+  });
+const deck = deckAt(1);
+
+/**
+ * One piece of two overlapping parts whose faces in one plane have edges that cross on the line of the X probe of a walker at (0.2, 0), with a block
+ * 0.25 m high under its other X probe (review 2, F8): review 2's piece turned half round X (scaled −1 in Y and Z), the parts' tops in one plane 0.25 m
+ * up with the line along both tops' diagonals; or the same parts upright, the shorter's top 0.25 m up inside the taller, their bottoms in the floor's plane.
+ */
+const crossed = (turned: boolean): StepDef =>
+  step(turned ? 'crossed-tops' : 'crossed-bottoms', (kit) => {
+    const b = new MeshBuilder();
+    b.box([-2, 0, -2], [2, turned ? 2 : 1, 2]);
+    b.box([-1, 0, -1], [3, 2, 3]);
+    const matrix = turned ? new Matrix4().compose(new Vector3(0.484375, 0.25, 0.015625), new Quaternion(), new Vector3(0.03125, -0.125, -0.03125)) : new Matrix4().compose(new Vector3(0.484375, 0, -0.015625), new Quaternion(), new Vector3(0.03125, 0.25, 0.03125));
+    kit.add(b.build(), stone, matrix);
+    block(kit, [-0.125, 0, -0.125], [-0.075, 0.25, 0.125]);
+  });
 
 describe('the rims a walker set down or settled stands on (work unit 13, review 0)', () => {
   const ALONG = Math.PI;
@@ -390,5 +415,36 @@ describe('the rims a walker set down or settled stands on (work unit 13, review 
     expect(walker.feet.y, 'asked 0.36 m over the deck, more than a step: through the seam, the bound').toBe(FLOOR_Y);
     walker.place(2.6, 1, 0, ALONG);
     expect(walker.feet.y, 'set down in the middle of the 1.2 m gap').toBe(FLOOR_Y);
+  });
+});
+
+describe('the rims a walker set down or settled stands on (work unit 13, review 2)', () => {
+  /** The walker at (0.2, 0) settled as the piece is built round it, and then set down there: what settle did, and the feet's height each time. */
+  const between = (turned: boolean): [Settled, number, number] => {
+    const { walker, to } = site([floor, crossed(turned)], 1);
+    walker.place(0.2, 0, 0, 0);
+    const settled = to(2);
+    const after = walker.feet.y;
+    walker.place(0.2, 0, 0, 0);
+    return [settled, after, walker.feet.y];
+  };
+
+  it('stands on the tops of two parts in one plane whose edges cross under a probe, settled or set down', () => {
+    expect(between(true), 'moved onto the tops 0.25 m up, and set down on them').toEqual(['moved', expect.closeTo(0.25, 6), expect.closeTo(0.25, 6)]);
+  });
+
+  it("never stands on the shorter part's top inside the taller where their bottoms' edges cross under a probe, settled or set down", () => {
+    expect(between(false), 'kept on the floor, and set down on it').toEqual(['kept', expect.closeTo(0, 6), expect.closeTo(0, 6)]);
+  });
+
+  it('stands on a deck exactly a step under the height asked, at any height, and falls through its seam from 0.36 m over it', () => {
+    const at = (y: number, over: number): number => {
+      const { walker } = site([deckAt(y)], 1);
+      walker.place(0, y + over, 0, Math.PI);
+      return walker.feet.y;
+    };
+    const heights = [0.75, 0.875, 1, 2.5, 10.875];
+    expect(heights.map((y) => at(y, BODY.step)), 'decks asked from a step over them, on them').toEqual(heights.map((y): unknown => expect.closeTo(y, 6)));
+    expect(heights.map((y) => at(y, 0.36)), 'decks asked from 0.36 m over them: through the seam, the bound').toEqual(heights.map(() => FLOOR_Y));
   });
 });

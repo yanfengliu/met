@@ -75,6 +75,8 @@ const EASE_TAU = 0.09;
 const JUMP_BUFFER = 0.15;
 /** The raised body may meet something overhead by this much and still fit under it, metres. */
 const HEADROOM_SLOP = 1e-3;
+/** `ontoRims` reads this far past its window's foot, so a rim exactly there is in it whatever the rounding of `top − low` (work unit 13, review 2, F9), metres. */
+const FOOT_SLACK = 1e-6;
 const MAX_STEPS_PER_UPDATE = 30;
 
 /** What the keys ask for: `forward` and `right` in [-1, 1] (back and left are negative), running, nothing else. */
@@ -167,14 +169,15 @@ export class Walker {
   }
 
   /**
-   * Lifts the feet out of a groove narrower than the body onto the lower rim of two opposite sides read from `top` down to `low` (./footing.ts `rims`):
-   * the highest over the feet whose probes stand on top of what they meet, walkable, where the body stands clear by the centre's crossings (`clearAt`).
+   * Lifts the feet out of a groove narrower than the body onto the lower rim of two opposite sides read from `top` down to `low`, `low` itself in
+   * (./footing.ts `rims`): the highest over the feet whose probes stand on top of what they meet, walkable, where the body stands clear by the centre's
+   * crossings (`clearAt`).
    */
   private ontoRims(low: number, top: number, lines?: readonly LineCrossings[]): boolean {
     const { feet, hit } = this;
     let centre = lines;
     const stands = (rim: GroundHit): boolean => rim.normalY >= MIN_WALKABLE_NORMAL_Y && this.clearAt((centre ??= this.world.crossings(feet.x, feet.z, this.floorY, Number.POSITIVE_INFINITY)), rim.y);
-    if (!this.footing.rims(feet.x, feet.z, top, top - low, hit, feet.y + STANDING, stands)) return false;
+    if (!this.footing.rims(feet.x, feet.z, top, top - low + FOOT_SLACK, hit, feet.y + STANDING, stands)) return false;
     feet.y = hit.y;
     return true;
   }

@@ -1,21 +1,26 @@
 /**
- * Where a vertical line crosses a piece (src/walk/collision.ts `crossings`), which the walk's settle reads by parity (docs/design/spec.md, Walk mode:
- * When the build moves), on fixtures built through the page's collision path: one surface met through an edge or a corner of its triangles counts
- * once, a block on a block is crossed four times through a face, an edge and a corner, as two faces back to back in one piece count twice, and so do
- * a face looking up and one looking down meeting at the line, so a closed piece is crossed an even number of times; a walker that a piece of two
- * parts is built through is found inside the upper part; a single surface with no inside keeps a walker in it; and a declared sheet has no inside
- * even where its panes overlap, as two panes 2 cm apart and a hipped skylight's over its hip do, so one built through a walker leaves it be, which
- * the same panes undeclared do not, its mark the same in a world of moving pieces (red without settle's reading of sheets: the panes' walker moved).
- * Two pins: two overlapping parts whose faces share planes are crossed at each, so their overlap reads as outside, and a walker in it is found by
- * their tops 1.2 m up where they are shorter than it and missed wholly inside a taller one, 3 m tall (the bound src/model/closure.test.ts keeps on
- * the model), or on a line along edges both parts have in one of those planes, as their bottom diagonals, which reads them once there, so a walker on
- * it is missed even 1.2 m up (the crossing rule's bound, src/walk/collision.ts); and a rusticated wall whose window's sill lies on a channel's floor
+ * Where a vertical line crosses a piece (src/walk/collision.ts `crossings`, by src/walk/crossing-rule.ts), which the walk's settle reads by parity and
+ * its probes by the winding of the faces (docs/design/spec.md, Walk mode: When the build moves), on fixtures built through the page's collision path:
+ * one surface met through an edge or a corner of its triangles counts once, a block on a block is crossed four times through a face, an edge and a
+ * corner, as two faces back to back in one piece count twice, and so do a face looking up and one looking down meeting at the line, so a closed piece
+ * is crossed an even number of times; a walker that a piece of two parts is built through is found inside the upper part; a single surface with no
+ * inside keeps a walker in it; and a declared sheet has no inside even where its panes overlap, as two panes 2 cm apart and a hipped skylight's over
+ * its hip do, so one built through a walker leaves it be, which the same panes undeclared do not, its mark the same in a world of moving pieces (red
+ * without settle's reading of sheets: the panes' walker moved).
+ * Two overlapping parts whose faces share planes are crossed at each, so their overlap reads as outside (a pin), and a walker in it is found by their
+ * tops 1.2 m up where they are shorter than it and missed wholly inside a taller one, 3 m tall (the bound src/model/closure.test.ts keeps on the model).
+ * On a line along edges of both parts' faces in one of those planes, as their bottom diagonals, which cross there, the line is read again off them, so
+ * each part's face counts and a walker on it is found 1.2 m up too; and so it is for review 2's piece of two parts turned half round X, its tops in one
+ * plane, and for the same parts upright, the shorter's top inside the taller, the faces' facings read as built (work unit 13, review 2, F8). Red at
+ * c2a9bcc, which read hits at one height facing one way on edges once whatever the edges: [0, 3, 3] along both bottoms' diagonals and the walker on
+ * that line kept; [0, 0, 0.25] facings [−1, −1, 1] turned and [0, 0.25, 0.5] facings [−1, 1, 1] upright. A part doubled, the faces of its two copies on
+ * one another, is read once along an edge both have (a pin of the rule's bound). And a rusticated wall whose window's sill lies on a channel's floor
  * and head on a channel's ceiling lays one face at each, not two, so the window is crossed once at each (red without `intervalsAt`'s edge mode in
  * src/model/lib/wall.ts; no wall in the model puts an opening's edge on a channel's).
- * Red with main's crossing rule in 5 of these 8 tests.
+ * Red with main's crossing rule, which counted hits within 1 µm once, in 8 of these 11 tests.
  * Bound: fixtures only; src/model/closure.test.ts checks that every piece of the model is closed along vertical lines.
  */
-import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
+import { BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { CHAPTERS } from '../build/chapters.js';
@@ -99,6 +104,12 @@ describe('where a vertical line crosses a piece', () => {
     for (const [x, z] of [[0.7, 0.2], [0.5, 0.5], [0, 0], [-1.3, 0.4]] as const) {
       expect(heightsAt(w, x, z), `the line through X ${String(x)}, Z ${String(z)}`).toEqual([0, 1, 1, 3]);
     }
+  });
+
+  it("reads a line along the piece's own outer corner or edge as through its faces, where one surface's triangles meet it there, as it stood", () => {
+    const w = world([step('stack', stacked())]);
+    // The outer corner two triangles of each face share, and a point of the outer edge one triangle of each face has.
+    for (const [x, z] of [[2, 2], [2, 0.7]] as const) expect(heightsAt(w, x, z), `the line through X ${String(x)}, Z ${String(z)}`).toEqual([0, 1, 1, 3]);
   });
 
   it('counts a face looking up and one looking down that meet at the line as two crossings', () => {
@@ -200,16 +211,49 @@ describe('where a vertical line crosses a piece', () => {
     const w = world([step('overlap', b.build())]);
     expect(heightsAt(w, 0.3, 0.1), 'inside both parts').toEqual([0, 0, 3, 3]);
     expect(heightsAt(w, -1.5, -1.5), 'inside one').toEqual([0, 3]);
-    // The bound: along both parts' bottom diagonals, which cross there in the plane the parts share, hits at one height merge across the parts.
-    expect(heightsAt(w, 0.5, 0.5), "along both bottoms' diagonals").toEqual([0, 3, 3]);
+    // Along both parts' bottom diagonals, which cross there in the plane the parts share: the line is read again off them, so each part's bottom counts.
+    expect(heightsAt(w, 0.5, 0.5), "along both bottoms' diagonals").toEqual([0, 0, 3, 3]);
+    expect(w.crossings(0.5, 0.5, -10, 10)[0]?.facings, "along both bottoms' diagonals, which way each face looks").toEqual([-1, -1, 1, 1]);
   });
 
-  it('finds a walker that two overlapping parts shorter than it are built through, by their tops, and misses one wholly inside a taller overlap or on a line read once', () => {
-    // The last: on the line along both bottoms' diagonals, which the crossing rule reads once there, its bound.
+  it("reads each part's face where edges of two overlapping parts' faces in one plane cross at the line, either way up (work unit 13, review 2, F8)", () => {
+    // Review 2's piece, turned half round X (scaled −1 in Y and Z, its determinant positive), its parts' tops (their bottoms as built) in one plane 0.25 m
+    // up, the line through (0.5, 0) along both tops' diagonals; and the same parts upright, the shorter half as tall, their bottoms in one plane at 0.
+    const turned = new MeshBuilder();
+    turned.box([-2, 0, -2], [2, 2, 2]);
+    turned.box([-1, 0, -1], [3, 2, 3]);
+    const upright = new MeshBuilder();
+    upright.box([-2, 0, -2], [2, 1, 2]);
+    upright.box([-1, 0, -1], [3, 2, 3]);
+    const read = (geometry: BufferGeometry, matrix: Matrix4): [number[], readonly number[] | undefined] => {
+      const w = world([step('crossed', geometry, matrix)]);
+      return [heightsAt(w, 0.5, 0), w.crossings(0.5, 0, -10, 10)[0]?.facings];
+    };
+    const both = {
+      turned: read(turned.build(), new Matrix4().compose(new Vector3(0.484375, 0.25, 0.015625), new Quaternion(), new Vector3(0.03125, -0.125, -0.03125))),
+      upright: read(upright.build(), new Matrix4().compose(new Vector3(0.484375, 0, -0.015625), new Quaternion(), new Vector3(0.03125, 0.25, 0.03125))),
+    };
+    expect(both, "the heights where both faces' diagonals cross, and which way each face looks").toEqual({
+      turned: [[0, 0, 0.25, 0.25], [-1, -1, 1, 1]],
+      upright: [[0, 0, 0.25, 0.5], [-1, -1, 1, 1]],
+    });
+  });
+
+  it("reads a part doubled once along an edge both its copies' faces have, the crossing rule's bound", () => {
+    const b = new MeshBuilder();
+    b.box([-2, 0, -2], [2, 3, 2]);
+    b.box([-2, 0, -2], [2, 3, 2]);
+    const w = world([step('doubled', b.build())]);
+    expect(heightsAt(w, 0.3, 0.1), 'inside both copies').toEqual([0, 0, 3, 3]);
+    expect(heightsAt(w, 0.5, 0.5), "along both bottoms' diagonal, one edge of the same places").toEqual([0, 3, 3]);
+  });
+
+  it("finds a walker that two overlapping parts shorter than it are built through, by their tops, along both bottoms' diagonals too, and misses one wholly inside a taller overlap", () => {
+    // The last: on the line along both bottoms' diagonals, which the crossing rule reads again off them.
     for (const [height, x, z, settled] of [
       [1.2, 0.3, 0.1, 'moved'],
       [3, 0.3, 0.1, 'kept'],
-      [1.2, 0.5, 0.5, 'kept'],
+      [1.2, 0.5, 0.5, 'moved'],
     ] as const) {
       const b = new MeshBuilder();
       b.box([-2, 0, -2], [2, height, 2]);

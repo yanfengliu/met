@@ -55,7 +55,8 @@ export function faceAcross(geometry: BufferGeometry, vertical: Vector3): boolean
 /**
  * The winding at `q`, in a geometry's frame, of the faces that a line along `vertical`, a unit direction, meets above it, from `reach` above it: +1 for
  * each looking up and −1 for each looking down, so 1 inside a closed part wound outward and 0 outside. Hits at one height that lie on edges of their
- * triangles and face one way count once, one surface met through an edge, as the walk's crossing query reads them.
+ * triangles and face one way count once, one surface met through an edge, as the walk's crossing query reads them but for its second reading of a
+ * line whose edges there are not one (src/walk/crossing-rule.ts).
  */
 export function windingAbove(bvh: MeshBVH, q: Vector3, vertical: Vector3, reach: number): number {
   const ray = new Ray(q.clone().addScaledVector(vertical, reach), vertical.clone().negate());
@@ -106,10 +107,11 @@ export function backed(geometry: BufferGeometry, face: number, p: Vector3, norma
 
 /**
  * Along the vertical line through (x, z), the triangles' crossings read by their winding as drawn (faces looking up entering, those looking down
- * leaving): the sum of their facings, the length where their parity and their winding disagree on what is inside, where parts overlap, and the length
- * where more faces look down than up above it, wound inside out. Hits within 1 µm of height are read together.
+ * leaving): the sum of their facings, the length inside (where more faces above look up than down), the length where their parity and their winding
+ * disagree on what is inside, where parts overlap, and the length where more faces look down than up above it, wound inside out. Hits within 1 µm of
+ * height are read together.
  */
-export function windingAlong(tris: Float64Array, x: number, z: number): { sum: number; overlap: number; inward: number } {
+export function windingAlong(tris: Float64Array, x: number, z: number): { sum: number; inside: number; overlap: number; inward: number } {
   const hits: [number, number][] = [];
   for (let o = 0; o < tris.length; o += 9) {
     const [ax, ay, az, bx, by, bz, cx, cy, cz] = [tris[o] ?? 0, tris[o + 1] ?? 0, tris[o + 2] ?? 0, tris[o + 3] ?? 0, tris[o + 4] ?? 0, tris[o + 5] ?? 0, tris[o + 6] ?? 0, tris[o + 7] ?? 0, tris[o + 8] ?? 0];
@@ -124,6 +126,7 @@ export function windingAlong(tris: Float64Array, x: number, z: number): { sum: n
   hits.sort((p, q) => q[0] - p[0]);
   let winding = 0;
   let parity = 0;
+  let inside = 0;
   let overlap = 0;
   let inward = 0;
   for (let k = 0; k < hits.length; ) {
@@ -132,8 +135,24 @@ export function windingAlong(tris: Float64Array, x: number, z: number): { sum: n
     for (; k < hits.length && top - (hits[k]?.[0] ?? 0) < 1e-6; k += 1, n += 1) winding += hits[k]?.[1] ?? 0;
     parity = (parity + n) % 2;
     const next = hits[k]?.[0];
+    if (next !== undefined && winding > 0) inside += top - next;
     if (next !== undefined && winding !== 0 !== (parity === 1)) overlap += top - next;
     if (next !== undefined && winding < 0) inward += top - next;
   }
-  return { sum: winding, overlap, inward };
+  return { sum: winding, inside, overlap, inward };
+}
+
+/**
+ * The length of a line inside a piece by the walk's own reading of it (src/walk/collision.ts `crossings`): its crossings' `heights`, lowest first, and
+ * their `facings`, inside where more of the crossings below look down than up, as src/walk/footing.ts `under` reads them.
+ */
+export function insideAlong(heights: readonly number[], facings: readonly number[]): number {
+  let winding = 0;
+  let inside = 0;
+  heights.forEach((y, i) => {
+    winding -= facings[i] ?? 0;
+    const next = heights[i + 1];
+    if (next !== undefined && winding > 0) inside += next - y;
+  });
+  return inside;
 }
