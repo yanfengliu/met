@@ -2,12 +2,14 @@
  * Work unit 15's gates on the 1880 fronts (exterior.md section 9). From the court-floor camera of [C7]'s renders, the Lehman Wing's court shows the west
  * front's central arch's head as exterior-images.md #60 shows it: each face of its voussoirs and inner order that looks out of the wall is the first thing
  * a ray from the camera meets, at its centroid and at each of its corners drawn 2 cm in, among every opaque piece of the wing's structure and glass and of
- * the west front itself. And each 1880 head moves as one in the build: through its step, its light and dark pieces stand at one matrix at every moment.
+ * the west front itself. And each 1880 head moves as one in the build: at five moments through its step, its light and dark pieces stand at one matrix and
+ * are drawn or not alike.
  * Bound: geometry is built in Node without WebGL, so these read ray hits on the built pieces and the timeline's instance matrices, not rendered pixels.
  * The sightline samples points, not whole faces. The court's ring walls stand 0.29 m into its east opening, so from this camera they hide the head's faces
  * beyond 2.01 m of the axis, the outer halves of its lowest stones, which #60 shows (section 9); the samples stop at 1.95 m. They start 0.1 m over the
  * springing, where the impost band's top, 5 cm prouder than the inner order, hides the faces' lowest centimetres from below. The wing's flat roof hides
- * the other four heads from this camera, so it reads the central one. The motion is read at five moments through each step that holds heads.
+ * the other four heads from this camera, so it reads the central one. The motion is read at five moments, 0.2 apart, through each step that holds heads;
+ * every piece's window lasts at least 0.25 of its step (src/build/stagger.ts), so each holds one, and a dropping piece is off its place until it lands.
  * Red proofs (2026-11-04): the sightline went red with the court's east lintel back on the flat roof (12.0 m; 398 points hidden), with the strip's head
  * back at 12.9 m (110) and with it at 13.8 m, where the lead flat cuts the crown (27), and with the central head's light piece left out of its step; the
  * motion went red with `vaux-openings` popping its pieces about their own centres (25 problems), staggered by Z (15), and dropping each piece by its
@@ -91,7 +93,7 @@ describe('the 1880 west front from the Lehman court', () => {
 });
 
 describe('the 1880 heads in the build', () => {
-  it("move as one: each head's light and dark pieces stand at one matrix at every moment of their step", () => {
+  it("move as one: at five moments of their step, each head's light and dark pieces stand at one matrix and are drawn or not alike", () => {
     const timeline = new Timeline(vauxSteps);
     const problems: string[] = [];
     let pairs = 0;
@@ -111,6 +113,9 @@ describe('the 1880 heads in the build', () => {
           const [a, b] = [matrixAt(light.mesh, light.slot), matrixAt(dark.mesh, dark.slot)];
           const gap = a.elements.reduce((most, v, k) => Math.max(most, Math.abs(v - (b.elements[k] ?? 0))), 0);
           if (gap > 1e-6) problems.push(`${step.def.id} at f ${String(f)}: ${light.mesh.geometry.name} slot ${String(light.slot)} and its dark piece differ by ${gap.toFixed(3)}`);
+          // A mesh draws its first `count` slots, in arrival order (src/build/timeline.ts).
+          const drawn = (p: { readonly mesh: InstancedMesh; readonly slot: number }): boolean => p.mesh.visible && p.slot < p.mesh.count;
+          if (drawn(light) !== drawn(dark)) problems.push(`${step.def.id} at f ${String(f)}: ${light.mesh.geometry.name} slot ${String(light.slot)} drawn ${String(drawn(light))}, its dark piece ${String(drawn(dark))}`);
         }
       }
     });

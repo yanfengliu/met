@@ -133,19 +133,20 @@ export function bandPieces(): Piece[] {
   return pieces;
 }
 
-/**
- * The skylight along the 1880 front: a lean-to from the flat roof up to the old wall, rafters every 0.75 m (orthophoto), in two runs either side of the
- * court's east tip (STRIP_GAP_HALF_X). Its head bar rests against the brick face over the old front's arches and under its string course, so nothing of it enters the
- * old front's trim; a glass triangle closes each run's inner end up to the lead flat over the gap, and a pane the 0.25 m between it and the court's ring
- * wall. Over the link walls' coping (13.1 m) a glass triangle closes each run's outer end up to the head.
- */
 /** The top of the link walls' coping beside the strip's outer ends (lehman.ts: parapet and a 0.3 m coping). */
 const LINK_TOP_Y = LEHMAN_PARAPET_Y + 0.3;
-/** How far the head bar's underside stands under the head line at the wall: half its depth along the slope's normal, leaning (about 0.13 m). */
-const HEAD_BAR_UNDER = 0.13;
 /** |X| where the court's ring wall crosses the strip's west edge: the gap's half width less its 0.25 m clearance (lehman-plan.ts). */
 const RING_CROSSING_X = STRIP_GAP_HALF_X - 0.25;
+/** How far an outer end's pane stands beyond the bars' ends, so it never lies in their end faces' plane. */
+const END_CLEAR = 0.01;
 
+/**
+ * The skylight along the 1880 front: a lean-to from the flat roof up to the old wall, rafters every 0.75 m (orthophoto), in two runs either side of the
+ * court's east tip (STRIP_GAP_HALF_X). Its head bar runs along the brick face over the old front's arches and under its string course, 5 mm off it, so
+ * nothing of it enters the old front's trim. A glass triangle closes each run's inner end up to the lead flat over the gap, and a pane the 0.25 m between
+ * it and the court's ring wall, from the roof's top. Over the link walls' coping (13.1 m) a glass quad closes each run's outer end, from where the glass
+ * crosses the coping's height to the brick and up to the head line, 1 cm beyond the bars' ends.
+ */
 export function stripPieces(): Piece[] {
   const z0 = STRIP_WEST_Z;
   const y0 = LEHMAN_ROOF_Y + 0.1;
@@ -179,13 +180,13 @@ export function stripPieces(): Piece[] {
     // The pane across to the ring wall stands from the roof's top, under the run's sill bar.
     const ring = inner - Math.sign(inner) * (STRIP_GAP_HALF_X - RING_CROSSING_X);
     for (const matrix of quadPanes([ring, LEHMAN_ROOF_Y, z0], [inner, LEHMAN_ROOF_Y, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true, order: 1 });
-    // The run's outer end over the link wall's coping: from where the glass crosses the coping's height to the old front's brick face, up to the head
-    // bar's underside, whose end closes the rest; the pane stops short of the bar's end face rather than lie in its plane.
+    // The run's outer end over the link wall's coping, 1 cm beyond the bars' ends: from where the glass crosses the coping's height to the old front's
+    // brick face and up to the head line.
     const outer = inner === x0 ? x1 : x0;
-    const under = y1 - HEAD_BAR_UNDER;
-    if (under > LINK_TOP_Y) {
-      const along = (y: number): number => z0 + ((y - y0) / (y1 - y0)) * (z1 - z0);
-      for (const matrix of quadPanes([outer, LINK_TOP_Y, along(LINK_TOP_Y)], [outer, LINK_TOP_Y, STRIP_EAST_Z], [outer, under, STRIP_EAST_Z], [outer, under, along(under)])) pieces.push({ matrix, glass: true, order: 1 });
+    const end = outer + Math.sign(outer - inner) * END_CLEAR;
+    if (y1 > LINK_TOP_Y) {
+      const zc = z0 + ((LINK_TOP_Y - y0) / (y1 - y0)) * (z1 - z0);
+      for (const matrix of quadPanes([end, LINK_TOP_Y, zc], [end, LINK_TOP_Y, STRIP_EAST_Z], [end, y1, STRIP_EAST_Z], [end, y1, z1])) pieces.push({ matrix, glass: true, order: 1 });
     }
   };
   run(-STRIP_HALF_X, -STRIP_GAP_HALF_X, -STRIP_GAP_HALF_X);

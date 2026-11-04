@@ -60,8 +60,10 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Glaze the windows and set the granite trim',
     detail: 'Windows fill the west arches and the ground storey; heads of light and dark granite voussoirs and granite bands finish the fronts and side walls.',
-    // A fixed drop in rising courses (by order): each arch head's light and dark pieces share an order and a distance, so they move as one.
-    motion: { kind: 'drop', distance: 3 },
+    // A fixed drop by order: the side walls' bands in rising courses (1 to 4), then the heads (5), the west windows by their distance off the axis,
+    // the east front's trim (12) and the oculus glass (20). Each head's light and dark pieces share an order and the distance, so they move as one;
+    // 2.5 m keeps each ground window, starting over its place, under the main opening above it.
+    motion: { kind: 'drop', distance: 2.5 },
     stagger: 'order',
     build(kit) {
       westFrontWindows(kit);

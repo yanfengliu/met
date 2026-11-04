@@ -33,7 +33,7 @@ Decisions, item by item (F-owner-7's seven differences):
 
 Also found and built: the west front's ground storey is light rusticated stone with square-headed windows (#49, #53), not brick with segmental ones, and a string course's middle stands 1.85 m over its crowns (#53). Found and left, with their reasons in section 9: the stair tower between the north arcade and the west block (#49); the north arcade's wider windows between light piers (#49); the Lehman Wing's section at the front, where #60 shows brick up to about 17.5 m, the outer arches' heads under its flat roof and the central arch's lowest stones beside its court's east opening.
 
-The build: each head is two pieces, its light granite and its dark, placed per arch; all the heads arrive in `vaux-openings`, which drops each piece a fixed 3 m in rising courses (by order), so a head's two pieces move as one (reviews 0 to 2); window frames are merged with their bars, so the core area stays within its 130 meshes, at 129.
+The build: each head is two pieces, its light granite and its dark, placed per arch; all the heads arrive in `vaux-openings`, which drops each piece a fixed 2.5 m by order (`vaux.ts` names the groups), so a head's two pieces move as one (reviews 0 to 3); window frames are merged with their bars, so the core area stays within its 130 meshes, at 129.
 
 ## Acceptance criteria
 
@@ -51,7 +51,8 @@ The build: each head is two pieces, its light granite and its dark, placed per a
 - [x] Review 0 (`reviews/0_implementation.md`) of the working tree (`snapshots/0_target.patch.txt`), verify green on it; F0 to F18 dispositioned and repaired.
 - [x] Verify on the repairs (green), commit `2238385`; review 1 (`reviews/1_implementation.md`) of it, F19 to F30 dispositioned and repaired.
 - [x] Verify on round 1's repairs (green), commit `cbc5edd`; review 2 (`reviews/2_implementation.md`) of it, F31 to F35 dispositioned and repaired.
-- [ ] Verify on round 2's repairs, commit, focused review 3, landing, gallery.
+- [x] Verify on round 2's repairs (green, before the commit), commit `be01a26`; review 3 (`reviews/3_implementation.md`) of it, F36 to F40 dispositioned, four repaired.
+- [ ] Verify on round 3's repairs and commit; merge origin/main and verify the merged tree; landing; gallery.
 
 ## Outcome
 
