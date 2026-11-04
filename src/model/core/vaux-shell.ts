@@ -43,6 +43,7 @@ import {
   VAUX_HALL_EAST_Z,
   VAUX_HALL_WALL,
   VAUX_HALL_WEST_Z,
+  VAUX_OCULUS,
   VAUX_OCULUS_Y,
   VAUX_WEST_PAVILION_WALL_Z,
   WEST_WALL,
@@ -235,7 +236,7 @@ export const NAVE_RIDGE_Y = HALL_NAVE_ROOF_EAVES_Y + NAVE_OUTER_X * Math.tan((HA
 /** The hall's end walls (1880) with the nave gables above the roofs, the iron posts and roof trusses of the nave, and the pavilions' main-floor walls. */
 export function vauxHall(kit: Kit): void {
   const lower = openWall({ width: AX1 - AX0, height: ROOF_Y - WALL_BASE_Y, thickness: VAUX_HALL_WALL, holes: END_WALL_HOLES });
-  const upper = openWall({ width: NAVE_GABLE_WIDTH, height: HALL_NAVE_ROOF_EAVES_Y - ROOF_Y, thickness: VAUX_HALL_WALL, holes: [{ head: 'circle', y: VAUX_OCULUS_Y - 1.2 - ROOF_Y, width: 2.4, height: 2.4 }] });
+  const upper = openWall({ width: NAVE_GABLE_WIDTH, height: HALL_NAVE_ROOF_EAVES_Y - ROOF_Y, thickness: VAUX_HALL_WALL, holes: [{ head: 'circle', y: VAUX_OCULUS_Y - VAUX_OCULUS / 2 - ROOF_Y, width: VAUX_OCULUS, height: VAUX_OCULUS }] });
   const gable = gablePrism(NAVE_GABLE_WIDTH, NAVE_RIDGE_Y - HALL_NAVE_ROOF_EAVES_Y, VAUX_HALL_WALL);
   for (const [z, facing, order] of [
     [VAUX_HALL_WEST_Z, FACING.east, 0],

@@ -60,6 +60,10 @@
     {
       "id": 14,
       "theme": "mouse-look"
+    },
+    {
+      "id": 16,
+      "theme": "hall-end-windows"
     }
   ]
 }

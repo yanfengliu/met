@@ -13,7 +13,7 @@ import type { Kit } from '../../build/types.js';
 import { moulding, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { openWall, tympanum, voussoirRing, type Hole } from './arches.js';
-import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, L2, LG, PARAPET_Y, VAUX_ARCH_RISE, VAUX_ARCH_SILL, VAUX_ARCH_SPAN, VAUX_ARCH_SPRING, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
+import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, L2, LG, PARAPET_Y, VAUX_ARCH_RISE, VAUX_ARCH_SILL, VAUX_ARCH_SPAN, VAUX_ARCH_SPRING, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_OCULUS, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, placed } from './shapes.js';
 
@@ -106,7 +106,7 @@ export function westFrontTrim(kit: Kit): void {
 export function westFrontWindows(kit: Kit): void {
   const disc = cylinder(20);
   for (const z of [VAUX_HALL_WEST_Z - VAUX_HALL_WALL / 2, VAUX_HALL_EAST_Z + VAUX_HALL_WALL / 2]) {
-    kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(2.4, 0.03, 2.4)), 20);
+    kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(VAUX_OCULUS, 0.03, VAUX_OCULUS)), 20);
   }
   const main = windowUnit({ width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING - VAUX_ARCH_SILL - VAUX_BAND, cols: 2, rows: 3, frame: 0.09 });
   const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, shape: 'segmental', rise: GROUND_RISE, cols: 2, rows: 3 });

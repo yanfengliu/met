@@ -28,6 +28,7 @@ import {
   SLAB,
   VAUX_HALL_EAST_Z,
   VAUX_HALL_WEST_Z,
+  VAUX_OCULUS,
   VAUX_OCULUS_Y,
 } from './constants.js';
 import { INTERIOR, NAVE_OUTER_X } from './layout.js';
@@ -209,7 +210,7 @@ export function hallClerestoryVault(kit: Kit): void {
 function endWallLinings(kit: Kit): void {
   const t = 0.05;
   const archivolt = voussoirRing({ head: 'round', span: END_DOOR.width, band: 0.5, count: 15, projection: 0.16, parity: 'all' });
-  const upper = openWall({ width: 2 * NAVE_INNER_X, height: HALL_NAVE_ROOF_EAVES_Y - ROOF_Y, thickness: t, holes: [{ head: 'circle', y: VAUX_OCULUS_Y - 1.2 - ROOF_Y, width: 2.4, height: 2.4 }] });
+  const upper = openWall({ width: 2 * NAVE_INNER_X, height: HALL_NAVE_ROOF_EAVES_Y - ROOF_Y, thickness: t, holes: [{ head: 'circle', y: VAUX_OCULUS_Y - VAUX_OCULUS / 2 - ROOF_Y, width: VAUX_OCULUS, height: VAUX_OCULUS }] });
   for (const [z, facing, dir] of [
     [VAUX_HALL_WEST_Z + t, FACING.east, 1],
     [VAUX_HALL_EAST_Z - t, FACING.west, -1],
