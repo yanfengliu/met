@@ -1,6 +1,7 @@
 """The Medieval Sculpture Hall's end windows (met work unit 16): every number in docs/research/interior.md, "End windows, measured", from the
 pixel readings taken on the original photographs at native resolution in a browser (2026-11-04). Python 3, standard library only.
-Run beside p8-balusters.txt (P8's 6,641 baluster centres), or pass its path as the first argument.
+Run beside the readings kept with it: p8-balusters.txt (P8's 6,641 baluster centres), p8-friezes.txt (P8's frieze edges) and
+m29-window-edges.txt (#29's window edges).
 
 Frames. Image rows and columns are pixels of the originals: P8 (Met,_cancellata.JPG, 1944 x 2592) and #29 (MM29152, 3206 x 4000 on Commons).
 Distances are horizontal metres along the hall; heights are metres over the hall floor. Z values are in the world frame of src/model/frame.ts
@@ -12,7 +13,7 @@ import os
 import sys
 
 # The model's choice, from the average at the end (src/model/core/constants.ts VAUX_OCULUS_Y and VAUX_OCULUS; the hall floor is at 4.11).
-MODEL_Y, MODEL_D, L1 = 20.4, 2.25, 4.11
+MODEL_Y, MODEL_D, L1 = 20.3, 2.25, 4.11
 MODEL_H = MODEL_Y - L1
 
 # =====================================================================================================================================
@@ -21,7 +22,8 @@ MODEL_H = MODEL_Y - L1
 Z_PARTITION = -106.12            # the screen's partition line
 Z_SCREEN_FRONT_W = Z_PARTITION - 0.10   # its west face (posts and friezes), toward P8's camera
 Z_SCREEN_FRONT_E = Z_PARTITION + 0.10   # its east face, toward #29's camera
-Z_EAST_WALL = -83.32             # the east wall's line; its inner face there, or up to 0.6 m west if the line is the wall's centre
+Z_EAST_WALL = -83.32             # the east wall's inner face: the backs of its two half-columns (map uid 447599798201 and 800006440452, Z -83.80 to
+                                 # -83.33 and -83.32) stand on it, and the doorway's line at -83.34, as the west half-columns' backs stand on the west wall's face
 Z_EAST_DOOR_W_FACE = -83.32      # the east doorway's west face, the far face from #29's camera (same line)
 Z_WEST_WALL = -117.62            # the west wall's inner face (-117.61 to -117.63, the west doorway's passage giving the faces)
 DOOR = 2.28                      # both end doorways (X -1.13..+1.15 west, -1.12..+1.16 east)
@@ -58,7 +60,7 @@ def vanishing_point(samples, k, yref, cx=P8_CX, cy=P8_CY):
     for i, x, y in samples:
         by.setdefault(i, []).append(undistort(x, y, k, cx, cy))
     lines = []
-    for pts in by.values():
+    for i, pts in by.items():
         if len(pts) < 20:
             continue
         n = len(pts)
@@ -68,7 +70,7 @@ def vanishing_point(samples, k, yref, cx=P8_CX, cy=P8_CY):
         a = (sx - b * sy) / n
         rms = math.sqrt(sum((p[0] - (a + b * (p[1] - yref))) ** 2 for p in pts) / n)
         if rms < 2.5:
-            lines.append((a, b, rms))
+            lines.append((a, b, rms, i))
     m = len(lines)
     sb = sum(l[1] for l in lines); sa = sum(l[0] for l in lines)
     sbb = sum(l[1] ** 2 for l in lines); sab = sum(l[0] * l[1] for l in lines)
@@ -76,7 +78,16 @@ def vanishing_point(samples, k, yref, cx=P8_CX, cy=P8_CY):
     X = (sa - slope * sb) / m
     rms = math.sqrt(sum((l[0] - (X + slope * l[1])) ** 2 for l in lines) / m)
     line_rms = math.sqrt(sum(l[2] ** 2 for l in lines) / m)
-    return X, yref - slope, m, rms, line_rms
+    return X, yref - slope, m, rms, line_rms, [l[3] for l in lines]
+
+
+def vp_jackknife(samples, k, yref):
+    """The vanishing point's row and its standard error over the balusters: refitted leaving out each baluster in turn."""
+    full = vanishing_point(samples, k, yref)
+    vals = [vanishing_point([s for s in samples if s[0] != i], k, yref)[1] for i in full[5]]
+    m = len(vals)
+    mean = sum(vals) / m
+    return full[1], math.sqrt((m - 1) / m * sum((v - mean) ** 2 for v in vals))
 
 
 def refit(path, cx=P8_CX, cy=P8_CY, show=False):
@@ -98,21 +109,110 @@ def refit(path, cx=P8_CX, cy=P8_CY, show=False):
             k = k0 + w * (k1 - k0)
             yv = (u0[1] + w * (u1[1] - u0[1]) + m0[1] + w * (m1[1] - m0[1])) / 2
             xv = (u0[0] + w * (u1[0] - u0[0]) + m0[0] + w * (m1[0] - m0[0])) / 2
-            return k, yv, xv
+            return k, yv, xv, (u0[0] + w * (u1[0] - u0[0])), (m0[0] + w * (m1[0] - m0[0])), (d1 - d0) / (k1 - k0)
     raise ValueError('the two tiers never agree on the grid')
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BAL = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'p8-balusters.txt')
 print('P8 vanishing point, tier by tier:')
-P8_K, P8_YV, P8_XV = refit(BAL, show=True)
-print(f'  the tiers agree at k {P8_K:.2e} per px^2: row {P8_YV:.0f}, x {P8_XV:.0f}')
+P8_K, P8_YV, P8_XV, XU, XM, P8_DROWS = refit(BAL, show=True)
+print(f'  the rows of the two tiers agree at k {P8_K:.2e} per px^2: row {P8_YV:.0f}; their columns there {XU:.1f} (upper) and {XM:.1f} (middle), '
+      f'{abs(XU - XM):.1f} px apart, averaged to {P8_XV:.0f}')
+VP_CENTRE = 0.0
 for dc in ((30, 0), (-30, 0), (0, 30), (0, -30)):
-    k_, yv_, xv_ = refit(BAL, P8_CX + dc[0], P8_CY + dc[1])
+    k_, yv_, xv_, *_ = refit(BAL, P8_CX + dc[0], P8_CY + dc[1])
+    VP_CENTRE = max(VP_CENTRE, abs(yv_ - P8_YV))
     print(f'  distortion centre moved {dc}: k {k_:.2e}, row {yv_:.0f}')
+_tiers = load_balusters(BAL)
+_, SE_U = vp_jackknife(_tiers['U'], P8_K, 820)
+_, SE_M = vp_jackknife(_tiers['M'], P8_K, 1350)
+SE_K = math.hypot(SE_U, SE_M) / abs(P8_DROWS)       # the tiers' rows part at P8_DROWS rows per unit of k where they cross
+print(f'  standard errors over the balusters (jackknife): upper tier {SE_U:.0f} rows, middle tier {SE_M:.0f} rows; '
+      f'so the distortion where they agree carries {SE_K:.2e}')
+
+
+# ---- The friezes' edges: straight lines in the hall, so straight once the distortion is undone -------------------------------------------
+def load_friezes(path):
+    edges = {}
+    for line in open(path, encoding='utf-8'):
+        if not line.strip() or line.startswith('#'):
+            continue
+        name, x, y = line.split()
+        edges.setdefault(name, []).append((float(x), float(y)))
+    return edges
+
+
+def line_fit(pts):
+    n = len(pts)
+    sx = sum(p[0] for p in pts); sy = sum(p[1] for p in pts)
+    sxx = sum(p[0] ** 2 for p in pts); sxy = sum(p[0] * p[1] for p in pts)
+    b = (n * sxy - sx * sy) / (n * sxx - sx * sx)
+    a = (sy - b * sx) / n
+    return a, b, [p[1] - (a + b * p[0]) for p in pts]
+
+
+def straight_edges(edges, k_select=2.0e-8):
+    """Drop each edge's outliers (a baluster's or an ornament's edge read instead) by iterated 3-sigma clipping, at least 1 px, at k_select;
+    then find the distortion that makes the kept readings straightest, all edges together and edge by edge, with the joint value's standard error."""
+    kept = {}
+    for name, pts in edges.items():
+        idx = list(range(len(pts)))
+        for _ in range(10):
+            _, _, res = line_fit([undistort(pts[i][0], pts[i][1], k_select) for i in idx])
+            rms = math.sqrt(sum(r * r for r in res) / len(res))
+            new = [i for i, r in zip(idx, res) if abs(r) < max(3 * rms, 1.0)]
+            if new == idx:
+                break
+            idx = new
+        kept[name] = [pts[i] for i in idx]
+    cost = (lambda pts, k: sum(r * r for r in line_fit([undistort(x, y, k) for x, y in pts])[2]))
+    grid = [j * 0.1e-8 for j in range(0, 61)]
+
+    def best(f, n_points, n_params):
+        """The minimum of f over the grid, refined by the parabola through its three lowest points, and its standard error from the
+        parabola's curvature and the residual variance (n_points readings, n_params fitted)."""
+        j = min(range(1, len(grid) - 1), key=lambda i: f(grid[i]))
+        c0, c1, c2, h = f(grid[j - 1]), f(grid[j]), f(grid[j + 1]), grid[1]
+        k = grid[j] + h * (c0 - c2) / (2 * (c0 - 2 * c1 + c2))
+        s2 = f(k) / (n_points - n_params)
+        return k, math.sqrt(2 * s2 / ((c0 - 2 * c1 + c2) / h ** 2))
+    n = sum(len(p) for p in kept.values())
+    k_joint, se = best(lambda k: sum(cost(p, k) for p in kept.values()), n, 2 * len(kept) + 1)   # two parameters per edge, and the distortion
+    each = {name: best(lambda k, p=p: cost(p, k), len(p), 3) for name, p in kept.items()}
+    rms = {name: math.sqrt(cost(p, k_joint) / len(p)) for name, p in kept.items()}
+    rms0 = {name: math.sqrt(cost(p, 0.0) / len(p)) for name, p in kept.items()}
+    return k_joint, se, each, rms, rms0, {name: (len(kept[name]), len(edges[name])) for name in edges}
+
+
+FRZ = os.path.join(HERE, 'p8-friezes.txt')
+K_FRIEZE, SE_KF, K_EACH, RMS_F, RMS_F0, N_F = straight_edges(load_friezes(FRZ))
+print(f'P8 friezes: {sum(v[0] for v in N_F.values())} of {sum(v[1] for v in N_F.values())} edge readings kept; straightest at k {K_FRIEZE:.2e} '
+      f'(standard error {SE_KF:.1e}); edge by edge {", ".join(f"{n} {K_EACH[n][0]:.2e} ({K_EACH[n][1]:.1e})" for n in K_EACH)}')
+print('  rms about each edge\'s line, distortion undone: ' + ', '.join(f'{n} {RMS_F[n]:.2f} px (as found {RMS_F0[n]:.2f})' for n in RMS_F))
+YV_U_F, YV_M_F = vanishing_point(_tiers['U'], K_FRIEZE, 820)[1], vanishing_point(_tiers['M'], K_FRIEZE, 1350)[1]
+print(f'  at the friezes\' distortion the tiers\' vanishing points stand at rows {YV_U_F:.0f} (upper) and {YV_M_F:.0f} (middle)')
+# The sweep's distortion: the friezes' value, the tiers' and the tiers' plus two of its standard errors. Its vanishing point follows the middle
+# tier, which straddles the frame's centre and so depends least on the distortion, and moves two of the larger tier's standard errors plus
+# the most a 30-row move of the distortion's centre moves it.
+K_SWEEP = [K_FRIEZE, P8_K, P8_K + 2 * SE_K]
+YV_AT = {K_FRIEZE: YV_M_F, P8_K: P8_YV, K_SWEEP[2]: vanishing_point(_tiers['M'], K_SWEEP[2], 1350)[1]}
+VP_HALF = 2 * max(SE_U, SE_M) + VP_CENTRE
+print(f'  the sweep: distortion {", ".join(f"{k:.2e}" for k in K_SWEEP)}, vanishing point {", ".join(f"{YV_AT[k]:.0f}" for k in K_SWEEP)} '
+      f'each +-{VP_HALF:.0f} rows (2 x {max(SE_U, SE_M):.0f} + {VP_CENTRE:.0f})')
 
 # The friezes' edges on the centre column (rows, as found) and their heights as #29 gives them (work unit 4).
 FRIEZES = [(653.42, 10.59), (994.67, 8.38), (1112.68, 7.71), (1602.94, 5.09)]
+# Cross-check: the same edges from the kept readings, a line through those within 150 px of the centre column (residuals over 1.5 px dropped).
+_edges = load_friezes(FRZ)
+FRIEZES_KEPT = []
+for (_, h_), name in zip(FRIEZES, ('topFriezeBottom', 'midFriezeTop', 'midFriezeBottom', 'lowFriezeTop')):
+    near = [(x, y) for x, y in _edges[name] if abs(x - P8_CX) <= 150]
+    _, _, res = line_fit(near)
+    a_, b_, _ = line_fit([p for p, r in zip(near, res) if abs(r) < 1.5])
+    FRIEZES_KEPT.append((a_ + b_ * P8_CX, h_))
+print('P8 friezes on the centre column: read there at rows ' + ', '.join(f'{v:.1f}' for v, _ in FRIEZES) +
+      '; the kept edge readings put them at ' + ', '.join(f'{v:.1f}' for v, _ in FRIEZES_KEPT))
 # The east window: the surround's top and bottom (rows 1,133.2 and 1,356 at x 987) and about 220 px across where its edge is soft;
 # the glazing's iron frame, to its outer edge: rows 1,183 to 1,324 and 148 px across at row 1,254.6.
 RING_TOP, RING_BOT, RING_W = 1133.2, 1356.0, 220.0
@@ -169,9 +269,9 @@ assert vertical_check(unroll) < 1e-9, 'level() does not keep a vertical line ver
 assert vertical_check(unroll_old) > 1e-3, 'the check would pass the reversed rotation too'
 
 
-def fit_screen(f=P8_F, yv=None, k=None, cy=P8_CY, scale=1.0):
+def fit_screen(f=P8_F, yv=None, k=None, cy=P8_CY, scale=1.0, friezes=FRIEZES):
     """The friezes' heights (times the screen's scale factor) against their tangents: h = eye + distance * t."""
-    pts = [(t_centre(v, f, yv, k, cy), h * scale) for v, h in FRIEZES]
+    pts = [(t_centre(v, f, yv, k, cy), h * scale) for v, h in friezes]
     n = len(pts)
     st = sum(p[0] for p in pts); sh = sum(p[1] for p in pts)
     stt = sum(p[0] ** 2 for p in pts); sth = sum(p[0] * p[1] for p in pts)
@@ -181,10 +281,10 @@ def fit_screen(f=P8_F, yv=None, k=None, cy=P8_CY, scale=1.0):
     return ds, hc, rms
 
 
-def p8(f=P8_F, yv=None, k=None, D=D_SCREEN_EAST, cy=P8_CY, scale=1.0, setback=0.37):
+def p8(f=P8_F, yv=None, k=None, D=D_SCREEN_EAST, cy=P8_CY, scale=1.0, setback=0.37, friezes=FRIEZES):
     yv = P8_YV if yv is None else yv
     k = P8_K if k is None else k
-    ds, hc, rms = fit_screen(f, yv, k, cy, scale)
+    ds, hc, rms = fit_screen(f, yv, k, cy, scale, friezes)
     dw = ds + D
     t_top, t_bot = t_centre(RING_TOP, f, yv, k, cy), t_centre(RING_BOT, f, yv, k, cy)
     ring_centre = hc + dw * (t_top + t_bot) / 2
@@ -212,29 +312,42 @@ def p8_setback():
 
 nom = p8()
 print('P8 nominal:', {k: round(v, 3) for k, v in nom.items()}, 'set-back', round(p8_setback(), 2))
+_kept = p8(friezes=FRIEZES_KEPT)
+print(f'  with the friezes\' rows from the kept readings instead: distance {_kept["ds"]:.3f} m, eye {_kept["hc"]:.3f} m, centre {_kept["ring_centre"]:.3f} m')
 print('P8 camera Z with the screen at the map place:', round(Z_SCREEN_FRONT_W - nom['ds'], 2), '; at the model place (-99.4):', round(-99.4 - 0.10 - nom['ds'], 2))
-# The sweep: focal length +-1 %; vanishing point +-175 rows; distortion 1.5e-8 to 3.0e-8 (the friezes' bow and the tiers' agreement);
-# the east wall's inner face from the map's line to a full wall (1.1 m) west of it, the screen's face +-0.1 m; principal point +-30 rows;
-# the screen's scale +-1 % (the same calibration #29 carries).
-WALL_FACES = [-1.2, -0.55, 0.0, 0.1]
+# The sweep: focal length +-1 %; the distortion and its vanishing point as above; the east wall's and the screen's faces together +-0.1 m
+# about the map's lines; principal point +-30 rows; the screen's scale +-1 % (the same calibration #29 carries).
+WALL_FACES = [-0.1, 0.0, 0.1]
+P8_CASES = {
+    'focal length': [dict(f=f) for f in (2670, 2730)],
+    'distortion, its vanishing point following': [dict(k=k, yv=YV_AT[k]) for k in K_SWEEP],
+    'vanishing point': [dict(yv=P8_YV + d) for d in (-VP_HALF, VP_HALF)],
+    'wall and screen faces': [dict(D=D_SCREEN_EAST + d) for d in WALL_FACES],
+    'principal point': [dict(cy=cy) for cy in (1266, 1326)],
+    'screen scale': [dict(scale=s) for s in (0.99, 1.01)],
+}
 sweep = []
-for f, dyv, k_, dD, cy, sc in itertools.product([2670, 2700, 2730], [-175, 0, 175], [1.5e-8, P8_K, 3.0e-8], WALL_FACES, [1266, 1296, 1326], [0.99, 1.0, 1.01]):
-    sweep.append(p8(f, P8_YV + dyv, k_, D_SCREEN_EAST + dD, cy, sc))
+for f, k_, dyv, dD, cy, sc in itertools.product([2670, 2700, 2730], K_SWEEP, [-VP_HALF, 0, VP_HALF], WALL_FACES, [1266, 1296, 1326], [0.99, 1.0, 1.01]):
+    sweep.append(p8(f, YV_AT[k_] + dyv, k_, D_SCREEN_EAST + dD, cy, sc))
 P8_RANGES = {key: (min(r[key] for r in sweep), max(r[key] for r in sweep)) for key in ['ring_centre', 'glaz_v', 'glaz_h', 'ring_v', 'ring_h', 'hc', 'ds', 'pitch']}
 for key, (lo, hi) in P8_RANGES.items():
     print(f'  P8 {key}: {lo:.2f} .. {hi:.2f}')
+print('  P8 centre, one input at a time: ' + '; '.join(
+    f'{name} {min(p8(**c)["ring_centre"] for c in cases):.2f} .. {max(p8(**c)["ring_centre"] for c in cases):.2f}' for name, cases in P8_CASES.items()))
 
 # Check of the pitch: a man walking at the far end, read by eye at column 705, head row 2,349, legs cut off at row 2,496.
-# The screen's base hides his feet: its coping (0.98 m) crosses his column at about the same row, so his distance is only bounded.
+# Something 0.98 m high on the screen hides his feet, so his distance is only bounded. #29 shows what stands there: the base's die and coping
+# stop 1.22 m from the gate's centre, and inside them the gate's iron jamb, its inner face 1.03 m out, rises to the coping's level.
 t_cop = (0.98 - nom['hc']) / nom['ds']
-print('P8 man: the base\'s coping at his column falls at row %.0f (his legs end at 2,496)' % next(
-    v / 10 for v in range(23000, 26000) if level(705, v / 10)[1] <= t_cop))
+row_cop = next(v / 10 for v in range(23000, 26000) if level(705, v / 10)[1] <= t_cop)
+print('P8 man: 0.98 m on the screen falls at row %.0f in his column (his legs end at 2,496), %.2f m north of the camera\'s line' % (
+    row_cop, -level(705, row_cop)[0] * nom['ds']))
 s_f, t_f = level(705, 2496)
 print(f'  his distance is at most {-nom["hc"] / t_f:.1f} m')
-for dyv in (-225, 0, 225):
+for dyv in (-VP_HALF, 0, VP_HALF):
     ds_, hc_, _ = fit_screen(yv=P8_YV + dyv)
     th_ = level(705, 2349, yv=P8_YV + dyv)[1]
-    print(f'  vanishing point {dyv:+d} rows (pitch {math.degrees(pitch(P8_F, P8_YV + dyv, P8_CY)):.2f}): his head {hc_ + 20 * th_:.2f} to {hc_ + 32 * th_:.2f} m up at 20 to 32 m')
+    print(f'  vanishing point {dyv:+.0f} rows (pitch {math.degrees(pitch(P8_F, P8_YV + dyv, P8_CY)):.2f}): his head {hc_ + 20 * th_:.2f} to {hc_ + 32 * th_:.2f} m up at 20 to 32 m')
 
 # Check of the camera's place along the hall: three features of the north arcade, read by eye on enhanced crops (+-10 px).
 ARCADE = [(120, 1810), (311, 1904), (427, 1981)]
@@ -253,40 +366,10 @@ def arcade(pts):
 d_arc, h_arc, X_arc = arcade(ARCADE)
 print('P8 arcade features: distances', [round(d, 2) for d in d_arc], 'heights', [round(h, 2) for h in h_arc], 'plane X', round(X_arc, 2),
       '; pier lines from the map place camera:', [round(z - (Z_SCREEN_FRONT_W - nom['ds']), 2) for z in (-100.47, -94.82, -89.16)])
-third = [arcade([(u + du, v) for (u, v), du in zip(ARCADE, dus)])[0][2] for dus in itertools.product((-10, 0, 10), repeat=3)]
+third = [arcade([(u + du, v + dv) for (u, v), (du, dv) in zip(ARCADE, ds6)])[0][2] for ds6 in itertools.product(itertools.product((-10, 0, 10), repeat=2), repeat=3)]
 walls = [r['ds'] + (Z_EAST_WALL - (-99.4 - 0.10)) for r in sweep]
-print(f'  third feature over +-10 px: {min(third):.2f} .. {max(third):.2f} m; east wall from this camera with the model screen place: '
-      f'{nom["ds"] + (Z_EAST_WALL - (-99.4 - 0.10)):.2f} m ({min(walls) - 1.2:.2f} .. {max(walls):.2f} over the sweep and the wall\'s face): it does not decide')
-
-# =====================================================================================================================================
-# #29: a view camera, nearly level, its view shifted up. Work unit 4 measured the screen's 2,790 px from floor (row 3,452) to cross (row 662)
-# on the axis and a horizontal scale that grows 0.8 % for every 1,000 px down the image, its vertical vanishing point about 125,000 px above.
-# Heights on the screen's plane then follow the 1D projective map h(y) = A (1/(y - yv) - 1/(3452 - yv)); the horizontal scale is
-# proportional to (y - yv). The Met gives the screen's size rounded to the foot, so its scale carries about 1 %.
-# =====================================================================================================================================
-YV29 = 2057.0 - 1000.0 / 0.008     # the vertical vanishing point's row, from the 0.8 % per 1,000 px gradient about row 2,057
-Y_FLOOR, Y_CROSS = 3452.0, 662.0
-
-
-def h_screen(y, scale=1.0):
-    A = 15.85 * scale / (1 / (Y_CROSS - YV29) - 1 / (Y_FLOOR - YV29))
-    return A * (1 / (y - YV29) - 1 / (Y_FLOOR - YV29))
-
-
-def sy_at(y, scale=1.0):
-    """Vertical scale, px per metre on the screen's plane, at row y."""
-    A = 15.85 * scale / (1 / (Y_CROSS - YV29) - 1 / (Y_FLOOR - YV29))
-    return (y - YV29) ** 2 / A
-
-
-def sx_at(y, scale=1.0):
-    """Horizontal scale, px per metre on the screen's plane: proportional to (y - yv), equal to the vertical scale at the screen's mid-height."""
-    ym = (Y_FLOOR + Y_CROSS) / 2
-    return sy_at(ym, scale) * (y - YV29) / (ym - YV29)
-
-
-FRAME_W = 2670.0          # the east doorway's intrados: jambs at x 249 and 2,919 (rows 2,100-3,300), crown at row 382
-
+print(f'  third feature over +-10 px in both coordinates: {min(third):.2f} .. {max(third):.2f} m; east wall from this camera with the model screen place: '
+      f'{nom["ds"] + (Z_EAST_WALL - (-99.4 - 0.10)):.2f} m ({min(walls) - 0.1:.2f} .. {max(walls) + 0.1:.2f} over the sweep and the faces): it does not decide')
 
 def circle_fit(pts):
     """Algebraic (Kasa) circle fit: centre x, centre y, radius, rms of the radial residuals, residuals."""
@@ -335,45 +418,117 @@ EDGES = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, 'm29-window-edg
 RING, FRAME = window_circles(EDGES)
 
 
-def m29(door=DOOR, d_es=D_EAST_TO_SCREEN, d_sw=D_SCREEN_TO_WEST, base_off=0.15, thr=3299.0, base=3452.5, scale=1.0):
-    s_frame = sx_at(2700, scale)                  # the framing doorway is read about row 2,700
-    d_east = s_frame * d_es / (FRAME_W / door - s_frame)    # FRAME_W = f door / d_east, with f = s ds and ds = d_east + d_es
-    ds = d_east + d_es
-    f = s_frame * ds
+# =====================================================================================================================================
+# #29: a view camera, nearly level, its view shifted up, solved as one pinhole camera. Unknowns: its focal length f, its tilt theta, the
+# principal point's row y0, its eye height hc and its distance to the east doorway's west face. Conditions:
+#   the cross's tip, 15.85 m up on the screen's plane, at row 662 (work unit 4);
+#   the floor meeting the screen's base, base_off nearer than the screen's plane, at row 3,452.5;
+#   the west doorway's threshold, on the floor at the west wall, at row 3,299;
+#   the vertical vanishing point at row YV29, from the 0.8 % per 1,000 px growth of the balusters' spacing (work unit 4);
+#   the east doorway, door metres wide on the map, 2,670 px across at row 2,700.
+# A row y sees along the elevation alpha(y) = theta + atan((y0 - y) / f); a point at height h and horizontal distance d lands at the row where
+# tan alpha = (h - hc) / d, and its horizontal scale there is f / z, z = d cos(alpha - theta) / cos(alpha).
+# =====================================================================================================================================
+YV29 = 2057.0 - 1000.0 / 0.008     # -122,943: the vertical vanishing point's row
+Y_CROSS, Y_BASE = 662.0, 3452.5
+FRAME_W, FRAME_ROW = 2670.0, 2700.0
+
+
+def alpha(y, f, y0):
+    """Elevation of the ray through row y: the tilt follows from the vanishing point, tan(theta) = f / (y0 - YV29)."""
+    th = math.atan(f / (y0 - YV29))
+    return th + math.atan((y0 - y) / f)
+
+
+def tilt(f, y0):
+    return math.atan(f / (y0 - YV29))
+
+
+def m29_solve(door=DOOR, d_es=D_EAST_TO_SCREEN, d_sw=D_SCREEN_TO_WEST, base_off=0.15, thr=3299.0, scale=1.0):
+    """Solve (f, y0) by Newton's method on the cross and the framing doorway; the tilt follows from the vanishing point, the rest in closed form."""
+    def rest(f, y0):
+        th = tilt(f, y0)
+        tb, tt = math.tan(alpha(Y_BASE, f, y0)), math.tan(alpha(thr, f, y0))
+        ds = (d_sw * tt + base_off * tb) / (tb - tt)       # (ds - base_off) tan(a_base) = (ds + d_sw) tan(a_thr): both rays meet the floor
+        hc = -(ds - base_off) * tb
+        de = ds - d_es
+        ae = alpha(FRAME_ROW, f, y0)
+        r1 = math.tan(alpha(Y_CROSS, f, y0)) - (15.85 * scale - hc) / ds
+        r2 = (FRAME_W - f * door * math.cos(ae) / (de * math.cos(ae - th))) / FRAME_W
+        return r1, r2, ds, hc, de
+    f, y0 = 4730.0, 2760.0
+    for _ in range(200):
+        r1, r2, *_ = rest(f, y0)
+        h = 0.5
+        a1, a2, *_ = rest(f + h, y0)
+        b1, b2, *_ = rest(f, y0 + h)
+        j11, j12, j21, j22 = (a1 - r1) / h, (b1 - r1) / h, (a2 - r2) / h, (b2 - r2) / h
+        det = j11 * j22 - j12 * j21
+        df = (r1 * j22 - r2 * j12) / det
+        dy = (j11 * r2 - j21 * r1) / det
+        step, nf, ny = 1.0, f, y0
+        while step > 1e-3:                                # damped: never step to a worse pair
+            nf, ny = f - step * df, y0 - step * dy
+            try:
+                n1, n2, *_ = rest(nf, ny)
+                if n1 * n1 + n2 * n2 < r1 * r1 + r2 * r2:
+                    break
+            except (ValueError, ZeroDivisionError):
+                pass
+            step /= 2
+        f, y0 = nf, ny
+        if abs(step * df) < 1e-6 and abs(step * dy) < 1e-6:
+            break
+    r1, r2, ds, hc, de = rest(f, y0)
+    assert abs(r1) < 1e-10 and abs(r2) < 1e-10, ('the #29 camera did not solve', r1, r2)
+    return f, y0, ds, hc, de
+
+
+def m29(door=DOOR, d_es=D_EAST_TO_SCREEN, d_sw=D_SCREEN_TO_WEST, base_off=0.15, thr=3299.0, scale=1.0):
+    f, y0, ds, hc, de = m29_solve(door, d_es, d_sw, base_off, thr, scale)
+    th = tilt(f, y0)
     dw = ds + d_sw
-    r = dw / ds
-    # The base row (where the floor meets the base's front face, base_off nearer than the screen's plane) stands at
-    # delta = -hc base_off / (ds - base_off) on the screen's plane; heights read from that row are shifted by delta.
-    h_thr = h_screen(thr, scale) - h_screen(base, scale)
-    hc, delta = 2.8, 0.0
-    for _ in range(50):
-        delta = -hc * base_off / (ds - base_off)
-        hc = (h_thr + delta) * dw / (dw - ds)      # the ray through the threshold's row meets the floor at dw
-    ring_c = h_screen(RING[1], scale) - h_screen(base, scale) + delta
-    hw = hc + (ring_c - hc) * r
-    ring_v = (h_screen(RING[1] - RING[2], scale) - h_screen(RING[1] + RING[2], scale)) * r
-    ring_h = 2 * RING[2] / sx_at(RING[1], scale) * r
-    frame_c = h_screen(FRAME[1], scale) - h_screen(base, scale) + delta
-    setback = (hw - hc) / (frame_c - hc) * ds - dw
-    rg = (dw + setback) / ds
-    gl_out = 2 * FRAME[4] / sx_at(FRAME[1], scale) * rg
-    gl_in = 2 * FRAME[3] / sx_at(FRAME[1], scale) * rg
-    west_near = f * door / dw
-    west_far = f * door / (dw + 1.15)
-    return dict(d_east=d_east, ds=ds, f=f, dw=dw, r=r, hc=hc, ring_c_app=ring_c, hw=hw, ring_v=ring_v, ring_h=ring_h, gl_out=gl_out, gl_in=gl_in,
-                setback=setback, west_near_px=west_near, west_far_px=west_far, cam_z=Z_EAST_DOOR_W_FACE + d_east)
+    height = (lambda y, d: hc + d * math.tan(alpha(y, f, y0)))
+    across = (lambda px, y, d: px * d * math.cos(alpha(y, f, y0) - th) / math.cos(alpha(y, f, y0)) / f)
+    hw = height(RING[1], dw)
+    ring_v = height(RING[1] - RING[2], dw) - height(RING[1] + RING[2], dw)
+    ring_h = across(2 * RING[2], RING[1], dw)
+    # The glazing's set-back: where the frame's centre stands as high as the surround's.
+    tf = math.tan(alpha(FRAME[1], f, y0))
+    dg = (hw - hc) / tf
+    setback = dg - dw
+    gl_out = across(2 * FRAME[4], FRAME[1], dg)
+    gl_in = across(2 * FRAME[3], FRAME[1], dg)
+    gl_v = height(FRAME[1] - FRAME[4], dg) - height(FRAME[1] + FRAME[4], dg)
+    a_thr = alpha(3150, f, y0)
+    west_near = f * door * math.cos(a_thr) / (dw * math.cos(a_thr - th))
+    west_far = f * door * math.cos(a_thr) / ((dw + 1.15) * math.cos(a_thr - th))
+    cross_check = height(Y_CROSS, ds)
+    return dict(f=f, tilt=math.degrees(th), y0=y0, d_east=de, ds=ds, dw=dw, hc=hc, hw=hw, ring_v=ring_v, ring_h=ring_h,
+                gl_out=gl_out, gl_in=gl_in, gl_v=gl_v, setback=setback, west_near_px=west_near, west_far_px=west_far, cross=cross_check,
+                cam_z=Z_EAST_DOOR_W_FACE + de)
 
 
 n29 = m29()
 print('#29 nominal:', {k: round(v, 3) for k, v in n29.items()})
-# The sweep: the doorways' width +-10 %; the east doorway's west face from the map's line to a full wall west of it, the screen's face
-# +-0.1 m; the west wall's face +-0.15 m from the screen's; the base's projection 0 to 0.3 m; the threshold +-3 px; the screen's scale +-1 %.
-sweep29 = [m29(dw_, D_EAST_TO_SCREEN + dD, dsw, bo, thr, 3452.5, sc) for dw_, dD, dsw, bo, thr, sc in itertools.product(
+# The sweep: the doorways' width +-10 %; the east doorway's and the screen's faces together +-0.1 m about the map's lines; the west wall's
+# face +-0.15 m from the screen's; the base's projection 0 to 0.3 m; the threshold +-3 px; the screen's scale +-1 %.
+M29_CASES = {
+    'doorway width': [dict(door=DOOR * s) for s in (0.9, 1.1)],
+    'east doorway and screen faces': [dict(d_es=D_EAST_TO_SCREEN + d) for d in WALL_FACES],
+    'west wall face': [dict(d_sw=D_SCREEN_TO_WEST + d) for d in (-0.15, 0.15)],
+    'base projection': [dict(base_off=b) for b in (0.0, 0.3)],
+    'threshold': [dict(thr=t) for t in (3296, 3302)],
+    'screen scale': [dict(scale=s) for s in (0.99, 1.01)],
+}
+sweep29 = [m29(dw_, D_EAST_TO_SCREEN + dD, dsw, bo, thr, sc) for dw_, dD, dsw, bo, thr, sc in itertools.product(
     [DOOR * 0.9, DOOR, DOOR * 1.1], WALL_FACES, [D_SCREEN_TO_WEST - 0.15, D_SCREEN_TO_WEST, D_SCREEN_TO_WEST + 0.15],
     [0.0, 0.15, 0.3], [3296, 3299, 3302], [0.99, 1.0, 1.01])]
-M29_RANGES = {key: (min(r[key] for r in sweep29), max(r[key] for r in sweep29)) for key in ['hw', 'ds', 'hc', 'r', 'ring_v', 'ring_h', 'gl_out', 'setback']}
+M29_RANGES = {key: (min(r[key] for r in sweep29), max(r[key] for r in sweep29)) for key in ['hw', 'ds', 'hc', 'tilt', 'ring_v', 'ring_h', 'gl_out', 'setback']}
 for key, (lo, hi) in M29_RANGES.items():
     print(f'  #29 {key}: {lo:.2f} .. {hi:.2f}')
+print('  #29 centre, one input at a time: ' + '; '.join(
+    f'{name} {min(m29(**c)["hw"] for c in cases):.2f} .. {max(m29(**c)["hw"] for c in cases):.2f}' for name, cases in M29_CASES.items()))
 
 # =====================================================================================================================================
 # The screen's place: the two windows at the map's place and at the model's (SCREEN_Z -99.4).
@@ -383,24 +538,34 @@ east_model = nom['hc'] + (nom['ring_centre'] - nom['hc']) * (nom['ds'] + (Z_EAST
 print('screen at the map place: east window %.2f m, west window %.2f m' % (nom['ring_centre'], n29['hw']))
 print('screen at the model place: east window %.2f m, west window %.2f m; #29 west doorway %.0f to %.0f px' % (
     east_model, model29['hw'], model29['west_far_px'], model29['west_near_px']))
-ratio = FRAME_W / 281.0
-d_east_free = (Z_EAST_DOOR_W_FACE - Z_WEST_WALL) / (ratio - 1)
+# The west doorway's own edges: the dark lines where its jambs meet the opening (m29-west-doorway.txt), and the pilasters' edges outside them.
+DOORWAY = [[float(v) for v in line.split()[1:]] for line in open(os.path.join(HERE, 'm29-west-doorway.txt'), encoding='utf-8') if line.startswith('D ')]
+W_IN = [r[2] - r[1] for r in DOORWAY]
+W_OUT = [r[4] - r[3] for r in DOORWAY]
+WEST_DOOR_PX = sum(W_IN) / len(W_IN)
+print('#29 west doorway: %.1f px between its jambs\' inner edges (%.1f to %.1f over %d bands of rows), %.1f px between the pilasters\' edges; '
+      'predicted at the map place %.0f (far face) to %.0f (near face)' % (WEST_DOOR_PX, min(W_IN), max(W_IN), len(W_IN), sum(W_OUT) / len(W_OUT),
+                                                                         n29['west_far_px'], n29['west_near_px']))
 for name, zs in (('map', Z_PARTITION), ('model', -99.4)):
-    ds_free = d_east_free + Z_EAST_DOOR_W_FACE - (zs + 0.10)
-    w_free = FRAME_W * d_east_free / (sx_at(2700) * ds_free)
-    hw_free = m29(door=w_free, d_es=Z_EAST_DOOR_W_FACE - (zs + 0.10), d_sw=(zs + 0.10) - Z_WEST_WALL)['hw']
-    print(f'  #29 with the doorways\' width left free, screen at the {name} place: camera {d_east_free:.2f} m east of the east doorway, doorways {w_free:.2f} m, west window {hw_free:.2f} m')
+    # The doorways' width left free: the width at which the west doorway's near face reads WEST_DOOR_PX, at this screen place.
+    d_es_, d_sw_ = Z_EAST_DOOR_W_FACE - (zs + 0.10), (zs + 0.10) - Z_WEST_WALL
+    lo, hi = 1.5, 4.5
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if m29(door=mid, d_es=d_es_, d_sw=d_sw_)['west_near_px'] < WEST_DOOR_PX else (lo, mid)
+    r_ = m29(door=(lo + hi) / 2, d_es=d_es_, d_sw=d_sw_)
+    print('  #29 with the doorways width left free, screen at the %s place: camera %.2f m east of the east doorway, doorways %.2f m, west window %.2f m' % (name, r_['d_east'], (lo + hi) / 2, r_['hw']))
 
 # =====================================================================================================================================
-# The model's height and opening: the two readings averaged with weights from the halves of their ranges. The ranges are bounds over each
-# photograph's inputs, not independent errors, and both rest on the map and on one screen scale, so the average carries no error of its own
-# beyond lying inside both ranges.
+# The model's height and opening: the two nominal readings averaged with weights the inverse squares of their ranges' halves. The ranges are
+# bounds over each photograph's inputs, not independent errors, and both rest on the map and on one screen scale, so the average carries no
+# error of its own beyond lying inside both ranges. The model takes the average rounded to 0.1 m in the world frame (the opening to 0.05 m).
 # =====================================================================================================================================
 hp = (P8_RANGES['ring_centre'][1] - P8_RANGES['ring_centre'][0]) / 2
 h29 = (M29_RANGES['hw'][1] - M29_RANGES['hw'][0]) / 2
 centre = (nom['ring_centre'] / hp ** 2 + n29['hw'] / h29 ** 2) / (1 / hp ** 2 + 1 / h29 ** 2)   # weights: inverse squares of the half-ranges
-print('centre: P8 %.2f (half-range %.2f), #29 %.2f (half-range %.2f), weighted %.2f m over the floor, world %.2f; the model takes %.2f (world %.1f)' % (
-    nom['ring_centre'], hp, n29['hw'], h29, centre, L1 + centre, MODEL_H, MODEL_Y))
+print('centre: P8 %.2f (%.2f to %.2f), #29 %.2f (%.2f to %.2f), weighted by inverse squared half-ranges (%.2f, %.2f) %.2f m over the floor, world %.2f; the model takes %.2f (world %.1f)' % (
+    nom['ring_centre'], *P8_RANGES['ring_centre'], n29['hw'], *M29_RANGES['hw'], hp, h29, centre, L1 + centre, MODEL_H, MODEL_Y))
 print('  overlap of the two ranges: %.2f .. %.2f' % (max(P8_RANGES['ring_centre'][0], M29_RANGES['hw'][0]), min(P8_RANGES['ring_centre'][1], M29_RANGES['hw'][1])))
 g8 = (nom['glaz_v'] + nom['glaz_h']) / 2
 g8h = (max(P8_RANGES['glaz_v'][1], P8_RANGES['glaz_h'][1]) - min(P8_RANGES['glaz_v'][0], P8_RANGES['glaz_h'][0])) / 2
@@ -413,44 +578,33 @@ print('glazing: P8 %.2f (half-range %.2f), #29 %.2f (half-range %.2f), weighted 
 cam_model = -99.4 - 0.10 - nom['ds']
 for hw in (MODEL_H, 17.29):
     t = (hw - nom['hc']) / nom['dw']
-    pre = 1.6 + (hw - 1.6) * (112.9 - 99.4) / (112.9 - 83.32)
+    pre = 1.6 + (hw - 1.6) * (112.9 - 99.5) / (112.9 - 83.32)       # onto the model screen's west face, Z -99.5
     alt = nom['hc'] + (hw - nom['hc']) * nom['ds'] / (Z_EAST_WALL - cam_model)
     print('  window at %.2f m: from P8\'s camera on the screen plane %.2f m; from the preset %.2f m; from P8\'s camera at the model place (Z %.2f) %.2f m' % (
         hw, nom['hc'] + t * nom['ds'], pre, cam_model, alt))
 print('  P8 reading on the screen plane: %.2f m' % (nom['hc'] + nom['ds'] * (t_centre(RING_TOP) + t_centre(RING_BOT)) / 2))
 
-# Inputs held at one value in the nominal readings, and where they move the two centres and their average.
-# dD: the east wall's inner face moved along the hall (west -); dS: the screen moved along the hall (east +).
-def both(k=None, yv=None, dD=0.0, dS=0.0):
-    a = p8(k=k, yv=yv, D=D_SCREEN_EAST + dD - dS)
-    b = m29(d_es=D_EAST_TO_SCREEN + dD - dS, d_sw=D_SCREEN_TO_WEST + dS)
+# Alternatives the nominal readings do not take, and where they move the two centres and their average (dS: the screen moved along the
+# hall, east +, which the map does not support beyond its faces' 0.1 m).
+def both(k=None, yv=None, dS=0.0):
+    a = p8(k=k, yv=yv, D=D_SCREEN_EAST - dS)
+    b = m29(d_es=D_EAST_TO_SCREEN - dS, d_sw=D_SCREEN_TO_WEST + dS)
     w = (a['ring_centre'] / hp ** 2 + b['hw'] / h29 ** 2) / (1 / hp ** 2 + 1 / h29 ** 2)
     return a['ring_centre'], b['hw'], w
 
 
-_tiers = load_balusters(BAL)
-YV_FRIEZE = vanishing_point(_tiers['M'], 1.5e-8, 1350)[1]
-for name, kw in (('distortion from the friezes\' bow, 1.5e-8, middle tier\'s vanishing point (row %.0f)' % YV_FRIEZE, dict(k=1.5e-8, yv=YV_FRIEZE)),
-                 ('the east wall a full wall (1.1 m) west of the line', dict(dD=-1.1)),
-                 ('the screen 0.6 m east of the partition line', dict(dS=0.6))):
+for name, kw in (('the friezes\' distortion %.2e with the middle tier\'s vanishing point (row %.0f)' % (K_FRIEZE, YV_M_F), dict(k=K_FRIEZE, yv=YV_M_F)),
+                 ('the friezes\' distortion %.2e with the upper tier\'s vanishing point (row %.0f)' % (K_FRIEZE, YV_U_F), dict(k=K_FRIEZE, yv=YV_U_F))):
     e, w_, a = both(**kw)
     print(f'  {name}: east {e:.2f}, west {w_:.2f}, average {a:.2f} m')
-
-
-def crossing(key):
-    lo, hi = -3.0, 3.0
-    f0 = (lambda d: both(**{key: d})[0] - both(**{key: d})[1])
-    s_lo = f0(lo) > 0
-    for _ in range(60):
-        mid = (lo + hi) / 2
-        lo, hi = (mid, hi) if (f0(mid) > 0) == s_lo else (lo, mid)
-    e, w_, _ = both(**{key: (lo + hi) / 2})
-    return (lo + hi) / 2, e, w_
-
-
-for key, what in (('dD', 'the east wall\'s inner face (west -)'), ('dS', 'the screen (east +)')):
-    d, e, w_ = crossing(key)
-    print(f'  the two centres meet with {what} moved {d:+.2f} m: east {e:.2f}, west {w_:.2f} m')
+lo, hi = -1.5, 1.5
+gap = (lambda d: both(dS=d)[0] - both(dS=d)[1])
+s_lo = gap(lo) > 0
+for _ in range(60):
+    mid = (lo + hi) / 2
+    lo, hi = (mid, hi) if (gap(mid) > 0) == s_lo else (lo, mid)
+e, w_, _ = both(dS=(lo + hi) / 2)
+print(f'  the two centres would meet with the screen moved {(lo + hi) / 2:+.2f} m east: east {e:.2f}, west {w_:.2f} m')
 
 # P8's field: the angles of its top and bottom rows on the centre column, distortion undone.
 top = math.degrees(math.atan((P8_CY - undistort(P8_CX, 0, P8_K)[1]) / P8_F))
