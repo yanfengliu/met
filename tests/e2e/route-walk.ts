@@ -1,7 +1,8 @@
 /**
  * The walker on the real model, read and moved through real input: its eye read from the read-only `window.__met.walk` at every frame, mouse drags that
  * turn it (`face`), and the doors (docs/design/spec.md, Doors) read from the read-only `window.__met.doors` and used by E, as a visitor uses them. Keys
- * are held by ./route-holds.ts, which bounds where a walker let go comes to rest; ./route-places.ts sets the fixed places walks start from.
+ * are held by ./route-holds.ts, which bounds where a walker let go comes to rest; ./route-places.ts sets the door specs' fixed places (`standAt`), and
+ * ./routes.spec.ts sets its own (`openAt`).
  */
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';

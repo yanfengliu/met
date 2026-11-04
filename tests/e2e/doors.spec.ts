@@ -431,7 +431,8 @@ test.describe('the doors', () => {
     await page.keyboard.press('KeyE');
     await doorIs(page, MIDDLE, 'open');
     // In the entrance bay behind the doors, standing open into the building (doors=open, as E opens them from before them), facing out at the open right
-    // leaf: closed by it, then opened out toward the plaza, each swing timed. The side doorways, open too, stand out of the view.
+    // leaf: closed by it, then opened out toward the plaza, each swing timed. The north doorway, open too, stands at the left of the view, its leaves open
+    // and the plaza through it; the south one is out of the view (review 28, F85).
     const bay = inTheBay();
     const inside = await standAt(page, 'in the entrance bay', bay, pitchedAt(bay, 0.62, DOOR_Z - 0.3), '&doors=open');
     expect(inside.facts.doors.find((d) => d.id === MIDDLE), 'standing open into the building').toMatchObject({ state: 'open', angle: 90 });

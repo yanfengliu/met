@@ -23,7 +23,7 @@ export interface Watched {
 }
 
 /**
- * The longest any watch waits, milliseconds times the CPU throttle: a 100 m leg at a run takes 20 s, at a walk 50 s, so a watch past it is lost.
+ * The longest any watch waits, milliseconds times the CPU throttle: 100 m held at a run takes 20 s, at a walk 50 s, so a watch past it is lost.
  * Every watch ends when walk mode is left, and within 60 s times the throttle.
  */
 const WATCH_MS = 60_000;

@@ -223,6 +223,13 @@ Mouse-look and Esc (work unit 14, 2026-10-29): each mutation made on the work an
   - A held key's repeat counted as the keyboard (F15): the first unit test red ("entered by a tap with a key held: expected 4 to be 3").
   - The locked card planted 40 px in from the left while its hint shows (F18): `labels.spec`'s locked test red at both sizes ("the locked card at the bottom left": 40; at 390×844 "art-card inside the viewport").
 
+### `tests/e2e/walk.spec.ts`
+
+- The Walk toggle's view once the pointer locks (work unit 2's follow-up, reviews 28 and 29, F84 and F94; 2026-11-04). One pixel of turn was planted where the page hears the lock taken (`src/walk/walk-mode.ts`, the `pointerlockchange` listener), made once the walker is placed. `enter` asks for the lock before the frame that places the walker, so a turn made at a lock that comes first is undone by the placement: planted at once, the yaw went red in two runs and the pitch stayed green in one. Each placed plant was run twice and undone:
+  - Yaw: the toggle test red ("the pointer locked: on the plaza spawn’s line, looking as the spawn does": the look's X 0.00129 for 0), and `tests/e2e/door-look.spec.ts`'s middle-door test red at its own check of the lock ("the pointer locked by a click that turned nothing": 0.00129 for under 1e-6).
+  - Pitch: the toggle test red at the look's Y, 0.13789 for 0.13917, its X still 0, so the check's first form, of X alone, would pass.
+  - Both tests green with the plant undone.
+
 ### `tests/e2e/labels.spec.ts` and `src/viewer/art-label.test.ts`
 
 - The card left behind on leaving walk mode, the old `frame` (work unit 14): `art-label.test.ts`'s keep test red ("left looking at it: the orbit view keeps its card: expected null to be '11013'"); `labels.spec`'s locked test red at both sizes ("the card kept in the orbit view": null).

@@ -1,8 +1,8 @@
 /**
  * What the walks of ./routes.spec.ts meet on their way, beside the walking itself (./route-walk.ts), each read apart from the page or used through real
- * input:
+ * input, and the places ./doors.spec.ts and ./door-look.spec.ts stand at:
  * - a fixed place for the walker, set by the query (`spawn=x,y,z,tx,ty,tz`), its feet on the floor the finished model has there (`feetOn`, `standAt`),
- *   which ./doors.spec.ts and ./door-look.spec.ts stand at too;
+ *   where the door specs stand; ./routes.spec.ts `openAt` sets its own places and makes the same checks, with its records and a picture;
  * - a door's closed leaves where the finished model places them, read from the timeline built in the test's own process (./surface.ts): the planes of
  *   their faces, their hinges and how far a leaf reaches from a hinge, so a walk can be held at them, look at a leaf and stand clear of their swing;
  * - the eye aimed at a point by drags, across for its yaw and up or down for its pitch, `LOOK_PER_PIXEL` a pixel;

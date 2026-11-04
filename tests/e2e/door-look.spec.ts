@@ -13,8 +13,8 @@
  * "not the look target within 3000 ms", the look target found null (the entrance's eye at (0.00, 5.55, −0.42), the link door's at (69.00, 2.17, −1.03)).
  * A ray more than about 4° off a door's axis meets a leaf's edge inside the gap, which is why both places stand on their door's axis.
  * Bound: where the ray crosses the leaves is worked out from the published eye and look and the door's pieces in the finished model built in the test
- * process; the query sets the place to 0.1 mm. Each place enters walk mode at load, with no gesture, so the pointer stays free until the click that locks
- * it, after which the mouse moves no more, so the view turns by nothing (work unit 14).
+ * process; the query sets the place to 0.1 mm. Each place enters walk mode at load, with no gesture, so the pointer stays free; at the middle door a click
+ * of the view then locks it, after which the mouse moves no more, so the view turns by nothing (work unit 14).
  */
 import { expect, test } from '@playwright/test';
 import { Box3, Matrix4, Vector3 } from 'three';

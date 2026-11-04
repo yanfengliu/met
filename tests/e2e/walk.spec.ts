@@ -191,6 +191,13 @@ test.describe('walk mode', () => {
     expect(first.spawn).toBe('plaza');
     expect(first.spawns).toEqual(expect.arrayContaining(['plaza', 'great-hall', 'second-floor']));
     expect(Math.hypot((first.eye?.[0] ?? 0) - plaza.feet[0], (first.eye?.[2] ?? 0) - plaza.feet[2]), 'on the plaza spawn').toBeLessThan(0.05);
+    // The toggle's click and the lock it took turned nothing: on the plaza spawn's line, the entrance axis, looking as the spawn does, along its facing at
+    // its pitch, the look the walker's own in doubles (src/walk/walker.ts `look`; review 28, F84; review 29, F94).
+    const locked = await rest(page);
+    expect(plaza.facing, 'the plaza spawn faces −Z, along the entrance axis').toEqual([0, -1]);
+    const pitch = (plaza.pitch * Math.PI) / 180;
+    const view = [0, Math.sin(pitch), -Math.cos(pitch)].map((v) => expect.closeTo(v, 9));
+    expect([locked.eye?.[0], ...(locked.look ?? [])], 'the pointer locked: on the plaza spawn’s line, looking as the spawn does').toEqual([expect.closeTo(plaza.feet[0], 9), ...view]);
     expect(first.onGround).toBe(true);
     expect(first.target, 'the look target: nothing tagged in reach on the plaza').toBeNull();
     await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'true');
