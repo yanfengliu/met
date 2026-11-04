@@ -31,9 +31,9 @@ Decisions, item by item (F-owner-7's seven differences):
 6. The east front: four large arches at X ±5.8 and ±12, two either side of the covered middle (#66), each the west front's arch inside a ring of dark granite blocks (#67), blind today; the inner pair hold a roundel inside a moulded light arch (#67); the outer pair stand on today's passages at ±12, and today's second-floor doors at ±10.3 cut their heads, taking their roundels and the stones they cross.
 7. The side walls: banded pointed arches on the hall's six bays only, as the west front's design (#49), over a ground storey of light rusticated stone with small square-headed openings (#65, the south side; the north side's is hidden in #49 and taken to match); the end blocks in plain brick with round-headed openings on three tiers (#49, #65). Today's doors stay where they are.
 
-Also found and built: the west front's ground storey is light rusticated stone with square-headed windows (#49, #53), not brick with segmental ones, and a string course stands 1.9 m over its crowns (#53). Found and left, with their reasons in section 9: the stair tower between the north arcade and the west block (#49); the north arcade's wider windows between light piers (#49); the Lehman Wing's section at the front, where #60 shows brick up to about 17.3 m.
+Also found and built: the west front's ground storey is light rusticated stone with square-headed windows (#49, #53), not brick with segmental ones, and a string course stands 1.9 m over its crowns (#53). Found and left, with their reasons in section 9: the stair tower between the north arcade and the west block (#49); the north arcade's wider windows between light piers (#49); the Lehman Wing's section at the front, where #60 shows brick up to about 17.5 m, the outer arches' heads under its flat roof and the central arch's lowest stones beside its court's east opening.
 
-The build: each head is two pieces, its light granite and its dark, placed per arch and arriving together (`vaux-openings` staggered by order); window frames are merged with their bars, so the core area stays within its 130 meshes (review 0, F0).
+The build: each head is two pieces, its light granite and its dark, placed per arch with one bounding box, so they arrive together and move about one pivot (reviews 0 and 1); window frames are merged with their bars, so the core area stays within its 130 meshes, at 129.
 
 ## Acceptance criteria
 
@@ -49,7 +49,8 @@ The build: each head is two pieces, its light granite and its dark, placed per a
 - [x] West front, side walls, east front, brick; Lehman skylight head.
 - [x] Records: `exterior.md` [C7] and section 9, `exterior-images.md`, devlog.
 - [x] Review 0 (`reviews/0_implementation.md`) of the working tree (`snapshots/0_target.patch.txt`), verify green on it; F0 to F18 dispositioned and repaired.
-- [ ] Verify on the repairs, commit, review 1, landing, gallery.
+- [x] Verify on the repairs (green), commit `2238385`; review 1 (`reviews/1_implementation.md`) of it, F19 to F30 dispositioned and repaired.
+- [ ] Verify on round 1's repairs, commit, focused review 2, landing, gallery.
 
 ## Outcome
 

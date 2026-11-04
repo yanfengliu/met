@@ -5,9 +5,10 @@
  * jambs (exterior-images.md #53, #60, #61, #63, #64). The west front fills the head with a striped tympanum; the east front's heads hold a roundel inside
  * a moulded light arch and a ring of dark granite blocks round the voussoirs (#67); the side walls' heads, glazed in 1880 (#49), are bricked up.
  * Frames: an arch's parts are placed at the centre of its springing line on the wall face, as arches.ts's rings and tympana are. Each head is two
- * pieces, its light granite and its dark, built in that frame and placed per arch, so it arrives and grows or pops about its own place in the build.
+ * pieces, its light granite and its dark, built in that frame and placed per arch, with one bounding box between them, so they arrive together and grow
+ * or pop about one pivot at the arch's own place in the build (src/build/timeline.ts reads a piece's bounds for both).
  */
-import { Matrix4, Vector3 } from 'three';
+import { Box3, Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
 import { MeshBuilder } from '../lib/index.js';
@@ -27,7 +28,7 @@ export const SPRING_Y = L1 + VAUX_ARCH_SPRING;
 export const LINTEL_Y = SPRING_Y - VAUX_IMPOST;
 /** Window sills, world Y. */
 export const SILL_Y = L1 + VAUX_ARCH_SILL;
-/** The clear opening between the inner orders: today's doorways' 2.6 m. */
+/** The clear opening between the inner orders: 2.6 m, as wide as the doorways were (the floor map's are about 2.3 m). */
 export const CLEAR = VAUX_ARCH_SPAN - 2 * VAUX_INNER_ORDER;
 
 /** The rise of the inner order's inner edge, the tympanum's outline: the intrados drawn VAUX_INNER_ORDER inside itself about the same two centres. */
@@ -100,42 +101,50 @@ export function ringCut(ring: RingParams, cut?: Cut): BufferGeometry {
   return voussoirRing(cut === undefined ? ring : { ...ring, omit: stonesIn(ring, cut) });
 }
 
-/** The 1880 heads, by front: the west front's with its striped tympanum, the side arcade's, and the east front's with their outer blocks and moulded orders. */
+/** The 1880 heads, by front: the west front's with its striped tympanum, the side arcade's, and the east front's with their outer blocks, moulded orders and roundel. */
 export type HeadKind = 'west' | 'side' | 'east';
 
-/** One head's light granite as one geometry in the arch's frame: its light voussoirs and inner order or orders, and on the west front its stripes. */
-export function lightHead(kind: HeadKind, cut?: Cut): BufferGeometry {
-  const key = `vauxHead:light:${kind}:${cut === undefined ? 'whole' : keyOf(...cut)}`;
-  return memo(key, () => {
-    const b = new MeshBuilder();
+/**
+ * One head's two pieces in the arch's frame. The light: its light voussoirs and inner order or orders, on the west front its striped tympanum on the back
+ * of the head's niche (#60, #61), on an uncut east head the roundel's moulding there (#67). The dark: its dark voussoirs and, on the east front, the ring of
+ * dark blocks round them. Both take the union of their bounds as their bounding box, so the build gives them one stagger key and one pivot.
+ */
+function headPair(kind: HeadKind, cut?: Cut): { readonly light: BufferGeometry; readonly dark: BufferGeometry } {
+  const key = `${kind}:${cut === undefined ? 'whole' : keyOf(...cut)}`;
+  return memo(`vauxHead:${key}`, () => {
+    const lit = new MeshBuilder();
+    const dim = new MeshBuilder();
     if (kind === 'east') {
-      b.append(ringCut(EAST_VOUSSOIRS, cut));
-      for (const order of EAST_ORDERS) b.append(ringCut(order, cut));
+      lit.append(ringCut(EAST_VOUSSOIRS, cut));
+      for (const order of EAST_ORDERS) lit.append(ringCut(order, cut));
+      if (cut === undefined) lit.append(annulus(ROUNDEL.inner, ROUNDEL.outer, ROUNDEL.proud), new Matrix4().makeTranslation(0, ROUNDEL.centre, -HEAD_DEPTH));
+      dim.append(ringCut({ ...EAST_VOUSSOIRS, parity: 1 }, cut));
+      dim.append(ringCut(EAST_OUTER_RING, cut));
     } else {
-      b.append(ringCut(VOUSSOIRS, cut));
-      b.append(ringCut(INNER_ORDER, cut));
+      lit.append(ringCut(VOUSSOIRS, cut));
+      lit.append(ringCut(INNER_ORDER, cut));
+      if (kind === 'west') lit.append(tympanum({ head: 'pointed', span: CLEAR, rise: TYMPANUM_RISE, stripe: 0.27, part: 'stripes' }), new Matrix4().makeTranslation(0, 0, -HEAD_DEPTH));
+      dim.append(ringCut({ ...VOUSSOIRS, parity: 1 }, cut));
     }
-    // The west front's striped tympanum stands on the back of the head's niche (#60, #61).
-    if (kind === 'west') b.append(tympanum({ head: 'pointed', span: CLEAR, rise: TYMPANUM_RISE, stripe: 0.27, part: 'stripes' }), new Matrix4().makeTranslation(0, 0, -HEAD_DEPTH));
-    return named(b.build(), key);
+    const light = lit.build();
+    const dark = dim.build();
+    light.name = `vauxHead:light:${key}`;
+    dark.name = `vauxHead:dark:${key}`;
+    const box = new Box3().copy(light.boundingBox ?? new Box3()).union(dark.boundingBox ?? new Box3());
+    light.boundingBox = box.clone();
+    dark.boundingBox = box.clone();
+    return { light, dark };
   });
 }
 
-/** One head's dark granite as one geometry in the arch's frame: its dark voussoirs, and on the east front the ring of dark blocks round them. */
+/** One head's light granite as one geometry in the arch's frame (headPair). */
+export function lightHead(kind: HeadKind, cut?: Cut): BufferGeometry {
+  return headPair(kind, cut).light;
+}
+
+/** One head's dark granite as one geometry in the arch's frame (headPair). */
 export function darkHead(kind: HeadKind, cut?: Cut): BufferGeometry {
-  const key = `vauxHead:dark:${kind}:${cut === undefined ? 'whole' : keyOf(...cut)}`;
-  return memo(key, () => {
-    const b = new MeshBuilder();
-    b.append(ringCut({ ...(kind === 'east' ? EAST_VOUSSOIRS : VOUSSOIRS), parity: 1 }, cut));
-    if (kind === 'east') b.append(ringCut(EAST_OUTER_RING, cut));
-    return named(b.build(), key);
-  });
-}
-
-/** `geometry` named by its cache key, so a test can tell a head's pieces apart (vaux-fronts.test.ts). */
-function named(geometry: BufferGeometry, name: string): BufferGeometry {
-  geometry.name = name;
-  return geometry;
+  return headPair(kind, cut).dark;
 }
 
 /** The holes of an arch at `x` in a wall whose base is at world Y `base`: its opening, through or blind, and its head's blind niche unless left out. */

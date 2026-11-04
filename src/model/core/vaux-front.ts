@@ -37,7 +37,7 @@ const GROUND_WIDTH = 2.2;
 const DOOR_WIDTH = 2.2;
 const DOOR_HEAD_Y = RUST_Y0 + 5 * COURSE;
 const PROUD = 0.08;
-/** The string course over the arches, under the cornice: 1.9 m over the crowns in #53, read upright at #60's 6.3 m from the main floor to the springing. */
+/** The string course over the arches, under the cornice: its middle 1.85 m over the crowns in #53, read upright at #60's 6.3 m from the main floor to the springing. */
 const STRING_Y = 15.9;
 
 function frontHoles(): Hole[] {
@@ -118,7 +118,7 @@ export function westFrontWindows(kit: Kit): void {
   const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, cols: 2, rows: 2 });
   // Each window's frame and bars as one piece, as they arrive together (the core's mesh budget).
   const metal = (name: string, parts: { readonly frame: BufferGeometry; readonly bars: BufferGeometry }): BufferGeometry =>
-    memo(`vauxWindowMetal:${name}`, () => {
+    memo(`vauxWindowMetal:${name}:${parts.frame.uuid}:${parts.bars.uuid}`, () => {
       const b = new MeshBuilder();
       b.append(parts.frame);
       b.append(parts.bars);

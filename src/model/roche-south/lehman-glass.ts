@@ -174,13 +174,15 @@ export function stripPieces(): Piece[] {
     for (const matrix of quadPanes(lifted(corners[0]), lifted(corners[1]), lifted(corners[2]), lifted(corners[3]))) pieces.push({ matrix, glass: true, order: 1 });
     // The run's inner end: a triangle from its low edge up to the head's height, under the lead flat, and a pane across to the ring wall.
     pieces.push({ matrix: paneMatrix([inner, y0, z0], [inner, y1, z0], [inner, y1, z1]), glass: true, order: 1 });
+    // The pane across to the ring wall stands from the roof's top, under the run's sill bar.
     const ring = inner - Math.sign(inner) * (STRIP_GAP_HALF_X - RING_CROSSING_X);
-    for (const matrix of quadPanes([ring, y0, z0], [inner, y0, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true, order: 1 });
-    // The run's outer end over the link wall's coping: a triangle under the glass, from where it crosses the coping's height to the head.
+    for (const matrix of quadPanes([ring, LEHMAN_ROOF_Y, z0], [inner, LEHMAN_ROOF_Y, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true, order: 1 });
+    // The run's outer end over the link wall's coping: from where the glass crosses the coping's height, under the glass and the head bar, to the old
+    // front's brick face.
     const outer = inner === x0 ? x1 : x0;
     if (y1 > LINK_TOP_Y) {
       const zc = z0 + ((LINK_TOP_Y - y0) / (y1 - y0)) * (z1 - z0);
-      pieces.push({ matrix: paneMatrix([outer, LINK_TOP_Y, zc], [outer, LINK_TOP_Y, z1], [outer, y1, z1]), glass: true, order: 1 });
+      for (const matrix of quadPanes([outer, LINK_TOP_Y, zc], [outer, LINK_TOP_Y, STRIP_EAST_Z], [outer, y1, STRIP_EAST_Z], [outer, y1, z1])) pieces.push({ matrix, glass: true, order: 1 });
     }
   };
   run(-STRIP_HALF_X, -STRIP_GAP_HALF_X, -STRIP_GAP_HALF_X);

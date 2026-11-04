@@ -61,8 +61,7 @@ export const vauxSteps: readonly StepDef[] = [
     title: 'Glaze the windows and set the granite trim',
     detail: 'Windows fill the west arches and the ground storey; light and dark granite voussoirs and bands finish the side and east walls.',
     motion: { kind: 'pop' },
-    // By order: each arch head's light and dark pieces share one, so they arrive together (vaux-fronts.test.ts).
-    stagger: 'order',
+    stagger: 'z',
     build(kit) {
       westFrontWindows(kit);
       vauxSideTrim(kit);

@@ -106,7 +106,7 @@ export const STRIP_HALF_X = 16.3 - OUTER_WALL;
 /**
  * The strip's head, at the brick face of the 1880 front (core, Z −138.3), and its height there. E: over the front's arches, whose crowns stand at about
  * 14.2 m (core/vaux-arch.ts), and under its string course at 15.9 m (core/vaux-front.ts), on the brick between them. exterior-images.md #60 shows brick
- * over the crowns up to about 17.3 m, over this string course and the pyramid's eave; a head that high needs the court's east end built anew, which is
+ * over the crowns up to about 17.5 m, over this string course and the pyramid's eave; a head that high needs the court's east end built anew, which is
  * left (exterior.md section 9).
  */
 export const STRIP_EAST_Z = WEST_FACE_Z_CORE;

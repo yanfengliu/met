@@ -17,7 +17,7 @@ import { A_HALF, EAST_Z, L1, L2, OUTER_WALL, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAY
 import { INNER_EAST_Z } from './layout.js';
 import { core } from './materials.js';
 import { FACING, addBox, placed, runsBetween } from './shapes.js';
-import { CLEAR, HEAD_DEPTH, LINTEL_Y, ORDER_PROUD, ROUNDEL, SILL_Y, SPRING_Y, annulus, archHoles, darkHead, lightHead, type Cut } from './vaux-arch.js';
+import { CLEAR, LINTEL_Y, ORDER_PROUD, SILL_Y, SPRING_Y, archHoles, darkHead, lightHead, type Cut } from './vaux-arch.js';
 import { WALL_BASE_Y } from './vaux-front.js';
 
 /** E: the inner pair on the west front's bay; the outer pair on today's passages into the stair halls (as before). */
@@ -66,7 +66,6 @@ export function vauxEastTrim(kit: Kit): void {
   const passages = [0, -OUTER_X, OUTER_X].map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
   for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, passages)) box(x0, x1, L1 - 0.2, L1 + 0.12, proud);
   box(-A_HALF, A_HALF, LINTEL_Y, SPRING_Y, proud);
-  const roundel = annulus(ROUNDEL.inner, ROUNDEL.outer, ROUNDEL.proud);
   for (const s of [-1, 1]) {
     for (const x of [s * INNER_X, s * OUTER_X]) {
       const window = Math.abs(x) === INNER_X;
@@ -75,13 +74,12 @@ export function vauxEastTrim(kit: Kit): void {
         const edge = x + side * (CLEAR / 2);
         box(Math.min(edge, edge + side * VAUX_INNER_ORDER), Math.max(edge, edge + side * VAUX_INNER_ORDER), window ? SILL_Y : L1, LINTEL_Y, ORDER_PROUD);
       }
-      // Each head as two pieces placed at its arch; an outer head is cut by the second-floor door beside it.
+      // Each head as two pieces placed at its arch, an inner one with its roundel's moulding round its brick (#67); an outer head is cut by the
+      // second-floor door beside it.
       const cut = window ? undefined : secondCut(s);
       const at = placed(x, SPRING_Y, EAST_Z, FACING.east);
       kit.add(lightHead('east', cut), core.granite, at, 12);
       kit.add(darkHead('east', cut), core.graniteDark, at, 12);
-      // The roundel's moulding on the back of an inner head's niche, round its brick (#67).
-      if (window) kit.add(roundel, core.granite, placed(x, SPRING_Y + ROUNDEL.centre, EAST_Z - HEAD_DEPTH, FACING.east), 12);
     }
   }
 }
