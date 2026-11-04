@@ -224,3 +224,4 @@ The route-walk worker proposed it after work unit 14, and the coordinator approv
   - Reviews 29 and 30, focused Codex checks (`reviews/29_implementation.md`, `reviews/30_implementation.md`): F94 to F96, repaired. F94 made walk.spec's check read the toggle's whole view. Its red proofs turn once the walker is placed, since a turn made at a lock that comes first is undone by the placement.
   - Gated on the final tree: `npm run verify`, 732 unit tests in 81 files and 125 e2e in 9.5 min, 610 s in all, the seven door tests 26.7 s of it; routes.spec with walk.spec at 4×, three runs in a row, 21 passed and 2 skipped each, in 140, 145 and 137 s.
   - Every finding of rounds 28 to 30 is closed: F84 to F91 and F94 to F96 repaired, F92 and F93 noted with no change.
+- **Landing.** `3d346fc` on origin's main, on 2026-11-04, with this record in the commit after it.
