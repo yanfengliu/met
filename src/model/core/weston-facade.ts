@@ -99,8 +99,9 @@ export function westonTrim(kit: Kit): void {
   const stone = core.westonStone;
   const e = SOUTH;
   const disc = cylinder(20);
-  // The porch's pedestals, edge to edge: the dado stops at them. The main floor's head band stands at the height of the porch's entablature: under the
-  // cornice it runs on to the porch's sides, and from the cornice's foot up it stops at the cornice.
+  // The porch's pedestals, edge to edge: the dado stops at them. The main floor's head band stands at the height of the porch's entablature and runs
+  // on to it, 1 cm short of what it meets at each height: the frieze, then from the cornice's foot the cornice's bed mouldings, and over its soffit
+  // its corona.
   const porch0 = CENTRE_Z - PORCH_REACH.pedestals;
   const porch1 = CENTRE_Z + PORCH_REACH.pedestals;
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
@@ -111,12 +112,13 @@ export function westonTrim(kit: Kit): void {
   ] as const) {
     elevationBox(kit, e, stone, a0, a1, L1, L1 + WESTON_DADO, 0.1, 0, 1);
   }
-  const band = { y0: L1 + WESTON_LOWER_HEAD, y1: L1 + WESTON_LOWER_HEAD + 0.75, cornice: L1 + PORCH_REACH.corniceFrom };
+  const band = { y0: L1 + WESTON_LOWER_HEAD, y1: L1 + WESTON_LOWER_HEAD + 0.75, cornice: L1 + PORCH_REACH.corniceFrom, soffit: L1 + PORCH_REACH.soffit };
   for (const s of [-1, 1]) {
     const end = s < 0 ? WEST_Z : EAST_Z;
     for (const [reach, y0, y1] of [
-      [BESIDE_PORCH, band.y0, band.cornice],
-      [PORCH_REACH.cornice + 0.05, band.cornice, band.y1],
+      [PORCH_REACH.frieze + 0.01, band.y0, band.cornice],
+      [PORCH_REACH.bed + 0.01, band.cornice, band.soffit],
+      [PORCH_REACH.corona + 0.01, band.soffit, band.y1],
     ] as const) {
       const near = CENTRE_Z + s * reach;
       elevationBox(kit, e, stone, Math.min(near, end), Math.max(near, end), y0, y1, 0.16, 0, 3);

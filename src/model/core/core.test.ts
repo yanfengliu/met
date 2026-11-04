@@ -11,7 +11,7 @@
  * 0.3 m; trim (any non-brick piece) on the west face (into the Lehman court and the park) and on Weston's south face (into the Petrie Court)
  * may project up to 1.5 m (coordinator, 2026-10-11), but for the porch of Weston's door, which stands 2.25 m out to its pilasters' faces and
  * 2.85 m to its cornice's front as the April 1888 drawing and the court's photographs show it (work unit 17, docs/research/interior.md, Weston's 1888
- * door): trim lying wholly within 3.5 m of the door's middle along the front (Z −103.65) and under Y 13.2 (9 m over the main floor; its railing's
+ * door): trim lying wholly within 3.5 m of the door's middle along the front (Z −103.65) and under Y 13.2 (9.1 m over the main floor; its railing's
  * top stands 8.5 m over it) may reach 2.9 m into the court.
  */
 import { Box3, Vector3 } from 'three';

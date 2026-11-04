@@ -6,8 +6,8 @@
  * Measured on fig. 29 (Heckscher's reproduction, 29.6 px a metre) from the doorway's middle and the porch floor, the main floor: pedestals ±1.87 to
  * ±2.95 m across the front and 0.96 m tall; the shafts about ±1.97 to ±2.75 m, plain to 3.19 m and fluted above; the capitals' top at 5.81 m; the
  * architrave, the frieze and the cornice to 7.31 m, the cornice's corona out to ±3.46 m; a top block to 7.6 m, the balcony's floor; the doorway
- * 3.29 m wide and 4.91 m tall in an architrave about 0.20 m wide. The drawing's plan stops at the wall, so the porch's depth, 2.25 m to its
- * pilasters' faces, comes from three other readings: the 1888 first-floor plan (Heckscher fig. 26) about 2.2 m, the east side in #35 against the
+ * 3.29 m wide and 4.91 m tall in an architrave about 0.20 m wide. The drawing's plan is cut off along the porch's front, before the wall, so the
+ * porch's depth, 2.25 m to its pilasters' faces, comes from three other readings: the 1888 first-floor plan (Heckscher fig. 26) about 2.2 m, the east side in #35 against the
  * porch's height about 2.3 m, and the railing in #33 about 2.0 m from post to post, its posts set in from the top block's edges. In #33 at full size
  * each front corner is a pier with a fluted pilaster on its front and on its side, the capital turning the corner; in #35 and fig. 110 each side is
  * that pilaster, a blind panel and a narrower pilaster against the wall. The doorway runs through the porch, its reveals and soffit in the porch's
@@ -46,7 +46,7 @@ export const PORCH = {
   /**
    * The front and side pilasters: face width, projection, flutes, and the front pair's centres. The shafts are drawn 0.76 to 0.78 m wide; at 0.72 m the
    * parts library's Attic base, 1.5 times as wide, is the drawn pedestals' width and clears the doorway's architrave. The library's Ionic capital is
-   * 0.36 widths tall, 0.26 m, where the drawing's runs 0.52 m with its necking, and its base 0.36 m, where the drawn base and pedestal cap run 0.47 m.
+   * 0.36 widths tall, 0.26 m, where the drawing's runs 0.52 m with its necking, and its base 0.36 m, where the drawn base runs 0.47 m.
    */
   pilaster: { width: 0.72, projection: 0.12, flutes: 7, u: 2.39 },
   /** The narrower pilasters against the wall (#35 and fig. 110, estimated): face width, flutes and centre out from the wall. */
@@ -66,10 +66,21 @@ const EDGE = PORCH.body.half + PORCH.pilaster.projection;
 const CORNICE = PORCH.entablature * 0.4;
 
 /**
- * How far the porch reaches along the front from the doorway's middle: its pedestals, up to their cap; its side pilasters' faces, their capitals a few
- * centimetres more; and its cornice, from the frieze's top up.
+ * How far the porch reaches along the front from the doorway's middle, and from what height over the main floor: its pedestals, up to their cap; its
+ * side pilasters' faces, their capitals a few centimetres more; the entablature's frieze; the cornice's bed mouldings, from the frieze's top
+ * (`corniceFrom`) up to the soffit (`soffit`); its corona over the soffit; and its top moulding, the furthest. The cornice's shares are the parts
+ * library's (profiles.ts `corniceProfile` with modillions: its bed face 0.24 of its projection out, its soffit at half its height, its corona 0.8 out).
  */
-export const PORCH_REACH = { pedestals: PORCH.pedestal.outer, sides: EDGE, cornice: EDGE + CORNICE, corniceFrom: PORCH.body.height + PORCH.entablature - CORNICE } as const;
+export const PORCH_REACH = {
+  pedestals: PORCH.pedestal.outer,
+  sides: EDGE,
+  frieze: EDGE + PORCH.entablature * 0.012,
+  bed: EDGE + 0.24 * CORNICE,
+  corona: EDGE + 0.8 * CORNICE,
+  cornice: EDGE + CORNICE,
+  corniceFrom: PORCH.body.height + PORCH.entablature - CORNICE,
+  soffit: PORCH.body.height + PORCH.entablature - CORNICE / 2,
+} as const;
 
 /** The porch's frame in the world: the brick face at the doorway's middle on the main floor, its front toward the court. */
 const FRAME = placed(B_SOUTH_X, L1, CENTRE_Z, FACING.south);
@@ -156,7 +167,8 @@ export function westonPorch(kit: Kit): void {
     box(kit, stone, [s * body.half, die, 0], [s * (ped.outer + 0.04), ped.height, body.depth], 1);
     // The corner pier's two pilasters, on the front and on the side, and the narrower one against the wall. The corner's two are pieces apart: their
     // shafts meet face to face, but their bases (to 0.12 m over the pedestal for their plinths) and capitals (the top 0.26 m) run into each other
-    // there, as one moulding turning the corner would (#33); every piece stays closed, so the walk and the cut read each alone.
+    // there, as one moulding turning the corner would (#33). Every piece stays closed and the walk reads each alone; a cut through the overlap (0.96
+    // to 1.32 m or 5.55 to 5.81 m over the main floor) caps each piece it crosses, so there one's stone shows inside the other's cap.
     kit.add(front, stone, at(s * p.u, ped.height, body.depth), 2);
     kit.add(front, stone, at(s * body.half, ped.height, body.depth - p.width / 2, (s * Math.PI) / 2), 2);
     kit.add(narrow, stone, at(s * body.half, ped.height, anta.d, (s * Math.PI) / 2), 2);
@@ -185,8 +197,13 @@ export function westonPorch(kit: Kit): void {
   // The frieze's carving read as its roundels (#33: oval paterae among garlands), on the front and both sides.
   const frieze = { y: body.height + PORCH.entablature * 0.45, out: PORCH.entablature * 0.012 };
   for (let k = -4; k <= 4; k++) kit.add(roundel, stone, disc(k * 0.6, frieze.y, PORCH.depth + frieze.out, '+d', 0.22, 0.04), 5);
+  // Four along each side, evenly from 0.45 m off the wall to 0.3 m short of the front, clear of the frieze's mitred corner.
+  const side = { from: 0.45, to: PORCH.depth - 0.3, count: 4 };
   for (const s of [-1, 1]) {
-    for (let d = 0.45; d <= PORCH.depth - 0.3 + 1e-9; d += 0.5) kit.add(roundel, stone, disc(s * (EDGE + frieze.out), frieze.y, d, s < 0 ? '-u' : '+u', 0.22, 0.04), 5);
+    for (let k = 0; k < side.count; k++) {
+      const d = side.from + (k * (side.to - side.from)) / (side.count - 1);
+      kit.add(roundel, stone, disc(s * (EDGE + frieze.out), frieze.y, d, s < 0 ? '-u' : '+u', 0.22, 0.04), 5);
+    }
   }
 }
 

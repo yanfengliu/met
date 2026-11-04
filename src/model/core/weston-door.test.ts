@@ -7,7 +7,8 @@
  * layer's stand-ins and doorways registered as the page registers them), whose prompt says "E Open"; opened as E opens it (`DoorLayer.use` on the look target, from the walker's
  * eye; red with the layer's meshes left out of the picker, which met nothing there; work unit 2, review 17, F48), it swings a quarter turn into wing B, and the walker walks through the doorway into gallery 529 and back out into
  * the court, past where it set out, beyond the porch the doorway runs through (work unit 17, review 0, F0), on the main floor's level all the way but
- * for the door frame's 8 cm sill.
+ * for the door frame's 8 cm sill. Red with the way back held 4 s, as before that repair: the feet stop at X −51.593, inside the porch, which the old
+ * line (`WESTON_DOOR.x - 2`, X −51.40) passed (work unit 17, review 1).
  * Bound: the walker walks on the door's axis, square to the facade; positions are the feet's; "no leaf inside the body" is read where the walker stops
  * at the closed door and where it ends, by src/walk/door-testing.ts `gap`, an oracle apart from the collision.
  */
@@ -37,7 +38,7 @@ const W: WalkInput = { forward: 1, right: 0, run: false };
 /** Yaw facing +X, from the court into wing B, and −X, back out (src/walk/walker.ts: yaw 0 faces −Z and grows turning left). */
 const NORTH = -Math.PI / 2;
 const SOUTH = Math.PI / 2;
-/** Where the walk starts and ends: on the door's axis 3.5 m out in the court, just before the porch's pedestals. */
+/** Where the walk starts, on the door's axis 3.5 m out in the court just before the porch's pedestals, and the line its way back must pass. */
 const COURT_X = WESTON_DOOR.x - 3.5;
 
 let timeline: Timeline;
