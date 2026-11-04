@@ -7,6 +7,7 @@ import type { StepDef } from '../../build/types.js';
 import { B_SOUTH_X, L1 } from './constants.js';
 import { galleryWalls, laylightFrames, lightWellWalls, mainFloorWalls, roofWithSkylights } from './galleries.js';
 import { WESTON_DOOR, westonOpenings, westonTrim, westonWalls } from './weston-facade.js';
+import { westonPorch } from './weston-porch.js';
 import { ELEVATIONS, elevationTrim, elevationWalls, elevationWindows, wingFloors, wingFoundations } from './wings-walls.js';
 
 const CHAPTER = 'weston-tuckerman-1894';
@@ -54,6 +55,7 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     build: (kit) => {
       westonWalls(kit);
       westonTrim(kit);
+      westonPorch(kit);
     },
   },
   {
@@ -96,7 +98,7 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     id: 'wings-openings',
     chapter: CHAPTER,
     title: 'Glaze the windows and the south entrance',
-    detail: 'Windows in both wings, the arched windows and the square-headed entrance door of the south front, and the porch of paired columns that carries its balcony.',
+    detail: 'Windows in both wings, the arched windows and the square-headed entrance door of the south front, and the copper railing of its porch’s balcony.',
     motion: { kind: 'pop' },
     stagger: 'z',
     build: (kit) => {

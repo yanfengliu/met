@@ -17,7 +17,7 @@
  *   the test's output folder for a person to inspect (nothing judges it), the walker checked to stand there on its floor: the middle door from the Great
  *   Hall (held, "E Open" from 1.9 m out, opened by E out toward the plaza, walked out, shut behind from before it); Weston's door from the Petrie Court
  *   (held, "E Open" from 1.9 m out, opened by E into wing B, walked through) and from gallery 529 with the doors open (shut by E, opened again by E toward
- *   the walker, walked back); R5's doorway into gallery 600; the Grand Staircase's landing; the Temple of Dendur's forecourt and the gate's passage on one
+ *   the walker, walked back out through its porch to the court); R5's doorway into gallery 600; the Grand Staircase's landing; the Temple of Dendur's forecourt and the gate's passage on one
  *   level; the dais's south flight walked down; the rail before the gate's riser, which holds the walker on the terrace; the pool's north arm, stepped
  *   into to rest on its floor and out of again; and the Sphinx of Hatshepsut and Ruth Gleaning, each approached at a walk until its card shows within
  *   6 m and turned away. At each the card and the prompt follow the one look target, and the walker never leaves the ground (F55).
@@ -331,7 +331,8 @@ test.describe('the walk through real input', () => {
     await looksAt(page, 'weston', 'E Open');
     await page.keyboard.press('KeyE');
     expect((await doorIs(page, 'weston', 'open')).angle, 'open again into wing B, toward the walker, the one way it opens').toBe(90);
-    const court = await holdPast(page, 'back through Weston’s door into the court', ['KeyW'], door.normal, door.front + 1.5, samples);
+    // Out through the porch the doorway runs through, let go once past the court's place where the walk from the court sets out (review 0, F0).
+    const court = await holdPast(page, 'back through Weston’s door and its porch into the court', ['KeyW'], door.normal, alongXZ(WESTON_APPROACH, door.normal), samples);
     expect(Math.abs(court.eye[1] - (MAIN_FLOOR_Y + EYE)), `back in the court at ${fmt(court.eye)}`).toBeLessThan(0.02);
     expectThroughWestonsDoorway(door, samples);
     await expectClean(page, 'Weston’s door from gallery 529', samples);
