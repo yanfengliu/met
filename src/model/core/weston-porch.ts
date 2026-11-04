@@ -34,7 +34,10 @@ const CENTRE_Z = (WEST_Z + EAST_Z) / 2;
  */
 export const DOOR = { width: 3.29, height: 4.91, trim: 0.2, lining: 0.15, threshold: 0.03 } as const;
 
-/** The porch's measures in its frame (see the header). */
+/**
+ * The porch's measures in its frame (see the header): measured on fig. 29 where nothing says otherwise. Estimates: the depth (three readings), the
+ * pilasters' projection, the narrower pilasters' width and place, the pedestals' front and cap, and the railing.
+ */
 export const PORCH = {
   /** The pilasters' faces, out from the brick face: the porch's depth. */
   depth: 2.25,
@@ -42,12 +45,13 @@ export const PORCH = {
   body: { half: 2.63, depth: 2.13, height: 5.81 },
   /**
    * The front and side pilasters: face width, projection, flutes, and the front pair's centres. The shafts are drawn 0.76 to 0.78 m wide; at 0.72 m the
-   * parts library's Attic base, 1.5 times as wide, is the drawn pedestals' width and clears the doorway's architrave.
+   * parts library's Attic base, 1.5 times as wide, is the drawn pedestals' width and clears the doorway's architrave. The library's Ionic capital is
+   * 0.36 widths tall, 0.26 m, where the drawing's runs 0.52 m with its necking, and its base 0.36 m, where the drawn base and pedestal cap run 0.47 m.
    */
   pilaster: { width: 0.72, projection: 0.12, flutes: 7, u: 2.39 },
-  /** The narrower pilasters against the wall: face width, flutes and centre out from the wall. */
+  /** The narrower pilasters against the wall (#35 and fig. 110, estimated): face width, flutes and centre out from the wall. */
   anta: { width: 0.38, flutes: 4, d: 0.31 },
-  /** The pedestals: their inner and outer edges across the front, their front, height and cap. */
+  /** The pedestals: their inner and outer edges across the front, their front (estimated), height and cap (estimated). */
   pedestal: { inner: 1.85, outer: 2.95, front: 2.45, height: 0.96, cap: 0.12 },
   /** Where the shafts' fluting starts. */
   fluted: 3.19,
@@ -128,11 +132,14 @@ function masonry(): BufferGeometry {
   });
 }
 
-/** The porch's stonework, from its pedestals to the balcony's floor (see the header); its railing is `westonRailing`. */
+/**
+ * The porch's stonework, from its pedestals to the balcony's floor (see the header); its railing is `westonRailing`. Under the facade step's `order`
+ * stagger the pedestals come first, then the pilasters, then the body rising to its entablature, the panels and roundels, and the balcony's block.
+ */
 export function westonPorch(kit: Kit): void {
   const stone = core.westonStone;
   const { body, pedestal: ped, pilaster: p, anta } = PORCH;
-  kit.add(masonry(), stone, FRAME, 2);
+  kit.add(masonry(), stone, FRAME, 3);
   // Over the doorway's architrave, up to the capitals, a frieze panel with a row of paterae (#33's band of paterae).
   const panel = { y0: DOOR.height + DOOR.trim + 0.06, y1: body.height - 0.06, d: body.depth + 0.03 };
   box(kit, stone, [-(DOOR.width / 2 + DOOR.trim), panel.y0, body.depth], [DOOR.width / 2 + DOOR.trim, panel.y1, panel.d], 4);
@@ -147,17 +154,20 @@ export function westonPorch(kit: Kit): void {
     box(kit, stone, [s * body.half, 0, 0], [s * ped.outer, die, body.depth], 1);
     box(kit, stone, [s * ped.inner, die, body.depth], [s * (ped.outer + 0.04), ped.height, ped.front + 0.04], 1);
     box(kit, stone, [s * body.half, die, 0], [s * (ped.outer + 0.04), ped.height, body.depth], 1);
-    // The corner pier's two pilasters, on the front and on the side, and the narrower one against the wall.
-    kit.add(front, stone, at(s * p.u, ped.height, body.depth), 3);
-    kit.add(front, stone, at(s * body.half, ped.height, body.depth - p.width / 2, (s * Math.PI) / 2), 3);
-    kit.add(narrow, stone, at(s * body.half, ped.height, anta.d, (s * Math.PI) / 2), 3);
-    // The blind panel between them: a band at the fluting's foot and a raised frame round the panel above and the one below it.
+    // The corner pier's two pilasters, on the front and on the side, and the narrower one against the wall. The corner's two are pieces apart: their
+    // shafts meet face to face, but their bases (to 0.12 m over the pedestal for their plinths) and capitals (the top 0.26 m) run into each other
+    // there, as one moulding turning the corner would (#33); every piece stays closed, so the walk and the cut read each alone.
+    kit.add(front, stone, at(s * p.u, ped.height, body.depth), 2);
+    kit.add(front, stone, at(s * body.half, ped.height, body.depth - p.width / 2, (s * Math.PI) / 2), 2);
+    kit.add(narrow, stone, at(s * body.half, ped.height, anta.d, (s * Math.PI) / 2), 2);
+    // The blind panel between them: a band at the fluting's foot and a raised frame round the panel above and the one below it, the lower clear of the
+    // pilasters' bases (0.36 m, half a width) and the upper of their capitals.
     const d0 = anta.d + anta.width / 2;
     const d1 = body.depth - p.width;
     const face = s * (body.half + 0.025);
     box(kit, stone, [s * body.half, PORCH.fluted - 0.12, d0], [face, PORCH.fluted + 0.12, d1], 4);
     for (const [y0, y1] of [
-      [ped.height + 0.2, PORCH.fluted - 0.22],
+      [ped.height + p.width / 2 + 0.06, PORCH.fluted - 0.22],
       [PORCH.fluted + 0.22, body.height - 0.35],
     ] as const) {
       for (const [a, b] of [
@@ -176,16 +186,19 @@ export function westonPorch(kit: Kit): void {
   const frieze = { y: body.height + PORCH.entablature * 0.45, out: PORCH.entablature * 0.012 };
   for (let k = -4; k <= 4; k++) kit.add(roundel, stone, disc(k * 0.6, frieze.y, PORCH.depth + frieze.out, '+d', 0.22, 0.04), 5);
   for (const s of [-1, 1]) {
-    for (const d of [0.45, 0.95, 1.45, 1.95]) kit.add(roundel, stone, disc(s * (EDGE + frieze.out), frieze.y, d, s < 0 ? '-u' : '+u', 0.22, 0.04), 5);
+    for (let d = 0.45; d <= PORCH.depth - 0.3 + 1e-9; d += 0.5) kit.add(roundel, stone, disc(s * (EDGE + frieze.out), frieze.y, d, s < 0 ? '-u' : '+u', 0.22, 0.04), 5);
   }
 }
 
-/** The balcony's railing: two rails of copper pipe on posts round the top block's front and sides (interior-images.md #33 and #35; fig. 110). */
+/**
+ * The balcony's railing: two rails of copper pipe on posts round the top block's front and sides, its posts 0.15 m in from the block's edges, four
+ * across the front (interior-images.md #33 and #35; fig. 110). Its heights and pipe are estimates read against the porch in #33.
+ */
 export function westonRailing(kit: Kit): void {
   const pipe = cylinder(12);
   const green = palette.copperGreen;
-  const r = { u: 2.6, front: 2.1, back: 0.15, top: 0.9, mid: 0.45, size: 0.05 };
-  const posts: (readonly [number, number])[] = [-r.u, -0.87, 0.87, r.u].map((u) => [u, r.front] as const);
+  const r = { u: EDGE - 0.15, front: PORCH.depth - 0.15, back: 0.15, top: 0.9, mid: 0.45, size: 0.05 };
+  const posts: (readonly [number, number])[] = [-r.u, -r.u / 3, r.u / 3, r.u].map((u) => [u, r.front] as const);
   posts.push([-r.u, r.back], [r.u, r.back]);
   for (const [u, d] of posts) kit.add(pipe, green, at(u, PORCH.top, d).multiply(new Matrix4().makeScale(r.size, r.top + r.size / 2, r.size)), 8);
   for (const y of [r.top, r.mid]) {

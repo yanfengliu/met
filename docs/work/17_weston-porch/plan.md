@@ -13,7 +13,7 @@ Outcome: the porch built at the drawing's size and in its form, the door's openi
 
 ## Scope
 
-Included: the porch in `src/model/core/weston-facade.ts` (its body, pilasters, pedestals, entablature, balcony and railing), the door's size there and its hole and lining in the pavilion's wall, the pavilion's main floor beside the porch (the two windows at ±3.6 m that the photographs show as brick between quoins), the stone courses that the porch now interrupts, the 528/529 wall that `clearOf` moves to the wider doorway's reveal, the step texts, the Petrie Court comment in `src/model/collection/spaces-b.ts`, `docs/research/interior.md` and `interior-images.md`, the spec's Doors item, the devlog.
+Included: the porch, new in `src/model/core/weston-porch.ts` (its body, pilasters, pedestals, entablature, balcony and railing), the door's size and its hole and lining in the pavilion's wall (`src/model/core/weston-facade.ts`), the pavilion's main floor beside the porch (the two windows at ±3.6 m that the photographs show as brick between quoins), the stone courses that the porch now interrupts, the 528/529 wall that `clearOf` moves to the wider doorway's reveal, the step texts, the Petrie Court comment in `src/model/collection/spaces-b.ts`, `docs/research/interior.md` and `interior-images.md`, the spec's Doors item, the devlog.
 
 Excluded: the door's place along the front, 2.68 m west of the floor map's (the brief: leave it unless the owner asks); the depth of the leaves in the doorway (see Approach); the facade's line, 1.54 m north of the floor map's; any other part of the pavilion.
 
@@ -23,7 +23,7 @@ Measured on fig. 29 (Heckscher's reproduction, 1878 px wide, 29.6 px a metre fro
 
 Built from the parts library and the core's builders, every piece closed: the body an `openWall` 5.26 × 5.81 m and 2.13 m deep with the doorway through it; library Ionic pilasters (`pilasterParts`, a plain lower and a fluted upper shaft) on the front, the sides and against the wall; pedestal and cap boxes; the door's `surround`; the library `entablature` (1.5 m, modillioned, no dentils) round the three sides on a filling block; the top block; a pipe railing in `palette.copperGreen` (sampled on #33: 103, 150, 132). The pavilion's main-floor windows at ±3.6 m go, and a strip of rusticated quoins stands beside each side of the porch, as #33 and fig. 110 show.
 
-The door stays in the 1888 wall, 0.3 m behind its face, as the brief asks. #33 at full size puts the real leaves about 0.35 m behind the porch's face (the lit gap at the east leaf's hinge, 45 px inside the opening's east edge where the porch's depth runs about 128 px a metre), and the 1888 plan draws the door at the porch's front: so the real porch is a vestibule closed at its front, where the model's is a lined passage 2.25 m deep before the leaves. That stays open for the owner, a one-constant change with its gates' places.
+The door stays in the 1888 wall, 0.3 m behind its face: this unit reads the brief's "leave the door where it is" as covering the leaves' depth too. #33 at full size puts the real leaves about 0.35 m behind the doorway's architrave (the lit gap at the east leaf's hinge, 45 px inside the opening's east edge where the porch's depth runs about 128 px a metre), and the 1888 plan draws the door at the porch's front: so the real porch is a vestibule closed at its front, where the model's doorway is a stone passage 2.43 m deep before the leaves (2.13 m through the porch's body, 0.3 m into the wall), 2.5 m behind the architrave. That stays open for the owner. Moving the leaves would move `WESTON_DOOR` and the places the walk's tests and the e2e specs take from it, end the swing's reach into gallery 529 (so the 528/529 wall would no longer need moving), leave the 1888 wall's lining and threshold behind the door, and need the leaves' no-shadow reading (`core.westonDoorWood`) probed again.
 
 ## Acceptance criteria
 
@@ -39,9 +39,10 @@ The door stays in the 1888 wall, 0.3 m behind its face, as the brief asks. #33 a
 - [x] Research: figs. 26, 28, 29 and 110, #33 and #35 read at native size; the porch measured.
 - [x] Model: `src/model/core/weston-porch.ts` (new: the porch's stonework in the facade step, its railing in the openings step, the door's and the porch's measures), `src/model/core/weston-facade.ts` (the door's size, the pavilion's main floor, the courses the porch stops), `src/model/core/wings.ts` (the steps), comments in `galleries.ts`, `spaces-b.ts`, `routes.ts`. The porch's once-only masonry (body, the door's architrave, the entablature and its modillions) is one piece, since the core sat at its budget of 130 meshes.
 - [x] Tests: `core.test.ts` lets the porch's stretch of the front (within 3.5 m of the door's middle) reach 2.9 m into the court, where trim may otherwise reach 1.5 m; `closure.test.ts` counts two fewer glass sheets in `wings-openings` (the two windows gone); `lib/door.test.ts`'s Weston unit is 3.29 × 4.91 m.
-- [ ] Checks: `npm run verify` green through `tmp/gate.sh` on the first commit (732 unit tests, 125 e2e, Weston's walks among them); the shots, and `routes.spec.ts` three times at 4× throttle.
+- [x] Checks on the first commit, `ff9fcbd`: `npm run verify` green through `tmp/gate.sh` (732 unit tests, 125 e2e, Weston's walks among them); the standard shots against the gallery's set of `1002016` (no model change between it and the base `b9ecd58`): 21 of 64 images differ beyond the capture's noise, every difference at the porch, each read at native size.
+- [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): no blocker or major finding; twelve minor findings and nits (F0 to F11).
+- [ ] Repairs of review 0, `npm run verify` again, `routes.spec.ts` three times in a row at 1× and at 4× throttle, re-review.
 - [x] Records: `interior.md`, `interior-images.md` (#33, #35, #43), `history.md`, the spec's Doors item, the devlog.
-- [ ] Review (Codex and Claude), repairs, re-review as needed.
 - [ ] Land, gallery.
 
 ## Outcome

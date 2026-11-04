@@ -5,7 +5,7 @@
  * between stone piers in each bay, an entablature at the second floor, a round arch of rusticated voussoirs over the upper windows, rusticated
  * quoin piers with roundels between the arches, a cornice; at the centre the 1888 entrance pavilion with its porch and balcony (weston-porch.ts) and a
  * great round window. Beside the porch the pavilion's main floor is brick between quoins, with no window (interior-images.md #33 and #43). Trim may
- * project up to 1.5 m into the court (coordinator, 2026-10-11).
+ * project up to 1.5 m into the court (coordinator, 2026-10-11), and the porch stands 2.85 m out to its cornice (docs/design/spec.md, World frame).
  */
 import { Matrix4 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -99,11 +99,10 @@ export function westonTrim(kit: Kit): void {
   const stone = core.westonStone;
   const e = SOUTH;
   const disc = cylinder(20);
-  // The porch's pedestals, edge to edge: the dado stops at them. The main floor's head band stops at the porch's cornice, which stands at its height.
+  // The porch's pedestals, edge to edge: the dado stops at them. The main floor's head band stands at the height of the porch's entablature: under the
+  // cornice it runs on to the porch's sides, and from the cornice's foot up it stops at the cornice.
   const porch0 = CENTRE_Z - PORCH_REACH.pedestals;
   const porch1 = CENTRE_Z + PORCH_REACH.pedestals;
-  const cornice0 = CENTRE_Z - PORCH_REACH.cornice - 0.05;
-  const cornice1 = CENTRE_Z + PORCH_REACH.cornice + 0.05;
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, L1 - 0.45, L1, 0.14, 0, 0);
   for (const [a0, a1] of [
@@ -112,11 +111,16 @@ export function westonTrim(kit: Kit): void {
   ] as const) {
     elevationBox(kit, e, stone, a0, a1, L1, L1 + WESTON_DADO, 0.1, 0, 1);
   }
-  for (const [a0, a1] of [
-    [WEST_Z, cornice0],
-    [cornice1, EAST_Z],
-  ] as const) {
-    elevationBox(kit, e, stone, a0, a1, L1 + WESTON_LOWER_HEAD, L1 + WESTON_LOWER_HEAD + 0.75, 0.16, 0, 3);
+  const band = { y0: L1 + WESTON_LOWER_HEAD, y1: L1 + WESTON_LOWER_HEAD + 0.75, cornice: L1 + PORCH_REACH.corniceFrom };
+  for (const s of [-1, 1]) {
+    const end = s < 0 ? WEST_Z : EAST_Z;
+    for (const [reach, y0, y1] of [
+      [BESIDE_PORCH, band.y0, band.cornice],
+      [PORCH_REACH.cornice + 0.05, band.cornice, band.y1],
+    ] as const) {
+      const near = CENTRE_Z + s * reach;
+      elevationBox(kit, e, stone, Math.min(near, end), Math.max(near, end), y0, y1, 0.16, 0, 3);
+    }
   }
   // Rusticated quoins, long and short blocks in turn, at the corners and the pavilion's edges; stone pilaster strips between the other bays.
   for (const edge of [WEST_Z + 0.48, PAV0, PAV1, EAST_Z - 0.48]) {
@@ -126,8 +130,8 @@ export function westonTrim(kit: Kit): void {
       elevationBox(kit, e, stone, edge - half, edge + half, y, y + 0.54, 0.12, 0, 2 + Math.round((y - L1) / 1.5));
     }
   }
-  // Beside the porch, on the pavilion's brick, a strip of quoins each side, long and short blocks in turn from the dado to the head band, clear of the
-  // porch's side pilasters and their capitals (interior-images.md #33 and #43).
+  // Beside the porch, on the pavilion's brick, a strip of quoins each side, long and short blocks in turn from the dado up to just under the head band,
+  // clear of the porch's side pilasters and their capitals (interior-images.md #33 and #43).
   for (const s of [-1, 1]) {
     let k = 0;
     for (let y = L1 + WESTON_DADO; y + 0.5 < L1 + WESTON_LOWER_HEAD; y += 0.58, k++) {
@@ -186,7 +190,7 @@ export function westonOpenings(kit: Kit): void {
   });
   for (const px of [-3.6, 3.6]) put(ground, z(CENTRE_Z, px), GROUND_WINDOW.sill, 5);
   put(big, CENTRE_Z, L2 + w.sill, 5);
-  const dm = placed(x, L1, CENTRE_Z, FACING.south);
+  const dm = placed(WESTON_DOOR.x, L1, CENTRE_Z, FACING.south);
   kit.add(door.frame, palette.metalDark, dm, 5);
   kit.addTagged(door.leaf, core.westonDoorWood, dm, doorTag('weston'), 5);
   westonRailing(kit);
