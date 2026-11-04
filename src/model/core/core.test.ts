@@ -9,7 +9,9 @@
  * Bound: geometry is built in Node without WebGL, so counts and bounds are exact but nothing here looks at a rendered pixel.
  * Blocks: core-1880-a, core-1888-b and core-1894-c tile X −49.7..49.4, Z −138.3..−69.0 (exterior.md section 2). A piece may overstep that by
  * 0.3 m; trim (any non-brick piece) on the west face (into the Lehman court and the park) and on Weston's south face (into the Petrie Court)
- * may project up to 1.5 m (coordinator, 2026-10-11).
+ * may project up to 1.5 m (coordinator, 2026-10-11), but for the porch of Weston's door, which stands 2.25 m out to its pilasters' faces and
+ * 2.85 m to its cornice's front as the April 1888 drawing and the court's photographs show it (work unit 17, docs/research/interior.md, Weston's 1888
+ * door): trim lying wholly within 3.5 m of the door's middle along the front (Z −103.65) may reach 2.9 m into the court.
  */
 import { Box3, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -36,6 +38,8 @@ const ALL: readonly StepDef[] = ARRAYS.flatMap(([, steps]) => steps);
 const BLOCKS = { x0: -49.7, x1: 49.4, z0: -138.3, z1: -69.0 } as const;
 const SLACK = 0.3;
 const TRIM = 1.5;
+/** The stretch of Weston's south face where its porch stands, and how far trim there may reach into the Petrie Court (see the header). */
+const PORCH = { z0: -103.65 - 3.5, z1: -103.65 + 3.5, reach: 2.9 } as const;
 const BUDGET = { triangles: 350_000, meshes: 130, lights: 1 } as const;
 
 describe('core steps', () => {
@@ -60,11 +64,12 @@ describe('core steps', () => {
         const trim = piece.material !== palette.brick;
         const west = BLOCKS.z0 - box.min.z;
         const south = BLOCKS.x0 - box.min.x;
+        const porch = trim && box.min.z >= PORCH.z0 && box.max.z <= PORCH.z1;
         const bad =
           box.max.x > BLOCKS.x1 + SLACK ||
           box.max.z > BLOCKS.z1 + SLACK ||
           west > (trim ? TRIM : SLACK) + 1e-6 ||
-          south > (trim ? TRIM : SLACK) + 1e-6 ||
+          south > (porch ? PORCH.reach : trim ? TRIM : SLACK) + 1e-6 ||
           box.min.y < -30 ||
           box.max.y > 60;
         if (bad) problems.push(`${step.id} piece ${String(i)} (${piece.material.name}): ${box.min.toArray().map((v) => v.toFixed(2)).join(', ')} to ${box.max.toArray().map((v) => v.toFixed(2)).join(', ')}`);

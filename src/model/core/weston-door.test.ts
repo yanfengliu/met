@@ -36,7 +36,7 @@ const W: WalkInput = { forward: 1, right: 0, run: false };
 /** Yaw facing +X, from the court into wing B, and −X, back out (src/walk/walker.ts: yaw 0 faces −Z and grows turning left). */
 const NORTH = -Math.PI / 2;
 const SOUTH = Math.PI / 2;
-/** Where the walk starts and ends: on the door's axis 3.5 m out in the court, in front of the porch's columns. */
+/** Where the walk starts and ends: on the door's axis 3.5 m out in the court, just before the porch's pedestals. */
 const COURT_X = WESTON_DOOR.x - 3.5;
 
 let timeline: Timeline;
