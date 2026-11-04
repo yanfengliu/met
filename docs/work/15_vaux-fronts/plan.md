@@ -52,7 +52,9 @@ The build: each head is two pieces, its light granite and its dark, placed per a
 - [x] Verify on the repairs (green), commit `2238385`; review 1 (`reviews/1_implementation.md`) of it, F19 to F30 dispositioned and repaired.
 - [x] Verify on round 1's repairs (green), commit `cbc5edd`; review 2 (`reviews/2_implementation.md`) of it, F31 to F35 dispositioned and repaired.
 - [x] Verify on round 2's repairs (green, before the commit), commit `be01a26`; review 3 (`reviews/3_implementation.md`) of it, F36 to F40 dispositioned, four repaired.
-- [ ] Verify on round 3's repairs and commit; merge origin/main and verify the merged tree; landing; gallery.
+- [x] Verify on round 3's repairs (verify-5, green, before the commit), commit `532958d`; origin/main at `806bc91` (work unit 17, Weston's porch) merged in and verify on the merged tree (verify-6, green), then the merge committed as `859d419` under the landing slot once a fetch found origin/main unmoved; review 4 (`reviews/4_implementation.md`) of both, F41 to F44 dispositioned and repaired in comments and this plan.
+- [x] Verify on round 4's repairs (verify-7, green) and the Load rule's runs on the same tree: `routes.spec` and `walk.spec` three runs in a row at 4× CPU throttle and three at 1×, green (at 4× 21 passed and 2 skipped each, in 146, 157 and 151 s; at 1× 23 passed each, in 127, 124 and 126 s; `tmp/vf/load-1.log`, ignored).
+- [ ] Landing; gallery.
 
 ## Outcome
 

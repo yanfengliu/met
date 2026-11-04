@@ -12,8 +12,11 @@
  * every piece's window lasts at least 0.25 of its step (src/build/stagger.ts), so each holds one, and a dropping piece is off its place until it lands.
  * Red proofs (2026-11-04): the sightline went red with the court's east lintel back on the flat roof (12.0 m; 398 points hidden), with the strip's head
  * back at 12.9 m (110) and with it at 13.8 m, where the lead flat cuts the crown (27), and with the central head's light piece left out of its step; the
- * motion went red with `vaux-openings` popping its pieces about their own centres (25 problems), staggered by Z (15), and dropping each piece by its
- * own height (25).
+ * motion, rerun with the drawn check (review 4), went red with `vaux-openings` popping its pieces about their own centres (25 problems), staggered by Z
+ * (17: 15 of matrices, 2 of drawing), and dropping each piece by its own height (25). No model change fails the drawn check alone: a head's two pieces
+ * share an order, so they are drawn alike unless a change gives them different windows, and then their matrices differ at the same moments (both of the
+ * Z stagger's drawing problems). It went red alone only with the engine's state changed under it: a light head's mesh hidden, or its count zeroed (Codex,
+ * review 4).
  */
 import { Matrix4, Mesh, Raycaster, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';

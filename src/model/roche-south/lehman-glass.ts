@@ -142,10 +142,11 @@ const END_CLEAR = 0.01;
 
 /**
  * The skylight along the 1880 front: a lean-to from the flat roof up to the old wall, rafters every 0.75 m (orthophoto), in two runs either side of the
- * court's east tip (STRIP_GAP_HALF_X). Its head bar runs along the brick face over the old front's arches and under its string course, 5 mm off it, so
- * nothing of it enters the old front's trim. A glass triangle closes each run's inner end up to the lead flat over the gap, and a pane the 0.25 m between
- * it and the court's ring wall, from the roof's top. Over the link walls' coping (13.1 m) a glass quad closes each run's outer end, from where the glass
- * crosses the coping's height to the brick and up to the head line, 1 cm beyond the bars' ends.
+ * court's east tip (STRIP_GAP_HALF_X). Its head bar runs along the brick, 5 mm off it, over the old front's arches and under its string course, so
+ * nothing of it enters the old front's trim; its outer ends pass the old front's end (|X| 14.5) onto wings B and C's west walls. A glass triangle closes
+ * each run's inner end up to the lead flat over the gap, and a pane the 0.25 m between it and the court's ring wall, from the roof's top. Over the link
+ * walls' coping (13.1 m) a glass quad closes each run's outer end, from where the glass crosses the coping's height to the wings' brick and up to the
+ * head line, 1 cm beyond the bars' ends.
  */
 export function stripPieces(): Piece[] {
   const z0 = STRIP_WEST_Z;
@@ -175,13 +176,15 @@ export function stripPieces(): Piece[] {
     }
     const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
     for (const matrix of quadPanes(lifted(corners[0]), lifted(corners[1]), lifted(corners[2]), lifted(corners[3]))) pieces.push({ matrix, glass: true, order: 1 });
-    // The run's inner end: a triangle from its low edge up to the head's height, under the lead flat, and a pane across to the ring wall.
+    // The run's inner end: a triangle from its low edge up to the head's height, under the lead flat, and a pane across to the ring wall. The triangle
+    // lies in the bars' end faces' plane, as it did before work unit 15, so outside the end rafter glass and steel share about 30 cm² (review 4); only the
+    // 0.25 m pocket by the ring wall sees them.
     pieces.push({ matrix: paneMatrix([inner, y0, z0], [inner, y1, z0], [inner, y1, z1]), glass: true, order: 1 });
     // The pane across to the ring wall stands from the roof's top, under the run's sill bar.
     const ring = inner - Math.sign(inner) * (STRIP_GAP_HALF_X - RING_CROSSING_X);
     for (const matrix of quadPanes([ring, LEHMAN_ROOF_Y, z0], [inner, LEHMAN_ROOF_Y, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true, order: 1 });
-    // The run's outer end over the link wall's coping, 1 cm beyond the bars' ends: from where the glass crosses the coping's height to the old front's
-    // brick face and up to the head line.
+    // The run's outer end over the link wall's coping, 1 cm beyond the bars' ends: from where the glass crosses the coping's height to the brick, here
+    // wing B's or C's west wall beyond the old front's end, and up to the head line.
     const outer = inner === x0 ? x1 : x0;
     const end = outer + Math.sign(outer - inner) * END_CLEAR;
     if (y1 > LINK_TOP_Y) {
