@@ -60,6 +60,10 @@
     {
       "id": 14,
       "theme": "mouse-look"
+    },
+    {
+      "id": 15,
+      "theme": "vaux-fronts"
     }
   ]
 }

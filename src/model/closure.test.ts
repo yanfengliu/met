@@ -6,7 +6,7 @@
  * Pieces: every piece of every mesh the walk collides with (src/walk/collision.ts `collisionMeshes`, the doors' closed leaves among them) or the cut caps
  * (src/viewer/section-cut.ts `capsMesh`, as src/main.ts picks them), as its step's mesh draws it, and each door's leaves apart, as the door layer's
  * stand-ins draw them (src/model/lib/window.ts `doorLeavesOf`), but the sheets their builders declare (src/model/lib/sheet.ts), which SHEETS counts by
- * step and material so that a new one is seen (10,028 sheet pieces in 53 pairs: glass, paving, roads, paths, the terrain, the pad and the upright
+ * step and material so that a new one is seen (10,023 sheet pieces in 52 pairs: glass, paving, roads, paths, the terrain, the pad and the upright
  * surfaces); the walk reads no inside in a sheet, whatever its crossings (`LineCrossings.sheet`, from `build` and `buildPieces` alike), and the cut
  * leaves it out. Pieces read alike form a shape: one geometry with one direction of world vertical in its frame. Counted at dc1a7dc: 870 shapes of
  * 16,766 pieces.
@@ -90,7 +90,7 @@ const SHEETS: Readonly<Record<string, number>> = {
   'great-hall-domes/glass': 3,
   'greek-court-skylight/glass': 1,
   'hunt-roof/glass': 3,
-  'lehman-gallery-glass/rocheSouthGlass': 16,
+  'lehman-gallery-glass/rocheSouthGlass': 22,
   'lehman-pyramid/rocheSouthGlass': 8,
   'mmw-north-roofs/glass': 1,
   'mmw-south-roofs/glass': 1,
@@ -116,7 +116,7 @@ const SHEETS: Readonly<Record<string, number>> = {
   'site-terrain/siteBareGround': 1,
   'site-transverse-cuts/asphalt': 657,
   // Standing upright, every face vertical: lib/window.ts's window and door panes, the site's curbs, retaining walls and excavation faces (site/grid.ts),
-  // core/arches.ts's tympanum panels, the Arms and Armor Court's banners and the Astor Court's moon gate surround.
+  // the Arms and Armor Court's banners and the Astor Court's moon gate surround.
   'american-1924-walls/glassDark': 2,
   'american-walls/glassDark': 1,
   'armor-court-parade/mmwClothBlue': 5,
@@ -133,8 +133,7 @@ const SHEETS: Readonly<Record<string, number>> = {
   'site-terrain/siteExcavation': 1,
   'site-terrain/siteGranite': 1,
   'site-terrain/siteWallStone': 1,
-  'vaux-openings/glassDark': 12,
-  'vaux-west-front/brick': 7,
+  'vaux-openings/glassDark': 8,
   'wings-openings/glassDark': 137,
 };
 

@@ -22,6 +22,7 @@ import { MeshBuilder } from '../lib/builder.js';
 import { levelFaces, openAlong } from '../lib/check.js';
 import { palette } from '../palette.js';
 import { holeLining, holeOutline, openWall } from './arches.js';
+import { core } from './materials.js';
 import type { Hole } from './arches.js';
 import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from './index.js';
 
@@ -57,7 +58,7 @@ describe('core steps', () => {
         const g = piece.geometry;
         if (g.boundingBox === null) g.computeBoundingBox();
         const box = (g.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
-        const trim = piece.material !== palette.brick;
+        const trim = piece.material !== palette.brick && piece.material !== core.vauxBrick;
         const west = BLOCKS.z0 - box.min.z;
         const south = BLOCKS.x0 - box.min.x;
         const bad =

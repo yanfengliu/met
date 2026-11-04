@@ -16,6 +16,7 @@ import {
   LEHMAN_APEX_Y,
   LEHMAN_BAND_LOW_Y,
   LEHMAN_EAVE_Y,
+  LEHMAN_PARAPET_Y,
   LEHMAN_ROOF_Y,
   STRIP_EAST_Z,
   STRIP_GAP_HALF_X,
@@ -134,9 +135,15 @@ export function bandPieces(): Piece[] {
 
 /**
  * The skylight along the 1880 front: a lean-to from the flat roof up to the old wall, rafters every 0.75 m (orthophoto), in two runs either side of the
- * court's east tip (STRIP_GAP_HALF_X). Its head bar rests against the brick face above the band at the second floor, so nothing of it enters the old
- * front's trim; a glass triangle closes each run's inner end up to the lead flat over the gap.
+ * court's east tip (STRIP_GAP_HALF_X). Its head bar rests against the brick face over the old front's arches and under its string course, so nothing of it enters the
+ * old front's trim; a glass triangle closes each run's inner end up to the lead flat over the gap, and a pane the 0.25 m between it and the court's ring
+ * wall. Over the link walls' coping (13.1 m) a glass triangle closes each run's outer end up to the head.
  */
+/** The top of the link walls' coping beside the strip's outer ends (lehman.ts: parapet and a 0.3 m coping). */
+const LINK_TOP_Y = LEHMAN_PARAPET_Y + 0.3;
+/** |X| where the court's ring wall crosses the strip's west edge: the gap's half width less its 0.25 m clearance (lehman-plan.ts). */
+const RING_CROSSING_X = STRIP_GAP_HALF_X - 0.25;
+
 export function stripPieces(): Piece[] {
   const z0 = STRIP_WEST_Z;
   const y0 = LEHMAN_ROOF_Y + 0.1;
@@ -165,8 +172,16 @@ export function stripPieces(): Piece[] {
     }
     const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
     for (const matrix of quadPanes(lifted(corners[0]), lifted(corners[1]), lifted(corners[2]), lifted(corners[3]))) pieces.push({ matrix, glass: true, order: 1 });
-    // The run's inner end: a triangle from its low edge up to the head's height, under the lead flat.
+    // The run's inner end: a triangle from its low edge up to the head's height, under the lead flat, and a pane across to the ring wall.
     pieces.push({ matrix: paneMatrix([inner, y0, z0], [inner, y1, z0], [inner, y1, z1]), glass: true, order: 1 });
+    const ring = inner - Math.sign(inner) * (STRIP_GAP_HALF_X - RING_CROSSING_X);
+    for (const matrix of quadPanes([ring, y0, z0], [inner, y0, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true, order: 1 });
+    // The run's outer end over the link wall's coping: a triangle under the glass, from where it crosses the coping's height to the head.
+    const outer = inner === x0 ? x1 : x0;
+    if (y1 > LINK_TOP_Y) {
+      const zc = z0 + ((LINK_TOP_Y - y0) / (y1 - y0)) * (z1 - z0);
+      pieces.push({ matrix: paneMatrix([outer, LINK_TOP_Y, zc], [outer, LINK_TOP_Y, z1], [outer, y1, z1]), glass: true, order: 1 });
+    }
   };
   run(-STRIP_HALF_X, -STRIP_GAP_HALF_X, -STRIP_GAP_HALF_X);
   run(STRIP_GAP_HALF_X, STRIP_HALF_X - 0.1, STRIP_GAP_HALF_X);

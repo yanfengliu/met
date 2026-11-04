@@ -86,7 +86,7 @@ export const palette = Object.freeze({
   limestoneDark: standard('limestoneDark', { colour: '#928c81', roughness: 0.86 }),
   /** Grey granite: steps, pedestals, landing edges ([C2] #918B81, #8C867D); scaled with limestone. */
   granite: standard('granite', { colour: '#837c70', roughness: 0.66 }),
-  /** Red brick of the 1880 Vaux building ([C7] about #9A4B3A; its granite bands are about #B9B4AA). */
+  /** Red brick of the 1888 and 1894 wings and the 1939 hall's clerestory ([C7] about #9A4B3A); the 1880 building's own is core/materials.ts vauxBrick, calibrated to its photographs. */
   brick: standard('brick', { colour: '#9a4b3a', roughness: 0.9 }),
   /** Sandstone: the Temple of Dendur (interior.md, Dendur: suggested base #a07a58). */
   sandstone: standard('sandstone', { colour: '#a07a58', roughness: 0.85 }),
