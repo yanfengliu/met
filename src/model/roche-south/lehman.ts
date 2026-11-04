@@ -226,7 +226,8 @@ function ringWalls(kit: Kit): void {
     const westFlat = Math.abs(a[1] - b[1]) < 1e-6 && a[1] < COURT_Z;
     if (eastFlat) {
       // The east flat opens the court to the 1880 front: a wall under the landing and a lintel over the front's central arch, on the lead flat at the
-      // skylight's head (exterior-images.md #60 shows the arch whole through this opening).
+      // skylight's head, so the arch's head shows through this opening as exterior-images.md #60 shows it, but for its lowest stones' outer halves,
+      // which the long ring walls hide (exterior.md section 9).
       kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, G, M - MAIN_SLAB, INNER_RING_THICKNESS), 0);
       kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, STRIP_HEAD_Y + 0.06, LEHMAN_EAVE_Y, INNER_RING_THICKNESS), 0);
       continue;

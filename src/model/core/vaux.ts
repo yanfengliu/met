@@ -5,7 +5,7 @@
  */
 import type { StepDef } from '../../build/types.js';
 import { L1, WEST_Z } from './constants.js';
-import { westFrontTrim, westFrontWall, westFrontWindows } from './vaux-front.js';
+import { westFrontHeads, westFrontTrim, westFrontWall, westFrontWindows } from './vaux-front.js';
 import { vauxGalleries, vauxRoof } from './vaux-roof.js';
 import { vauxFoundations, vauxHall, vauxIronFrame, vauxSideTrim, vauxWalls } from './vaux-shell.js';
 
@@ -36,7 +36,7 @@ export const vauxSteps: readonly StepDef[] = [
     id: 'vaux-west-front',
     chapter: CHAPTER,
     title: 'Build the west front and its entrance',
-    detail: 'The park front: five tall pointed arches with light and dark granite voussoirs over a rusticated ground storey, the entrance on the axis. It survives inside the Lehman Wing.',
+    detail: 'The park front: five tall arched openings over a rusticated ground storey, the entrance on the axis, with granite bands and a cornice. It survives inside the Lehman Wing.',
     motion: { kind: 'grow' },
     stagger: 'order',
     weight: 1.3,
@@ -59,11 +59,13 @@ export const vauxSteps: readonly StepDef[] = [
     id: 'vaux-openings',
     chapter: CHAPTER,
     title: 'Glaze the windows and set the granite trim',
-    detail: 'Windows fill the west arches and the ground storey; light and dark granite voussoirs and bands finish the side and east walls.',
-    motion: { kind: 'pop' },
-    stagger: 'z',
+    detail: 'Windows fill the west arches and the ground storey; heads of light and dark granite voussoirs and granite bands finish the fronts and side walls.',
+    // A fixed drop in rising courses (by order): each arch head's light and dark pieces share an order and a distance, so they move as one.
+    motion: { kind: 'drop', distance: 3 },
+    stagger: 'order',
     build(kit) {
       westFrontWindows(kit);
+      westFrontHeads(kit);
       vauxSideTrim(kit);
     },
   },

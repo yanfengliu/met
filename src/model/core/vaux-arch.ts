@@ -5,10 +5,10 @@
  * jambs (exterior-images.md #53, #60, #61, #63, #64). The west front fills the head with a striped tympanum; the east front's heads hold a roundel inside
  * a moulded light arch and a ring of dark granite blocks round the voussoirs (#67); the side walls' heads, glazed in 1880 (#49), are bricked up.
  * Frames: an arch's parts are placed at the centre of its springing line on the wall face, as arches.ts's rings and tympana are. Each head is two
- * pieces, its light granite and its dark, built in that frame and placed per arch, with one bounding box between them, so they arrive together and grow
- * or pop about one pivot at the arch's own place in the build (src/build/timeline.ts reads a piece's bounds for both).
+ * pieces, its light granite and its dark, built in that frame and placed per arch; both arrive in the `vaux-openings` step with one order and drop the
+ * same fixed distance, so they move as one (vaux.ts; core/vaux-fronts.test.ts).
  */
-import { Box3, Matrix4, Vector3 } from 'three';
+import { Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
 
 import { MeshBuilder } from '../lib/index.js';
@@ -107,7 +107,7 @@ export type HeadKind = 'west' | 'side' | 'east';
 /**
  * One head's two pieces in the arch's frame. The light: its light voussoirs and inner order or orders, on the west front its striped tympanum on the back
  * of the head's niche (#60, #61), on an uncut east head the roundel's moulding there (#67). The dark: its dark voussoirs and, on the east front, the ring of
- * dark blocks round them. Both take the union of their bounds as their bounding box, so the build gives them one stagger key and one pivot.
+ * dark blocks round them. Each keeps its own bounds: the section cut's cap pass reads them as the piece's (src/viewer/cap-pass.ts).
  */
 function headPair(kind: HeadKind, cut?: Cut): { readonly light: BufferGeometry; readonly dark: BufferGeometry } {
   const key = `${kind}:${cut === undefined ? 'whole' : keyOf(...cut)}`;
@@ -130,9 +130,6 @@ function headPair(kind: HeadKind, cut?: Cut): { readonly light: BufferGeometry; 
     const dark = dim.build();
     light.name = `vauxHead:light:${key}`;
     dark.name = `vauxHead:dark:${key}`;
-    const box = new Box3().copy(light.boundingBox ?? new Box3()).union(dark.boundingBox ?? new Box3());
-    light.boundingBox = box.clone();
-    dark.boundingBox = box.clone();
     return { light, dark };
   });
 }

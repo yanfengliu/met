@@ -76,7 +76,7 @@ function rustication(kit: Kit): void {
   }
 }
 
-/** Granite bands and rustication, the arches' orders, voussoirs and striped tympana, the string course, cornice and coping, in rising courses. */
+/** Granite bands and rustication, the jambs' inner order, the string course, cornice and coping, in rising courses; the arches' heads come with the openings. */
 export function westFrontTrim(kit: Kit): void {
   band(kit, WALL_BASE_Y, RUST_Y0, 0, [], 0.12);
   rustication(kit);
@@ -84,8 +84,6 @@ export function westFrontTrim(kit: Kit): void {
   band(kit, L1 - 0.2, L1 + 0.12, 2, doors);
   // The impost band runs across the whole front, over each opening as its lintel (#53, #60, #61).
   band(kit, LINTEL_Y, SPRING_Y, 4);
-  const light = lightHead('west');
-  const dark = darkHead('west');
   for (const x of FRONT_ARCH_X) {
     const sill = doorway(x) ? L1 : SILL_Y;
     // A window stands over a light granite apron (#53, #61).
@@ -95,17 +93,24 @@ export function westFrontTrim(kit: Kit): void {
       const edge = x + side * (CLEAR / 2);
       addBox(kit, core.granite, edge, sill, WEST_Z - ORDER_PROUD, edge + side * VAUX_INNER_ORDER, LINTEL_Y, WEST_Z, 4);
     }
-    // The head: light voussoirs, the inner order and the striped tympanum (#60, #61) as one piece; the dark voussoirs, grey stone, never brick, in
-    // every colour photograph of the front, rock-faced where one is sharp enough to show it (#60 to #64), as another; no hood round them (#53, #60, #61,
-    // #63, #64).
-    const at = placed(x, SPRING_Y, WEST_Z, FACING.west);
-    kit.add(light, core.granite, at, 5);
-    kit.add(dark, core.graniteDark, at, 5);
   }
   band(kit, STRING_Y, STRING_Y + VAUX_BAND, 6);
   const cornice = moulding({ profile: 'cornice-plain', path: [[-A_HALF, 0, 0], [A_HALF, 0, 0]], height: 0.8, projection: 0.6 });
   kit.add(cornice, core.granite, placed(0, CORNICE_Y, WEST_Z, FACING.west), 8);
   addBox(kit, core.granite, -A_HALF, PARAPET_Y, WEST_Z - 0.1, A_HALF, COPING_TOP_Y, WEST_Z + WEST_WALL, 9);
+}
+
+/**
+ * The heads of the front's five arches, set with the openings (vaux.ts): light voussoirs, the inner order and the striped tympanum (#60, #61) as one piece;
+ * the dark voussoirs, grey stone, never brick, in every colour photograph of the front, rock-faced where one is sharp enough to show it (#60 to #64), as
+ * another; no hood round them (#53, #60, #61, #63, #64).
+ */
+export function westFrontHeads(kit: Kit): void {
+  for (const x of FRONT_ARCH_X) {
+    const at = placed(x, SPRING_Y, WEST_Z, FACING.west);
+    kit.add(lightHead('west'), core.granite, at, 5);
+    kit.add(darkHead('west'), core.graniteDark, at, 5);
+  }
 }
 
 /** Windows in the front's arches that are not doorways and in the ground storey's four windows; and glass in the hall's two oculi. */

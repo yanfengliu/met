@@ -141,6 +141,8 @@ export function bandPieces(): Piece[] {
  */
 /** The top of the link walls' coping beside the strip's outer ends (lehman.ts: parapet and a 0.3 m coping). */
 const LINK_TOP_Y = LEHMAN_PARAPET_Y + 0.3;
+/** How far the head bar's underside stands under the head line at the wall: half its depth along the slope's normal, leaning (about 0.13 m). */
+const HEAD_BAR_UNDER = 0.13;
 /** |X| where the court's ring wall crosses the strip's west edge: the gap's half width less its 0.25 m clearance (lehman-plan.ts). */
 const RING_CROSSING_X = STRIP_GAP_HALF_X - 0.25;
 
@@ -177,12 +179,13 @@ export function stripPieces(): Piece[] {
     // The pane across to the ring wall stands from the roof's top, under the run's sill bar.
     const ring = inner - Math.sign(inner) * (STRIP_GAP_HALF_X - RING_CROSSING_X);
     for (const matrix of quadPanes([ring, LEHMAN_ROOF_Y, z0], [inner, LEHMAN_ROOF_Y, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true, order: 1 });
-    // The run's outer end over the link wall's coping: from where the glass crosses the coping's height, under the glass and the head bar, to the old
-    // front's brick face.
+    // The run's outer end over the link wall's coping: from where the glass crosses the coping's height to the old front's brick face, up to the head
+    // bar's underside, whose end closes the rest; the pane stops short of the bar's end face rather than lie in its plane.
     const outer = inner === x0 ? x1 : x0;
-    if (y1 > LINK_TOP_Y) {
-      const zc = z0 + ((LINK_TOP_Y - y0) / (y1 - y0)) * (z1 - z0);
-      for (const matrix of quadPanes([outer, LINK_TOP_Y, zc], [outer, LINK_TOP_Y, STRIP_EAST_Z], [outer, y1, STRIP_EAST_Z], [outer, y1, z1])) pieces.push({ matrix, glass: true, order: 1 });
+    const under = y1 - HEAD_BAR_UNDER;
+    if (under > LINK_TOP_Y) {
+      const along = (y: number): number => z0 + ((y - y0) / (y1 - y0)) * (z1 - z0);
+      for (const matrix of quadPanes([outer, LINK_TOP_Y, along(LINK_TOP_Y)], [outer, LINK_TOP_Y, STRIP_EAST_Z], [outer, under, STRIP_EAST_Z], [outer, under, along(under)])) pieces.push({ matrix, glass: true, order: 1 });
     }
   };
   run(-STRIP_HALF_X, -STRIP_GAP_HALF_X, -STRIP_GAP_HALF_X);
