@@ -100,8 +100,8 @@ export function westonTrim(kit: Kit): void {
   const e = SOUTH;
   const disc = cylinder(20);
   // The porch's pedestals, edge to edge: the dado stops at them. The main floor's head band stands at the height of the porch's entablature and runs
-  // on to it, 1 cm short of what it meets at each height: the frieze, then from the cornice's foot the cornice's bed mouldings, and over its soffit
-  // its corona.
+  // on to it, 1 cm short of what it meets at each height: the frieze, then from the cornice's foot the face of the cornice's bed mouldings (which step
+  // back at their foot, so a little brick shows there), and over its soffit its corona.
   const porch0 = CENTRE_Z - PORCH_REACH.pedestals;
   const porch1 = CENTRE_Z + PORCH_REACH.pedestals;
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
