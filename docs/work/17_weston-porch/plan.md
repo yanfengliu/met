@@ -1,6 +1,6 @@
 # The Weston porch at the April 1888 drawing's size
 
-Status: active
+Status: complete
 Owner: Claude Code desktop session optimistic-mayer-d1fe0b (2026-11-04)
 Created: 2026-11-04
 Updated: 2026-11-04
@@ -27,12 +27,12 @@ The door stays in the 1888 wall, 0.3 m behind its face: this unit reads the brie
 
 ## Acceptance criteria
 
-- [ ] The porch in the drawing's form and size, measured as above; its depth recorded with its three readings; checked against #33, #35 and fig. 110 at their native size, and the standard shots before and after compared, every changed image read at native resolution.
-- [ ] The door's opening 3.29 × 4.91 m in its 0.20 m architrave; the leaves open a quarter turn into wing B only, stop the walker closed and let it through open (`src/model/core/weston-door.test.ts`, the Weston places in `tests/e2e/routes.spec.ts`).
-- [ ] Green: the door's gates (`src/model/core/weston-door.test.ts`, `src/model/door-fit.test.ts`, `src/model/doors.test.ts`, `src/model/lib/door.test.ts`), the reach gate, the collection's clearances (`src/model/collection/placement.test.ts`), the closure gate, and `npm run verify` on the final revision.
-- [ ] The Petrie Court's glass roof still meets the 1888 front's coping (shots and the roof's own geometry).
-- [ ] `docs/research/interior.md`'s "Open" paragraph and the spec's Doors item "Weston's door" match what is built, and say that the door's place along the front and its leaves' depth are left for the owner.
-- [ ] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished from main's shots.
+- [x] The porch in the drawing's form and size, measured as above; its depth recorded with its three readings; checked against #33, #35 and fig. 110 at their native size, and the standard shots before and after compared, every changed image read at native resolution.
+- [x] The door's opening 3.29 × 4.91 m in its 0.20 m architrave; the leaves open a quarter turn into wing B only, stop the walker closed and let it through open (`src/model/core/weston-door.test.ts`, the Weston places in `tests/e2e/routes.spec.ts`).
+- [x] Green: the door's gates (`src/model/core/weston-door.test.ts`, `src/model/door-fit.test.ts`, `src/model/doors.test.ts`, `src/model/lib/door.test.ts`), the reach gate, the collection's clearances (`src/model/collection/placement.test.ts`), the closure gate, and `npm run verify` on the final revision.
+- [x] The Petrie Court's glass roof still meets the 1888 front's coping (shots and the roof's own geometry).
+- [x] `docs/research/interior.md`'s "Open" paragraph and the spec's Doors item "Weston's door" match what is built, and say that the door's place along the front and its leaves' depth are left for the owner.
+- [x] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished from main's shots.
 
 ## Implementation steps
 
@@ -46,8 +46,12 @@ The door stays in the 1888 wall, 0.3 m behind its face: this unit reads the brie
 - [x] Repairs of review 1 (`69f9a84`); there `npm run verify` green, the shots compared with the gallery's set (the same 21 images, only at the porch) and the two broad ones read again at native size, and `routes.spec.ts` three runs in a row green at 1× and at 4× with no edit to a served file during them (a first 4× attempt on `817b4ae` was void: this session edited served files during it and Vite reloaded the page).
 - [x] Review 2 (Codex and Claude, `reviews/2_implementation.md`) of those repairs: no blocker or major finding; nits F2, F5, F6 and F12 repaired in the records and a comment, F13 declined with its reason.
 - [x] Records: `interior.md`, `interior-images.md` (#33, #35, #43), `history.md`, the spec's Doors item, the devlog.
-- [ ] Land, gallery.
+- [x] Land: `tmp/land.sh` taken, origin's main (`037c5b5`, the README, docs only) merged in as `740a999`, `npm run verify` green on it (732 unit tests, 125 e2e), pushed to origin's main; the Pages workflow built and deployed it. Gallery: the main checkout fast-forwarded (`tmp/ff-main.sh`), main's shots taken there, all 64 within the capture's noise of the shots reviewed, and the owner's gallery rebuilt and republished (version 10).
 
 ## Outcome
 
-Pending.
+Complete. The porch over Weston's 1888 door stands at the size of its April 1888 drawing (Heckscher fig. 29) and in its form: an aedicule of Ionic pilasters on 0.96 m pedestals, plain to 3.19 m and fluted to the capitals at 5.81 m, a pilaster on the front and on the side of each front corner and a narrower one against the wall with a blind panel between, under the parts library's modillioned entablature and a top block that carries the balcony at 7.6 m behind a copper pipe railing, 2.25 m out from the wall (`src/model/core/weston-porch.ts`). The door's opening is the drawing's 3.29 × 4.91 m in a 0.20 m architrave; its leaves open a quarter turn into wing B only, stop the walker closed and let it through open, and the walks come back out past the porch (`src/model/core/weston-door.test.ts`, `tests/e2e/routes.spec.ts`). Beside the porch the pavilion's main floor is brick between quoins. The Petrie Court's glass roof still rests on the 1888 front's coping: nothing above the balcony changed, and the court's shots show the eave on the coping.
+
+Merged to main at `740a999`, the merge of `4e41512` with origin's README commit `037c5b5`, pushed through `tmp/land.sh`. `npm run verify` passed on the merged tree: 732 unit tests and 125 e2e. `routes.spec.ts` passed three runs in a row at 1× and at 4× on `69f9a84`, which differs from the merge only in records and one comment. The Pages workflow built and deployed `740a999`. The owner's render gallery shows main's shots at `740a999` (version 10). Reviews 0 to 2 (Codex and Claude) found no blocker or major defect; every finding is repaired but F13, declined with its reason, and F8, recorded.
+
+Left for the owner, in `docs/research/interior.md` and the spec's Doors item: #33 puts the real leaves about 0.35 m behind the doorway's architrave, and the 1888 plan draws the door at the porch's front, where the model's leaves stand in the 1888 wall 2.5 m behind it; and the floor map puts the real door 2.68 m east of the model's. Limitations: the parts library's proportions stand in for the drawing's capitals (0.26 against 0.52 m), bases (0.36 against 0.47 m), modillion spacing (0.345 against 0.43 m) and corona (±3.23 against ±3.46 m); the porch's depth and several of its measures are estimates (`interior.md`). Origin's registry skips units 15 and 16, reserved by sessions still at work, as `work-docs.md` allows a past revision to; the main checkout's ignored `tmp/ff-main.sh` now sorts pending reservations into place, so its fast-forward keeps a consecutive working registry.
