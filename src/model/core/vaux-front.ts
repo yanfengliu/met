@@ -1,44 +1,51 @@
 /**
- * The Vaux and Mould west front of 1880 (history.md section 2; exterior.md [K7]): red brick with grey-white granite bands, seven pointed arches on
- * the main floor (five in the photographs, open with the owner: exterior.md section 9) whose voussoirs alternate light and dark grey granite ([C7]), striped tympana (the central one the original entrance),
- * segmental windows on the ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman
- * Wing (seen in int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch), the 1880 stereograph from the
- * southwest and the views of the front from the Lehman Wing (Untapped New York, 2026 and 2012; Forgotten New York, 2023; Heckscher 1995, figs. 105
- * and 107), exterior-images.md #49, #65, #60, #61, #62, #63 and #64. Trim may project up to 1.5 m into the Lehman court (coordinator, 2026-10-11);
- * walls do not.
+ * The Vaux and Mould west front of 1880 (history.md section 2; exterior.md [K7] and section 9), facing the park at Z −138.3 and surviving inside the
+ * Robert Lehman Wing (seen in int-lehman-pyramid-up): red brick over a ground storey of light rusticated stone with square-headed windows, five of
+ * the 1880 arches (vaux-arch.ts) 5.8 m apart on the main floor, the entrance on the axis, and a string course, cornice and parapet over them.
+ * References, each read at native size: Original_Met.jpg (about 1880, the front's north half beside its porch), 1880_Met_Museum.jpg (about 1900, the
+ * whole front from the southwest) and the views from the Lehman Wing (Untapped New York 2026 and 2012; Forgotten New York 2023; Heckscher 1995, figs.
+ * 105 and 107), exterior-images.md #49, #53, #60, #61, #62, #63 and #64; the floor map's doors through the front (exterior.md section 9). Trim may
+ * project up to 1.5 m into the Lehman court (coordinator, 2026-10-11); walls do not.
  */
 import { Matrix4 } from 'three';
+import type { BufferGeometry } from 'three';
 
 import type { Kit } from '../../build/types.js';
-import { moulding, windowUnit } from '../lib/index.js';
+import { MeshBuilder, moulding, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { openWall, tympanum, voussoirRing, type Hole } from './arches.js';
-import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, L2, LG, PARAPET_Y, VAUX_ARCH_RISE, VAUX_ARCH_SILL, VAUX_ARCH_SPAN, VAUX_ARCH_SPRING, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_OCULUS, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
+import { openWall, type Hole } from './arches.js';
+import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, LG, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_INNER_ORDER, VAUX_OCULUS, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
 import { core } from './materials.js';
-import { FACING, addBox, cylinder, placed } from './shapes.js';
+import { FACING, addBox, cylinder, memo, placed, runsBetween } from './shapes.js';
+import { CLEAR, COURSE, JOINT, LINTEL_Y, ORDER_PROUD, RUST_Y0, SILL_Y, SPRING_Y, archHoles, darkHead, lightHead } from './vaux-arch.js';
 
 /** Foot of the walls, on the footings (constants FOOTING_Y + 1.0). */
 export const WALL_BASE_Y = LG - 0.3;
 
-// Open with the owner (exterior.md section 9): seven is an estimate; the Lehman court's photographs show five, the outer two with windows
-// (exterior-images.md #60 and #64), and in 1880 two large arches stood either side of the central porch (exterior-images.md #49 and #65).
-/** World X of the seven arches across the front, the entrance on the axis. */
-export const FRONT_ARCH_X = [-3, -2, -1, 0, 1, 2, 3].map((k) => k * VAUX_BAY);
-const GROUND_WIDTH = 1.6;
-const GROUND_RISE = 0.4;
-const DOOR_WIDTH = 2.2;
-const PROUD = 0.08;
+/** World X of the front's five arches, the entrance on the axis, 5.8 m apart (constants.ts VAUX_BAY): five in #53, #60 and #64, two either side of the porch in #49 and #65. */
+export const FRONT_ARCH_X = [-2, -1, 0, 1, 2].map((k) => k * VAUX_BAY);
+/**
+ * The arches open to the main floor as doorways. Today the middle three are (#60, #61, #62; the floor map's doors at X −5.78, 0 and +5.76); the two beside
+ * the entrance would add passages for the walker between the Lehman Wing and gallery 521, so they wait for the owner (asked 2026-11-04) and hold windows.
+ */
+export const WEST_DOORWAY_X: readonly number[] = [0];
+const doorway = (x: number): boolean => WEST_DOORWAY_X.includes(x);
 
-// Open with the owner (exterior.md section 9): several of these arches are open to the floor as doorways today, not windows over sills
-// (exterior-images.md #61, #62 and #63).
+/** The ground storey's windows (#53), on the joints of its courses (vaux-arch.ts). */
+const GROUND_WIDTH = 2.2;
+/** The central door into the ground floor (the floor map's, 2.31 m), as wide as before, its head on a joint. */
+const DOOR_WIDTH = 2.2;
+const DOOR_HEAD_Y = RUST_Y0 + 5 * COURSE;
+const PROUD = 0.08;
+/** The string course over the arches, under the cornice: its middle 1.85 m over the crowns in #53, read upright at #60's 6.3 m from the main floor to the springing. */
+const STRING_Y = 15.9;
+
 function frontHoles(): Hole[] {
   const holes: Hole[] = [];
   for (const x of FRONT_ARCH_X) {
-    const door = x === 0;
-    const sill = door ? 0 : VAUX_ARCH_SILL;
-    holes.push({ head: 'pointed', x, y: L1 + sill - WALL_BASE_Y, width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING + VAUX_ARCH_RISE - sill, rise: VAUX_ARCH_RISE });
-    if (door) holes.push({ head: 'segmental', x, y: LG - WALL_BASE_Y, width: DOOR_WIDTH, height: 3.3, rise: 0.5 });
-    else holes.push({ head: 'segmental', x, y: LG + VAUX_GROUND_SILL - WALL_BASE_Y, width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, rise: GROUND_RISE });
+    holes.push(...archHoles(x, WALL_BASE_Y, { sill: doorway(x) ? L1 : SILL_Y, through: true }));
+    if (x === 0) holes.push({ x, y: LG - WALL_BASE_Y, width: DOOR_WIDTH, height: DOOR_HEAD_Y - LG });
+    else holes.push({ x, y: LG + VAUX_GROUND_SILL - WALL_BASE_Y, width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT });
   }
   return holes;
 }
@@ -46,79 +53,93 @@ function frontHoles(): Hole[] {
 /** The front's brick wall, 29 m across and 1.5 m thick, outer face on Z −138.3, from the footings to the parapet. */
 export function westFrontWall(kit: Kit): void {
   const geometry = openWall({ width: 2 * A_HALF, height: PARAPET_Y - WALL_BASE_Y, thickness: WEST_WALL, holes: frontHoles() });
-  // Open with the owner (exterior.md section 9): the photographs read this brick duller than the palette's brick renders (exterior-images.md #60 and #64).
-  kit.add(geometry, palette.brick, placed(0, WALL_BASE_Y, WEST_Z, FACING.west));
+  kit.add(geometry, core.vauxBrick, placed(0, WALL_BASE_Y, WEST_Z, FACING.west));
 }
 
-/** A granite band across the front from y0 to y1, standing `proud` in front of the wall face, split round the gaps (world X ranges). */
-function band(kit: Kit, y0: number, y1: number, order: number, gaps: readonly (readonly [number, number])[] = [], proud = PROUD): void {
-  let x = -A_HALF;
-  for (const [g0, g1] of [...gaps, [A_HALF, A_HALF] as const]) {
-    if (g0 > x) addBox(kit, core.granite, x, y0, WEST_Z - proud, g0, y1, WEST_Z, order);
-    x = g1;
+/** A granite band across the front from y0 to y1, standing `proud` in front of the wall face (from `back` out), split round the gaps (world X ranges). */
+function band(kit: Kit, y0: number, y1: number, order: number, gaps: readonly (readonly [number, number])[] = [], proud = PROUD, back = 0): void {
+  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, gaps)) addBox(kit, core.granite, x0, y0, WEST_Z - back - proud, x1, y1, WEST_Z - back, order);
+}
+
+/** The ground storey's rustication: each course a face 6 cm proud and over it a block 4 cm prouder, short of the joint above it. */
+function rustication(kit: Kit): void {
+  for (let j = 0; j < 10; j++) {
+    const y0 = RUST_Y0 + j * COURSE;
+    const y1 = y0 + COURSE;
+    const gaps = FRONT_ARCH_X.flatMap((x): [number, number][] => {
+      const [h0, h1] = x === 0 ? [LG, DOOR_HEAD_Y] : [LG + VAUX_GROUND_SILL, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT];
+      const w = (x === 0 ? DOOR_WIDTH : GROUND_WIDTH) / 2;
+      return y0 < h1 - 1e-6 && y1 > h0 + 1e-6 ? [[x - w, x + w]] : [];
+    });
+    band(kit, y0, y1, 1, gaps, 0.06);
+    band(kit, y0, y1 - JOINT, 1, gaps, 0.04, 0.06);
   }
 }
 
-/** Granite bands, voussoirs, striped tympana, cornice and coping of the front, in rising courses. */
+/** Granite bands and rustication, the jambs' inner order, the string course, cornice and coping, in rising courses; the arches' heads come with the openings. */
 export function westFrontTrim(kit: Kit): void {
-  const spring = L1 + VAUX_ARCH_SPRING;
-  band(kit, WALL_BASE_Y, LG + 0.5, 0, [], 0.12);
-  band(kit, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT + VAUX_BAND, 1);
-  band(kit, L1 - 0.2, L1 + 0.12, 2);
-  band(kit, L1 + VAUX_ARCH_SILL - 0.16, L1 + VAUX_ARCH_SILL, 3, [[-VAUX_ARCH_SPAN / 2, VAUX_ARCH_SPAN / 2]], 0.12);
-  band(kit, spring - VAUX_BAND, spring, 4);
-  band(kit, L2 + 1.2, L2 + 1.2 + VAUX_BAND, 6);
-  band(kit, L2 + 3.6, L2 + 3.6 + VAUX_BAND, 7);
-  const ring = (parity: 0 | 1) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.42, count: 15, projection: 0.06, parity });
-  // Open with the owner (exterior.md section 9): the front's photographs show no hood round the voussoirs (exterior-images.md #60, #63 and #64); they
-  // show a smooth light ring inside them, which this front lacks (exterior-images.md #61, #63 and #64).
-  const hood = voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.09, count: 15, projection: 0.1, parity: 'all', inset: 0.42 });
-  const ground = voussoirRing({ head: 'segmental', span: GROUND_WIDTH, rise: GROUND_RISE, band: 0.3, count: 9, projection: 0.05, parity: 'all' });
-  const door = voussoirRing({ head: 'segmental', span: DOOR_WIDTH, rise: 0.5, band: 0.34, count: 11, projection: 0.05, parity: 'all' });
-  const panel = tympanum({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, stripe: 0.2, part: 'panel' });
-  const stripes = tympanum({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, stripe: 0.2, part: 'stripes' });
+  band(kit, WALL_BASE_Y, RUST_Y0, 0, [], 0.12);
+  rustication(kit);
+  const doors = FRONT_ARCH_X.filter(doorway).map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
+  band(kit, L1 - 0.2, L1 + 0.12, 2, doors);
+  // The impost band runs across the whole front, over each opening as its lintel (#53, #60, #61).
+  band(kit, LINTEL_Y, SPRING_Y, 4);
   for (const x of FRONT_ARCH_X) {
-    const facing = FACING.west;
-    if (x === 0) kit.add(door, core.granite, placed(x, LG + 3.3 - 0.5, WEST_Z, facing), 1);
-    else kit.add(ground, core.granite, placed(x, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT - GROUND_RISE, WEST_Z, facing), 1);
-    // Granite jambs flank the opening below the springing (Lehman-court photo: light stone round each window).
-    const sill = x === 0 ? L1 : L1 + VAUX_ARCH_SILL;
+    const sill = doorway(x) ? L1 : SILL_Y;
+    // A window stands over a light granite apron (#53, #61).
+    if (!doorway(x)) addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, L1 + 0.12, WEST_Z - 0.05, x + VAUX_ARCH_SPAN / 2, sill, WEST_Z, 3);
+    // The inner order runs down the jambs to the sill or the floor (#61).
     for (const side of [-1, 1]) {
-      const edge = x + side * (VAUX_ARCH_SPAN / 2);
-      addBox(kit, core.granite, edge, sill, WEST_Z - 0.05, edge + side * 0.16, spring - VAUX_BAND, WEST_Z, 4);
+      const edge = x + side * (CLEAR / 2);
+      addBox(kit, core.granite, edge, sill, WEST_Z - ORDER_PROUD, edge + side * VAUX_INNER_ORDER, LINTEL_Y, WEST_Z, 4);
     }
-    // A granite transom through the wall at the springing closes the gap between window head and tympanum.
-    addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, spring - VAUX_BAND, WEST_Z, x + VAUX_ARCH_SPAN / 2, spring, WEST_Z + WEST_WALL, 4);
-    kit.add(ring(0), core.granite, placed(x, spring, WEST_Z, facing), 5);
-    // The dark voussoirs: grey stone, never brick, in every colour photograph of the front, rock-faced where one is sharp enough to show it
-    // (exterior-images.md #60, #61, #62, #63 and #64).
-    kit.add(ring(1), core.graniteDark, placed(x, spring, WEST_Z, facing), 5);
-    kit.add(hood, core.granite, placed(x, spring, WEST_Z, facing), 5);
-    kit.add(panel, palette.brick, placed(x, spring, WEST_Z + 0.32, facing), 5);
-    kit.add(stripes, core.granite, placed(x, spring, WEST_Z + 0.32, facing), 5);
   }
+  band(kit, STRING_Y, STRING_Y + VAUX_BAND, 6);
   const cornice = moulding({ profile: 'cornice-plain', path: [[-A_HALF, 0, 0], [A_HALF, 0, 0]], height: 0.8, projection: 0.6 });
   kit.add(cornice, core.granite, placed(0, CORNICE_Y, WEST_Z, FACING.west), 8);
   addBox(kit, core.granite, -A_HALF, PARAPET_Y, WEST_Z - 0.1, A_HALF, COPING_TOP_Y, WEST_Z + WEST_WALL, 9);
 }
 
-/** Windows in the front's six main-floor arches (below the springing) and six ground-storey openings, the entrance left open; and glass in the hall's two oculi. */
+/**
+ * The heads of the front's five arches, set with the openings (vaux.ts): light voussoirs, the inner order and the striped tympanum (#60, #61) as one piece;
+ * the dark voussoirs, grey stone, never brick, in every colour photograph of the front, rock-faced where one is sharp enough to show it (#60 to #64), as
+ * another; no hood round them (#53, #60, #61, #63, #64).
+ */
+export function westFrontHeads(kit: Kit): void {
+  for (const x of FRONT_ARCH_X) {
+    const at = placed(x, SPRING_Y, WEST_Z, FACING.west);
+    kit.add(lightHead('west'), core.granite, at, 5);
+    kit.add(darkHead('west'), core.graniteDark, at, 5);
+  }
+}
+
+/** Windows in the front's arches that are not doorways and in the ground storey's four windows; and glass in the hall's two oculi. */
 export function westFrontWindows(kit: Kit): void {
   const disc = cylinder(20);
   for (const z of [VAUX_HALL_WEST_Z - VAUX_HALL_WALL / 2, VAUX_HALL_EAST_Z + VAUX_HALL_WALL / 2]) {
     kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(VAUX_OCULUS, 0.03, VAUX_OCULUS)), 20);
   }
-  const main = windowUnit({ width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING - VAUX_ARCH_SILL - VAUX_BAND, cols: 2, rows: 3, frame: 0.09 });
-  const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, shape: 'segmental', rise: GROUND_RISE, cols: 2, rows: 3 });
+  const main = windowUnit({ width: CLEAR, height: LINTEL_Y - SILL_Y, cols: 2, rows: 2, frame: 0.1 });
+  const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, cols: 2, rows: 2 });
+  // Each window's frame and bars as one piece, as they arrive together (the core's mesh budget).
+  const metal = (name: string, parts: { readonly frame: BufferGeometry; readonly bars: BufferGeometry }): BufferGeometry =>
+    memo(`vauxWindowMetal:${name}:${parts.frame.uuid}:${parts.bars.uuid}`, () => {
+      const b = new MeshBuilder();
+      b.append(parts.frame);
+      b.append(parts.bars);
+      return b.build();
+    });
+  const mainMetal = metal('main', main);
+  const groundMetal = metal('ground', ground);
   for (const x of FRONT_ARCH_X) {
     if (x === 0) continue;
     const at = (y: number) => placed(x, y, WEST_Z + 0.4, FACING.west);
     const order = Math.abs(x);
-    kit.add(main.frame, palette.metalDark, at(L1 + VAUX_ARCH_SILL), order);
-    kit.add(main.bars, palette.metalDark, at(L1 + VAUX_ARCH_SILL), order);
-    kit.add(main.glass, palette.glassDark, at(L1 + VAUX_ARCH_SILL), order);
-    kit.add(ground.frame, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
-    kit.add(ground.bars, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
+    if (!doorway(x)) {
+      kit.add(mainMetal, palette.metalDark, at(SILL_Y), order);
+      kit.add(main.glass, palette.glassDark, at(SILL_Y), order);
+    }
+    kit.add(groundMetal, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
     kit.add(ground.glass, palette.glassDark, at(LG + VAUX_GROUND_SILL), order);
   }
 }

@@ -255,6 +255,35 @@ export interface RingParams {
   readonly inset?: number;
   /** Close the ring's back (z = 0) too, for a free-standing rib. Default false (the back lies on a wall). */
   readonly back?: boolean;
+  /**
+   * A pointed ring's depth at its crown, metres, its extrados then drawn as a two-centred arch of its own (span + 2 × (inset + band), rising `crown` over
+   * the intrados' apex), more pointed than the intrados, as the 1880 voussoirs are (exterior-images.md #60, #61). Default: concentric, `band` all round.
+   */
+  readonly crown?: number;
+  /** Stones to leave out, by index from the right springing: where a later opening was cut through the ring. */
+  readonly omit?: readonly number[];
+}
+
+/** Sub-steps along each stone's arcs. */
+const STONE_SUB = 4;
+
+/** The intrados and extrados of a ring in its frame (origin at the centre of the springing line), from the right springing over the crown. */
+function ringCurves(params: RingParams): { inner: V2[]; outer: V2[] } {
+  const rise = params.rise ?? riseOf({ head: params.head, width: params.span, height: 99 });
+  const inset = params.inset ?? 0;
+  const inner = headPoints(params.head, 0, 0, params.span, rise, inset, params.count * 6);
+  if (params.crown === undefined || params.head !== 'pointed') return { inner, outer: headPoints(params.head, 0, 0, params.span, rise, inset + params.band, params.count * 6) };
+  const apex = Math.max(...inner.map((p) => p[1]));
+  return { inner, outer: headPoints('pointed', 0, 0, params.span + 2 * (inset + params.band), apex + params.crown, 0, params.count * 6) };
+}
+
+/** Each stone of a ring as its outline in the ring's frame: along its extrados, then back along its intrados; stones from the right springing. */
+export function ringStones(params: RingParams): V2[][] {
+  const { inner, outer } = ringCurves(params);
+  return Array.from({ length: params.count }, (_, k) => {
+    const ts = Array.from({ length: STONE_SUB + 1 }, (__, j) => (k + j / STONE_SUB) / params.count);
+    return [...ts.map((t) => along(outer, t)), ...[...ts].reverse().map((t) => along(inner, t))];
+  });
 }
 
 /** Voussoirs round an arch head, origin at the centre of its springing line on the wall face; alternate parities give polychrome rings. */
@@ -262,15 +291,16 @@ export function voussoirRing(params: RingParams): BufferGeometry {
   const rise = params.rise ?? riseOf({ head: params.head, width: params.span, height: 99 });
   const inset = params.inset ?? 0;
   const back = params.back ?? false;
-  const key = `ring:${keyOf(params.head, params.span, rise, params.band, params.count, params.projection, String(params.parity), inset, back)}`;
+  const omit = [...(params.omit ?? [])].sort((p, q) => p - q);
+  const key = `ring:${keyOf(params.head, params.span, rise, params.band, params.count, params.projection, String(params.parity), inset, back, params.crown ?? 'concentric', omit.join(' '))}`;
   return memo(key, () => {
     const b = new MeshBuilder();
-    const inner = headPoints(params.head, 0, 0, params.span, rise, inset, params.count * 6);
-    const outer = headPoints(params.head, 0, 0, params.span, rise, inset + params.band, params.count * 6);
+    const { inner, outer } = ringCurves(params);
     const z = params.projection;
-    const sub = 4;
+    const sub = STONE_SUB;
     for (let k = 0; k < params.count; k++) {
       if (params.parity !== 'all' && k % 2 !== params.parity) continue;
+      if (omit.includes(k)) continue;
       const i: Vector3[] = [];
       const o: Vector3[] = [];
       for (let j = 0; j <= sub; j++) {

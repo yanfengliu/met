@@ -36,6 +36,11 @@ export const core = Object.freeze({
    * renders at about 0.62 of the light granite seen from the Lehman court, as five photographs read the dark stones against the light, 0.63 on average.
    */
   graniteDark: standard('core.graniteDark', '#85827a', 0.85),
+  /**
+   * The 1880 building's red brick, duller than the palette's (the 1888 and 1894 wings keep that): calibrated so its render from the Lehman court reads
+   * against the light granite as the west front's photographs read it, a mean of (0.75, 0.55, 0.55) a channel (exterior.md [C7]).
+   */
+  vauxBrick: standard('core.vauxBrick', '#9a7971', 0.9),
   /** Weston's light grey stone base, piers, arches and cornice (Petrie Court photo). */
   westonStone: standard('core.westonStone', '#c4c0b7', 0.78),
   /** The Medieval Sculpture Hall's plaster walls and vault (interior.md #dcd8d0). */

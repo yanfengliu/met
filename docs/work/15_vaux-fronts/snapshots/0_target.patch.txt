@@ -1,0 +1,1260 @@
+diff --git a/docs/devlog/summary.md b/docs/devlog/summary.md
+index 834a581..595b946 100644
+--- a/docs/devlog/summary.md
++++ b/docs/devlog/summary.md
+@@ -2,6 +2,8 @@
+ 
+ Newest first. One dated line per behaviour-changing session; `detailed/` holds anything a later session could trip over.
+ 
++- 2026-11-04 (work unit 15): **The 1880 fronts stand as their photographs show them** — the owner asked for work unit 4's open findings to be finished, F-owner-7 among them: seven ways the 1880 Vaux fronts differed from their photographs. Read again at native size (`exterior-images.md` #49, #53, #60, #61, #67) and against the floor map's doors through the west front (X −5.78, 0, +5.76), the west front now has five arches 5.8 m apart, not seven 4 m apart, each the 1880 arch as #60 measures it: an opening 6.2 m tall under a 0.5 m impost band, a 3.2 m head of light and dark voussoirs deeper at the crown than at the springing, no hood, and a smooth light inner order running down the jambs; its ground storey is light rusticated stone with square-headed windows (#53). The side walls band only the hall's six bays, over rusticated stone, the end blocks bare brick with round-headed openings on three tiers (#49, #65); the east front has four large arches with roundels inside moulded light arches and rings of dark granite blocks (#66, #67), today's openings kept. The 1880 brick is its own material, #9A7971, calibrated to render against the light granite as the photographs read it ((0.748, 0.554, 0.547) against their (0.745, 0.555, 0.55)); the palette's brick stays for the 1888 and 1894 wings. The Lehman Wing's skylight head on the front rose from 12.9 to 15.4 m and its east lintel onto it, so its court shows the arches whole (a core gate holds the crowns 0.5 m under it, red at 12.9 m). The doorways the west front's two arches beside the entrance and the east front's inner pair are today wait for the owner, as they add passages for the walker; they hold windows and blind openings meanwhile. Records: `exterior.md` [C7] and section 9, `docs/work/15_vaux-fronts/plan.md`.
++
+ - 2026-10-30 (work unit 2, follow-up): **The door specs stand at fixed places, and the walks' corner settle and lag learning are gone** — `tests/e2e/doors.spec.ts` and `door-look.spec.ts` walked up to their doors by long real-key walks from the plaza spawn, the last users of `route-walk.ts`'s corner settle and `route-keys.ts`'s release-lag learning. Both now stand the walker at fixed places set by `walk=1&spawn=x,y,z,tx,ty,tz`, its feet on the model's floor there (`route-places.ts` `standAt`): before the entrance's middle doorway, in the entrance bay behind it with `doors=open`, and before the north link door. door-look's middle-door place lies on the plaza spawn's line, where W alone from the spawn brings the walker, and a click of the view locks the pointer there. Every check is kept but the walks themselves, and every red proof the record gives the two specs is red again on the new form; a new one, the eye 3 cm high, fails every place's check. `walk`, `legs`, the corner settle, the key log, the lag learning and the walk's stops are retired. The two specs take 28.1 s inside `npm run verify`, against 93.7 s on main before. Review 28 (Codex and Claude) found that the Walk toggle's facing was no longer read in the browser: walk.spec now reads the toggle's whole view once the pointer locks, red with one pixel of turn, in yaw or in pitch, planted at the lock. It also found the bay page's open north doorway in its view, where the record said the side doorways stood out of it; the rest was the record's wording (`3d346fc`, reviews 28 to 30).
+ 
+ - 2026-10-30: **The spec opens with a section map, and a session reads the sections its work needs** — the owner asked that the docs follow progressive disclosure, so that a session's context holds only what its work needs (`../fleet/FLEET.md`, Repo file shape). `docs/design/spec.md` (93,858 bytes) now opens with a 2,913-byte map of its sections, and its Page section, 45,920 bytes, has a `###` heading over each of six parts: the build replay, timeline and menus; the floor picker; camera and keyboard; walk mode; doors; and first load. No text moved, so the code's and tests' citations "docs/design/spec.md, <section>: <item>" still find what they cite. AGENTS.md says to read the map, then the sections the work needs, and the local rules' opening says the canon's core is in AGENTS.md and the rest in fleet's coordinator skill and work rules. A script found every old sentence in place, with those two sentences the only ones reworded, and went red on a planted deletion. Docs only.
+diff --git a/docs/research/exterior-images.md b/docs/research/exterior-images.md
+index 2ec6689..7edd70e 100644
+--- a/docs/research/exterior-images.md
++++ b/docs/research/exterior-images.md
+@@ -167,11 +167,11 @@ Measured at 1:1 by the `mmw` worker, each photograph viewed on the date its entr
+ 
+ ### Historical (for the chapter boundaries)
+ 
+-49. https://commons.wikimedia.org/wiki/File:Original_Met.jpg — unknown, about 1880, public domain, 1384×968. The Vaux & Mould building alone in the park (chapter `vaux-mould-1880`). Viewed at full size 2026-10-28: the building from the park, a long front of pointed arches with alternating light and dark voussoirs on its main floor (seven in this first reading; six when counted again at 2× on 2026-10-28, the sixth against a stair tower), its ground storey behind a grassy mound, between two taller end blocks under steep hipped roofs with chimneys; behind the front a hipped roof rises to a long glazed clerestory; at the right end a porch with a stair and a small canopy. Read again 2026-10-28 (`exterior.md` section 9): taken from the northwest, its long front is the north side, the taller blocks' faces with plain round-headed openings, and the porch end at the right is the west front, two arches north of the porch, as #65 shows two south of it.
++49. https://commons.wikimedia.org/wiki/File:Original_Met.jpg — unknown, about 1880, public domain, 1384×968. The Vaux & Mould building alone in the park (chapter `vaux-mould-1880`). Viewed at full size 2026-10-28: the building from the park, a long front of pointed arches with alternating light and dark voussoirs on its main floor (seven in this first reading; six when counted again at 2× on 2026-10-28, the sixth against a stair tower), its ground storey behind a grassy mound, between two taller end blocks under steep hipped roofs with chimneys; behind the front a hipped roof rises to a long glazed clerestory; at the right end a porch with a stair and a small canopy. Read again 2026-10-28 (`exterior.md` section 9): taken from the northwest, its long front is the north side, the taller blocks' faces with plain round-headed openings, and the porch end at the right is the west front, two arches north of the porch, as #65 shows two south of it. Read again at native size 2026-11-04 (work unit 15): the north side's six hall bays hold tall rectangular windows between light stone piers under the banded pointed heads, which meet the brick with no hood, with light piers rising between the heads; the west block's north face has round-headed openings on three tiers, about five a tier; the west front's ground storey is light stone with square-headed openings, and its main-floor arches stand over two-light windows with a transom.
+ 50. https://commons.wikimedia.org/wiki/File:US-NY(1891)_p604_NYC,_METROPOLITAN_MUSEUM_OF_ART.jpg — King's Handbook, 1891, public domain, 969×479. Engraving after the 1888 wing. Viewed 2026-10-28: Weston's south entrance front near square-on, three round-arched upper windows with roundels between them over a square-headed door with a pair of panelled leaves under an entablature, and the stair below it (`interior.md`, Weston's 1888 door).
+ 51. https://commons.wikimedia.org/wiki/File:(King1893NYC)_pg311_METROPOLITAN_MUSEUM_OF_MODERN_ART,_CENTRAL_PARK,_NEAR_FIFTH_AVENUE.jpg — King's Handbook, 1893, public domain. The brick complex near Fifth Avenue (chapter `weston-tuckerman-1894`).
+ 52. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art,_Central_Park,_from_Robert_N._Dennis_collection_of_stereoscopic_views.jpg — about 1896, public domain. Stereoview of the brick buildings.
+-53. https://commons.wikimedia.org/wiki/File:1880_Met_Museum.jpg — Detroit Publishing Co., about 1900, public domain, 9406×6439. Viewed at full size 2026-10-28: the brick complex from the park to the southwest, and at the right Weston's south front receding east, its entrance porch seen from the west with a blind panel between pilasters on its side and the 1888 stair before it, too obliquely to read the door's head (`interior.md`, Weston's 1888 door).
++53. https://commons.wikimedia.org/wiki/File:1880_Met_Museum.jpg — Detroit Publishing Co., about 1900, public domain, 9406×6439. Viewed at full size 2026-10-28: the brick complex from the park to the southwest, and at the right Weston's south front receding east, its entrance porch seen from the west with a blind panel between pilasters on its side and the 1888 stair before it, too obliquely to read the door's head (`interior.md`, Weston's 1888 door). Read again at native size 2026-11-04 (work unit 15) for the 1880 west front, seen obliquely between the 1888 and 1894 wings: five pointed arches, the outer two half a bay from the front's ends, their voussoirs alternating light and dark with no hood and a thin light ring inside them, over striped tympana; an impost band across the front at the springing; two-light windows with a transom over light aprons; a ground storey of light rusticated stone with square-headed windows; plain brick over the arches up to a string course and the cornice. Read upright at the 6.7 m from the main floor to the impost band's top that #60 gives: the apron's top 0.67 m over the main floor, the ground windows' sills 4.1 m and heads 1.8 m under it.
+ 54. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art,_New_York,_N._Y_(NYPL_b12647398-63134).tiff — Detroit Publishing Co., 1902–03, public domain. Postcard of the new Hunt facade (chapter `hunt-1902`).
+ 55. https://commons.wikimedia.org/wiki/File:New_York_City_-_Metropolitan_Museum_of_Art_LCCN2003678130.jpg — Library of Congress, 1905, public domain. Hunt facade before the MMW wings.
+ 56. https://commons.wikimedia.org/wiki/File:Metropolitan_Museum,_New_York,_N._Y_(NYPL_b12647398-69920).tiff — Detroit Publishing Co., 1908–09, public domain. Postcard, MMW wings under way (?).
+@@ -181,7 +181,7 @@ Measured at 1:1 by the `mmw` worker, each photograph viewed on the date its entr
+ 
+ ### The 1880 west front today (added by work unit 4, 2026-10-28)
+ 
+-60. https://www.untappedcities.com/the-met-original-building-museum/ — Nicole Saraniero, Untapped New York, "The Met's Original Building is Still Hiding Inside the Museum", 2026-04-17: its photograph captioned "The former west facade as seen from the Robert Lehman Wing" (1260×840; reference only, not freely licensed). Viewed at full size 2026-10-28: from the Lehman court's floor looking east and up, the glazed pyramid with its short ridge over the court's cream limestone walls, and through three tall openings in them the 1880 west front, in red brick: pointed arches of alternating light and dark grey voussoirs over striped tympana and lit windows, a light stone band at the windows' heads, and a light cornice at the wall's top; a balcony with a rail stands in the middle opening. The article's text says the 1888 wing moved the main entrance from Fifth Avenue (east) to the park (south); `history.md` has the 1880 entrance facing the park (west). Sampled on the middle arch (2026-10-28, means of patches inside single stones): the crown's dark voussoir (104, 103, 104), a light one (162, 160, 158), the brick above (110 to 116, 75 to 83, 75 to 82). Seen at 5× the same day, each ring's voussoirs meet the brick with no hood moulding round them; at native size, five arches show through the court's three openings, windows in the outer two and the middle three open as doorways, the central one behind the balcony rail. Informs: the west front's arches and materials.
++60. https://www.untappedcities.com/the-met-original-building-museum/ — Nicole Saraniero, Untapped New York, "The Met's Original Building is Still Hiding Inside the Museum", 2026-04-17: its photograph captioned "The former west facade as seen from the Robert Lehman Wing" (1260×840; reference only, not freely licensed). Viewed at full size 2026-10-28: from the Lehman court's floor looking east and up, the glazed pyramid with its short ridge over the court's cream limestone walls, and through three tall openings in them the 1880 west front, in red brick: pointed arches of alternating light and dark grey voussoirs over striped tympana and lit windows, a light stone band at the windows' heads, and a light cornice at the wall's top; a balcony with a rail stands in the middle opening. The article's text says the 1888 wing moved the main entrance from Fifth Avenue (east) to the park (south); `history.md` has the 1880 entrance facing the park (west). Sampled on the middle arch (2026-10-28, means of patches inside single stones): the crown's dark voussoir (104, 103, 104), a light one (162, 160, 158), the brick above (110 to 116, 75 to 83, 75 to 82). Seen at 5× the same day, each ring's voussoirs meet the brick with no hood moulding round them; at native size, five arches show through the court's three openings, windows in the outer two and the middle three open as doorways, the central one behind the balcony rail. Informs: the west front's arches and materials. Measured at native size 2026-11-04 (work unit 15), square to the front from the court floor: the arches 142 px apart (24.5 px/m at the floor map's 5.77 m bay); the voussoirs 117 px across outside and 77 px inside at the springing, 20 px deep there and 28 px at the crown; a light inner order 7 to 9 px wide; the impost band 12 px tall across the whole front; the doorway 153 px from the landing to the band; the intrados rising 51 px over the springing; the tympanum's stripes 6 px; brick over the crowns up to the skylight's head, about 58 px.
+ 
+ ### The 1880 fronts' voussoirs (added 2026-10-28)
+ 
+@@ -189,13 +189,13 @@ What the 1880 arches' dark voussoirs are made of, after #60 showed them grey whe
+ 
+ Patches, as pixel boxes x0, y0, x1, y1 (ends excluded) in each image at the size its entry gives: #60 dark 586,460,595,476, light 600,462,609,474, brick 545,443,575,453 and 600,443,635,453; #61 dark 470,70,480,87, light 491,70,500,87, brick 400,55,425,80; #63 dark 362,425,380,470 and 302,450,316,482, light 326,440,344,472 and 400,440,414,476, brick 215,405,240,425 and 430,405,480,420; #64 dark 1152,612,1174,660, 1066,626,1088,658 and 1212,626,1234,658, light 1110,620,1130,660 and 1192,620,1210,660, brick 1010,580,1050,610 and 1260,580,1300,615; #67 dark 570,160,625,320, 330,300,400,420 and 840,300,920,400, light 430,220,500,370 and 710,220,790,370, brick 260,10,480,60 and 540,610,740,730.
+ 
+-61. https://untappedcities.com/2022/11/02/top-secrets-metropolitan-museum-of-art/2/ — Untapped Cities, "Top Secrets of the Metropolitan Museum of Art" (2022-11-02), section 2: its photograph of the west front, uploaded 2012-09 and marked "© Untapped Cities by Michelle Young" (https://storage.ghost.io/c/3e/3b/3e3b259f-e5a2-4287-97e8-4888d22daaef/content/images/wp-content/uploads/2012/09/secrets-of-metropolitan-museum_new-york-city_untapped-cities-2.jpg, 640×426; reference only, not freely licensed). Viewed at full size 2026-10-28: from the Lehman Wing's main floor, looking along the front at an angle, four pointed arches in red brick, their voussoirs alternating white and blue-grey stone round tympana striped orange-red and cream, a smooth light ring lining each arch inside its voussoirs, three arches open to the floor as doorways and the fourth holding a window over a light stone apron. Sampled on the right arch: a dark voussoir (95, 96, 90), a light one (170, 179, 181), the brick beside it (155, 96, 78). Informs: the voussoirs' material and colour.
++61. https://untappedcities.com/2022/11/02/top-secrets-metropolitan-museum-of-art/2/ — Untapped Cities, "Top Secrets of the Metropolitan Museum of Art" (2022-11-02), section 2: its photograph of the west front, uploaded 2012-09 and marked "© Untapped Cities by Michelle Young" (https://storage.ghost.io/c/3e/3b/3e3b259f-e5a2-4287-97e8-4888d22daaef/content/images/wp-content/uploads/2012/09/secrets-of-metropolitan-museum_new-york-city_untapped-cities-2.jpg, 640×426; reference only, not freely licensed). Viewed at full size 2026-10-28: from the Lehman Wing's main floor, looking along the front at an angle, four pointed arches in red brick, their voussoirs alternating white and blue-grey stone round tympana striped orange-red and cream, a smooth light ring lining each arch inside its voussoirs, three arches open to the floor as doorways and the fourth holding a window over a light stone apron. Sampled on the right arch: a dark voussoir (95, 96, 90), a light one (170, 179, 181), the brick beside it (155, 96, 78). Informs: the voussoirs' material and colour. Read again at native size 2026-11-04 (work unit 15): the light inner order is a smooth chamfered ring inside the voussoirs that runs on down each doorway's jambs to the floor, and the impost band runs across the front and over each opening as its lintel.
+ 62. https://forgotten-ny.com/2023/07/the-forgotten-met/ — Sergey Kadinsky, Forgotten New York, "The Forgotten Met", 2023-07-30: its photograph of the lobby between the old building and the Lehman Wing (https://forgotten-ny.com/wp-content/uploads/2023/07/lehman-lobby.jpg, 720×542; reference only, not freely licensed). Viewed at full size 2026-10-28: on the Lehman Wing's main floor under its glazed roof, looking along the west front, pointed arches over open doorways in red brick on light granite bases, their voussoirs alternating smooth white stone with coarse, speckled mid-grey stone, over tympana striped red and cream. The brick reads (138, 84, 71); at this size each dark voussoir's patch takes in some of its light neighbours, so it gives no ratio, but every one reads grey, red within 7 of blue. Informs: the voussoirs' material.
+ 63. Heckscher (`history.md`, Sources) fig. 105, p. 73: the Robert Lehman Wing in 1995, looking south toward part of the west front (The Met; reference only, not freely licensed; 1281×1622 as embedded in the Bulletin's PDF). Viewed at full size 2026-10-28: from the Lehman Wing's main floor beside a stair down to the court, looking along the front, pointed arches in red brick whose voussoirs alternate smooth light grey stone with rock-faced darker grey stone, over tympana striped red and white, each ring meeting the brick with no hood moulding round it and a smooth light ring lining the arch inside its voussoirs; the middle arch is a doorway into a gallery and a window fills the one at the left; light granite jambs, imposts and base. Sampled on the main arch (a warm print): dark voussoirs (98 to 107, 90 to 97, 97 to 102), light ones (145 to 159, 127 to 135, 130 to 132), the brick (86 to 111, 69 to 81, 74 to 84). Informs: the voussoirs' material, finish and colour.
+ 64. Heckscher (`history.md`, Sources) fig. 107, p. 74: the Robert Lehman Wing in 1995, looking east toward the arches of the west front (The Met; reference only, not freely licensed; 2292×1871 as embedded). Viewed at full size 2026-10-28: from the court floor through the inner ring's three openings, as #60 looks, five of the front's arches: each ring alternates smooth light grey voussoirs with rock-faced dark grey ones, a dark one at the crown, and meets the brick with no hood moulding round it; a smooth light ring lines each arch inside its voussoirs; the tympana are striped red and white; the middle arch is a doorway with a balcony rail and the outer two hold windows. Sampled on the middle arch (a warm print): dark voussoirs (113 to 123, 100 to 107, 96 to 105), light ones (158 to 170, 137 to 141, 128), the brick (112 to 129, 81 to 91, 83 to 90). Informs: the voussoirs' material, finish and colour; the hood moulding the model adds.
+ 65. Heckscher (`history.md`, Sources) fig. 8, p. 11: the Museum building from the southwest, 1880, a stereograph (The Met, 1995.114.1, gift of Herbert Mitchell; public domain; 2175×1096 as embedded). Viewed at full size 2026-10-28: a sepia print of the building: at the left the west front, seen obliquely, its canopied porch and stair beside two large pointed arches, with a third arch's head showing behind the porch's gable; then a taller brick block; and at the right the south side, where only the hall's six-bay arcade has pointed windows, between two taller blocks whose faces have round-headed windows and blind round arches with plain brick heads on three tiers; the arcade stands on a ground storey of light rusticated stone with small square-headed openings. Every pointed arch's voussoirs alternate light and dark. On the two arches beside the porch the dark voussoirs read 1.3 to 1.7 times the values of the brick round them, (97 to 129, 75 to 101, 69 to 89) against (72 to 77, 56 to 59, 53 to 58), while the tympana's dark stripes, red in every later photograph, read as dark as the brick; the light voussoirs read about (200, 178, 165). An inference: the plates of 1880 were blind to red, so red brick prints darker than a grey stone that looks as light, and the dark voussoirs are not of the wall's brick. Informs: the voussoirs' material in 1880.
+ 66. Heckscher (`history.md`, Sources) fig. 19, p. 18: the Museum from Fifth Avenue, 1880, a stereograph (The Met, 1995.114.2, gift of Herbert Mitchell; public domain; 2244×1404 as embedded). Viewed at full size 2026-10-28: the east front over the trees of Fifth Avenue, four large pointed arches on the main floor, two on either side of the temporary wooden stair in the middle, each with a roundel in its head (the surviving one, #67, blind today), their voussoirs alternating light and dark; too small to read the stones. Informs: the east front's arches, one of which survives in #67.
+-67. https://www.untappedcities.com/the-met-original-building-museum/ — the article of #60: its photograph of the arch at the entrance of the Robert Wood Johnson Jr. Gallery, at the top of the Grand Staircase (https://storage.ghost.io/c/3e/3b/3e3b259f-e5a2-4287-97e8-4888d22daaef/content/images/2026/04/1880s-remnants-met-museum-untapped-new-york--7-.jpg, 1260×840; reference only, not freely licensed). Viewed at full size 2026-10-28: close up under warm gallery light, the head of one of the 1880 east front's windows, the arch of "banded granite" round a blind roundel that Heckscher describes (p. 18): voussoirs alternating fine-grained light grey granite with coarse, rough-dressed dark grey granite, a dark one at the crown, inside an outer ring of dark granite blocks, over a moulded light granite inner arch round a roundel filled with red brick. Sampled: dark voussoirs (89 to 122, 77 to 107, 68 to 94), light ones (183 to 205, 168 to 191, 154 to 177), the brick (69 to 109, 36 to 56, 26 to 37). Informs: the voussoirs' material on the east front.
++67. https://www.untappedcities.com/the-met-original-building-museum/ — the article of #60: its photograph of the arch at the entrance of the Robert Wood Johnson Jr. Gallery, at the top of the Grand Staircase (https://storage.ghost.io/c/3e/3b/3e3b259f-e5a2-4287-97e8-4888d22daaef/content/images/2026/04/1880s-remnants-met-museum-untapped-new-york--7-.jpg, 1260×840; reference only, not freely licensed). Viewed at full size 2026-10-28: close up under warm gallery light, the head of one of the 1880 east front's windows, the arch of "banded granite" round a blind roundel that Heckscher describes (p. 18): voussoirs alternating fine-grained light grey granite with coarse, rough-dressed dark grey granite, a dark one at the crown, inside an outer ring of dark granite blocks, over a moulded light granite inner arch round a roundel filled with red brick. Sampled: dark voussoirs (89 to 122, 77 to 107, 68 to 94), light ones (183 to 205, 168 to 191, 154 to 177), the brick (69 to 109, 36 to 56, 26 to 37). Informs: the voussoirs' material on the east front. Read again at native size 2026-11-04 (work unit 15): the voussoirs spring at today's floor, the second floor, and the roundel is about 1.3 m across by its brick courses (15.6 px a course). The article's text places the arch on the right at the start of the exhibition after turning left at the top of the Grand Staircase: the arch south of the axis nearest the stair.
+ 
+ ## Gaps
+ 
+diff --git a/docs/research/exterior.md b/docs/research/exterior.md
+index 9a1ac10..c2c8cb3 100644
+--- a/docs/research/exterior.md
++++ b/docs/research/exterior.md
+@@ -144,7 +144,7 @@ Colours are means of 17×17 px patches read from the image file in the browser,
+ - [C4] Door glazing and bronze frames, dark: #3B4346 (S8). Lunette grilles read near-black (#2E3338 by eye). **M**/**E**.
+ - [C5] Sidewalk concrete #787878, asphalt #67757B (S8). **M** (photo).
+ - [C6] Roofs: brownish membrane or lead roofs about #8A7867, skylight glass blue-grey about #6F8FA8, park-side glass walls blue-grey about #7A93A6. **E** by eye from S5.
+-- [C7] Red brick of the 1880 west front about #9A4B3A with grey-white granite bands about #B9B4AA. **E** (no sample in this run). Sampled since (2026-10-28, `exterior-images.md` #60 and #64): the brick reads (110 to 116, 75 to 83, 75 to 82) in #60 and (112 to 129, 81 to 91, 83 to 90) in #64, duller than the model renders it (section 9). The arches' voussoirs alternate smooth light grey stone with dark grey stone, rock-faced in #63, #64 and #67, and never brick. The surviving east-front arch is granite at close range (#67), and Heckscher calls it "banded granite" (p. 18) and the west front's arches "pointed arches, with their red bricks and gray granite" (p. 75); that the west front's dark stones are granite too is an inference from that arch, of one design with them. In the five photographs that show single stones clearly (#60, #61, #63, #64, #67; means of patches inside single stones, the boxes listed before #61), each dark patch reads 0.41 to 0.82 of the mean of the same photograph's light patches a channel; a photograph's mean is 0.53 to 0.74, and the mean of the five 0.63. In each the dark stones' red over blue lies within 0.21 of the light ones' and 0.10 or more under the brick's (per patch, from the unrounded means: dark 0.99 to 1.32, light 0.94 to 1.32, brick 1.16 to 2.94). **M** (photos). The model's dark granite is the light granite's #B9B4AA times 0.72, #85827A: its renders from the Lehman court (`cam=0,-0.84,-158,0,13,-138.3` and `cam=-6,5.7,-146,0,9,-138.3`) read it at about 0.62 of the light granite (0.61 to 0.63 a channel), where 0.61 times #B9B4AA (#716E68) read 0.48, the renderer's tone curve darkening the darker stone. **D**.
++- [C7] Red brick of the 1880 west front about #9A4B3A with grey-white granite bands about #B9B4AA. **E** (no sample in this run). Sampled since (2026-10-28, `exterior-images.md` #60 and #64): the brick reads (110 to 116, 75 to 83, 75 to 82) in #60 and (112 to 129, 81 to 91, 83 to 90) in #64, duller than the model renders it (section 9). The arches' voussoirs alternate smooth light grey stone with dark grey stone, rock-faced in #63, #64 and #67, and never brick. The surviving east-front arch is granite at close range (#67), and Heckscher calls it "banded granite" (p. 18) and the west front's arches "pointed arches, with their red bricks and gray granite" (p. 75); that the west front's dark stones are granite too is an inference from that arch, of one design with them. In the five photographs that show single stones clearly (#60, #61, #63, #64, #67; means of patches inside single stones, the boxes listed before #61), each dark patch reads 0.41 to 0.82 of the mean of the same photograph's light patches a channel; a photograph's mean is 0.53 to 0.74, and the mean of the five 0.63. In each the dark stones' red over blue lies within 0.21 of the light ones' and 0.10 or more under the brick's (per patch, from the unrounded means: dark 0.99 to 1.32, light 0.94 to 1.32, brick 1.16 to 2.94). **M** (photos). The model's dark granite is the light granite's #B9B4AA times 0.72, #85827A: its renders from the Lehman court (`cam=0,-0.84,-158,0,13,-138.3` and `cam=-6,5.7,-146,0,9,-138.3`) read it at about 0.62 of the light granite (0.61 to 0.63 a channel), where 0.61 times #B9B4AA (#716E68) read 0.48, the renderer's tone curve darkening the darker stone. **D**. The 1880 brick (2026-11-04, work unit 15): the four photographs of the west front read it at a mean of (0.75, 0.55, 0.55) of their light voussoirs a channel ((0.70, 0.49, 0.50) in #60, (0.91, 0.54, 0.43) in #61, (0.64, 0.57, 0.60) in #63, (0.73, 0.62, 0.67) in #64). The palette's brick #9A4B3A rendered (87, 31, 24) from the court, far redder; `core.vauxBrick` #9A7971 renders at (0.748, 0.554, 0.547) of the light granite there, (92, 67, 64) against (123, 121, 117) (`cam=0,-0.84,-158,0,13,-138.3`, the central arch), within 0.003 of that mean. **D**. The 1888 and 1894 wings keep the palette's brick, which no photograph here measures. At the same camera the dark voussoirs of the five-arch front's central arch read 0.62 of the light granite, as work unit 8 calibrated them.
+ - Note (integration worker, 2026-10-13): matched patches (17×17 px means) of the columns, wall faces and spandrels of the central bays read (172, 162, 146) in S7 (Schneider 2019, `ref-front-axis`) and (208, 203, 193) in S8 (Haklai 2012, `ref-front-street`), against (213, 209, 203) in the renders of those presets; the attic band read (207, 200, 188) and (222, 218, 212); a limestone north wall in shade in King of Hearts 2013 (`ref-park-northwest`) read (148, 147, 142) against (165, 163, 159) rendered. The palette's limestone, limestoneDark and granite were scaled by the same linear factors (0.80, 0.78, 0.74), so the front now renders (203, 197, 188) and the shaded wall (149, 145, 138). Both front photographs show the facade in shade or overcast light, the render a sunlit one, so the match is of overall tone, not of lighting.
+ 
+ ## 9. Conflicts and open questions
+@@ -155,4 +155,4 @@ Colours are means of 17×17 px patches read from the image file in the browser,
+ - Overall length: 304.7 m measured versus "almost 1/4-mile (400 m)" (S11).
+ - Wing letters and the 1880/1888/1894 split: placeholders until the 1995 Bulletin plan is read.
+ - Present-day state of the southwest corner: the Tang Wing broke ground on 15 Sep 2026 inside the Wallace Wing's envelope (completion 2029–2030); how to show the corner is a coordinator decision (see `history.md`).
+-- The 1880 fronts against their photographs (found 2026-10-28 while settling the voussoirs, [C7]; open with the owner, each noted beside its code in `src/model/core/vaux-front.ts` and `vaux-shell.ts`). The west front's arches show no hood moulding round their voussoirs (`exterior-images.md` #60, #63 and #64), where the model adds a light granite ring 9 cm wide round every 1880 arch; the surviving east-front arch has a ring of dark granite blocks there (#67). A smooth light inner ring lines each west-front arch inside its voussoirs (#61, #63 and #64), which the model lacks. Several west-front arches are open to the floor as doorways today (#60, #61, #62, #63 and #64), where the model has windows over sills in all but the central entrance. In 1880 the east front had two large arches on either side of its covered middle, each with a roundel in its head (#66; the surviving one, #67, and Heckscher p. 18), where the model has seven at 4 m and no roundels. The brick reads duller than the model renders it: (110 to 116, 75 to 83, 75 to 82) in #60 against (87, 31, 24) in the render at t = N from the court floor (`cam=0,-0.84,-158,0,13,-138.3`). In 1880 only the hall's six bays on each side had banded pointed arches, and the end blocks' bays round-headed openings with plain brick heads (#49 on the north side, #65 on the south). On the south side, the one seen whole (#65), the arcade stands on a ground storey of light rusticated stone with small square-headed openings, and the end blocks' openings are on three tiers; in #49 a mound hides the north side's ground storey. The model gives all eleven bays a side banded pointed arches over segmental ground-storey openings, in brick but for the trim (`vauxWalls` and `vauxSideTrim`, `src/model/core/vaux-shell.ts`). The west front's count of seven arches is an estimate (`FRONT_ARCH_X`, `src/model/core/vaux-front.ts`): the Lehman court's photographs show five, a central doorway and windows in the outer two (#60 and #64), and in 1880 two large arches stood on either side of the central porch, north of it in #49 and south of it in #65, so the front has five.
++- The 1880 fronts against their photographs (found 2026-10-28 while settling the voussoirs, [C7]; settled 2026-11-04 by work unit 15, `docs/work/15_vaux-fronts/plan.md`, when the owner asked for the open findings to be finished). Read again at native size: `exterior-images.md` #49, #53, #60, #61 and #67. The floor map has three main-floor doors through the west front at X −5.78, 0 and +5.76, each about 2.3 m wide, and narrow corridors through the east front at X ±6.15. Built: the west front's five arches, 5.8 m apart, its 29 m in five bays (`FRONT_ARCH_X`, `VAUX_BAY`; #49, #53, #60, #64, #65). The 1880 arch as #60 and #61 show it, measured on #60 at 24.5 px/m (`constants.ts`, `core/vaux-arch.ts`): voussoirs round a 3.2 m intrados rising 2.3 m, 0.8 m deep at the springing and 1.25 m at the crown, meeting the brick with no hood (#53, #60, #61, #63, #64); a smooth light inner order 0.3 m wide inside them, running down the jambs (#61, #63, #64); an impost band 0.5 m tall whose top stands 6.7 m over the main floor, the openings 6.2 m tall under it, so the heads stand over the second floor, as on the east front (#67). The west front's ground storey in light rusticated stone with square-headed windows (#49, #53), found while reading #53. The side walls' banded arches on the hall's six bays only, over light rusticated stone with small square-headed openings (#65; the north side's, hidden by a mound in #49, taken to match), and the end blocks in bare brick with round-headed openings on three tiers, two to a bay (#49, #65). The east front's four large arches, two either side of its covered middle (#66), each with a roundel in its head inside a moulded light arch and a ring of dark granite blocks round its voussoirs (#67), at X ±5.8 and ±12 (`core/vaux-east.ts`); today's second-floor doors cut the outer pair's heads. The 1880 brick as `core.vauxBrick` ([C7]). Waiting for the owner (asked 2026-11-04): the west front's arches at X ±5.8 and the east front's inner pair are doorways today, which would add passages for the walker; until an answer the west pair hold windows and the east pair are blind. Changed with it: the Lehman Wing's skylight head on the front, from 12.9 to 15.4 m, over the arches' crowns at 14.36 m (`frame.ts` LEHMAN_STRIP_HEAD_Y), and its east lintel onto it, so the court shows the central arch whole as #60 does. Left as they are: the stair tower between the north arcade and the west block in #49, whose plan and height no source gives; the end blocks' greater height and the 1880 roofs (#49, #65), which no longer stand; and the Lehman Wing's flat roof at 12.0 m (an estimate, `roche-south/lehman-plan.ts`), which still hides the outer arches' heads seen through the court's side openings, where #60 shows them whole under a higher ceiling.
+diff --git a/docs/work/15_vaux-fronts/plan.md b/docs/work/15_vaux-fronts/plan.md
+new file mode 100644
+index 0000000..3d7c904
+--- /dev/null
++++ b/docs/work/15_vaux-fronts/plan.md
+@@ -0,0 +1,53 @@
++# The 1880 fronts as their photographs show them
++
++Status: active
++Owner: Vaux fronts session (claude/vaux-fronts-3c8d7d)
++Created: 2026-11-04
++Updated: 2026-11-04
++
++## Problem and outcome
++
++Work unit 4 left F-owner-7 open: the 1880 Vaux building's fronts differ from their photographs in seven ways, recorded in `docs/research/exterior.md` section 9 and in "Open with the owner" notes in `src/model/core/vaux-front.ts`, `vaux-shell.ts` and `constants.ts`. The owner has asked for the open findings to be finished. Outcome: each difference is built as the photographs show it, read at native resolution, or kept with its reason recorded; the notes in the code and section 9 say what was decided; every gate is green.
++
++## Scope
++
++Included: the west front (`vaux-front.ts`), the side and east walls and their trim (`vaux-shell.ts`), their constants, the 1880 brick's colour, and the Lehman Wing's estimated skylight head and east lintel where they would hide the west front's arches (`src/model/roche-south/lehman-plan.ts`, `lehman.ts`). Following work unit 8's method: evidence viewed at native resolution and recorded in `docs/research/`, colours calibrated against renders.
++
++Excluded: the hall's two round end windows (`VAUX_OCULUS_Y`, the oculus hole in `vauxHall`'s gable, the glass discs in `westFrontWindows`, the lining in `medieval-hall.ts`), which the hall-windows session owns; the Weston porch (`weston-facade.ts`), which the Weston session owns; `palette.brick`, which Weston's 1888 and 1894 walls keep. Any opening that adds a passage for the walker waits for the owner (asked 2026-11-04 through the coordinating session).
++
++## Approach
++
++Evidence, each read at native resolution in the browser on 2026-11-04 (`exterior-images.md`): #60 and #67 (Untapped New York, 1260×840), #61 (Untapped Cities, 640×426), #49 (Original_Met.jpg, 1384×968) and #53 (1880_Met_Museum.jpg, 9406×6439). Heckscher's figures #63 to #66 could not be opened again: the Met's PDF server answers automated readers with a bot challenge, so their earlier full-size readings stand. The floor map (`research/cache/lm_features.json`, Floor 1) has three main-floor doors through the west front at X −5.78, 0 and +5.76, each about 2.3 m wide, and narrow corridors through the east front at X ±6.15.
++
++Measurements on #60 (taken square to the front from the court floor): the five arches stand 142 px apart, so with the map's 5.77 m bay the front is 24.5 px/m. The voussoir ring spans 117 px outside and 77 px inside at the springing (4.8 and 3.1 m), 20 px deep there and 28 px at the crown (0.8 and about 1.25 m); a smooth light inner order 7 to 9 px wide (0.3 m) lines the arch and runs down the jambs (#61); the impost band is 12 px tall (0.5 m) and runs across the front; the doorway rises 153 px from the landing to the band (6.2 m); the tympanum's stripes are 6 px (0.27 m). The intrados rises 51 px over the springing, about 2.3 m once the camera's tilt is allowed for. So the springing stands at L1 + 6.7 m, just under the second floor, as #67 shows on the east front, where the voussoirs spring at the second floor.
++
++Decisions, item by item (F-owner-7's seven differences):
++
++1. Five arches on the west front, 5.8 m apart (the front's 29 m in five bays, within 0.03 m of the map): built.
++2. No hood on the west front's arches (#53, #60, #61, #63, #64) nor on the side arcade's (#49): removed. The east front's arches get the ring of dark granite blocks #67 shows.
++3. The smooth light inner order inside the voussoirs, running down the jambs: built on the west front and the side arcade; the east front's arches get #67's moulded light granite inner arch round a roundel.
++4. Doorways in the west front's arches at X ±5.8: asked of the owner, since they add passages. Until an answer, those arches hold windows.
++5. The brick: a core material for the 1880 walls (`core.vauxBrick`), calibrated so its render from the Lehman court reads against the light granite as the photographs do.
++6. The east front: four large arches at X ±5.8 and ±11.6, two either side of the covered middle (#66), each the west front's arch with a roundel in its head (#67), blind today; today's openings through the wall (the passages at 0 and ±12, the second-floor doors at ±10.3, gallery 600's doorway) are cut through them and the stones they cross are left out.
++7. The side walls: banded pointed arches on the hall's six bays only, as the west front's design (#49), over a ground storey of light rusticated stone with small square-headed openings (#65, the south side; the north side's is hidden in #49 and taken to match); the end blocks in plain brick with round-headed openings on three tiers (#49, #65). Today's doors stay where they are.
++
++Also found and built: the west front's ground storey is light rusticated stone with square-headed windows (#49, #53), not brick with segmental ones. Found and left, with its reason in section 9: the stair tower between the north arcade and the west block (#49).
++
++## Acceptance criteria
++
++- [ ] Each of the seven differences built or kept with its reason, in `exterior.md` section 9, the code's notes and this plan; every photograph used marked viewed in `exterior-images.md`.
++- [ ] Renders compared with #60 from the Lehman court and with the gallery's frames that show 1880 work, read at native resolution.
++- [ ] `npm run verify` green through the gate lock, closure, reach, placement and route gates included.
++- [ ] Independent review (Codex and Claude), every finding resolved.
++- [ ] Merged to main through the landing slot and pushed; the owner's render gallery republished.
++
++## Implementation steps
++
++- [ ] Evidence read and measured (this plan).
++- [ ] West front, side walls, east front, brick; Lehman skylight head.
++- [ ] Records: `exterior.md` [C7] and section 9, `exterior-images.md`, devlog.
++- [ ] Gates, renders, reviews, landing, gallery.
++
++## Outcome
++
++Pending.
+diff --git a/docs/work/registry.json b/docs/work/registry.json
+index 7e9668b..499601c 100644
+--- a/docs/work/registry.json
++++ b/docs/work/registry.json
+@@ -60,6 +60,10 @@
+     {
+       "id": 14,
+       "theme": "mouse-look"
++    },
++    {
++      "id": 15,
++      "theme": "vaux-fronts"
+     }
+   ]
+ }
+diff --git a/src/model/closure.test.ts b/src/model/closure.test.ts
+index bf02dfb..9d71532 100644
+--- a/src/model/closure.test.ts
++++ b/src/model/closure.test.ts
+@@ -116,7 +116,7 @@ const SHEETS: Readonly<Record<string, number>> = {
+   'site-terrain/siteBareGround': 1,
+   'site-transverse-cuts/asphalt': 657,
+   // Standing upright, every face vertical: lib/window.ts's window and door panes, the site's curbs, retaining walls and excavation faces (site/grid.ts),
+-  // core/arches.ts's tympanum panels, the Arms and Armor Court's banners and the Astor Court's moon gate surround.
++  // the Arms and Armor Court's banners and the Astor Court's moon gate surround.
+   'american-1924-walls/glassDark': 2,
+   'american-walls/glassDark': 1,
+   'armor-court-parade/mmwClothBlue': 5,
+@@ -133,8 +133,7 @@ const SHEETS: Readonly<Record<string, number>> = {
+   'site-terrain/siteExcavation': 1,
+   'site-terrain/siteGranite': 1,
+   'site-terrain/siteWallStone': 1,
+-  'vaux-openings/glassDark': 12,
+-  'vaux-west-front/brick': 7,
++  'vaux-openings/glassDark': 8,
+   'wings-openings/glassDark': 137,
+ };
+ 
+diff --git a/src/model/core/arches.ts b/src/model/core/arches.ts
+index 8bd8c87..dc9242f 100644
+--- a/src/model/core/arches.ts
++++ b/src/model/core/arches.ts
+@@ -255,6 +255,35 @@ export interface RingParams {
+   readonly inset?: number;
+   /** Close the ring's back (z = 0) too, for a free-standing rib. Default false (the back lies on a wall). */
+   readonly back?: boolean;
++  /**
++   * A pointed ring's depth at its crown, metres, its extrados then drawn as a two-centred arch of its own (span + 2 × (inset + band), rising `crown` over
++   * the intrados' apex), more pointed than the intrados, as the 1880 voussoirs are (exterior-images.md #60, #61). Default: concentric, `band` all round.
++   */
++  readonly crown?: number;
++  /** Stones to leave out, by index from the right springing: where a later opening was cut through the ring. */
++  readonly omit?: readonly number[];
++}
++
++/** Sub-steps along each stone's arcs. */
++const STONE_SUB = 4;
++
++/** The intrados and extrados of a ring in its frame (origin at the centre of the springing line), from the right springing over the crown. */
++function ringCurves(params: RingParams): { inner: V2[]; outer: V2[] } {
++  const rise = params.rise ?? riseOf({ head: params.head, width: params.span, height: 99 });
++  const inset = params.inset ?? 0;
++  const inner = headPoints(params.head, 0, 0, params.span, rise, inset, params.count * 6);
++  if (params.crown === undefined || params.head !== 'pointed') return { inner, outer: headPoints(params.head, 0, 0, params.span, rise, inset + params.band, params.count * 6) };
++  const apex = Math.max(...inner.map((p) => p[1]));
++  return { inner, outer: headPoints('pointed', 0, 0, params.span + 2 * (inset + params.band), apex + params.crown, 0, params.count * 6) };
++}
++
++/** Each stone of a ring as its outline in the ring's frame: along its extrados, then back along its intrados; stones from the right springing. */
++export function ringStones(params: RingParams): V2[][] {
++  const { inner, outer } = ringCurves(params);
++  return Array.from({ length: params.count }, (_, k) => {
++    const ts = Array.from({ length: STONE_SUB + 1 }, (__, j) => (k + j / STONE_SUB) / params.count);
++    return [...ts.map((t) => along(outer, t)), ...[...ts].reverse().map((t) => along(inner, t))];
++  });
+ }
+ 
+ /** Voussoirs round an arch head, origin at the centre of its springing line on the wall face; alternate parities give polychrome rings. */
+@@ -262,15 +291,16 @@ export function voussoirRing(params: RingParams): BufferGeometry {
+   const rise = params.rise ?? riseOf({ head: params.head, width: params.span, height: 99 });
+   const inset = params.inset ?? 0;
+   const back = params.back ?? false;
+-  const key = `ring:${keyOf(params.head, params.span, rise, params.band, params.count, params.projection, String(params.parity), inset, back)}`;
++  const omit = [...(params.omit ?? [])].sort((p, q) => p - q);
++  const key = `ring:${keyOf(params.head, params.span, rise, params.band, params.count, params.projection, String(params.parity), inset, back, params.crown ?? 'concentric', omit.join(' '))}`;
+   return memo(key, () => {
+     const b = new MeshBuilder();
+-    const inner = headPoints(params.head, 0, 0, params.span, rise, inset, params.count * 6);
+-    const outer = headPoints(params.head, 0, 0, params.span, rise, inset + params.band, params.count * 6);
++    const { inner, outer } = ringCurves(params);
+     const z = params.projection;
+-    const sub = 4;
++    const sub = STONE_SUB;
+     for (let k = 0; k < params.count; k++) {
+       if (params.parity !== 'all' && k % 2 !== params.parity) continue;
++      if (omit.includes(k)) continue;
+       const i: Vector3[] = [];
+       const o: Vector3[] = [];
+       for (let j = 0; j <= sub; j++) {
+diff --git a/src/model/core/constants.ts b/src/model/core/constants.ts
+index df944bc..f5fe8d7 100644
+--- a/src/model/core/constants.ts
++++ b/src/model/core/constants.ts
+@@ -37,14 +37,20 @@ export const VAUX_HALL_EAST_Z = -83.32; // map gallery 305, east edge
+ export const VAUX_HALL_WALL = 1.1; // the hall's end walls; the map leaves 1.15 m between 520 and 305
+ export const VAUX_WEST_PAVILION_WALL_Z = -127.0; // map: the wall between galleries 521 and 520
+ export const VAUX_OCULUS_Y = 21.4; // E: centre of the hall's round end windows, 2.4 m across (P8: one high over the end doorway)
+-export const VAUX_BAY = 4.0; // E: the west front's arch spacing, 7 arches across 29 m; the photographs show five, open with the owner (exterior.md section 9, FRONT_ARCH_X)
+-export const VAUX_ARCH_SPAN = 2.6; // E: the main-floor pointed arches, against people in the Lehman-court photo
+-export const VAUX_ARCH_RISE = 2.5; // E: lancet heads, rise about the span (Lehman-court photo), more pointed than equilateral (2.25)
+-export const VAUX_ARCH_SILL = 0.7; // E: window sills above L1; the central doorway starts at L1
+-export const VAUX_ARCH_SPRING = 4.5; // E: springing above L1, where the granite impost band runs across the front (windows 1.35 × their width below it)
+-export const VAUX_GROUND_SILL = 1.6; // E: ground-storey windows above LG
+-export const VAUX_GROUND_HEIGHT = 2.9; // E: ground-storey segmental windows, sill to crown
+-export const VAUX_BAND = 0.32; // E: granite band height (exterior.md [C7]: grey-white granite bands)
++// The 1880 arch, as the west front shows it from the Lehman court (exterior-images.md #60 read at native size, 2026-11-04, 24.5 px/m at the map's
++// 5.8 m bay; #61 for its orders; exterior.md section 9): the same arch on the west front, the hall's bays of the side walls and the east front.
++export const VAUX_BAY = 5.8; // D: the west front's 29 m in five bays; the floor map's three main-floor doors through it stand at X −5.78, 0 and +5.76
++export const VAUX_ARCH_SPAN = 3.2; // M: the voussoirs' intrados at the springing, 77 px of #60 (3.1 m); 3.2 leaves the 2.6 m of today's doorways between the inner orders
++export const VAUX_ARCH_RISE = 2.3; // M: the intrados rises 51 px over the springing in #60, read at its vertical scale (0.92 of the horizontal for the camera's tilt)
++export const VAUX_VOUSSOIR = 0.8; // M: the voussoirs' depth at the springing, 20 px of #60
++export const VAUX_VOUSSOIR_CROWN = 1.25; // M: their depth at the crown, 28 px of #60 read upright: the extrados is more pointed than the intrados (#61 alike)
++export const VAUX_INNER_ORDER = 0.3; // M: the smooth light order inside the voussoirs, 7 to 9 px of #60; it runs down the jambs (#61)
++export const VAUX_ARCH_SILL = 0.7; // M: window sills above L1, the apron under the window in exterior-images.md #53 (0.67 m); doorways start at L1
++export const VAUX_ARCH_SPRING = 6.7; // M: springing above L1 (the impost band's top): the doorway rises 153 px from the landing to the band in #60 (6.2 m)
++export const VAUX_IMPOST = 0.5; // M: the impost band across the front at the springing, 12 px of #60, which runs over the openings as their lintel
++export const VAUX_GROUND_SILL = 2.225; // M: the ground storey's square-headed windows in exterior-images.md #53, sills 4.1 m under the main floor, set on a joint of its courses
++export const VAUX_GROUND_HEIGHT = 2.3; // M: those windows' height in #53, four of the ten courses (vaux-front.ts)
++export const VAUX_BAND = 0.32; // E: the lesser granite bands (exterior.md [C7]: grey-white granite bands)
+ 
+ // --- Medieval Sculpture Hall (interior.md; map gallery 305 and its 14 columns; photo P8) -----------------------------------
+ export const HALL_PIER_X = 7.02; // map: pier rows at X -7.01 and +7.03
+diff --git a/src/model/core/core.test.ts b/src/model/core/core.test.ts
+index 82c6083..ab76570 100644
+--- a/src/model/core/core.test.ts
++++ b/src/model/core/core.test.ts
+@@ -9,7 +9,8 @@
+  * Bound: geometry is built in Node without WebGL, so counts and bounds are exact but nothing here looks at a rendered pixel.
+  * Blocks: core-1880-a, core-1888-b and core-1894-c tile X −49.7..49.4, Z −138.3..−69.0 (exterior.md section 2). A piece may overstep that by
+  * 0.3 m; trim (any non-brick piece) on the west face (into the Lehman court and the park) and on Weston's south face (into the Petrie Court)
+- * may project up to 1.5 m (coordinator, 2026-10-11).
++ * may project up to 1.5 m (coordinator, 2026-10-11). The 1880 west front's arch crowns stand at least 0.5 m under the Lehman Wing's skylight head
++ * (frame.ts LEHMAN_STRIP_HEAD_Y), so its court shows them whole (red with the head at its old 12.9 m: the crowns 1.46 m over it; work unit 15).
+  */
+ import { Box3, Vector3 } from 'three';
+ import type { BufferGeometry } from 'three';
+@@ -22,8 +23,12 @@ import { MeshBuilder } from '../lib/builder.js';
+ import { levelFaces, openAlong } from '../lib/check.js';
+ import { palette } from '../palette.js';
+ import { holeLining, holeOutline, openWall } from './arches.js';
++import { core } from './materials.js';
+ import type { Hole } from './arches.js';
++import { LEHMAN_STRIP_HEAD_Y } from '../frame.js';
++import { VAUX_ARCH_RISE, VAUX_VOUSSOIR_CROWN } from './constants.js';
+ import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from './index.js';
++import { SPRING_Y } from './vaux-arch.js';
+ 
+ const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+ const ARRAYS: readonly (readonly [string, readonly StepDef[]])[] = [
+@@ -57,7 +62,7 @@ describe('core steps', () => {
+         const g = piece.geometry;
+         if (g.boundingBox === null) g.computeBoundingBox();
+         const box = (g.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
+-        const trim = piece.material !== palette.brick;
++        const trim = piece.material !== palette.brick && piece.material !== core.vauxBrick;
+         const west = BLOCKS.z0 - box.min.z;
+         const south = BLOCKS.x0 - box.min.x;
+         const bad =
+@@ -73,6 +78,12 @@ describe('core steps', () => {
+     expect(problems).toEqual([]);
+   });
+ 
++  it("leave the 1880 west front's arches whole under the Lehman Wing's skylight head, as exterior-images.md #60 shows them from its court (work unit 15)", () => {
++    // The voussoirs' crowns: the springing, the intrados' rise and their depth at the crown (vaux-arch.ts); the skylight's head bar rests on the brick over them.
++    const crown = SPRING_Y + VAUX_ARCH_RISE + VAUX_VOUSSOIR_CROWN;
++    expect(LEHMAN_STRIP_HEAD_Y - crown, 'brick between the crowns and the skylight head, m').toBeGreaterThanOrEqual(0.5);
++  });
++
+   it('stay within the area budget with finite matrices', () => {
+     const timeline = new Timeline(ALL);
+     const stats = timeline.stats();
+diff --git a/src/model/core/materials.ts b/src/model/core/materials.ts
+index d52e525..79ea99d 100644
+--- a/src/model/core/materials.ts
++++ b/src/model/core/materials.ts
+@@ -36,6 +36,11 @@ export const core = Object.freeze({
+    * renders at about 0.62 of the light granite seen from the Lehman court, as five photographs read the dark stones against the light, 0.63 on average.
+    */
+   graniteDark: standard('core.graniteDark', '#85827a', 0.85),
++  /**
++   * The 1880 building's red brick, duller than the palette's (the 1888 and 1894 wings keep that): calibrated so its render from the Lehman court reads
++   * against the light granite as the west front's photographs read it, a mean of (0.75, 0.55, 0.55) a channel (exterior.md [C7]).
++   */
++  vauxBrick: standard('core.vauxBrick', '#9a7971', 0.9),
+   /** Weston's light grey stone base, piers, arches and cornice (Petrie Court photo). */
+   westonStone: standard('core.westonStone', '#c4c0b7', 0.78),
+   /** The Medieval Sculpture Hall's plaster walls and vault (interior.md #dcd8d0). */
+diff --git a/src/model/core/vaux-arch.ts b/src/model/core/vaux-arch.ts
+new file mode 100644
+index 0000000..5e08aa4
+--- /dev/null
++++ b/src/model/core/vaux-arch.ts
+@@ -0,0 +1,136 @@
++/**
++ * The 1880 arch of Vaux and Mould's fronts (exterior.md section 9; constants.ts): an opening from its sill (or the floor, as a doorway) up to a
++ * granite impost band, which runs across the front as its lintel, and over the band a pointed head: a ring of voussoirs alternating light and dark
++ * granite, deeper at the crown than at the springing, meeting the brick with no hood, and inside it a smooth light granite order that runs on down the
++ * jambs (exterior-images.md #53, #60, #61, #63, #64). The west front fills the head with a striped tympanum; the east front's heads hold a roundel inside
++ * a moulded light arch and a ring of dark granite blocks round the voussoirs (#67); the side walls' heads, glazed in 1880 (#49), are bricked up.
++ * Frames: an arch's parts are placed at the centre of its springing line on the wall face, as arches.ts's rings and tympana are.
++ */
++import { Vector3 } from 'three';
++import type { BufferGeometry, Matrix4 } from 'three';
++
++import { MeshBuilder } from '../lib/index.js';
++import type { V2 } from '../lib/index.js';
++import { ringStones, voussoirRing, type Hole, type RingParams } from './arches.js';
++import { L1, LG, VAUX_ARCH_RISE, VAUX_ARCH_SILL, VAUX_ARCH_SPAN, VAUX_ARCH_SPRING, VAUX_IMPOST, VAUX_INNER_ORDER, VAUX_VOUSSOIR, VAUX_VOUSSOIR_CROWN } from './constants.js';
++import { keyOf, memo } from './shapes.js';
++
++/** The ground storey's rusticated stone under the arches (#53 on the west front, #65 under the south arcade): ten courses from a base band to the main floor's band. */
++export const RUST_Y0 = LG + 0.5;
++export const RUST_Y1 = L1 - 0.2;
++export const COURSE = (RUST_Y1 - RUST_Y0) / 10;
++export const JOINT = 0.04;
++
++/** The springing (the impost band's top) and the openings' heads (its bottom), world Y. */
++export const SPRING_Y = L1 + VAUX_ARCH_SPRING;
++export const LINTEL_Y = SPRING_Y - VAUX_IMPOST;
++/** Window sills, world Y. */
++export const SILL_Y = L1 + VAUX_ARCH_SILL;
++/** The clear opening between the inner orders: today's doorways' 2.6 m. */
++export const CLEAR = VAUX_ARCH_SPAN - 2 * VAUX_INNER_ORDER;
++
++/** The rise of the inner order's inner edge, the tympanum's outline: the intrados drawn VAUX_INNER_ORDER inside itself about the same two centres. */
++export const TYMPANUM_RISE = ((): number => {
++  const a = VAUX_ARCH_SPAN / 2;
++  const c = (VAUX_ARCH_RISE * VAUX_ARCH_RISE - a * a) / (2 * a);
++  const r = a + c - VAUX_INNER_ORDER;
++  return Math.sqrt(r * r - c * c);
++})();
++
++/** How far the parts stand proud of the wall face: the voussoirs, the inner order and the jambs. */
++export const VOUSSOIR_PROUD = 0.06;
++export const ORDER_PROUD = 0.03;
++/** The head's blind niche behind the tympanum. */
++export const HEAD_DEPTH = 0.25;
++
++/** The voussoirs of the west front and the side arcade, 15 stones, a dark one at the crown (#60, #64). */
++export const VOUSSOIRS: RingParams = {
++  head: 'pointed',
++  span: VAUX_ARCH_SPAN,
++  rise: VAUX_ARCH_RISE,
++  band: VAUX_VOUSSOIR,
++  crown: VAUX_VOUSSOIR_CROWN,
++  count: 15,
++  projection: VOUSSOIR_PROUD,
++  parity: 0,
++};
++/** The smooth light inner order inside them, in 15 segments so a cut can leave some out. */
++export const INNER_ORDER: RingParams = { head: 'pointed', span: CLEAR, rise: TYMPANUM_RISE, band: VAUX_INNER_ORDER, count: 15, projection: ORDER_PROUD, parity: 'all' };
++
++/**
++ * The east front's voussoirs (#67): 0.75 m deep, so its outer arches, centred on today's passages 12 m off the axis, stay inside the front's 29 m with
++ * their ring of dark blocks; and that ring, 0.15 m deep, a fifth of the voussoirs as in #67, round their extrados.
++ */
++export const EAST_VOUSSOIR = 0.75;
++export const EAST_CROWN = 1.15;
++export const EAST_OUTER = 0.15;
++export const EAST_VOUSSOIRS: RingParams = { ...VOUSSOIRS, band: EAST_VOUSSOIR, crown: EAST_CROWN };
++export const EAST_OUTER_RING: RingParams = {
++  head: 'pointed',
++  span: VAUX_ARCH_SPAN + 2 * EAST_VOUSSOIR,
++  rise: VAUX_ARCH_RISE + EAST_CROWN,
++  band: EAST_OUTER,
++  count: 15,
++  projection: VOUSSOIR_PROUD + 0.02,
++  parity: 'all',
++};
++/** The east front's moulded inner arch (#67): two light orders, the outer standing further out than the inner. */
++export const EAST_ORDERS: readonly RingParams[] = [
++  { ...INNER_ORDER, band: VAUX_INNER_ORDER / 2, inset: VAUX_INNER_ORDER / 2, projection: ORDER_PROUD + 0.02 },
++  { ...INNER_ORDER, band: VAUX_INNER_ORDER / 2, projection: ORDER_PROUD },
++];
++/** The roundel in an east head (#67, its brick 1.3 m across): its centre over the springing and its moulded granite ring. */
++export const ROUNDEL = { centre: 0.95, inner: 0.65, outer: 0.8, proud: 0.05 } as const;
++
++/** A rectangle in an arch's frame, x0 < x1, y0 < y1: an opening cut through its head later. */
++export type Cut = readonly [x0: number, y0: number, x1: number, y1: number];
++
++/** The stones of `ring` that `cut` crosses (their outlines' bounds meet it). */
++export function stonesIn(ring: RingParams, cut: Cut): number[] {
++  return ringStones(ring).flatMap((stone, k) => {
++    const xs = stone.map((p) => p[0]);
++    const ys = stone.map((p) => p[1]);
++    return Math.max(...xs) > cut[0] && Math.min(...xs) < cut[2] && Math.max(...ys) > cut[1] && Math.min(...ys) < cut[3] ? [k] : [];
++  });
++}
++
++/** `ring` with the stones `cut` crosses left out (none left out without a cut). */
++export function ringCut(ring: RingParams, cut?: Cut): BufferGeometry {
++  return voussoirRing(cut === undefined ? ring : { ...ring, omit: stonesIn(ring, cut) });
++}
++
++/** The holes of an arch at `x` in a wall whose base is at world Y `base`: its opening, through or blind, and its head's blind niche unless left out. */
++export function archHoles(x: number, base: number, opening: { readonly sill: number; readonly through: boolean }, head = true): Hole[] {
++  const holes: Hole[] = [{ x, y: opening.sill - base, width: CLEAR, height: LINTEL_Y - opening.sill, ...(opening.through ? {} : { depth: HEAD_DEPTH }) }];
++  // The niche starts 2 cm under the springing, behind the band's top, so its outline has no point twice where its head springs.
++  if (head) holes.push({ head: 'pointed', x, y: SPRING_Y - 0.02 - base, width: CLEAR, height: TYMPANUM_RISE + 0.02, rise: TYMPANUM_RISE, depth: HEAD_DEPTH });
++  return holes;
++}
++
++/** A closed granite annulus, its back on z = 0 and its front `proud` out: the roundel's moulding. */
++export function annulus(inner: number, outer: number, proud: number, sides = 32): BufferGeometry {
++  return memo(`annulus:${keyOf(inner, outer, proud, sides)}`, () => {
++    const b = new MeshBuilder();
++    const circle = (r: number): V2[] => Array.from({ length: sides }, (_, k) => [r * Math.cos((2 * Math.PI * k) / sides), r * Math.sin((2 * Math.PI * k) / sides)] as const);
++    const [o, i] = [circle(outer), circle(inner)];
++    b.planar(o, [i], new Vector3(0, 0, proud), new Vector3(1, 0, 0), new Vector3(0, 1, 0));
++    const mirror = (pts: readonly V2[]): V2[] => pts.map(([u, v]) => [-u, v] as const);
++    b.planar(mirror(o), [mirror(i)], new Vector3(0, 0, 0), new Vector3(-1, 0, 0), new Vector3(0, 1, 0));
++    for (let k = 0; k < sides; k++) {
++      const [p, q] = [o[k] ?? [0, 0], o[(k + 1) % sides] ?? [0, 0]];
++      b.polygon([new Vector3(p[0], p[1], 0), new Vector3(q[0], q[1], 0), new Vector3(q[0], q[1], proud), new Vector3(p[0], p[1], proud)]);
++      const [r, s] = [i[k] ?? [0, 0], i[(k + 1) % sides] ?? [0, 0]];
++      b.polygon([new Vector3(r[0], r[1], proud), new Vector3(s[0], s[1], proud), new Vector3(s[0], s[1], 0), new Vector3(r[0], r[1], 0)]);
++    }
++    return b.build();
++  });
++}
++
++/** One geometry from `parts`, each placed by its matrix, cached under `key`: a wall's trim of one material as a single piece (the core's mesh budget). */
++export function mergedTrim(key: string, parts: () => readonly (readonly [BufferGeometry, Matrix4])[]): BufferGeometry {
++  return memo(`mergedTrim:${key}`, () => {
++    const b = new MeshBuilder();
++    for (const [geometry, matrix] of parts()) b.append(geometry, matrix);
++    return b.build();
++  });
++}
+diff --git a/src/model/core/vaux-east.ts b/src/model/core/vaux-east.ts
+new file mode 100644
+index 0000000..84f5b8a
+--- /dev/null
++++ b/src/model/core/vaux-east.ts
+@@ -0,0 +1,120 @@
++/**
++ * The 1880 building's east front at Z −69.0, toward Fifth Avenue until the Hunt Wing closed against it in 1902: two large arches either side of its
++ * covered middle (exterior-images.md #66), each the 1880 arch (vaux-arch.ts) with a roundel in its head inside a moulded light granite arch and a ring
++ * of dark granite blocks round its voussoirs, as the one surviving at the top of the Grand Staircase shows it (#67; exterior.md section 9). Their
++ * windows are bricked up. The inner pair stand on the west front's bay, 0.35 m from the floor map's narrow corridors either side of the Grand
++ * Staircase, which Heckscher says pass through them; the outer pair on today's passages into the stair halls, 12 m off the axis.
++ * Today's openings stay as they were (the floor map's; work unit 2, M1): the passages on the main floor on the axis and 12 m either side, the
++ * second-floor doors 10.3 m off the axis, which were cut through the outer arches' heads and take the stones they cross, and on the axis at the second
++ * floor the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand Staircase), lined in
++ * granite with a threshold.
++ */
++import type { BufferGeometry, Matrix4 } from 'three';
++
++import type { Kit } from '../../build/types.js';
++import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
++import { holeLining, openWall, type Hole } from './arches.js';
++import { A_HALF, EAST_Z, L1, L2, OUTER_WALL, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAY, VAUX_INNER_ORDER } from './constants.js';
++import { INNER_EAST_Z } from './layout.js';
++import { core } from './materials.js';
++import { FACING, addBox, placed, runsBetween } from './shapes.js';
++import {
++  CLEAR,
++  EAST_ORDERS,
++  EAST_OUTER_RING,
++  EAST_VOUSSOIRS,
++  HEAD_DEPTH,
++  LINTEL_Y,
++  ORDER_PROUD,
++  ROUNDEL,
++  SILL_Y,
++  SPRING_Y,
++  annulus,
++  archHoles,
++  mergedTrim,
++  ringCut,
++  type Cut,
++} from './vaux-arch.js';
++import { WALL_BASE_Y } from './vaux-front.js';
++
++/** E: the inner pair on the west front's bay; the outer pair on today's passages into the stair halls (as before). */
++const INNER_X = VAUX_BAY;
++const OUTER_X = 12.0;
++/** Today's main-floor passage on the axis: as wide as before, to the old springing's height. */
++const PASSAGE = { width: CLEAR, height: 4.5 } as const;
++/** Today's second-floor doors either side, 10.3 m off the axis (floor map), and the threshold under gallery 600's doorway. */
++const SECOND_DOOR = { x: 10.3, width: 2.6, height: 3.2 } as const;
++const DOOR_THRESHOLD = 0.03;
++/** A second-floor door as a cut through the outer arch on its side, in that arch's frame (x from the arch's middle, y from the springing). */
++function secondCut(sign: number): Cut {
++  const [x0, x1] = [sign * SECOND_DOOR.x - SECOND_DOOR.width / 2 - sign * OUTER_X, sign * SECOND_DOOR.x + SECOND_DOOR.width / 2 - sign * OUTER_X];
++  return [x0 - 0.03, L2 - SPRING_Y - 0.03, x1 + 0.03, L2 + SECOND_DOOR.height - SPRING_Y + 0.03];
++}
++
++/** The east wall from the footings to the parapet, with its arches' blind openings and today's openings. */
++export function vauxEastWall(kit: Kit): void {
++  const base = WALL_BASE_Y;
++  const holes: Hole[] = [{ x: 0, y: L1 - base, width: PASSAGE.width, height: PASSAGE.height }];
++  for (const s of [-1, 1]) {
++    holes.push(...archHoles(s * INNER_X, base, { sill: SILL_Y, through: false }));
++    holes.push(...archHoles(s * OUTER_X, base, { sill: L1, through: true }, false));
++    holes.push({ x: s * SECOND_DOOR.x, y: L2 - base, width: SECOND_DOOR.width, height: SECOND_DOOR.height });
++  }
++  // The doorway into gallery 600, cut for its granite lining and a threshold under it, flush with the floors on both sides; the Hunt wing lines the
++  // passage on through the cavity to its cross hall in the same section (hunt/stair.ts).
++  const sill = L2 - base;
++  const lined = GALLERY_600_DOOR_HALF_WIDTH + GALLERY_600_DOOR_LINING;
++  const outer: Hole = { head: 'round', x: 0, y: sill, width: 2 * lined, height: GALLERY_600_DOOR_CROWN + GALLERY_600_DOOR_LINING };
++  holes.push({ ...outer, y: sill - DOOR_THRESHOLD, height: outer.height + DOOR_THRESHOLD });
++  const east = openWall({ width: 2 * A_HALF, height: PARAPET_Y - base, thickness: OUTER_WALL, holes });
++  const frame = placed(0, base, EAST_Z, FACING.east);
++  kit.add(east, core.vauxBrick, frame, 12);
++  const inner: Hole = { head: 'round', x: 0, y: sill, width: 2 * GALLERY_600_DOOR_HALF_WIDTH, height: GALLERY_600_DOOR_CROWN };
++  kit.add(holeLining(outer, inner, OUTER_WALL), core.granite, frame, 12);
++  addBox(kit, core.granite, -lined, L2 - DOOR_THRESHOLD, INNER_EAST_Z, lined, L2, EAST_Z, 12);
++}
++
++/** The four heads' light granite (voussoirs, moulded orders, roundels) or dark granite (voussoirs, outer blocks), each as one piece. */
++function eastRings(dark: boolean): BufferGeometry {
++  return mergedTrim(`east-${dark ? 'dark' : 'light'}`, () =>
++    [-1, 1].flatMap((s): [BufferGeometry, Matrix4][] =>
++      [INNER_X, OUTER_X].flatMap((x): [BufferGeometry, Matrix4][] => {
++        const cut = x === OUTER_X ? secondCut(s) : undefined;
++        const at = placed(s * x, SPRING_Y, EAST_Z, FACING.east);
++        if (dark) {
++          return [
++            [ringCut({ ...EAST_VOUSSOIRS, parity: 1 }, cut), at],
++            [ringCut(EAST_OUTER_RING, cut), at],
++          ];
++        }
++        const parts: [BufferGeometry, Matrix4][] = [[ringCut(EAST_VOUSSOIRS, cut), at], ...EAST_ORDERS.map((order): [BufferGeometry, Matrix4] => [ringCut(order, cut), at])];
++        // The roundel's moulding on the back of the head's niche; the outer heads, cut by the second-floor doors, have no niche and keep none.
++        if (cut === undefined) parts.push([annulus(ROUNDEL.inner, ROUNDEL.outer, ROUNDEL.proud), placed(s * x, SPRING_Y + ROUNDEL.centre, EAST_Z - HEAD_DEPTH, FACING.east)]);
++        return parts;
++      }),
++    ),
++  );
++}
++
++/** Granite trim of the east front: the main floor's and the impost band, the windows' aprons, the jambs' inner order, and the four heads. */
++export function vauxEastTrim(kit: Kit): void {
++  const proud = 0.08;
++  const box = (x0: number, x1: number, y0: number, y1: number, depth: number): void => {
++    addBox(kit, core.granite, x0, y0, EAST_Z, x1, y1, EAST_Z + depth, 12);
++  };
++  const passages = [0, -OUTER_X, OUTER_X].map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
++  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, passages)) box(x0, x1, L1 - 0.2, L1 + 0.12, proud);
++  box(-A_HALF, A_HALF, LINTEL_Y, SPRING_Y, proud);
++  for (const s of [-1, 1]) {
++    for (const x of [s * INNER_X, s * OUTER_X]) {
++      const window = Math.abs(x) === INNER_X;
++      if (window) box(x - VAUX_ARCH_SPAN / 2, x + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0.05);
++      for (const side of [-1, 1]) {
++        const edge = x + side * (CLEAR / 2);
++        box(Math.min(edge, edge + side * VAUX_INNER_ORDER), Math.max(edge, edge + side * VAUX_INNER_ORDER), window ? SILL_Y : L1, LINTEL_Y, ORDER_PROUD);
++      }
++    }
++  }
++  kit.add(eastRings(false), core.granite, placed(0, 0, 0), 12);
++  kit.add(eastRings(true), core.graniteDark, placed(0, 0, 0), 12);
++}
+diff --git a/src/model/core/vaux-front.ts b/src/model/core/vaux-front.ts
+index 21f2778..55946a6 100644
+--- a/src/model/core/vaux-front.ts
++++ b/src/model/core/vaux-front.ts
+@@ -1,11 +1,11 @@
+ /**
+- * The Vaux and Mould west front of 1880 (history.md section 2; exterior.md [K7]): red brick with grey-white granite bands, seven pointed arches on
+- * the main floor (five in the photographs, open with the owner: exterior.md section 9) whose voussoirs alternate light and dark grey granite ([C7]), striped tympana (the central one the original entrance),
+- * segmental windows on the ground storey, blind upper storey, cornice and parapet. It faces the park at Z −138.3 and survives inside the Robert Lehman
+- * Wing (seen in int-lehman-pyramid-up). References: Original_Met.jpg (about 1880, the west front beside its porch), the 1880 stereograph from the
+- * southwest and the views of the front from the Lehman Wing (Untapped New York, 2026 and 2012; Forgotten New York, 2023; Heckscher 1995, figs. 105
+- * and 107), exterior-images.md #49, #65, #60, #61, #62, #63 and #64. Trim may project up to 1.5 m into the Lehman court (coordinator, 2026-10-11);
+- * walls do not.
++ * The Vaux and Mould west front of 1880 (history.md section 2; exterior.md [K7] and section 9), facing the park at Z −138.3 and surviving inside the
++ * Robert Lehman Wing (seen in int-lehman-pyramid-up): red brick over a ground storey of light rusticated stone with square-headed windows, five of
++ * the 1880 arches (vaux-arch.ts) 5.8 m apart on the main floor, the entrance on the axis, and a string course, cornice and parapet over them.
++ * References, each read at native size: Original_Met.jpg (about 1880, the front's north half beside its porch), 1880_Met_Museum.jpg (about 1900, the
++ * whole front from the southwest) and the views from the Lehman Wing (Untapped New York 2026 and 2012; Forgotten New York 2023; Heckscher 1995, figs.
++ * 105 and 107), exterior-images.md #49, #53, #60, #61, #62, #63 and #64; the floor map's doors through the front (exterior.md section 9). Trim may
++ * project up to 1.5 m into the Lehman court (coordinator, 2026-10-11); walls do not.
+  */
+ import { Matrix4 } from 'three';
+ 
+@@ -13,32 +13,38 @@ import type { Kit } from '../../build/types.js';
+ import { moulding, windowUnit } from '../lib/index.js';
+ import { palette } from '../palette.js';
+ import { openWall, tympanum, voussoirRing, type Hole } from './arches.js';
+-import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, L2, LG, PARAPET_Y, VAUX_ARCH_RISE, VAUX_ARCH_SILL, VAUX_ARCH_SPAN, VAUX_ARCH_SPRING, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
++import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, LG, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_INNER_ORDER, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
+ import { core } from './materials.js';
+-import { FACING, addBox, cylinder, placed } from './shapes.js';
++import { FACING, addBox, cylinder, placed, runsBetween } from './shapes.js';
++import { CLEAR, COURSE, HEAD_DEPTH, INNER_ORDER, JOINT, LINTEL_Y, ORDER_PROUD, RUST_Y0, SILL_Y, SPRING_Y, TYMPANUM_RISE, VOUSSOIRS, archHoles } from './vaux-arch.js';
+ 
+ /** Foot of the walls, on the footings (constants FOOTING_Y + 1.0). */
+ export const WALL_BASE_Y = LG - 0.3;
+ 
+-// Open with the owner (exterior.md section 9): seven is an estimate; the Lehman court's photographs show five, the outer two with windows
+-// (exterior-images.md #60 and #64), and in 1880 two large arches stood either side of the central porch (exterior-images.md #49 and #65).
+-/** World X of the seven arches across the front, the entrance on the axis. */
+-export const FRONT_ARCH_X = [-3, -2, -1, 0, 1, 2, 3].map((k) => k * VAUX_BAY);
+-const GROUND_WIDTH = 1.6;
+-const GROUND_RISE = 0.4;
++/** World X of the front's five arches, the entrance on the axis: five in #49, #53, #60, #64 and #65, 5.8 m apart (constants.ts VAUX_BAY). */
++export const FRONT_ARCH_X = [-2, -1, 0, 1, 2].map((k) => k * VAUX_BAY);
++/**
++ * The arches open to the main floor as doorways. Today the middle three are (#60, #61, #62; the floor map's doors at X −5.78, 0 and +5.76); the two beside
++ * the entrance would add passages for the walker between the Lehman Wing and gallery 521, so they wait for the owner (asked 2026-11-04) and hold windows.
++ */
++export const WEST_DOORWAY_X: readonly number[] = [0];
++const doorway = (x: number): boolean => WEST_DOORWAY_X.includes(x);
++
++/** The ground storey's windows (#53), on the joints of its courses (vaux-arch.ts). */
++const GROUND_WIDTH = 2.2;
++/** The central door into the ground floor (the floor map's, 2.31 m), as wide as before, its head on a joint. */
+ const DOOR_WIDTH = 2.2;
++const DOOR_HEAD_Y = RUST_Y0 + 5 * COURSE;
+ const PROUD = 0.08;
++/** The string course over the arches, under the cornice. */
++const STRING_Y = 15.7;
+ 
+-// Open with the owner (exterior.md section 9): several of these arches are open to the floor as doorways today, not windows over sills
+-// (exterior-images.md #61, #62 and #63).
+ function frontHoles(): Hole[] {
+   const holes: Hole[] = [];
+   for (const x of FRONT_ARCH_X) {
+-    const door = x === 0;
+-    const sill = door ? 0 : VAUX_ARCH_SILL;
+-    holes.push({ head: 'pointed', x, y: L1 + sill - WALL_BASE_Y, width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING + VAUX_ARCH_RISE - sill, rise: VAUX_ARCH_RISE });
+-    if (door) holes.push({ head: 'segmental', x, y: LG - WALL_BASE_Y, width: DOOR_WIDTH, height: 3.3, rise: 0.5 });
+-    else holes.push({ head: 'segmental', x, y: LG + VAUX_GROUND_SILL - WALL_BASE_Y, width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, rise: GROUND_RISE });
++    holes.push(...archHoles(x, WALL_BASE_Y, { sill: doorway(x) ? L1 : SILL_Y, through: true }));
++    if (x === 0) holes.push({ x, y: LG - WALL_BASE_Y, width: DOOR_WIDTH, height: DOOR_HEAD_Y - LG });
++    else holes.push({ x, y: LG + VAUX_GROUND_SILL - WALL_BASE_Y, width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT });
+   }
+   return holes;
+ }
+@@ -46,77 +52,82 @@ function frontHoles(): Hole[] {
+ /** The front's brick wall, 29 m across and 1.5 m thick, outer face on Z −138.3, from the footings to the parapet. */
+ export function westFrontWall(kit: Kit): void {
+   const geometry = openWall({ width: 2 * A_HALF, height: PARAPET_Y - WALL_BASE_Y, thickness: WEST_WALL, holes: frontHoles() });
+-  // Open with the owner (exterior.md section 9): the photographs read this brick duller than the palette's brick renders (exterior-images.md #60 and #64).
+-  kit.add(geometry, palette.brick, placed(0, WALL_BASE_Y, WEST_Z, FACING.west));
++  kit.add(geometry, core.vauxBrick, placed(0, WALL_BASE_Y, WEST_Z, FACING.west));
+ }
+ 
+-/** A granite band across the front from y0 to y1, standing `proud` in front of the wall face, split round the gaps (world X ranges). */
+-function band(kit: Kit, y0: number, y1: number, order: number, gaps: readonly (readonly [number, number])[] = [], proud = PROUD): void {
+-  let x = -A_HALF;
+-  for (const [g0, g1] of [...gaps, [A_HALF, A_HALF] as const]) {
+-    if (g0 > x) addBox(kit, core.granite, x, y0, WEST_Z - proud, g0, y1, WEST_Z, order);
+-    x = g1;
++/** A granite band across the front from y0 to y1, standing `proud` in front of the wall face (from `back` out), split round the gaps (world X ranges). */
++function band(kit: Kit, y0: number, y1: number, order: number, gaps: readonly (readonly [number, number])[] = [], proud = PROUD, back = 0): void {
++  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, gaps)) addBox(kit, core.granite, x0, y0, WEST_Z - back - proud, x1, y1, WEST_Z - back, order);
++}
++
++/** The ground storey's rustication: each course a face 6 cm proud and over it a block 4 cm prouder, short of the joint above it. */
++function rustication(kit: Kit): void {
++  for (let j = 0; j < 10; j++) {
++    const y0 = RUST_Y0 + j * COURSE;
++    const y1 = y0 + COURSE;
++    const gaps = FRONT_ARCH_X.flatMap((x): [number, number][] => {
++      const [h0, h1] = x === 0 ? [LG, DOOR_HEAD_Y] : [LG + VAUX_GROUND_SILL, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT];
++      const w = (x === 0 ? DOOR_WIDTH : GROUND_WIDTH) / 2;
++      return y0 < h1 - 1e-6 && y1 > h0 + 1e-6 ? [[x - w, x + w]] : [];
++    });
++    band(kit, y0, y1, 1, gaps, 0.06);
++    band(kit, y0, y1 - JOINT, 1, gaps, 0.04, 0.06);
+   }
+ }
+ 
+-/** Granite bands, voussoirs, striped tympana, cornice and coping of the front, in rising courses. */
++/** Granite bands and rustication, the arches' orders, voussoirs and striped tympana, the string course, cornice and coping, in rising courses. */
+ export function westFrontTrim(kit: Kit): void {
+-  const spring = L1 + VAUX_ARCH_SPRING;
+-  band(kit, WALL_BASE_Y, LG + 0.5, 0, [], 0.12);
+-  band(kit, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT + VAUX_BAND, 1);
+-  band(kit, L1 - 0.2, L1 + 0.12, 2);
+-  band(kit, L1 + VAUX_ARCH_SILL - 0.16, L1 + VAUX_ARCH_SILL, 3, [[-VAUX_ARCH_SPAN / 2, VAUX_ARCH_SPAN / 2]], 0.12);
+-  band(kit, spring - VAUX_BAND, spring, 4);
+-  band(kit, L2 + 1.2, L2 + 1.2 + VAUX_BAND, 6);
+-  band(kit, L2 + 3.6, L2 + 3.6 + VAUX_BAND, 7);
+-  const ring = (parity: 0 | 1) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.42, count: 15, projection: 0.06, parity });
+-  // Open with the owner (exterior.md section 9): the front's photographs show no hood round the voussoirs (exterior-images.md #60, #63 and #64); they
+-  // show a smooth light ring inside them, which this front lacks (exterior-images.md #61, #63 and #64).
+-  const hood = voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, band: 0.09, count: 15, projection: 0.1, parity: 'all', inset: 0.42 });
+-  const ground = voussoirRing({ head: 'segmental', span: GROUND_WIDTH, rise: GROUND_RISE, band: 0.3, count: 9, projection: 0.05, parity: 'all' });
+-  const door = voussoirRing({ head: 'segmental', span: DOOR_WIDTH, rise: 0.5, band: 0.34, count: 11, projection: 0.05, parity: 'all' });
+-  const panel = tympanum({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, stripe: 0.2, part: 'panel' });
+-  const stripes = tympanum({ head: 'pointed', span: VAUX_ARCH_SPAN, rise: VAUX_ARCH_RISE, stripe: 0.2, part: 'stripes' });
++  band(kit, WALL_BASE_Y, RUST_Y0, 0, [], 0.12);
++  rustication(kit);
++  const doors = FRONT_ARCH_X.filter(doorway).map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
++  band(kit, L1 - 0.2, L1 + 0.12, 2, doors);
++  // The impost band runs across the whole front, over each opening as its lintel (#53, #60, #61).
++  band(kit, LINTEL_Y, SPRING_Y, 4);
++  const light = voussoirRing(VOUSSOIRS);
++  const dark = voussoirRing({ ...VOUSSOIRS, parity: 1 });
++  const order = voussoirRing(INNER_ORDER);
++  const stripes = tympanum({ head: 'pointed', span: CLEAR, rise: TYMPANUM_RISE, stripe: 0.27, part: 'stripes' });
+   for (const x of FRONT_ARCH_X) {
+-    const facing = FACING.west;
+-    if (x === 0) kit.add(door, core.granite, placed(x, LG + 3.3 - 0.5, WEST_Z, facing), 1);
+-    else kit.add(ground, core.granite, placed(x, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT - GROUND_RISE, WEST_Z, facing), 1);
+-    // Granite jambs flank the opening below the springing (Lehman-court photo: light stone round each window).
+-    const sill = x === 0 ? L1 : L1 + VAUX_ARCH_SILL;
++    const sill = doorway(x) ? L1 : SILL_Y;
++    // A window stands over a light granite apron (#53, #61).
++    if (!doorway(x)) addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, L1 + 0.12, WEST_Z - 0.05, x + VAUX_ARCH_SPAN / 2, sill, WEST_Z, 3);
++    // The inner order runs down the jambs to the sill or the floor (#61).
+     for (const side of [-1, 1]) {
+-      const edge = x + side * (VAUX_ARCH_SPAN / 2);
+-      addBox(kit, core.granite, edge, sill, WEST_Z - 0.05, edge + side * 0.16, spring - VAUX_BAND, WEST_Z, 4);
++      const edge = x + side * (CLEAR / 2);
++      addBox(kit, core.granite, edge, sill, WEST_Z - ORDER_PROUD, edge + side * VAUX_INNER_ORDER, LINTEL_Y, WEST_Z, 4);
+     }
+-    // A granite transom through the wall at the springing closes the gap between window head and tympanum.
+-    addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, spring - VAUX_BAND, WEST_Z, x + VAUX_ARCH_SPAN / 2, spring, WEST_Z + WEST_WALL, 4);
+-    kit.add(ring(0), core.granite, placed(x, spring, WEST_Z, facing), 5);
++    const at = placed(x, SPRING_Y, WEST_Z, FACING.west);
++    kit.add(order, core.granite, at, 5);
++    kit.add(light, core.granite, at, 5);
+     // The dark voussoirs: grey stone, never brick, in every colour photograph of the front, rock-faced where one is sharp enough to show it
+-    // (exterior-images.md #60, #61, #62, #63 and #64).
+-    kit.add(ring(1), core.graniteDark, placed(x, spring, WEST_Z, facing), 5);
+-    kit.add(hood, core.granite, placed(x, spring, WEST_Z, facing), 5);
+-    kit.add(panel, palette.brick, placed(x, spring, WEST_Z + 0.32, facing), 5);
+-    kit.add(stripes, core.granite, placed(x, spring, WEST_Z + 0.32, facing), 5);
++    // (exterior-images.md #60, #61, #62, #63 and #64); no hood round them (#53, #60, #61, #63, #64).
++    kit.add(dark, core.graniteDark, at, 5);
++    // The striped tympanum on the back of the head's niche (#60, #61).
++    kit.add(stripes, core.granite, placed(x, SPRING_Y, WEST_Z + HEAD_DEPTH, FACING.west), 5);
+   }
++  band(kit, STRING_Y, STRING_Y + VAUX_BAND, 6);
+   const cornice = moulding({ profile: 'cornice-plain', path: [[-A_HALF, 0, 0], [A_HALF, 0, 0]], height: 0.8, projection: 0.6 });
+   kit.add(cornice, core.granite, placed(0, CORNICE_Y, WEST_Z, FACING.west), 8);
+   addBox(kit, core.granite, -A_HALF, PARAPET_Y, WEST_Z - 0.1, A_HALF, COPING_TOP_Y, WEST_Z + WEST_WALL, 9);
+ }
+ 
+-/** Windows in the front's six main-floor arches (below the springing) and six ground-storey openings, the entrance left open; and glass in the hall's two oculi. */
++/** Windows in the front's arches that are not doorways and in the ground storey's four windows; and glass in the hall's two oculi. */
+ export function westFrontWindows(kit: Kit): void {
+   const disc = cylinder(20);
+   for (const z of [VAUX_HALL_WEST_Z - VAUX_HALL_WALL / 2, VAUX_HALL_EAST_Z + VAUX_HALL_WALL / 2]) {
+     kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(2.4, 0.03, 2.4)), 20);
+   }
+-  const main = windowUnit({ width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING - VAUX_ARCH_SILL - VAUX_BAND, cols: 2, rows: 3, frame: 0.09 });
+-  const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, shape: 'segmental', rise: GROUND_RISE, cols: 2, rows: 3 });
++  const main = windowUnit({ width: CLEAR, height: LINTEL_Y - SILL_Y, cols: 2, rows: 2, frame: 0.1 });
++  const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, cols: 2, rows: 2 });
+   for (const x of FRONT_ARCH_X) {
+     if (x === 0) continue;
+     const at = (y: number) => placed(x, y, WEST_Z + 0.4, FACING.west);
+     const order = Math.abs(x);
+-    kit.add(main.frame, palette.metalDark, at(L1 + VAUX_ARCH_SILL), order);
+-    kit.add(main.bars, palette.metalDark, at(L1 + VAUX_ARCH_SILL), order);
+-    kit.add(main.glass, palette.glassDark, at(L1 + VAUX_ARCH_SILL), order);
++    if (!doorway(x)) {
++      kit.add(main.frame, palette.metalDark, at(SILL_Y), order);
++      kit.add(main.bars, palette.metalDark, at(SILL_Y), order);
++      kit.add(main.glass, palette.glassDark, at(SILL_Y), order);
++    }
+     kit.add(ground.frame, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
+     kit.add(ground.bars, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
+     kit.add(ground.glass, palette.glassDark, at(LG + VAUX_GROUND_SILL), order);
+diff --git a/src/model/core/vaux-shell.ts b/src/model/core/vaux-shell.ts
+index 26844ac..9341102 100644
+--- a/src/model/core/vaux-shell.ts
++++ b/src/model/core/vaux-shell.ts
+@@ -1,21 +1,16 @@
+ /**
+- * The Vaux and Mould building's shell and frame (history.md section 2): footings and basement slab, the brick side and east walls (exterior in
+- * 1880, party walls since 1888, their 1880 windows bricked up as blind pointed arches), Radford's iron frame with the floors and the restored iron
+- * staircases, and the central hall's end walls and iron roof frame (the hall itself is the Medieval Sculpture Hall of 1939, medieval-hall.ts).
+- * Side-wall bays follow the hall's pier lines (interior.md: piers 5.65 m apart); doors follow the floor map's openings. The east wall takes, on the axis
+- * at the second floor, the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand Staircase;
+- * work unit 2, M1), lined in granite with a threshold, so its central main-floor arch is a lower drop arch whose voussoirs stay under it. Open with
+- * the owner (exterior.md section 9): in 1880 only the hall's six bays a side had pointed arches and the end blocks' bays round-headed openings
+- * (exterior-images.md #49 and #65), the south side's six over light rusticated stone (exterior-images.md #65).
++ * The Vaux and Mould building's shell and frame (history.md section 2): footings and basement slab, the side and east walls of red brick (exterior in
++ * 1880, party walls since 1888 and 1894, their 1880 windows bricked up; vaux-sides.ts and vaux-east.ts), Radford's iron frame with the floors and the
++ * restored iron staircases, and the central hall's end walls and iron roof frame (the hall itself is the Medieval Sculpture Hall of 1939,
++ * medieval-hall.ts).
+  */
+ import { Vector3 } from 'three';
+ import type { BufferGeometry } from 'three';
+ 
+ import type { Kit } from '../../build/types.js';
+-import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
+ import { MeshBuilder, stairFlight } from '../lib/index.js';
+ import { palette } from '../palette.js';
+-import { holeLining, openWall, voussoirRing, type Hole } from './arches.js';
++import { openWall, type Hole } from './arches.js';
+ import {
+   A_HALF,
+   EAST_Z,
+@@ -28,18 +23,9 @@ import {
+   L2,
+   LG,
+   OUTER_WALL,
+-  PARAPET_Y,
+   PARTY_WALL,
+   ROOF_Y,
+   SLAB,
+-  VAUX_ARCH_RISE,
+-  VAUX_ARCH_SILL,
+-  VAUX_ARCH_SPAN,
+-  VAUX_ARCH_SPRING,
+-  VAUX_BAND,
+-  VAUX_BAY,
+-  VAUX_GROUND_HEIGHT,
+-  VAUX_GROUND_SILL,
+   VAUX_HALL_EAST_Z,
+   VAUX_HALL_WALL,
+   VAUX_HALL_WEST_Z,
+@@ -52,76 +38,18 @@ import { INNER_EAST_Z, INNER_WEST_Z, INTERIOR, NAVE_OUTER_X } from './layout.js'
+ import { core } from './materials.js';
+ import { barMatrix } from './skylights.js';
+ import { FACING, UNIT_BOX, addBox, cylinder, keyOf, memo, placed } from './shapes.js';
++import { vauxEastTrim, vauxEastWall } from './vaux-east.js';
+ import { WALL_BASE_Y } from './vaux-front.js';
++import { vauxSideArcadeTrim, vauxSideWalls } from './vaux-sides.js';
+ 
+-const [AX0, , AX1] = INTERIOR.a;
+-/**
+- * E: the east wall's central main-floor arch rises 1.8 m over its springing, not VAUX_ARCH_RISE, so its apex (10.41 m) and its voussoirs and hood
+- * (to 10.92 m) stay under the doorway into gallery 600 over it, whose hole starts at its threshold (10.94 m); no source shows this arch.
+- */
+-export const VAUX_EAST_CENTRE_RISE = 1.8;
+-const eastRise = (k: number): number => (k === 0 ? VAUX_EAST_CENTRE_RISE : VAUX_ARCH_RISE);
+-/** E: the granite threshold through the east wall under the doorway into gallery 600, this deep, its top on the second floor. */
+-const DOOR_THRESHOLD = 0.03;
++export { SIDE_BAY, SIDE_LINES } from './vaux-sides.js';
+ 
+-/** Pier lines of the side walls: the hall's seven, extended three bays west and two east at the same spacing. */
+-export const SIDE_BAY = (HALL_PIER_Z[6] - HALL_PIER_Z[0]) / 6;
+-export const SIDE_LINES: readonly number[] = [-3, -2, -1].map((k) => HALL_PIER_Z[0] + k * SIDE_BAY).concat([...HALL_PIER_Z], [1, 2].map((k) => HALL_PIER_Z[6] + k * SIDE_BAY));
+-/** Bays of the side walls with a main-floor door and a second-floor door (floor map, floor 1 and 2 openings in the X ±14.5 walls). */
+-const DOOR_BAYS: Readonly<Record<'south' | 'north', readonly number[]>> = { south: [2, 5, 6, 9], north: [4, 5, 6, 9] };
+-
+-// Open with the owner (exterior.md section 9): the end blocks' bays had round-headed openings in 1880, not these (exterior-images.md #49 and #65);
+-// the hall's six stood on light rusticated stone with small square-headed openings, on the south side seen whole (exterior-images.md #65).
+-/** The 1880 windows of a side-wall bay, bricked up on the outer face, or opened as doors. */
+-function sideBay(door: boolean): BufferGeometry {
+-  const height = ROOF_Y - WALL_BASE_Y;
+-  const holes: Hole[] = [{ head: 'segmental', y: LG + VAUX_GROUND_SILL - WALL_BASE_Y, width: 1.6, height: VAUX_GROUND_HEIGHT, rise: 0.4, depth: 0.25 }];
+-  if (door) {
+-    holes.push({ head: 'pointed', y: L1 - WALL_BASE_Y, width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING + VAUX_ARCH_RISE, rise: VAUX_ARCH_RISE });
+-    // Beside the main-floor arch, whose apex rises past the second floor.
+-    holes.push({ x: 1.6, y: L2 - WALL_BASE_Y, width: 1.8, height: 3.2 });
+-  } else {
+-    holes.push({ head: 'pointed', y: L1 + VAUX_ARCH_SILL - WALL_BASE_Y, width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING + VAUX_ARCH_RISE - VAUX_ARCH_SILL, rise: VAUX_ARCH_RISE, depth: 0.25 });
+-  }
+-  return openWall({ width: SIDE_BAY, height, thickness: PARTY_WALL, holes, openEnds: true });
+-}
++const [AX0, , AX1] = INTERIOR.a;
+ 
+-/** Side walls (X ±14.5) bay by bay and the east wall (Z −69.0), all from the footings; the side walls stop at the roof, the east wall at the parapet. */
++/** Side walls (X ±14.5, vaux-sides.ts) and the east wall (Z −69.0, vaux-east.ts), all from the footings. */
+ export function vauxWalls(kit: Kit): void {
+-  const height = ROOF_Y - WALL_BASE_Y;
+-  for (const [side, x, facing] of [
+-    ['south', -A_HALF, FACING.south],
+-    ['north', A_HALF, FACING.north],
+-  ] as const) {
+-    for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
+-      const z0 = SIDE_LINES[i] ?? 0;
+-      const z1 = SIDE_LINES[i + 1] ?? 0;
+-      kit.add(sideBay(DOOR_BAYS[side].includes(i)), palette.brick, placed(x, WALL_BASE_Y, (z0 + z1) / 2, facing), i + 1);
+-    }
+-    const inner = side === 'south' ? x + PARTY_WALL : x - PARTY_WALL;
+-    addBox(kit, palette.brick, x, WALL_BASE_Y, INNER_WEST_Z, inner, WALL_BASE_Y + height, SIDE_LINES[0] ?? 0, 0);
+-    addBox(kit, palette.brick, x, WALL_BASE_Y, SIDE_LINES[SIDE_LINES.length - 1] ?? 0, inner, WALL_BASE_Y + height, INNER_EAST_Z, SIDE_LINES.length);
+-  }
+-  const holes: Hole[] = [];
+-  for (const k of [-3, -2, -1, 0, 1, 2, 3]) {
+-    const through = k === 0 || Math.abs(k) === 3;
+-    const sill = through ? 0 : VAUX_ARCH_SILL;
+-    const rise = eastRise(k);
+-    holes.push({ head: 'pointed', x: k * VAUX_BAY, y: L1 + sill - WALL_BASE_Y, width: VAUX_ARCH_SPAN, height: VAUX_ARCH_SPRING + rise - sill, rise, ...(through ? {} : { depth: 0.25 }) });
+-  }
+-  for (const x of [-10.3, 10.3]) holes.push({ x, y: L2 - WALL_BASE_Y, width: 2.6, height: 3.2 });
+-  // The doorway into gallery 600, cut for its granite lining and a threshold under it, flush with the floors on both sides; the Hunt wing lines the
+-  // passage on through the cavity to its cross hall in the same section (hunt/stair.ts).
+-  const sill = L2 - WALL_BASE_Y;
+-  const lined = GALLERY_600_DOOR_HALF_WIDTH + GALLERY_600_DOOR_LINING;
+-  const outer: Hole = { head: 'round', x: 0, y: sill, width: 2 * lined, height: GALLERY_600_DOOR_CROWN + GALLERY_600_DOOR_LINING };
+-  holes.push({ ...outer, y: sill - DOOR_THRESHOLD, height: outer.height + DOOR_THRESHOLD });
+-  const east = openWall({ width: 2 * A_HALF, height: PARAPET_Y - WALL_BASE_Y, thickness: OUTER_WALL, holes });
+-  const frame = placed(0, WALL_BASE_Y, EAST_Z, FACING.east);
+-  kit.add(east, palette.brick, frame, SIDE_LINES.length + 1);
+-  const inner: Hole = { head: 'round', x: 0, y: sill, width: 2 * GALLERY_600_DOOR_HALF_WIDTH, height: GALLERY_600_DOOR_CROWN };
+-  kit.add(holeLining(outer, inner, OUTER_WALL), core.granite, frame, SIDE_LINES.length + 1);
+-  addBox(kit, core.granite, -lined, L2 - DOOR_THRESHOLD, INNER_EAST_Z, lined, L2, EAST_Z, SIDE_LINES.length + 1);
++  vauxSideWalls(kit);
++  vauxEastWall(kit);
+ }
+ 
+ /** Strip footings under every wall of the block, pads under the iron columns, and the ground-floor slab. */
+@@ -243,15 +171,15 @@ export function vauxHall(kit: Kit): void {
+   ] as const) {
+     // Below the roofs the end walls were always inside (pavilion to hall): plastered on both faces.
+     kit.add(lower, palette.plaster, placed(0, WALL_BASE_Y, z, facing), order);
+-    kit.add(upper, palette.brick, placed(0, ROOF_Y, z, facing), order + 4);
+-    kit.add(gable, palette.brick, placed(0, HALL_NAVE_ROOF_EAVES_Y, z, facing), order + 6);
++    kit.add(upper, core.vauxBrick, placed(0, ROOF_Y, z, facing), order + 4);
++    kit.add(gable, core.vauxBrick, placed(0, HALL_NAVE_ROOF_EAVES_Y, z, facing), order + 6);
+   }
+   // The wall between galleries 521 and 520, with its door on the axis (map: X −1.13..1.17).
+   const z = VAUX_WEST_PAVILION_WALL_Z;
+   const top = L2 - SLAB;
+-  addBox(kit, palette.brick, AX0, L1, z - 0.2, -1.15, top, z + 0.2, 2);
+-  addBox(kit, palette.brick, 1.15, L1, z - 0.2, AX1, top, z + 0.2, 2);
+-  addBox(kit, palette.brick, -1.15, L1 + 3.2, z - 0.2, 1.15, top, z + 0.2, 2);
++  addBox(kit, core.vauxBrick, AX0, L1, z - 0.2, -1.15, top, z + 0.2, 2);
++  addBox(kit, core.vauxBrick, 1.15, L1, z - 0.2, AX1, top, z + 0.2, 2);
++  addBox(kit, core.vauxBrick, -1.15, L1 + 3.2, z - 0.2, 1.15, top, z + 0.2, 2);
+   // Iron posts on the pier lines up to the eaves, eaves girders, and a truss on every interior pier line.
+   const iron = core.castIron;
+   const post = cylinder(10);
+@@ -277,48 +205,8 @@ export function vauxHall(kit: Kit): void {
+   }
+ }
+ 
+-/**
+- * Granite trim of the side and east walls: polychrome voussoirs over every 1880 arch and the floor, impost and ground-storey bands. The voussoirs
+- * alternate light and dark grey granite as on the west front (vaux-front.ts): the hall's arcade on the south side and the east front's arches are
+- * banded alike in 1880 (exterior-images.md #65 and #66), and one of the east arches survives at the top of the Grand Staircase in light and dark granite
+- * (exterior-images.md #67).
+- */
++/** Granite trim of the side walls' hall bays and of the east front (vaux-sides.ts, vaux-east.ts). */
+ export function vauxSideTrim(kit: Kit): void {
+-  const spring = L1 + VAUX_ARCH_SPRING;
+-  const ring = (parity: 0 | 1, rise = VAUX_ARCH_RISE) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise, band: 0.42, count: 15, projection: 0.06, parity });
+-  const hoodOf = (rise: number) => voussoirRing({ head: 'pointed', span: VAUX_ARCH_SPAN, rise, band: 0.09, count: 15, projection: 0.1, parity: 'all', inset: 0.42 });
+-  const hood = hoodOf(VAUX_ARCH_RISE);
+-  const proud = 0.08;
+-  for (const [x, facing, out] of [
+-    [-A_HALF, FACING.south, -1],
+-    [A_HALF, FACING.north, 1],
+-  ] as const) {
+-    // Open with the owner (exterior.md section 9): in 1880 only the hall's six bays had banded pointed arches; the end blocks' bays had
+-    // round-headed windows with plain brick heads (exterior-images.md #49 and #65).
+-    for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
+-      const z = ((SIDE_LINES[i] ?? 0) + (SIDE_LINES[i + 1] ?? 0)) / 2;
+-      kit.add(ring(0), core.granite, placed(x, spring, z, facing), i);
+-      kit.add(ring(1), core.graniteDark, placed(x, spring, z, facing), i);
+-      kit.add(hood, core.granite, placed(x, spring, z, facing), i);
+-    }
+-    const face = x + out * proud;
+-    for (const [y0, y1] of [
+-      [L1 - 0.2, L1 + 0.12],
+-      [spring - VAUX_BAND, spring],
+-      [LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT, LG + VAUX_GROUND_SILL + VAUX_GROUND_HEIGHT + VAUX_BAND],
+-    ] as const) {
+-      addBox(kit, core.granite, x, y0, WEST_Z, face, y1, EAST_Z, 0);
+-    }
+-  }
+-  // Open with the owner (exterior.md section 9): in 1880 the east front had two large arches on either side of its middle, each with a roundel in
+-  // its head, not seven (exterior-images.md #66); the surviving one has a ring of dark granite blocks outside its voussoirs, not a light hood
+-  // (exterior-images.md #67).
+-  for (const k of [-3, -2, -1, 0, 1, 2, 3]) {
+-    const rise = eastRise(k);
+-    kit.add(ring(0, rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+-    kit.add(ring(1, rise), core.graniteDark, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+-    kit.add(hoodOf(rise), core.granite, placed(k * VAUX_BAY, spring, EAST_Z, FACING.east), 12);
+-  }
+-  addBox(kit, core.granite, -A_HALF, spring - VAUX_BAND, EAST_Z, A_HALF, spring, EAST_Z + proud, 12);
+-  addBox(kit, core.granite, -A_HALF, L1 - 0.2, EAST_Z, A_HALF, L1 + 0.12, EAST_Z + proud, 12);
++  vauxSideArcadeTrim(kit);
++  vauxEastTrim(kit);
+ }
+diff --git a/src/model/core/vaux-sides.ts b/src/model/core/vaux-sides.ts
+new file mode 100644
+index 0000000..164d956
+--- /dev/null
++++ b/src/model/core/vaux-sides.ts
+@@ -0,0 +1,147 @@
++/**
++ * The 1880 building's side walls at X ±14.5, exterior in 1880 and party walls since 1888 (south) and 1894 (north), their openings bricked up since:
++ * bay by bay on the hall's pier lines (interior.md: piers 5.65 m apart), three bays of the west end block, the hall's six, and two of the east end block.
++ * In 1880 only the hall's six bays had the banded pointed arches, the arch of the west front (vaux-arch.ts), its tall windows under glazed heads over a
++ * ground storey of light rusticated stone with small square-headed openings; the end blocks were bare brick with round-headed openings on three tiers
++ * (exterior-images.md #49, the north side, read at native size; #65, the south side; exterior.md section 9). The north side's ground storey is hidden by
++ * a mound in #49 and taken to match the south's. Today's doors (the floor map's openings in these walls) stay where they were.
++ */
++import type { BufferGeometry, Matrix4 } from 'three';
++
++import type { Kit } from '../../build/types.js';
++import { openWall, type Hole } from './arches.js';
++import { A_HALF, HALL_PIER_Z, L1, L2, LG, PARTY_WALL, ROOF_Y, VAUX_ARCH_SPAN, VAUX_INNER_ORDER } from './constants.js';
++import { INNER_EAST_Z, INNER_WEST_Z } from './layout.js';
++import { core } from './materials.js';
++import { FACING, addBox, placed, runsBetween } from './shapes.js';
++import { CLEAR, COURSE, INNER_ORDER, JOINT, LINTEL_Y, ORDER_PROUD, RUST_Y0, RUST_Y1, SILL_Y, SPRING_Y, VOUSSOIRS, archHoles, mergedTrim, ringCut, type Cut } from './vaux-arch.js';
++import { WALL_BASE_Y } from './vaux-front.js';
++
++/** Pier lines of the side walls: the hall's seven, extended three bays west and two east at the same spacing. */
++export const SIDE_BAY = (HALL_PIER_Z[6] - HALL_PIER_Z[0]) / 6;
++export const SIDE_LINES: readonly number[] = [-3, -2, -1].map((k) => HALL_PIER_Z[0] + k * SIDE_BAY).concat([...HALL_PIER_Z], [1, 2].map((k) => HALL_PIER_Z[6] + k * SIDE_BAY));
++/** Bays of the side walls with a main-floor door and a second-floor door (floor map, floor 1 and 2 openings in the X ±14.5 walls). */
++const DOOR_BAYS: Readonly<Record<Side, readonly number[]>> = { south: [2, 5, 6, 9], north: [4, 5, 6, 9] };
++/** The hall's six bays, between the end blocks. */
++const isHall = (i: number): boolean => i >= 3 && i <= 8;
++
++type Side = 'south' | 'north';
++const SIDES: readonly (readonly [Side, number, number, number])[] = [
++  ['south', -A_HALF, FACING.south, -1],
++  ['north', A_HALF, FACING.north, 1],
++];
++
++/** A bay's second-floor door, beside its middle (as before); and as a cut through an arch head over the springing. */
++const SECOND_DOOR = { x: 1.6, width: 1.8, height: 3.2 } as const;
++const SECOND_CUT: Cut = [SECOND_DOOR.x - SECOND_DOOR.width / 2 - 0.03, L2 - SPRING_Y - 0.03, SECOND_DOOR.x + SECOND_DOOR.width / 2 + 0.03, L2 + SECOND_DOOR.height - SPRING_Y + 0.03];
++/** Blind openings' depth: bricked up flush with the 1880 frames' back. */
++const BLIND = 0.2;
++/** The hall bays' small square-headed openings in the rusticated ground storey (#65): two courses tall, on the fifth and sixth. */
++const SMALL = { width: 1.2, sill: RUST_Y0 + 4 * COURSE, head: RUST_Y0 + 6 * COURSE } as const;
++/** The end blocks' round-headed openings, two to a bay on each tier (#49 shows about five on the west block's three bays). */
++const PAIR = [-1.4, 1.4] as const;
++const TIERS = [
++  { sill: LG + 2.0, height: 2.2 },
++  { sill: L1 + 1.2, height: 4.0 },
++  { sill: L2 + 1.0, height: 3.2 },
++] as const;
++/** An end block's main-floor door, cut through its bare brick. */
++const END_DOOR_HEIGHT = 4.0;
++
++/** The openings of one bay: a hall bay's arch, blind or a door, or an end bay's round-headed openings; and today's doors. */
++function sideBay(hall: boolean, door: boolean): BufferGeometry {
++  const base = WALL_BASE_Y;
++  const holes: Hole[] = [];
++  const second: Hole = { x: SECOND_DOOR.x, y: L2 - base, width: SECOND_DOOR.width, height: SECOND_DOOR.height };
++  if (hall) {
++    holes.push({ y: SMALL.sill - base, width: SMALL.width, height: SMALL.head - SMALL.sill, depth: BLIND });
++    // A door bay's arch head is left without its niche: the second-floor door was cut through it.
++    holes.push(...archHoles(0, base, { sill: door ? L1 : SILL_Y, through: door }, !door));
++    if (door) holes.push(second);
++  } else {
++    const [ground, main, upper] = TIERS;
++    for (const x of PAIR) holes.push({ head: 'round', x, y: ground.sill - base, width: 1.3, height: ground.height, depth: BLIND });
++    if (door) {
++      holes.push({ x: 0, y: L1 - base, width: CLEAR, height: END_DOOR_HEIGHT }, second);
++      // The upper tier's opening on the door's side gave way to it.
++      holes.push({ head: 'round', x: -PAIR[1], y: upper.sill - base, width: 1.3, height: upper.height, depth: BLIND });
++    } else {
++      for (const tier of [main, upper]) for (const x of PAIR) holes.push({ head: 'round', x, y: tier.sill - base, width: 1.3, height: tier.height, depth: BLIND });
++    }
++  }
++  return openWall({ width: SIDE_BAY, height: ROOF_Y - WALL_BASE_Y, thickness: PARTY_WALL, holes, openEnds: true });
++}
++
++/** Side walls bay by bay, from the footings to the roof, with the plain stretches beyond the end bays. */
++export function vauxSideWalls(kit: Kit): void {
++  const height = ROOF_Y - WALL_BASE_Y;
++  for (const [side, x, facing] of SIDES) {
++    for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
++      const z0 = SIDE_LINES[i] ?? 0;
++      const z1 = SIDE_LINES[i + 1] ?? 0;
++      kit.add(sideBay(isHall(i), DOOR_BAYS[side].includes(i)), core.vauxBrick, placed(x, WALL_BASE_Y, (z0 + z1) / 2, facing), i + 1);
++    }
++    const inner = side === 'south' ? x + PARTY_WALL : x - PARTY_WALL;
++    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, INNER_WEST_Z, inner, WALL_BASE_Y + height, SIDE_LINES[0] ?? 0, 0);
++    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, SIDE_LINES[SIDE_LINES.length - 1] ?? 0, inner, WALL_BASE_Y + height, INNER_EAST_Z, SIDE_LINES.length);
++  }
++}
++
++/** The middle of bay i along Z. */
++const bayZ = (i: number): number => ((SIDE_LINES[i] ?? 0) + (SIDE_LINES[i + 1] ?? 0)) / 2;
++const HALL_Z0 = SIDE_LINES[3] ?? 0;
++const HALL_Z1 = SIDE_LINES[9] ?? 0;
++const HALL_BAYS = [3, 4, 5, 6, 7, 8] as const;
++
++/** The light and the dark granite of one side's six arch heads, each as one piece (vaux-arch.ts mergedTrim). */
++function sideRings(side: Side, x: number, facing: number): { light: BufferGeometry; dark: BufferGeometry } {
++  const parts = (dark: boolean): [BufferGeometry, Matrix4][] =>
++    HALL_BAYS.flatMap((i): [BufferGeometry, Matrix4][] => {
++      const cut = DOOR_BAYS[side].includes(i) ? SECOND_CUT : undefined;
++      const at = placed(x, SPRING_Y, bayZ(i), facing);
++      if (dark) return [[ringCut({ ...VOUSSOIRS, parity: 1 }, cut), at]];
++      return [
++        [ringCut(VOUSSOIRS, cut), at],
++        [ringCut(INNER_ORDER, cut), at],
++      ];
++    });
++  return { light: mergedTrim(`side-light:${side}`, () => parts(false)), dark: mergedTrim(`side-dark:${side}`, () => parts(true)) };
++}
++
++/**
++ * Granite trim of the side walls' hall bays (#49, #65): the rusticated ground storey round its small openings, the main floor's band, the windows'
++ * aprons, the jambs' inner order and the impost band, and each head's voussoirs and inner order, with no hood; the end blocks stay bare brick.
++ */
++export function vauxSideArcadeTrim(kit: Kit): void {
++  for (const [side, x, facing, out] of SIDES) {
++    const face = (z0: number, z1: number, y0: number, y1: number, back: number, proud: number, order: number): void => {
++      addBox(kit, core.granite, x + out * back, y0, z0, x + out * (back + proud), y1, z1, order);
++    };
++    const doors = HALL_BAYS.filter((i) => DOOR_BAYS[side].includes(i));
++    for (let j = 0; j < 10; j++) {
++      const y0 = RUST_Y0 + j * COURSE;
++      const y1 = y0 + COURSE;
++      const small = y0 < SMALL.head - 1e-6 && y1 > SMALL.sill + 1e-6;
++      const gaps = small ? HALL_BAYS.map((i): [number, number] => [bayZ(i) - SMALL.width / 2, bayZ(i) + SMALL.width / 2]) : [];
++      for (const [z0, z1] of runsBetween(HALL_Z0, HALL_Z1, gaps)) {
++        face(z0, z1, y0, y1, 0, 0.06, 1);
++        face(z0, z1, y0, y1 - JOINT, 0.06, 0.04, 1);
++      }
++    }
++    const doorGaps = doors.map((i): [number, number] => [bayZ(i) - CLEAR / 2, bayZ(i) + CLEAR / 2]);
++    for (const [z0, z1] of runsBetween(HALL_Z0, HALL_Z1, doorGaps)) face(z0, z1, RUST_Y1, L1 + 0.12, 0, 0.08, 2);
++    face(HALL_Z0, HALL_Z1, LINTEL_Y, SPRING_Y, 0, 0.08, 4);
++    for (const i of HALL_BAYS) {
++      const door = doors.includes(i);
++      const z = bayZ(i);
++      if (!door) face(z - VAUX_ARCH_SPAN / 2, z + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0, 0.05, 3);
++      for (const s of [-1, 1]) {
++        const edge = z + s * (CLEAR / 2);
++        face(Math.min(edge, edge + s * VAUX_INNER_ORDER), Math.max(edge, edge + s * VAUX_INNER_ORDER), door ? L1 : SILL_Y, LINTEL_Y, 0, ORDER_PROUD, 4);
++      }
++    }
++    const rings = sideRings(side, x, facing);
++    kit.add(rings.light, core.granite, placed(0, 0, 0), 5);
++    kit.add(rings.dark, core.graniteDark, placed(0, 0, 0), 5);
++  }
++}
+diff --git a/src/model/core/vaux.ts b/src/model/core/vaux.ts
+index e249792..2ac5f33 100644
+--- a/src/model/core/vaux.ts
++++ b/src/model/core/vaux.ts
+@@ -36,7 +36,7 @@ export const vauxSteps: readonly StepDef[] = [
+     id: 'vaux-west-front',
+     chapter: CHAPTER,
+     title: 'Build the west front and its entrance',
+-    detail: 'The park front: seven pointed arches with light and dark granite voussoirs, the entrance on the axis, granite bands and the cornice. It survives inside the Lehman Wing.',
++    detail: 'The park front: five tall pointed arches with light and dark granite voussoirs over a rusticated ground storey, the entrance on the axis. It survives inside the Lehman Wing.',
+     motion: { kind: 'grow' },
+     stagger: 'order',
+     weight: 1.3,
+diff --git a/src/model/frame.ts b/src/model/frame.ts
+index bb7e2a9..7fe30d7 100644
+--- a/src/model/frame.ts
++++ b/src/model/frame.ts
+@@ -134,6 +134,7 @@ export const ALLEE_SOUTH_MAX_X = -90.4; // [P8] M: south allées X -149.2..-90.4
+ // --- Park side ------------------------------------------------------------------------------
+ export const LEHMAN_HALF_WIDTH = 29.05; // [K2] M: square pavilion, chamfered west corners
+ export const LEHMAN_WEST_FACE_HALF_WIDTH = 5.55; // [K2] M: west face X -5.6..5.5 at BUILDING_MIN_Z
++export const LEHMAN_STRIP_HEAD_Y = 15.4; // [K2] E: head of the Lehman Wing's skylight along the 1880 west front, over the front's arches, whose crowns stand at 14.36 (core/vaux-arch.ts): exterior-images.md #60 shows brick over them up to it
+ export const LEHMAN_PYRAMID_APEX_Y = 27.4; // [K2] E: camera fit to photo P9 (int-lehman-pyramid-up; EXIF lens), corners, apex, 7 purlins: 11.1 m over an eave at +16.3; medium-low
+ export const SACKLER_NORTH_FACE_X = 153.13; // [K3] M: sloped glass wall faces north
+ export const SACKLER_MIN_Z = -102.7; // [K3] M
+diff --git a/src/model/palette.ts b/src/model/palette.ts
+index 72753ca..d40ef84 100644
+--- a/src/model/palette.ts
++++ b/src/model/palette.ts
+@@ -86,7 +86,7 @@ export const palette = Object.freeze({
+   limestoneDark: standard('limestoneDark', { colour: '#928c81', roughness: 0.86 }),
+   /** Grey granite: steps, pedestals, landing edges ([C2] #918B81, #8C867D); scaled with limestone. */
+   granite: standard('granite', { colour: '#837c70', roughness: 0.66 }),
+-  /** Red brick of the 1880 Vaux building ([C7] about #9A4B3A; its granite bands are about #B9B4AA). */
++  /** Red brick of the 1888 and 1894 wings and the 1939 hall's clerestory ([C7] about #9A4B3A); the 1880 building's own is core/materials.ts vauxBrick, calibrated to its photographs. */
+   brick: standard('brick', { colour: '#9a4b3a', roughness: 0.9 }),
+   /** Sandstone: the Temple of Dendur (interior.md, Dendur: suggested base #a07a58). */
+   sandstone: standard('sandstone', { colour: '#a07a58', roughness: 0.85 }),
+diff --git a/src/model/roche-south/lehman-glass.ts b/src/model/roche-south/lehman-glass.ts
+index 6e0e2db..edbc3fe 100644
+--- a/src/model/roche-south/lehman-glass.ts
++++ b/src/model/roche-south/lehman-glass.ts
+@@ -134,8 +134,8 @@ export function bandPieces(): Piece[] {
+ 
+ /**
+  * The skylight along the 1880 front: a lean-to from the flat roof up to the old wall, rafters every 0.75 m (orthophoto), in two runs either side of the
+- * court's east tip (STRIP_GAP_HALF_X). Its head bar rests against the brick face above the band at the second floor, so nothing of it enters the old
+- * front's trim; a glass triangle closes each run's inner end up to the lead flat over the gap.
++ * court's east tip (STRIP_GAP_HALF_X). Its head bar rests against the brick face over the old front's arches and under its string course, so nothing of it enters the
++ * old front's trim; a glass triangle closes each run's inner end up to the lead flat over the gap.
+  */
+ export function stripPieces(): Piece[] {
+   const z0 = STRIP_WEST_Z;
+diff --git a/src/model/roche-south/lehman-plan.ts b/src/model/roche-south/lehman-plan.ts
+index 96b38c9..13a0537 100644
+--- a/src/model/roche-south/lehman-plan.ts
++++ b/src/model/roche-south/lehman-plan.ts
+@@ -9,7 +9,7 @@
+  * which stands 1.5 m over the court floor at its south end, tilted 29.5° north. The gallery ring's ceiling slopes up toward the court in the 2011 gallery
+  * photograph (interior-images.md #30), and the orthophoto shows it glazed (exterior-images.md #9).
+  */
+-import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, MAIN_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
++import { GROUND_FLOOR_Y, LEHMAN_PYRAMID_APEX_Y, LEHMAN_STRIP_HEAD_Y, MAIN_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
+ import { LEHMAN_BLOCK, MAP_Z, OUTER_WALL } from './blocks.js';
+ import { ccw, clipHalfPlane, contains, distanceToEdges, inset, type P2 } from './poly.js';
+ 
+@@ -103,9 +103,9 @@ export const BAND_HIGH_Y = LEHMAN_EAVE_Y - 0.2;
+ /** Skylight strip along the 1880 front (orthophoto: Z −139.5 to the front, X ±15.5), between the link's inner walls. */
+ export const STRIP_WEST_Z = -139.6;
+ export const STRIP_HALF_X = 16.3 - OUTER_WALL;
+-/** The strip's head, at the brick face of the 1880 front (core, Z −138.3), and its height there over the flat roof. */
++/** The strip's head, at the brick face of the 1880 front (core, Z −138.3), and its height there, over the front's arches (frame.ts). */
+ export const STRIP_EAST_Z = WEST_FACE_Z_CORE;
+-export const STRIP_HEAD_Y = LEHMAN_ROOF_Y + 0.9;
++export const STRIP_HEAD_Y = LEHMAN_STRIP_HEAD_Y;
+ 
+ /** |X| where the inner ring wall's outer face crosses the strip's west edge, each side of the court's east tip. */
+ function ringCrossingX(): number {
+diff --git a/src/model/roche-south/lehman.ts b/src/model/roche-south/lehman.ts
+index 33b7b22..49cb275 100644
+--- a/src/model/roche-south/lehman.ts
++++ b/src/model/roche-south/lehman.ts
+@@ -225,9 +225,10 @@ function ringWalls(kit: Kit): void {
+     const eastFlat = Math.abs(a[1] - b[1]) < 1e-6 && a[1] > COURT_Z;
+     const westFlat = Math.abs(a[1] - b[1]) < 1e-6 && a[1] < COURT_Z;
+     if (eastFlat) {
+-      // The east flat opens the court to the 1880 front: a wall under the landing and a lintel at the roof.
++      // The east flat opens the court to the 1880 front: a wall under the landing and a lintel over the front's central arch, on the lead flat at the
++      // skylight's head (exterior-images.md #60 shows the arch whole through this opening).
+       kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, G, M - MAIN_SLAB, INNER_RING_THICKNESS), 0);
+-      kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, LEHMAN_ROOF_Y, LEHMAN_EAVE_Y, INNER_RING_THICKNESS), 0);
++      kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, STRIP_HEAD_Y + 0.06, LEHMAN_EAVE_Y, INNER_RING_THICKNESS), 0);
+       continue;
+     }
+     const geometry = long ? (a[1] + b[1] > 2 * COURT_Z ? INNER_LONG_EAST : INNER_LONG_WEST) : westFlat ? INNER_WEST_FLAT : INNER_SIDE_FLAT;
