@@ -1,0 +1,451 @@
+diff --git a/docs/design/spec.md b/docs/design/spec.md
+index 8b6f3fa..67618f7 100644
+--- a/docs/design/spec.md
++++ b/docs/design/spec.md
+@@ -167,7 +167,7 @@ type Vec3 = readonly [number, number, number];
+   - **Entering and leaving.** Entering puts the walker at the spawn asked for, else where it last stood in this page, else at `plaza`, and asks for pointer lock (Looking). While walking, the timeline keys are off, the bar's controls still work once it is unfolded, the follow camera is off, and the status line says how to look, move and leave (The screen). Choosing a camera preset in the view menu leaves walk mode first and then lands on the preset, which is then the preset in view. Leaving puts the orbit camera at the walker's eye with its target 5 m ahead, at the field of view it had before. Walking reads the scene and never writes it.
+   - **Spawns** (`src/walk/spawns.ts`): `plaza`, on the entrance axis halfway between the foot of the front steps and the curb, facing the facade (the default); `great-hall`, on the Great Hall floor 8 m in from its north end, facing south down the nave; `second-floor`, on the landing at the top of the Grand Staircase, facing down it. The query can also name a place of its own (Query contract, `spawn=`), which tests and captures use to stand the walker anywhere.
+   - **No trap, no dead end** (work unit 2, M1; each checked against the building in `docs/research/interior.md` first). The Temple of Dendur pool's bottom lies 0.3 m under the walkways, inside the walker's 0.35 m step, so a walker who steps in climbs out over the square edge on either walkway side. The gate on the temple's axis is walked into from the forecourt, as visitors do, and not crossed from the terrace: its passage is filled with granite to the forecourt's level, and its front is a 0.79 m riser behind a 0.45 m steel rail on the terrace, an edge the walker sees rather than an invisible wall. The cross hall at the top of the Grand Staircase opens on its axis into gallery 600 through a round-arched doorway 3.5 m wide, its passage lined in stone through both walls (route R5, `src/model/hunt/routes.ts`).
+-  - **Every space reached** (work unit 2, M4). From the Great Hall spawn the walker's own moves reach every space that holds artworks, a place where the walker, let go of the keys, comes to rest on each artwork's floor with that artwork as its own eye's look target, through the page's hit query (work unit 2, review 17, F44: the gate measured to an artwork's box, which can hold empty space; review 18, F51: it looked from feet + 1.6 m, an eye the walker does not have while it moves), the place of every interior camera preset, every walk spawn and both ends of every route (`src/model/reach.test.ts`, through the flood fill of `src/walk/reach.ts`, with the Hunt central arch's three doors counted open and every other door closed, Weston's included). For that the McKim, Mead & White party walls open where the floor map has a passage (`docs/research/interior.md`): on the American Wing's line (Z −96.0) from Arms and Armor gallery 374 into the Engelhard Court's east walk, X 72.56 to 74.86, and on the Kravis Wing's (Z −69.0) from Exhibition Gallery 199 into gallery 549 beside the Petrie Court, X −64.02 to −62.25, each 4.0 m high (`src/model/mmw/party-walls.ts`). Route R6 walks from the Great Hall spawn through the first into the Engelhard Court and route R7 through the second into the Petrie Court, and the collection keeps both routes and both passages clear as it keeps the other routes and passages (Collection, Placement).
++  - **Every space reached** (work unit 2, M4). From the Great Hall spawn the walker's own moves reach every space that holds artworks, a place where the walker, let go of the keys, comes to rest on each artwork's floor with that artwork as its own eye's look target, through the page's hit query (work unit 2, review 17, F44: the gate measured to an artwork's box, which can hold empty space; review 18, F51: it looked from feet + 1.6 m, an eye the walker does not have while it moves), the place of every interior camera preset, every walk spawn and both ends of every route (`src/model/reach.test.ts`, through the flood fill of `src/walk/reach.ts`, with the Hunt central arch's three doors counted open and every other door closed, Weston's included). For that the McKim, Mead & White party walls open where the floor map has a passage (`docs/research/interior.md`): on the American Wing's line (Z −96.0) from Arms and Armor gallery 374 into the Engelhard Court's east walk, X 72.56 to 74.86, and on the Kravis Wing's (Z −69.0) from Exhibition Gallery 199 into gallery 549 beside the Petrie Court, X −64.02 to −62.25, each 4.0 m high (`src/model/mmw/party-walls.ts`). Route R6 walks from the Great Hall spawn through the first into the Engelhard Court and route R7 through the second into the Petrie Court, and the collection keeps both routes and both passages clear as it keeps the other routes and passages (Collection, Placement). The 1880 fronts open where the owner chose on 2026-11-04 (`docs/research/exterior.md` section 9): the west front's doorways beside the entrance, between the Lehman Wing's main floor and gallery 521, and the corridors through its east front's inner arches, between gallery 304 and the Hunt Wing's galleries 300 and 301; route R8 walks through the first pair and route R9 through the second, each both ways, and the collection keeps both routes and the four openings clear.
+ 
+ ### Doors
+ 
+diff --git a/docs/devlog/summary.md b/docs/devlog/summary.md
+index eac459a..99e5b2d 100644
+--- a/docs/devlog/summary.md
++++ b/docs/devlog/summary.md
+@@ -2,6 +2,8 @@
+ 
+ Newest first. One dated line per behaviour-changing session; `detailed/` holds anything a later session could trip over.
+ 
++- 2026-11-04 (work unit 15, follow-up): **The 1880 fronts open where they open today** — the owner chose "Open both" for the two openings work unit 15 had left closed because they add passages for the walker. The west front's arches at X ±5.8 are doorways, as the middle three are today (`exterior-images.md` #60 to #62), between the Lehman Wing's main floor and gallery 521; and the floor map's corridors through the east front's inner arches are open, 1.78 m wide against each arch's outer jamb and 4 m high (an estimate), between gallery 304 and the Hunt Wing's galleries 300 and 301, the rest of each arch filled with brick so it reads blind round its corridor. Routes R8 and R9 (`hunt/routes.ts`) walk through them both ways, red with them closed again; the reach gate counts their ends, and the collection keeps clear of both routes and the four openings. Records: `exterior.md` section 9, the spec's Walk mode, `docs/work/15_vaux-fronts/plan.md`.
++
+ - 2026-11-04 (work unit 15): **The 1880 fronts stand as their photographs show them** — the owner asked for work unit 4's open findings to be finished, F-owner-7 among them: seven ways the 1880 Vaux fronts differed from their photographs. Read again at native size (`exterior-images.md` #49, #53, #60, #61, #67) and against the floor map's doors through the west front (X −5.78, 0, +5.76), the west front now has five arches 5.8 m apart, not seven 4 m apart, each the 1880 arch as #60 measures it through its solved camera: an opening 5.8 m tall under a 0.5 m impost band, a 3.2 m head of light and dark voussoirs deeper at the crown than at the springing, no hood, and a smooth light inner order running down the jambs; its ground storey is light rusticated stone with square-headed windows (#53). The side walls band only the hall's six bays, over rusticated stone, the end blocks bare brick with round-headed openings on three tiers (#49, #65); the east front has four large arches inside rings of dark granite blocks, the inner pair with roundels inside moulded light arches (#66, #67), today's openings kept. The 1880 brick is its own material, #9A7971, calibrated to render against the light granite as the photographs read it ((0.748, 0.554, 0.547) against their (0.745, 0.555, 0.55)); the palette's brick stays for the 1888 and 1894 wings. The Lehman Wing's skylight head on the front rose from 12.9 to 15.6 m, its east lintel onto it and glass closed the strip's ends, so its court shows the central arch's head (`core/vaux-fronts.test.ts` casts rays to its faces, red with the old lintel or head); each head's light and dark pieces stand per arch and arrive with the openings, dropping a fixed 2.5 m, so they move as one (the same file reads the timeline's matrices, red when they pop or drop by their own heights). The doorways the west front's two arches beside the entrance and the east front's inner pair are today wait for the owner, as they add passages for the walker; they hold windows and blind openings meanwhile. Records: `exterior.md` [C7] and section 9, `docs/work/15_vaux-fronts/plan.md`.
+ 
+ - 2026-11-04 (work unit 17): **Weston's porch stands at the April 1888 drawing's size** — the owner had the porch over Weston's 1888 door in the Petrie Court rebuilt as Weston and Tuckerman's drawing of April 1888 shows it (Heckscher fig. 29). Four free-standing columns 5.0 m tall under a balcony at 6.05 m gave way to an aedicule of Ionic pilasters on 0.96 m pedestals, plain to 3.19 m and fluted to the capitals at 5.81 m, a pilaster on the front and on the side of each front corner and a narrower one against the wall with a blind panel between, under the parts library's modillioned entablature and a top block that carries the balcony at 7.6 m behind a copper pipe railing (`src/model/core/weston-porch.ts`). The drawing's plan is cut off along the porch's front, so the porch's depth, 2.25 m to the pilasters' faces, comes from the 1888 plan (fig. 26), the east side in #35 and the railing in #33, each read at native size. The door's opening is the drawing's 3.29 × 4.91 m, no longer scaled down to the old porch (0.861), and the 528/529 wall moves 0.80 m onto its west reveal. Beside the porch the pavilion's two main-floor windows, which #33 and fig. 110 show as brick between quoins, are gone. The core's containment test lets the porch's stretch of the front reach 2.9 m into the court, where trim may otherwise reach 1.5 m, and the porch's once-only masonry is one piece, so the core keeps to its 130 meshes. Left for the owner: #33 puts the real leaves about 0.35 m behind the doorway's architrave, where the model's stand in the 1888 wall 2.5 m behind it, at the end of a stone passage 2.43 m deep, and the floor map puts the door 2.68 m east. Reviews 0 to 2 (Codex and Claude) found nothing above minor; merged to main at `740a999`.
+diff --git a/docs/research/exterior.md b/docs/research/exterior.md
+index 64821c4..d21e9ba 100644
+--- a/docs/research/exterior.md
++++ b/docs/research/exterior.md
+@@ -155,4 +155,4 @@ Colours are means of 17×17 px patches read from the image file in the browser,
+ - Overall length: 304.7 m measured versus "almost 1/4-mile (400 m)" (S11).
+ - Wing letters and the 1880/1888/1894 split: placeholders until the 1995 Bulletin plan is read.
+ - Present-day state of the southwest corner: the Tang Wing broke ground on 15 Sep 2026 inside the Wallace Wing's envelope (completion 2029–2030); how to show the corner is a coordinator decision (see `history.md`).
+-- The 1880 fronts against their photographs (found 2026-10-28 while settling the voussoirs, [C7]; settled 2026-11-04 by work unit 15, `docs/work/15_vaux-fronts/plan.md`, when the owner asked for the open findings to be finished). Read again at native size: `exterior-images.md` #49, #53, #60, #61 and #67. The floor map has three main-floor doors through the west front at X −5.78, 0 and +5.76, each about 2.3 m wide, and narrow corridors through the east front at X ±6.15. Built: the west front's five arches, 5.8 m apart, its 29 m in five bays (`FRONT_ARCH_X`, `VAUX_BAY`; five in #53, #60 and #64, two either side of the porch in #49 and #65). The 1880 arch as #60 and #61 show it, measured on #60 through its camera, solved from the landing's row, a visitor on it and the map's bay (`constants.ts`, `core/vaux-arch.ts`): voussoirs round a 3.2 m intrados rising 2.4 m, 0.8 m deep at the springing and 1.4 m at the crown, meeting the brick with no hood (#53, #60, #61, #63, #64); a smooth light inner order 0.3 m wide inside them, running down the jambs (#61, #63, #64); an impost band 0.5 m tall whose top, the springing, stands 6.3 m over the main floor, the openings 5.8 m tall under it, so the heads rise past the second floor, as on the east front, where the second floor meets the voussoirs near their foot (#67). The west front's ground storey in light rusticated stone with square-headed windows (#49, #53), found while reading #53, and a string course whose middle stands 1.85 m over the crowns (#53). The side walls' banded arches on the hall's six bays only, over light rusticated stone with small square-headed openings (#65; the north side's, hidden by a mound in #49, taken to match), and the end blocks in bare brick with round-headed openings on three tiers, two to a bay (#49, #65). The east front's four large arches, two either side of its covered middle (#66), at X ±5.8 and ±12 (`core/vaux-east.ts`), each inside a ring of dark granite blocks round its voussoirs (#67); the inner pair hold a roundel inside a moulded light arch (#67), and today's second-floor doors cut the outer pair's heads, taking their roundels and the stones they cross. The 1880 brick as `core.vauxBrick` ([C7]), on the fronts, the side walls and the nave's gables and clerestory. Waiting for the owner (asked 2026-11-04): the west front's arches at X ±5.8 and the east front's inner pair are doorways today, which would add passages for the walker; until an answer the west pair hold windows and the east pair are blind. Changed with it: the Lehman Wing's skylight head on the front, from 12.9 m to 15.6 m, over the arches' crowns at about 14.2 m and under the string course (`roche-south/lehman-plan.ts` STRIP_HEAD_Y), its east lintel onto it, and glass closing the strip's ends where the head rose, so the court shows the central arch's head as #60 does, but for the outer halves of its lowest stones (`core/vaux-fronts.test.ts`); the 0.12 m bands across the main-floor doorways, which stood proud of the floor, now stop at them. Left as they are: the stair tower between the north arcade and the west block in #49, whose plan and height no source gives; the north arcade's wider windows between light stone piers and the light piers between its heads (#49), where the model gives the hall's bays the west front's arch in brick, since no other photograph shows them and the side walls are hidden today; the end blocks' greater height and the 1880 roofs (#49, #65), which no longer stand; and the Lehman Wing's section at the front: #60 shows brick up to about 17.5 m, over the string course and the pyramid's eave; its flat roof (12.0 m, an estimate) still hides the outer arches' heads from the court's floor; and the court's ring walls, which stand 0.29 m into its east opening (the floor map's 4.30 m flat), hide the outer halves of the central arch's lowest stones from it, all of which #60 shows whole.
++- The 1880 fronts against their photographs (found 2026-10-28 while settling the voussoirs, [C7]; settled 2026-11-04 by work unit 15, `docs/work/15_vaux-fronts/plan.md`, when the owner asked for the open findings to be finished). Read again at native size: `exterior-images.md` #49, #53, #60, #61 and #67. The floor map has three main-floor doors through the west front at X −5.78, 0 and +5.76, each about 2.3 m wide, and narrow corridors through the east front at X ±6.15. Built: the west front's five arches, 5.8 m apart, its 29 m in five bays (`FRONT_ARCH_X`, `VAUX_BAY`; five in #53, #60 and #64, two either side of the porch in #49 and #65). The 1880 arch as #60 and #61 show it, measured on #60 through its camera, solved from the landing's row, a visitor on it and the map's bay (`constants.ts`, `core/vaux-arch.ts`): voussoirs round a 3.2 m intrados rising 2.4 m, 0.8 m deep at the springing and 1.4 m at the crown, meeting the brick with no hood (#53, #60, #61, #63, #64); a smooth light inner order 0.3 m wide inside them, running down the jambs (#61, #63, #64); an impost band 0.5 m tall whose top, the springing, stands 6.3 m over the main floor, the openings 5.8 m tall under it, so the heads rise past the second floor, as on the east front, where the second floor meets the voussoirs near their foot (#67). The west front's ground storey in light rusticated stone with square-headed windows (#49, #53), found while reading #53, and a string course whose middle stands 1.85 m over the crowns (#53). The side walls' banded arches on the hall's six bays only, over light rusticated stone with small square-headed openings (#65; the north side's, hidden by a mound in #49, taken to match), and the end blocks in bare brick with round-headed openings on three tiers, two to a bay (#49, #65). The east front's four large arches, two either side of its covered middle (#66), at X ±5.8 and ±12 (`core/vaux-east.ts`), each inside a ring of dark granite blocks round its voussoirs (#67); the inner pair hold a roundel inside a moulded light arch (#67), and today's second-floor doors cut the outer pair's heads, taking their roundels and the stones they cross. The 1880 brick as `core.vauxBrick` ([C7]), on the fronts, the side walls and the nave's gables and clerestory. The owner's call (2026-11-04, "Open both"): the west front's arches at X ±5.8 are doorways, as the middle three are today (#60 to #62), between the Lehman Wing's main floor and gallery 521 (`core/vaux-front.ts` `WEST_DOORWAY_X`), and the floor map's corridors through the east front's inner pair are open, 1.78 m wide against each arch's outer jamb and 4 m high (E), between gallery 304 and the Hunt Wing's galleries 300 and 301, the rest of each arch's opening filled with brick round its corridor (`core/vaux-east.ts` `eastCorridor`); routes R8 and R9 walk through them (`hunt/routes.ts`). Changed with it: the Lehman Wing's skylight head on the front, from 12.9 m to 15.6 m, over the arches' crowns at about 14.2 m and under the string course (`roche-south/lehman-plan.ts` STRIP_HEAD_Y), its east lintel onto it, and glass closing the strip's ends where the head rose, so the court shows the central arch's head as #60 does, but for the outer halves of its lowest stones (`core/vaux-fronts.test.ts`); the 0.12 m bands across the main-floor doorways, which stood proud of the floor, now stop at them. Left as they are: the stair tower between the north arcade and the west block in #49, whose plan and height no source gives; the north arcade's wider windows between light stone piers and the light piers between its heads (#49), where the model gives the hall's bays the west front's arch in brick, since no other photograph shows them and the side walls are hidden today; the end blocks' greater height and the 1880 roofs (#49, #65), which no longer stand; and the Lehman Wing's section at the front: #60 shows brick up to about 17.5 m, over the string course and the pyramid's eave; its flat roof (12.0 m, an estimate) still hides the outer arches' heads from the court's floor; and the court's ring walls, which stand 0.29 m into its east opening (the floor map's 4.30 m flat), hide the outer halves of the central arch's lowest stones from it, all of which #60 shows whole.
+diff --git a/docs/work/15_vaux-fronts/plan.md b/docs/work/15_vaux-fronts/plan.md
+index 4d29be2..3eb68b1 100644
+--- a/docs/work/15_vaux-fronts/plan.md
++++ b/docs/work/15_vaux-fronts/plan.md
+@@ -1,6 +1,6 @@
+ # The 1880 fronts as their photographs show them
+ 
+-Status: complete
++Status: active (follow-up: the owner's doorways, 2026-11-04)
+ Owner: Vaux fronts session (claude/vaux-fronts-3c8d7d)
+ Created: 2026-11-04
+ Updated: 2026-11-04
+@@ -26,7 +26,7 @@ Decisions, item by item (F-owner-7's seven differences):
+ 1. Five arches on the west front, 5.8 m apart (the front's 29 m in five bays, within 0.03 m of the map): built.
+ 2. No hood on the west front's arches (#53, #60, #61, #63, #64) nor on the side arcade's (#49): removed. The east front's arches get the ring of dark granite blocks #67 shows.
+ 3. The smooth light inner order inside the voussoirs, running down the jambs: built on the west front and the side arcade; the east front's arches get #67's moulded light granite inner arch round a roundel.
+-4. Doorways in the west front's arches at X ±5.8: asked of the owner, since they add passages. Until an answer, those arches hold windows.
++4. Doorways in the west front's arches at X ±5.8: asked of the owner, since they add passages. Until an answer, those arches hold windows. (The owner chose to open them and the east corridors on 2026-11-04: the follow-up at the end.)
+ 5. The brick: a core material for the 1880 walls (`core.vauxBrick`), calibrated so its render from the Lehman court reads against the light granite as the photographs do.
+ 6. The east front: four large arches at X ±5.8 and ±12, two either side of the covered middle (#66), each the west front's arch inside a ring of dark granite blocks (#67), blind today; the inner pair hold a roundel inside a moulded light arch (#67); the outer pair stand on today's passages at ±12, and today's second-floor doors at ±10.3 cut their heads, taking their roundels and the stones they cross.
+ 7. The side walls: banded pointed arches on the hall's six bays only, as the west front's design (#49), over a ground storey of light rusticated stone with small square-headed openings (#65, the south side; the north side's is hidden in #49 and taken to match); the end blocks in plain brick with round-headed openings on three tiers (#49, #65). Today's doors stay where they are.
+@@ -65,3 +65,21 @@ Merged to main at `a9acc06`: review 4's repairs (comments and records) on `859d4
+ Reviews 0 to 4 (Codex and Claude, both lanes kept in every round) found no blocker and three major findings, F0 in round 0 and F19 and F20 in round 1, all repaired. Of the 42 lesser ones, F12, F14, F15 and F38 were rejected with their reasons, F18 was superseded, F9 and F26 were moot once their code was gone, and the rest were repaired.
+ 
+ Left for the owner, asked on 2026-11-04 through the coordinating session and unanswered at the landing: whether the west front's arches at X ±5.8 are doorways, as #60 to #64 show them today, and whether the floor map's narrow corridors through the east front's inner arches are built. Both would add passages for the walker, so those arches hold windows and blind openings meanwhile (`vaux-front.ts` `WEST_DOORWAY_X`, `vaux-east.ts`'s header, section 9). Found and left, with reasons in section 9: the stair tower between the north arcade and the west block (#49), the north arcade's wider windows between light piers (#49), and the Lehman Wing's section at the front (brick to about 17.5 m in #60, the outer arches' heads under its flat roof, the central arch's lowest stones beside the court's east opening). Limitations: Heckscher's figures #63 to #66 could not be opened again, as the Met's PDF server answers automated readers with a bot challenge, so their earlier full-size readings stand; #49 hides the north side's ground storey, taken to match the south's (#65); the skylight strip's inner end panes share their plane with the bars' end faces, as before this unit; the core area builds 129 of its 130 meshes. Origin's registry skips unit 16, reserved by the hall-windows session still at work.
++
++## Follow-up: the owner's doorways (2026-11-04)
++
++The owner chose "Open both" (2026-11-04, relayed by the coordinating session) for the two openings this unit had left closed because they add passages for the walker: the west front's arches at X ±5.8, doorways today (#60 to #62) between the Lehman Wing's main floor and gallery 521, and the floor map's corridors through the east front's inner arches, 1.78 m wide either side of the Grand Staircase, between gallery 304 and the Hunt Wing's galleries 300 and 301. Built as they stand today, with the gates kept over the new passages.
++
++- **Outcome.**
++  - West: `core/vaux-front.ts` `WEST_DOORWAY_X` holds the three middle arches. The two beside the entrance open to the main floor as the central one does: the arch's clear opening, 2.6 m wide (the floor map's doors 2.29 and 2.30 m), from the floor to the impost band, the inner order down the jambs to the floor, with no apron and no main window. They join the Lehman Wing's main floor, which runs up to the front (`roche-south/lehman.ts`), to gallery 521 on one level, 4.11 m. The court's ring wall comes within 0.2 m of the front at its east tip, so the two doorways open onto the two sides of the wing's main floor, which meet only round its galleries.
++  - East: `core/vaux-east.ts` `eastCorridor`. Each corridor is 1.78 m wide against its inner arch's outer jamb, X −7.10..−5.32 and +5.32..+7.10, within 6 cm of the map's X −7.04..−5.26 and +5.31..+7.06, and 4 m high (E: the map gives no heights; the side walls' doors are 4 m). The arch's opening goes through the wall from the main floor and is filled with brick round the corridor (`eastInfill`): flush under the window's sill, where the apron stands, and set back 0.25 m above it, as the blind arches are, so the arch reads blind round its corridor. The corridor's outer jamb takes the inner order down to the floor, and the floor band stops at the corridor. The core's floor (4.11 m) meets the Hunt Wing's bare slab (4.08 m) at the wall's east face, as at the passage on the axis.
++  - Gates: routes R8 and R9 (`hunt/routes.ts`) walk through the openings, each both ways, in `hunt/routes.test.ts`, which also checks the feet on the main floor through each doorway and corridor. The reach gate counts their ends. The placement gate keeps the collection clear of both routes and of each opening 6 m out each side. The closure gate counts the two main windows gone (`vaux-openings/glassDark` 6, 10,021 sheet pieces in 52 pairs).
++  - Not covered: the e2e `routes.spec`'s fixed places include none of the new openings; walking them is the headless walker's, as for every route.
++  - Left as it is: the floor through each opening in the 1880 walls, these four among them, is the wall's own sill, brick-coloured, where a stone threshold would stand, as at the central doorway since this unit's first landing.
++- **Red proofs** (2026-11-04, each put back and undone): with `WEST_DOORWAY_X` at `[0]`, R8 and R8 back stall at the wall (−5.80, 4.110, −138.70) and the doorways' check fails, 3 tests; with the inner arches blind and unfilled again, R9 and R9 back stall at the east face (−6.21, 4.080, −68.65) and the corridors' check fails, 3 tests.
++- **Acceptance.**
++  - [x] The openings built as above; `exterior.md` section 9, the spec's Walk mode and the code's notes record the owner's call with its date.
++  - [x] R8 and R9 walked both ways, red with the openings closed again; reach, placement and closure green.
++  - [x] Renders of the openings read at native resolution: each west doorway from the Lehman Wing's side and from gallery 521, each corridor from galleries 300 and 301 and from gallery 304 (`tmp/vf/doors/`, ignored; cameras in the scratch script `capdoors.sh`).
++  - [ ] `npm run verify` green through the gate lock, and the Load rule's runs.
++  - [ ] Independent review (Codex and Claude), every finding resolved; landed through the slot; the gallery republished.
+diff --git a/src/model/closure.test.ts b/src/model/closure.test.ts
+index 6a3a66d..aaa8ac6 100644
+--- a/src/model/closure.test.ts
++++ b/src/model/closure.test.ts
+@@ -6,7 +6,7 @@
+  * Pieces: every piece of every mesh the walk collides with (src/walk/collision.ts `collisionMeshes`, the doors' closed leaves among them) or the cut caps
+  * (src/viewer/section-cut.ts `capsMesh`, as src/main.ts picks them), as its step's mesh draws it, and each door's leaves apart, as the door layer's
+  * stand-ins draw them (src/model/lib/window.ts `doorLeavesOf`), but the sheets their builders declare (src/model/lib/sheet.ts), which SHEETS counts by
+- * step and material so that a new one is seen (10,023 sheet pieces in 52 pairs: glass, paving, roads, paths, the terrain, the pad and the upright
++ * step and material so that a new one is seen (10,021 sheet pieces in 52 pairs: glass, paving, roads, paths, the terrain, the pad and the upright
+  * surfaces); the walk reads no inside in a sheet, whatever its crossings (`LineCrossings.sheet`, from `build` and `buildPieces` alike), and the cut
+  * leaves it out. Pieces read alike form a shape: one geometry with one direction of world vertical in its frame. Counted at dc1a7dc: 870 shapes of
+  * 16,766 pieces.
+@@ -133,7 +133,7 @@ const SHEETS: Readonly<Record<string, number>> = {
+   'site-terrain/siteExcavation': 1,
+   'site-terrain/siteGranite': 1,
+   'site-terrain/siteWallStone': 1,
+-  'vaux-openings/glassDark': 8,
++  'vaux-openings/glassDark': 6,
+   'wings-openings/glassDark': 135,
+ };
+ 
+diff --git a/src/model/collection/placement.test.ts b/src/model/collection/placement.test.ts
+index 204bf66..a3868fa 100644
+--- a/src/model/collection/placement.test.ts
++++ b/src/model/collection/placement.test.ts
+@@ -12,8 +12,9 @@
+  * - it is 1 m clear of the walking routes R1–R7 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court, R7 into the Petrie Court) beyond the walker's
+  *   radius, of the Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into
+  *   gallery 600 (hunt/stair.ts), of the Dendur gate's threshold and rail (roche-north/plan.ts), of the Dendur pool, and of the passages into the
+- *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts) and through the choir screen's gate (core/choir-screen.ts) and 6 m either side of
+- *   their wall or screen, beyond the walker's radius;
++ *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts), through the choir screen's gate (core/choir-screen.ts), through the 1880 west
++ *   front's doorways beside the entrance (core/vaux-front.ts) and the corridors in its east front's inner arches (core/vaux-east.ts), on routes R8 and
++ *   R9, and 6 m either side of their wall or screen, beyond the walker's radius;
+  * - each drawn object finds its own artwork in its material's table (material.ts): its entry is where the object stands, every other 5 cm or more away;
+  * - the placeholders take at most 110 meshes and 600,000 triangles of the model's budgets.
+  * R6 runs from the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court, and
+@@ -39,12 +40,15 @@ import type { GroundHit, LineCrossings } from '../../walk/collision.js';
+ import { BODY } from '../../walk/walker.js';
+ import { GATE_CLEAR } from '../core/choir-screen.js';
+ import { SCREEN_Z } from '../core/constants.js';
+-import { INNER_EAST_Z } from '../core/layout.js';
++import { EAST_Z, VAUX_BAY, WEST_Z } from '../core/constants.js';
++import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
++import { CLEAR } from '../core/vaux-arch.js';
++import { eastCorridor } from '../core/vaux-east.js';
+ import { WESTON_DOOR } from '../core/weston-facade.js';
+ import { GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING, MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
+ import { ENTRANCE_DOOR_Z, OPENINGS } from '../hunt/arches.js';
+ import { CROSS_HALL_BACK_Z } from '../hunt/dims.js';
+-import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7 } from '../hunt/routes.js';
++import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9 } from '../hunt/routes.js';
+ import { MORGAN, PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
+ import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
+ import type { Route } from '../hunt/routes.js';
+@@ -62,7 +66,7 @@ const CLEARANCE = 1;
+ /** The placeholders' share of the model's budgets (docs/design/spec.md, Budgets; plan 2, review 0, F9). */
+ const MAX_MESHES = 110;
+ const MAX_TRIANGLES = 600_000;
+-const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7];
++const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9];
+ 
+ /** A plan rectangle on a floor level, kept clear by `margin`: a door's swing, a passage through a door. */
+ interface Zone {
+@@ -93,6 +97,12 @@ const ZONES: readonly Zone[] = [
+   { name: 'Petrie Court passage', y: MAIN_FLOOR_Y, min: [PETRIE_PASSAGE.a, SOUTH_LINK.z0 - 6], max: [PETRIE_PASSAGE.b, SOUTH_LINK.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
+   // The Valladolid choir screen's open gate, between its jambs (core/choir-screen.ts), 6 m out each side, as Weston's.
+   { name: 'choir screen gate', y: MAIN_FLOOR_Y, min: [-GATE_CLEAR, SCREEN_Z - 6], max: [GATE_CLEAR, SCREEN_Z + 6], margin: CLEARANCE + BODY.radius },
++  // The 1880 west front's doorways beside the entrance, between their jambs, and the corridors in its east front's inner arches, 6 m out each side.
++  ...[-1, 1].map((s): Zone => ({ name: `west front doorway at X ${(s * VAUX_BAY).toFixed(1)}`, y: MAIN_FLOOR_Y, min: [s * VAUX_BAY - CLEAR / 2, WEST_Z - 6], max: [s * VAUX_BAY + CLEAR / 2, INNER_WEST_Z + 6], margin: CLEARANCE + BODY.radius })),
++  ...[-1, 1].map((s): Zone => {
++    const [x0, x1] = eastCorridor(s);
++    return { name: `east front corridor at X ${x0.toFixed(2)}..${x1.toFixed(2)}`, y: MAIN_FLOOR_Y, min: [x0, INNER_EAST_Z - 6], max: [x1, EAST_Z + 6], margin: CLEARANCE + BODY.radius };
++  }),
+ ];
+ 
+ /** One piece of an artwork as its step's mesh draws it at t = N. */
+diff --git a/src/model/core/vaux-east.ts b/src/model/core/vaux-east.ts
+index 00ca67a..c8b791e 100644
+--- a/src/model/core/vaux-east.ts
++++ b/src/model/core/vaux-east.ts
+@@ -3,12 +3,12 @@
+  * covered middle (exterior-images.md #66), each the 1880 arch (vaux-arch.ts) inside a ring of dark granite blocks round its voussoirs and a moulded light
+  * granite arch round a roundel in its head, as the one surviving at the top of the Grand Staircase shows it (#67; exterior.md section 9). Their windows
+  * are blind. The inner pair stand on the west front's bay, 0.35 m from the floor map's narrow corridors either side of the Grand Staircase, which
+- * Heckscher says pass through them; the outer pair on today's passages into the stair halls, 12 m off the axis.
++ * pass through them, as Heckscher says; the outer pair on today's passages into the stair halls, 12 m off the axis.
+  * Today's openings stay as they were (the floor map's; work unit 2, M1): the passages on the main floor on the axis and 12 m either side, the
+  * second-floor doors 10.3 m off the axis, which were cut through the outer arches' heads and took their roundels and the stones they cross, and on the
+  * axis at the second floor the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand
+- * Staircase), lined in granite with a threshold. The corridors through the inner pair wait for the owner (asked 2026-11-04), since they would add
+- * passages for the walker; until an answer the inner pair's windows stay blind.
++ * Staircase), lined in granite with a threshold. The corridors through the inner pair, between gallery 304 and the Hunt Wing's galleries 300 and 301,
++ * are open (the owner's call, 2026-11-04: "Open both"); round each the arch stays blind, its opening filled with brick.
+  */
+ import type { Kit } from '../../build/types.js';
+ import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
+@@ -17,12 +17,26 @@ import { A_HALF, EAST_Z, L1, L2, OUTER_WALL, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAY
+ import { INNER_EAST_Z } from './layout.js';
+ import { core } from './materials.js';
+ import { FACING, addBox, placed, runsBetween } from './shapes.js';
+-import { CLEAR, LINTEL_Y, ORDER_PROUD, SILL_Y, SPRING_Y, archHoles, darkHead, lightHead, type Cut } from './vaux-arch.js';
++import { CLEAR, HEAD_DEPTH, LINTEL_Y, ORDER_PROUD, SILL_Y, SPRING_Y, archHoles, darkHead, lightHead, type Cut } from './vaux-arch.js';
+ import { WALL_BASE_Y } from './vaux-front.js';
+ 
+ /** E: the inner pair on the west front's bay; the outer pair on today's passages into the stair halls (as before). */
+ const INNER_X = VAUX_BAY;
+ const OUTER_X = 12.0;
++/**
++ * The corridors through the inner pair (the floor map's doors between gallery 304 and the Hunt Wing's galleries 300 and 301: X −7.04..−5.26 and
++ * +5.31..+7.06, 1.78 and 1.75 m wide), each 1.78 m wide against its arch's outer jamb, within 6 cm of the map's lines. E: the head, 4 m over the
++ * main floor, as high as the side walls' doors (vaux-sides.ts); the map gives no heights.
++ */
++const CORRIDOR = { width: 1.78, height: 4.0 } as const;
++/** World X of the corridor through the inner arch on side `s` (−1 south, +1 north), from its lower X to its upper. */
++export function eastCorridor(s: number): readonly [number, number] {
++  const outer = s * (INNER_X + CLEAR / 2);
++  const inner = outer - s * CORRIDOR.width;
++  return [Math.min(inner, outer), Math.max(inner, outer)];
++}
++/** The corridors' head. */
++export const EAST_CORRIDOR_TOP_Y = L1 + CORRIDOR.height;
+ /** Today's main-floor passage on the axis: as wide as before, to the old springing's height. */
+ const PASSAGE = { width: CLEAR, height: 4.5 } as const;
+ /** Today's second-floor doors either side, 10.3 m off the axis (floor map), and the threshold under gallery 600's doorway. */
+@@ -34,12 +48,27 @@ function secondCut(sign: number): Cut {
+   return [x0 - 0.03, L2 - SPRING_Y - 0.03, x1 + 0.03, L2 + SECOND_DOOR.height - SPRING_Y + 0.03];
+ }
+ 
++/**
++ * The brick filling an inner arch's opening round its corridor, through to the wall's inner face: flush with the east face under the window's sill,
++ * where the apron stands, and set back as deep as the arches' blind heads above it, so the arch reads blind round the corridor as it did before.
++ */
++function eastInfill(kit: Kit, s: number): void {
++  const [c0, c1] = eastCorridor(s);
++  const [o0, o1] = [s * INNER_X - CLEAR / 2, s * INNER_X + CLEAR / 2];
++  const [b0, b1] = s > 0 ? [o0, c0] : [c1, o1];
++  const back = EAST_Z - HEAD_DEPTH;
++  addBox(kit, core.vauxBrick, b0, L1, INNER_EAST_Z, b1, SILL_Y, EAST_Z, 12);
++  addBox(kit, core.vauxBrick, b0, SILL_Y, INNER_EAST_Z, b1, EAST_CORRIDOR_TOP_Y, back, 12);
++  addBox(kit, core.vauxBrick, o0, EAST_CORRIDOR_TOP_Y, INNER_EAST_Z, o1, LINTEL_Y, back, 12);
++}
++
+ /** The east wall from the footings to the parapet, with its arches' blind openings and today's openings. */
+ export function vauxEastWall(kit: Kit): void {
+   const base = WALL_BASE_Y;
+   const holes: Hole[] = [{ x: 0, y: L1 - base, width: PASSAGE.width, height: PASSAGE.height }];
+   for (const s of [-1, 1]) {
+-    holes.push(...archHoles(s * INNER_X, base, { sill: SILL_Y, through: false }));
++    // The inner pair open through from the main floor, filled round their corridors (eastInfill).
++    holes.push(...archHoles(s * INNER_X, base, { sill: L1, through: true }));
+     holes.push(...archHoles(s * OUTER_X, base, { sill: L1, through: true }, false));
+     holes.push({ x: s * SECOND_DOOR.x, y: L2 - base, width: SECOND_DOOR.width, height: SECOND_DOOR.height });
+   }
+@@ -52,6 +81,7 @@ export function vauxEastWall(kit: Kit): void {
+   const east = openWall({ width: 2 * A_HALF, height: PARAPET_Y - base, thickness: OUTER_WALL, holes });
+   const frame = placed(0, base, EAST_Z, FACING.east);
+   kit.add(east, core.vauxBrick, frame, 12);
++  for (const s of [-1, 1]) eastInfill(kit, s);
+   const inner: Hole = { head: 'round', x: 0, y: sill, width: 2 * GALLERY_600_DOOR_HALF_WIDTH, height: GALLERY_600_DOOR_CROWN };
+   kit.add(holeLining(outer, inner, OUTER_WALL), core.granite, frame, 12);
+   addBox(kit, core.granite, -lined, L2 - DOOR_THRESHOLD, INNER_EAST_Z, lined, L2, EAST_Z, 12);
+@@ -64,15 +94,19 @@ export function vauxEastTrim(kit: Kit): void {
+     addBox(kit, core.granite, x0, y0, EAST_Z, x1, y1, EAST_Z + depth, 12);
+   };
+   const passages = [0, -OUTER_X, OUTER_X].map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
+-  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, passages)) box(x0, x1, L1 - 0.2, L1 + 0.12, proud);
++  const corridors = [-1, 1].map(eastCorridor);
++  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, [...passages, ...corridors])) box(x0, x1, L1 - 0.2, L1 + 0.12, proud);
+   box(-A_HALF, A_HALF, LINTEL_Y, SPRING_Y, proud);
+   for (const s of [-1, 1]) {
+     for (const x of [s * INNER_X, s * OUTER_X]) {
+       const window = Math.abs(x) === INNER_X;
+-      if (window) box(x - VAUX_ARCH_SPAN / 2, x + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0.05);
++      // An inner arch's apron runs from its inner side to its corridor, whose outer jamb's inner order runs down to the floor.
++      const [c0, c1] = eastCorridor(s);
++      if (window) box(s > 0 ? x - VAUX_ARCH_SPAN / 2 : c1, s > 0 ? c0 : x + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0.05);
+       for (const side of [-1, 1]) {
+         const edge = x + side * (CLEAR / 2);
+-        box(Math.min(edge, edge + side * VAUX_INNER_ORDER), Math.max(edge, edge + side * VAUX_INNER_ORDER), window ? SILL_Y : L1, LINTEL_Y, ORDER_PROUD);
++        const sill = window && side !== s ? SILL_Y : L1;
++        box(Math.min(edge, edge + side * VAUX_INNER_ORDER), Math.max(edge, edge + side * VAUX_INNER_ORDER), sill, LINTEL_Y, ORDER_PROUD);
+       }
+       // Each head as two pieces placed at its arch, an inner one with its roundel's moulding round its brick (#67); an outer head is cut by the
+       // second-floor door beside it.
+diff --git a/src/model/core/vaux-front.ts b/src/model/core/vaux-front.ts
+index 9b77ecf..e75eadb 100644
+--- a/src/model/core/vaux-front.ts
++++ b/src/model/core/vaux-front.ts
+@@ -25,10 +25,11 @@ export const WALL_BASE_Y = LG - 0.3;
+ /** World X of the front's five arches, the entrance on the axis, 5.8 m apart (constants.ts VAUX_BAY): five in #53, #60 and #64, two either side of the porch in #49 and #65. */
+ export const FRONT_ARCH_X = [-2, -1, 0, 1, 2].map((k) => k * VAUX_BAY);
+ /**
+- * The arches open to the main floor as doorways. Today the middle three are (#60, #61, #62; the floor map's doors at X −5.78, 0 and +5.76); the two beside
+- * the entrance would add passages for the walker between the Lehman Wing and gallery 521, so they wait for the owner (asked 2026-11-04) and hold windows.
++ * The arches that open to the main floor as doorways: the middle three, as today (#60, #61, #62; the floor map's doors at X −5.78, 0 and +5.76, each
++ * about 2.3 m wide). The two beside the entrance join the Lehman Wing's main floor to gallery 521 (the owner's call, 2026-11-04: "Open both"); the
++ * outer two hold windows.
+  */
+-export const WEST_DOORWAY_X: readonly number[] = [0];
++export const WEST_DOORWAY_X: readonly number[] = [-VAUX_BAY, 0, VAUX_BAY];
+ const doorway = (x: number): boolean => WEST_DOORWAY_X.includes(x);
+ 
+ /** The ground storey's windows (#53), on the joints of its courses (vaux-arch.ts). */
+diff --git a/src/model/hunt/routes.test.ts b/src/model/hunt/routes.test.ts
+index b603128..f67074e 100644
+--- a/src/model/hunt/routes.test.ts
++++ b/src/model/hunt/routes.test.ts
+@@ -6,11 +6,13 @@
+  * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, R5 up the Grand Staircase and through the cross hall's
+  * doorway into gallery 600 (work unit 2, M1), R6 through the Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court (work unit
+  * 2, M4), R7 as R4 goes into gallery 153, then through its south wall's door, Exhibition Gallery 199, the corridor through the party wall into
+- * gallery 549 and the court wall's opening into the Petrie Court (work unit 2, integration), each both ways. The walker never leaves the ground (no
++ * gallery 549 and the court wall's opening into the Petrie Court (work unit 2, integration), R8 between the Lehman Wing and gallery 521 through the 1880
++ * west front's doorways beside the entrance and R9 between the Hunt Wing's galleries 300 and 301 and gallery 304 through the corridors in its east
++ * front's inner arches (work unit 15, the owner's call of 2026-11-04), each both ways. The walker never leaves the ground (no
+  * drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
+  * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, R5 crosses the
+- * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, and R7
+- * the corridor and the court wall's opening on it.
++ * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, R7
++ * the corridor and the court wall's opening on it, R8 both doorways on it, and R9 both corridors on it.
+  * Bound: steering turns the walker directly, never by real keys (tests/e2e/routes.spec.ts checks fixed places on the routes in the page); a stall is
+  * less than 5 cm of progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts
+  * and ends within one frame's two physics steps is not seen.
+@@ -26,14 +28,17 @@ import type { DoorWorld } from '../../walk/door-world.js';
+ import { DOORS } from '../doors.js';
+ import { doorLeavesOf } from '../lib/window.js';
+ import { BODY, NO_INPUT, Walker } from '../../walk/walker.js';
+-import { INNER_EAST_Z } from '../core/layout.js';
++import { EAST_Z, VAUX_BAY, WEST_Z } from '../core/constants.js';
++import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
++import { CLEAR } from '../core/vaux-arch.js';
++import { eastCorridor } from '../core/vaux-east.js';
+ import { MORGAN, PARTY_WALL } from '../mmw/dims.js';
+ import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
+ import { ROMAN_COURT } from '../mmw/wings.js';
+ import { COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
+ import { COURT, DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../roche-north/plan.js';
+ import { CROSS_HALL_BACK_Z, EXT_NORTH_X, EXT_SOUTH_X, MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
+-import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, COURT_OPENING_Z, WESTON_APPROACH } from './routes.js';
++import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9, COURT_OPENING_Z, WESTON_APPROACH } from './routes.js';
+ import type { Route } from './routes.js';
+ import { STAIR_LANDING_Y } from './stair.js';
+ 
+@@ -136,7 +141,7 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
+     return made;
+   };
+ 
+-  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4), ROUTE_R5, reversed(ROUTE_R5), ROUTE_R6, reversed(ROUTE_R6), ROUTE_R7, reversed(ROUTE_R7)])('walks $id end to end on the ground and ends on its floor', (route) => {
++  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4), ROUTE_R5, reversed(ROUTE_R5), ROUTE_R6, reversed(ROUTE_R6), ROUTE_R7, reversed(ROUTE_R7), ROUTE_R8, reversed(ROUTE_R8), ROUTE_R9, reversed(ROUTE_R9)])('walks $id end to end on the ground and ends on its floor', (route) => {
+     const result = walked(route);
+     expect(result.failure).toBeUndefined();
+     expect(result.maxRise, `${route.id}: largest step up in a frame, metres`).toBeLessThanOrEqual(BODY.step);
+@@ -215,4 +220,29 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
+       expect(Math.hypot(end.x - x, end.z - z), `${route.id}: ends within 0.5 m of its last point at ${where(end)}`).toBeLessThan(0.5);
+     }
+   });
++
++  it('R8 crosses the 1880 west front’s doorways beside the entrance on the main floor’s level, between the Lehman Wing and gallery 521, and back', () => {
++    for (const route of [ROUTE_R8, reversed(ROUTE_R8)]) {
++      const { samples } = walked(route);
++      for (const x of [-VAUX_BAY, VAUX_BAY]) {
++        // Through the 1.5 m wall and a metre either side of it, between the doorway's jambs.
++        const doorway = samples.filter((s) => s.z > WEST_Z - 1 && s.z < INNER_WEST_Z + 1 && Math.abs(s.x - x) < CLEAR / 2);
++        expect(doorway.length, `${route.id}: samples in the doorway at X ${x.toFixed(1)}`).toBeGreaterThan(5);
++        expect(heightsOff(doorway, MAIN), `${route.id}: feet off the main floor in the doorway at X ${x.toFixed(1)}`).toEqual([]);
++      }
++    }
++  });
++
++  it('R9 crosses the corridors through the 1880 east front on the core’s main floor, between galleries 300 and 301 and gallery 304, and back', () => {
++    for (const route of [ROUTE_R9, reversed(ROUTE_R9)]) {
++      const { samples } = walked(route);
++      for (const side of [-1, 1]) {
++        const [x0, x1] = eastCorridor(side);
++        // Inside the 1 m wall, between the corridor's sides; the Hunt Wing's bare slab outside it lies 3 cm lower (routes.ts HUNT_SLAB_TOP_Y).
++        const corridor = samples.filter((s) => s.z > INNER_EAST_Z && s.z < EAST_Z && s.x > x0 && s.x < x1);
++        expect(corridor.length, `${route.id}: samples in the corridor at X ${x0.toFixed(2)}..${x1.toFixed(2)}`).toBeGreaterThan(5);
++        expect(heightsOff(corridor, MAIN), `${route.id}: feet off the core's main floor in the corridor at X ${x0.toFixed(2)}..${x1.toFixed(2)}`).toEqual([]);
++      }
++    }
++  });
+ });
+diff --git a/src/model/hunt/routes.ts b/src/model/hunt/routes.ts
+index 90396af..0f52af7 100644
+--- a/src/model/hunt/routes.ts
++++ b/src/model/hunt/routes.ts
+@@ -14,8 +14,13 @@
+  * the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Charles Engelhard Court (interior.md,
+  * The Charles Engelhard Court). R7 (work unit 2, integration): from the Great Hall spawn as R4 goes into gallery 153, then through its south wall's door,
+  * Exhibition Gallery 199 and the corridor from it through the party wall into gallery 549, and through the court wall's opening into the Petrie Court, to
+- * Weston's 1888 door (interior.md, Other skylit volumes).
++ * Weston's 1888 door (interior.md, Other skylit volumes). R8 and R9 (work unit 15) walk through the 1880 fronts' openings the owner chose to open on
++ * 2026-11-04: R8 between the Lehman Wing's main floor and gallery 521 through the west front's doorways beside the entrance, R9 between the Hunt Wing's
++ * galleries 300 and 301 and gallery 304 through the corridors in the east front's inner arches.
+  */
++import { EAST_Z, VAUX_BAY, VAUX_WEST_PAVILION_WALL_Z, WEST_Z } from '../core/constants.js';
++import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
++import { eastCorridor } from '../core/vaux-east.js';
+ import { WESTON_DOOR } from '../core/weston-facade.js';
+ import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
+ import { PAVING_GAP, walkWestY } from '../site/ground.js';
+@@ -130,6 +135,45 @@ export const ROUTE_R7: Route = {
+   endY: MAIN,
+ };
+ 
++/** R8's ends on the Lehman Wing's main floor, 2.7 m out from the 1880 front, either side of its court's east tip; its crossing midway through gallery 521. */
++const LEHMAN_FRONT_Z = WEST_Z - 2.7;
++const GALLERY_521_MID_Z = (INNER_WEST_Z + VAUX_WEST_PAVILION_WALL_Z) / 2;
++
++/**
++ * R8 (work unit 15, the owner's call of 2026-11-04): from the Lehman Wing's main floor south of its court's east tip, east through the 1880 west front's
++ * doorway at X −5.8 into gallery 521, north across it and west out through the doorway at +5.8 onto the wing's main floor north of the tip
++ * (src/model/core/vaux-front.ts WEST_DOORWAY_X). The court's ring wall comes within 0.2 m of the front at the tip, so the wing's two sides of it meet
++ * only round its galleries, and the route crosses between them in gallery 521.
++ */
++export const ROUTE_R8: Route = {
++  id: 'R8',
++  points: [[-VAUX_BAY, LEHMAN_FRONT_Z], [-VAUX_BAY, GALLERY_521_MID_Z], [VAUX_BAY, GALLERY_521_MID_Z], [VAUX_BAY, LEHMAN_FRONT_Z]],
++  startY: MAIN,
++  endY: MAIN,
++};
++
++/** The Hunt Wing's main-floor slab, bare in its galleries; the Great Hall's marble stands 3 cm on it (src/model/hunt/podium.ts, hall.ts). */
++export const HUNT_SLAB_TOP_Y = MAIN - 0.03;
++/** R9's ends in galleries 300 and 301, 9 m east of the core's east front; its crossing in gallery 304, 2.5 m from the front's inner face and from the iron posts on Z −75.06 (src/model/core/vaux-shell.ts). */
++const BYZANTINE_Z = EAST_Z + 9;
++const GALLERY_304_Z = INNER_EAST_Z - 2.5;
++const corridorMid = (s: number): number => {
++  const [a, b] = eastCorridor(s);
++  return (a + b) / 2;
++};
++
++/**
++ * R9 (work unit 15, the owner's call of 2026-11-04): from the Hunt Wing's gallery 300, south of the Grand Staircase, west through the corridor in the
++ * 1880 east front's inner arch on that side into gallery 304, north across it and east out through the corridor on the north side into gallery 301
++ * (src/model/core/vaux-east.ts eastCorridor).
++ */
++export const ROUTE_R9: Route = {
++  id: 'R9',
++  points: [[corridorMid(-1), BYZANTINE_Z], [corridorMid(-1), GALLERY_304_Z], [corridorMid(1), GALLERY_304_Z], [corridorMid(1), BYZANTINE_Z]],
++  startY: HUNT_SLAB_TOP_Y,
++  endY: HUNT_SLAB_TOP_Y,
++};
++
+ /** The same route walked the other way. */
+ export function reversed(route: Route): Route {
+   return { id: `${route.id} back`, points: [...route.points].reverse(), startY: route.endY, endY: route.startY };
+diff --git a/src/model/reach.test.ts b/src/model/reach.test.ts
+index 3a80faf..796fb3a 100644
+--- a/src/model/reach.test.ts
++++ b/src/model/reach.test.ts
+@@ -74,7 +74,7 @@ import { SPACES_A } from './collection/spaces-a.js';
+ import { SPACES_B } from './collection/spaces-b.js';
+ import { DOORS, doorById } from './doors.js';
+ import { CURB_WEST_Z, STEPS_HALF_WIDTH } from './frame.js';
+-import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7 } from './hunt/routes.js';
++import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9 } from './hunt/routes.js';
+ import { doorLeavesOf } from './lib/window.js';
+ import { insideOutline } from './site/footprint.js';
+ 
+@@ -233,7 +233,7 @@ function placeTargets(): Target[] {
+     return [{ group: 'preset', name: p.id, x: px, z: pz, radius: 1, level: py - EYE, met: (x, y, z) => Math.hypot(x - px, y + EYE - py, z - pz) <= 1 }];
+   });
+   const spawns = SPAWNS.map((s) => standing('spawn', s.id, s.feet[0], s.feet[2], s.feet[1]));
+-  const routes = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7].flatMap((r) => {
++  const routes = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9].flatMap((r) => {
+     const first = r.points[0] ?? [0, 0];
+     const last = r.points[r.points.length - 1] ?? first;
+     return [standing('route', `${r.id} start`, first[0], first[1], r.startY), standing('route', `${r.id} end`, last[0], last[1], r.endY)];

@@ -14,8 +14,13 @@
  * the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Charles Engelhard Court (interior.md,
  * The Charles Engelhard Court). R7 (work unit 2, integration): from the Great Hall spawn as R4 goes into gallery 153, then through its south wall's door,
  * Exhibition Gallery 199 and the corridor from it through the party wall into gallery 549, and through the court wall's opening into the Petrie Court, to
- * Weston's 1888 door (interior.md, Other skylit volumes).
+ * Weston's 1888 door (interior.md, Other skylit volumes). R8 and R9 (work unit 15) walk through the 1880 fronts' openings the owner chose to open on
+ * 2026-11-04: R8 between the Lehman Wing's main floor and gallery 521 through the west front's doorways beside the entrance, R9 between the Hunt Wing's
+ * galleries 300 and 301 and gallery 304 through the corridors in the east front's inner arches.
  */
+import { EAST_Z, VAUX_BAY, VAUX_WEST_PAVILION_WALL_Z, WEST_Z } from '../core/constants.js';
+import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
+import { eastCorridor } from '../core/vaux-east.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import { PAVING_GAP, walkWestY } from '../site/ground.js';
@@ -128,6 +133,45 @@ export const ROUTE_R7: Route = {
   points: [...ROUTE_R4.points.slice(0, 5), [GALLERY_153_DOOR_X, NAVE_MID_Z], [GALLERY_153_DOOR_X, GALLERY_199_TURN_Z], [PETRIE_PASSAGE_X, GALLERY_199_TURN_Z], [PETRIE_PASSAGE_X, COURT_OPENING_Z], [WESTON_APPROACH[0], COURT_OPENING_Z], WESTON_APPROACH],
   startY: MAIN,
   endY: MAIN,
+};
+
+/** R8's ends on the Lehman Wing's main floor, 2.7 m out from the 1880 front, either side of its court's east tip; its crossing midway through gallery 521. */
+const LEHMAN_FRONT_Z = WEST_Z - 2.7;
+const GALLERY_521_MID_Z = (INNER_WEST_Z + VAUX_WEST_PAVILION_WALL_Z) / 2;
+
+/**
+ * R8 (work unit 15, the owner's call of 2026-11-04): from the Lehman Wing's main floor south of its court's east tip, east through the 1880 west front's
+ * doorway at X −5.8 into gallery 521, north across it and west out through the doorway at +5.8 onto the wing's main floor north of the tip
+ * (src/model/core/vaux-front.ts WEST_DOORWAY_X). The court's ring wall comes within 0.2 m of the front at the tip, so the wing's two sides of it meet
+ * only round its galleries, and the route crosses between them in gallery 521.
+ */
+export const ROUTE_R8: Route = {
+  id: 'R8',
+  points: [[-VAUX_BAY, LEHMAN_FRONT_Z], [-VAUX_BAY, GALLERY_521_MID_Z], [VAUX_BAY, GALLERY_521_MID_Z], [VAUX_BAY, LEHMAN_FRONT_Z]],
+  startY: MAIN,
+  endY: MAIN,
+};
+
+/** The Hunt Wing's main-floor slab, bare in its galleries; the Great Hall's marble stands 3 cm on it (src/model/hunt/podium.ts, hall.ts). */
+export const HUNT_SLAB_TOP_Y = MAIN - 0.03;
+/** R9's ends in galleries 300 and 301, 9 m east of the core's east front; its crossing in gallery 304, 2.5 m from the front's inner face and from the iron posts on Z −75.06 (src/model/core/vaux-shell.ts). */
+const BYZANTINE_Z = EAST_Z + 9;
+const GALLERY_304_Z = INNER_EAST_Z - 2.5;
+const corridorMid = (s: number): number => {
+  const [a, b] = eastCorridor(s);
+  return (a + b) / 2;
+};
+
+/**
+ * R9 (work unit 15, the owner's call of 2026-11-04): from the Hunt Wing's gallery 300, south of the Grand Staircase, west through the corridor in the
+ * 1880 east front's inner arch on that side into gallery 304, north across it and east out through the corridor on the north side into gallery 301
+ * (src/model/core/vaux-east.ts eastCorridor).
+ */
+export const ROUTE_R9: Route = {
+  id: 'R9',
+  points: [[corridorMid(-1), BYZANTINE_Z], [corridorMid(-1), GALLERY_304_Z], [corridorMid(1), GALLERY_304_Z], [corridorMid(1), BYZANTINE_Z]],
+  startY: HUNT_SLAB_TOP_Y,
+  endY: HUNT_SLAB_TOP_Y,
 };
 
 /** The same route walked the other way. */

@@ -172,3 +172,13 @@ Neither lane found a major or minor problem: Codex two nits, Claude eight, merge
 | F46 | Two wording slips: the jackknife sentence followed "read as found" though it runs at the corrected distortion, and the plan said the ranges' narrowing moved the constant, where F27's rule did (Claude 8) | Accepted | The jackknife sentence follows the correction it runs at, and the plan's step says the model now takes the record's own average |
 
 Not a finding: Claude could not confirm that the last gate's tree (`verify-5.log`, at `9833aab` with changes) was `00ae202`. Its `src/` was: `constants.ts` changed before that run began, and no file under `src/` changed between then and the commit. Docs changed while the run's end-to-end tests ran.
+
+## Verification
+
+- `npm run verify` passed on the reviewed tree, `00ae202` (`tmp/hall-windows/verify-5.log`), and on the repairs' tree, committed as `4288b42`, whose only change under `src/` is a comment (`verify-6.log`: 732 unit and 125 end-to-end tests).
+- Codex reproduced the output and minimised the friezes' fit on its own. It jackknifed the tiers' crossing directly and projected all 729 of #29's sweep cases forward. Claude recomputed by hand and read two renders at native resolution.
+- Neither reviewer could fetch the photographs, so no one remeasured them; the repository never stores them. Claude's lane could not run Python.
+
+## Round outcome
+
+No major or minor findings: Codex found two nits and Claude eight, merged as F38 to F46. All were accepted and repaired at `4288b42`; `VAUX_OCULUS_Y` stayed 20.3. Review 4, focused on the repairs, re-reviewed them. None of this round's findings stayed open.

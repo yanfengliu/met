@@ -181,3 +181,15 @@ I changed nothing.
 | F8 | Number nits: P8's own reading on the screen's plane is 6.96 m, not 6.80; 22.1 m is above the model's eaves, not near them; the upper tier's vanishing point lay outside the swept range; the glazing figures differed between the record, the devlog and the constants; the surround's centre was taken at its middle row, not its mean tangent (Claude R9) | Accepted | All corrected in the repaired record and script. The distortion refit resolves the tiers' disagreement |
 | F9 | P8's quoted glazing range covered only its vertical reading (Codex 3) | Accepted | Both ranges recorded (2.13 to 2.25 m up and down, 2.07 to 2.16 m across), and the 2.25 m opening explained as the weighted 2.23 m rounded to 0.05 m |
 | F10 | The renders do not reproduce the photographs' projections: the default 45° field, no shift for #29, and #29's views cropping the cresting (Codex 4) | Accepted | The plan's criterion now says what the renders check, the change's place and size, and what they cannot: registration with the photographs, also out of reach while the screen stands 6.7 m east |
+
+## Verification
+
+- `npm run verify` ran through the shared gate lock on the tree committed as `4f41cd6` and passed: 732 unit tests, typecheck, lint, build and 125 end-to-end tests (`tmp/hall-windows/verify-2.log`, port 5393). An earlier run had failed only because another server held port 5377, after its unit tests passed (`verify-1.log`).
+- Renders of the windows before and after the change, in the worktree's ignored `.shots/hall-windows/`, were read at native resolution; Codex read all 12 and Claude 8.
+- Codex ran the script's nominal values, sweeps, arcade check and doorway predictions again, and built the core area headless with the old and the new dimensions: 130 meshes each. Claude's lane allowed only git reads, so it recomputed the script by hand.
+- The repairs, at `2a2e6ec`: `npm run verify` passed on that tree (`verify-3.log`: 732 unit and 125 end-to-end tests), and review 1 checked them.
+- Neither reviewer could fetch the photographs, so no one remeasured them; the repository never stores them.
+
+## Round outcome
+
+Claude found one major problem and eight lesser ones, Codex four minor ones, merged as F0 to F10. All were accepted and repaired at `2a2e6ec`, the major one too: the check script's reversed roll, which had made the walking man and the arcade seem to confirm P8's camera. Review 1 re-reviewed the repairs. No finding was rejected, and none stayed open.

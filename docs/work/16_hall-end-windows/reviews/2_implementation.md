@@ -205,3 +205,13 @@ If 20.4 stays, the record must say it is kept by choice, 0.1 m above its own ave
 | F35 | The arcade's ±10 px varied the columns only; with the rows too the third feature spans 27.72 to 31.31 m (Codex 6) | Accepted | Both coordinates are swept: 27.7 to 31.3 m, against the model-place east wall's 28.2 to 29.4 m, so the arcade still does not decide |
 | F36 | F24's doorway readings mixed edges: 281 px ran from the left jamb's edge to the opening's right edge, and the span still counted the curtains (Claude 6) | Accepted | The doorway's own edges were read again on the original: 287 px between its jambs' inner edges (286.5 to 287.8 over 18 bands of rows, kept as `snapshots/m29-west-doorway.txt`), against 276 to 284 predicted. The lines 316 px apart are the pilasters' edges. The free-width check uses 287 px: 2.30 m at the map's place, 3.07 m at the model's |
 | F37 | The man's occluder is the gate's iron jamb, not the base's coping, with the camera on the axis (Claude 7) | Accepted | The record names the jamb from #29 (the die and coping stop 1.22 m out; the jamb's inner face stands 1.03 m out and rises to the coping's level), gives his column 1.09 m north of the camera's line, and notes that a camera more than about 6 cm south of the axis would show his feet in the open gate |
+
+## Verification
+
+- `npm run verify` passed on the reviewed tree, `9833aab` (`tmp/hall-windows/verify-4.log`), and on the repairs' tree, committed as `00ae202`, in one run with the window renders (`verify-5.log`: 732 unit and 125 end-to-end tests). Those renders, with the windows at `VAUX_OCULUS_Y` 20.3, were read at native resolution.
+- Codex reproduced the script's output exactly, checked the circle fitter on a synthetic circle and solved the eye-height equation on its own. Claude recomputed by hand, Python being refused in its lane.
+- Neither reviewer could fetch the photographs, so no one remeasured them; the repository never stores them.
+
+## Round outcome
+
+No major findings. Codex found two minor problems and four nits, Claude four minor and six nits, merged as F26 to F37, all accepted and repaired at `00ae202`. The reviewers differed on the model's height: Codex judged keeping `VAUX_OCULUS_Y` 20.4 acceptable as a recorded choice, while Claude showed that the record's own rule gives 20.3 and recommended it. The repair took 20.3. Review 3 re-reviewed the repairs; none of this round's findings stayed open.
