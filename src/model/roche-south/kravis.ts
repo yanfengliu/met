@@ -40,7 +40,7 @@ export const COURT_WALL = 0.8;
  */
 const GUTTER = 0.45;
 export const PETRIE_EAVE_Y = CORE_COPING_TOP_Y + GUTTER;
-/** The 1888 front's base course stands 0.14 m proud at the main floor (core); the court's floor stops at it, so nothing of the court touches the old front's trim. Under Weston's end blocks the floor runs on under their podiums (core/weston-ends.ts), separate closed pieces with no face in common. */
+/** The 1888 front's base course stands 0.14 m proud at the main floor (core); the court's floor stops at it, so nothing of the court touches the old front's trim. Under Weston's end blocks the floor and its slab run on into their ground storeys and podiums (core/weston-ends.ts), separate closed pieces whose faces there lie inside one another or behind the court's end walls. */
 const OLD_FRONT_CLEAR = 0.15;
 /** The court's floor finish, laid on the slab so its top is the main floor (MAIN_FLOOR_Y), the level of the 1888 door sill and porch. */
 const FINISH = 0.03;

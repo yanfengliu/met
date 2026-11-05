@@ -4,7 +4,7 @@
  * (Heckscher figs. 28 and 26: "projecting flanking sections", their main floor "articulated by pilasters and pairs of double-window openings", their
  * upper wall blind for skylit picture galleries), the photograph of about 1895 from the south-east shows them built (fig. 35), and the court's
  * photographs show them today (interior-images.md #33, #35, #45 and #46; interior.md, Weston's 1888 front). Each block: a brick ground storey on the
- * front's base course, from the footing up to a stone podium at the main floor; three bays, each a column with a dark granite shaft between two
+ * front's base course, which stands on the footing, up to a stone podium at the main floor; three bays, each a column with a dark granite shaft between two
  * windows, bricked up since, set back between brick piers, a wide pier at the block's inner end and a pier at its outer end; the main floor's head band
  * carried round the block as the columns' entablature; above, brick with pilasters on stone bases under console capitals, a stone panel on a moulded
  * sill over each bay, a stone frieze with two roundels on the return, and the front's cornice and coping, all returned round the block.
@@ -76,8 +76,11 @@ const PODIUM = { bottom: L1 - 0.3, top: L1 + 1.0, out: PROJ + 0.5, cap: 0.12 } a
 const BASE = { top: LG + 0.6, out: PROJ + 0.12 } as const;
 const HEAD = L1 + WESTON_LOWER_HEAD;
 const ENTABLATURE = { top: HEAD + 0.8, out: PROJ + 0.4, crown: 0.25, overhang: 0.2 } as const;
-/** How far the entablature returns along the front's face beyond each block, toward the pavilion, its body and crown alike: the arched bays' head band meets it there. */
-export const END_ENTABLATURE_RETURN = ENTABLATURE.out - PROJ + ENTABLATURE.overhang;
+/**
+ * How far the entablature returns along the front's face beyond each block, toward the pavilion, its body and, overhanging it there as on the front,
+ * its crown, which starts `crownFrom`: the arched bays' head band meets each, below and above that height.
+ */
+export const END_ENTABLATURE_RETURN = { body: ENTABLATURE.out - PROJ, crown: ENTABLATURE.out - PROJ + ENTABLATURE.overhang, crownFrom: ENTABLATURE.top - ENTABLATURE.crown } as const;
 /** The column's parts over the podium: the plinth, the base's torus and fillet, then under the entablature the astragal, the echinus and the abacus. */
 const COLUMN = { plinth: 0.12, torus: 0.12, fillet: 0.06, astragal: 0.06, echinus: 0.14, abacus: 0.16 } as const;
 /** The upper wall: the pilasters' bases, the panels' sills and tops, the console capitals and the frieze under the cornice. */
@@ -131,12 +134,12 @@ function pilasters(b: EndBlock): { readonly us: readonly number[]; readonly widt
   return { us: [bay1[0] - half, bay1[1] + half, bay3[1] + half, bay5[1] + half], width: 0.97 * k };
 }
 
-/** The block's brick: its ground storey, the mass from the main floor's head to the parapet, the piers and the bays' bricked-up windows between, and the pilasters. */
+/** The block's brick: its ground storey over the base course, the mass from the main floor's head to the parapet, the piers and the bays' bricked-up windows between, and the pilasters. */
 export function westonEndWalls(kit: Kit): void {
   for (const b of END_BLOCKS) {
     const length = Math.abs(b.outer - b.inner);
     const parts = partsOf(b);
-    boxOut(kit, b, palette.brick, 0, PROJ, WALL_BASE_Y, PODIUM.bottom, 0, length, 0);
+    boxOut(kit, b, palette.brick, 0, PROJ, BASE.top, PODIUM.bottom, 0, length, 0);
     boxOut(kit, b, palette.brick, 0, PROJ, HEAD, PARAPET_Y, 0, length, 2);
     parts.forEach(([u0, u1], i) => {
       boxOut(kit, b, palette.brick, 0, i % 2 === 1 ? PROJ - RECESS : PROJ, PODIUM.top, HEAD, u0, u1, i % 2 === 1 ? 1 : 0);
@@ -202,12 +205,12 @@ export function westonEndTrim(kit: Kit): void {
       kit.add(disc, stone, drum(x, shaft1 + c.astragal, HEAD - c.abacus, zz, COLUMN_D + 0.14), 5);
       addBox(kit, stone, x - 0.38, HEAD - c.abacus, zz - 0.38, x + 0.38, HEAD, zz + 0.38, 5);
     });
-    // The entablature: round the return to the front's face, then its body before the piers under a crown that overhangs it.
-    const back = END_ENTABLATURE_RETURN;
-    const crown0 = ENTABLATURE.top - ENTABLATURE.crown;
-    boxOut(kit, b, stone, 0, PROJ, HEAD, ENTABLATURE.top, -back, 0, 6);
-    boxOut(kit, b, stone, PROJ, ENTABLATURE.out, HEAD, crown0, -back, length, 6);
-    boxOut(kit, b, stone, PROJ, ENTABLATURE.out + ENTABLATURE.overhang, crown0, ENTABLATURE.top, -back, length, 6);
+    // The entablature: its body before the piers and round the return to the front's face, under a crown that overhangs it on both.
+    const { body, crown, crownFrom } = END_ENTABLATURE_RETURN;
+    boxOut(kit, b, stone, 0, PROJ, HEAD, crownFrom, -body, 0, 6);
+    boxOut(kit, b, stone, PROJ, ENTABLATURE.out, HEAD, crownFrom, -body, length, 6);
+    boxOut(kit, b, stone, 0, PROJ, crownFrom, ENTABLATURE.top, -crown, 0, 6);
+    boxOut(kit, b, stone, PROJ, ENTABLATURE.out + ENTABLATURE.overhang, crownFrom, ENTABLATURE.top, -crown, length, 6);
     // The pilasters' bases and console capitals.
     const { us, width } = pilasters(b);
     for (const u of us) {

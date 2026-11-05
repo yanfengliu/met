@@ -206,7 +206,7 @@ Codex's findings are C1 and C2; Claude's keep their numbers, its nits N1 to N6. 
 | N5 | The block's coping overhangs its front but not its return (nit; Claude) | Accepted | It overhangs both; the middle section's coping stops 0.08 m short to meet it, as its base course stops 0.12 m short to meet the blocks' |
 | N6 | The plan gives fig. 28's middle section as 32.1 m, where its 803 px make 32.4 (nit; Claude) | Accepted | Corrected |
 
-The repairs give the old wall beyond the west block, 1.3 m that the Kravis Wing's pier has hidden since 1990, a cornice in the middle section's piece, which the first version had dropped; and the east block's end at −69.0 shows its parts' ends until the Hunt wing stands against it in 1902, as the old front's trims did. Both are recorded in `interior.md`.
+The repairs give the old wall beyond the west block, 1.3 m that the Kravis Wing's pier has hidden since 1990, a cornice in the middle section's piece, which the first version had dropped; and the east block's end at −69.0 shows its parts' ends until the McKim, Mead & White south link's wall stands against it, 1914 to 1926, as the old front's trims did (corrected by review 1's N1; this record first said the Hunt wing, 1902). Both are recorded in `interior.md`.
 
 ## Verification
 

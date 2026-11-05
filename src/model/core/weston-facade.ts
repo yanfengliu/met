@@ -112,13 +112,24 @@ function z(c: number, x: number): number {
   return c + x;
 }
 
-/** The facade's brick walls: the two arched bays, the pavilion, and the plain wall behind the strips and the end blocks, footing to parapet. */
-export function westonWalls(kit: Kit): void {
-  const bay = westonBay();
-  BAYS.forEach((c, i) => {
-    kit.add(bay, palette.brick, placed(B_SOUTH_X, WALL_BASE_Y, c, FACING.south), i);
+/**
+ * The middle section's brick walls, the two arched bays and the pavilion, as one piece in the facade's frame: one mesh for the three, so the end
+ * blocks' columns and the middle section's cornices (below) leave the core within its 130 (core.test.ts). They stand on one footing line and rise
+ * together, as each did on its own.
+ */
+function middleWalls(): BufferGeometry {
+  return memo('weston-middle-walls', () => {
+    const b = new MeshBuilder();
+    const bay = westonBay();
+    for (const c of BAYS) b.append(bay, placed(B_SOUTH_X, WALL_BASE_Y, c, FACING.south));
+    b.append(pavilion(), placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south));
+    return b.build();
   });
-  kit.add(pavilion(), palette.brick, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 0);
+}
+
+/** The facade's brick walls: the two arched bays and the pavilion, and the plain wall behind the strips and the end blocks, footing to parapet. */
+export function westonWalls(kit: Kit): void {
+  kit.add(middleWalls(), palette.brick, new Matrix4(), 0);
   for (const [a0, a1] of FILLS) elevationBox(kit, SOUTH, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, OUTER_WALL, 0);
 }
 
@@ -127,21 +138,26 @@ function roundelMatrix(y: number, zz: number, d: number, t: number): Matrix4 {
   return new Matrix4().makeTranslation(B_SOUTH_X, y, zz).multiply(new Matrix4().makeRotationZ(Math.PI / 2)).multiply(new Matrix4().makeScale(d, t, d));
 }
 
-/**
- * The voussoirs of the three round arches, the pavilion's over its great window and each arched bay's, and the cornices of the middle section, the
- * pavilion's and each arched bay's, with the cornice over the bit of wall beyond the west end block, as one piece in the facade's frame: one mesh for
- * them all, so the end blocks' columns and their mitred cornices (weston-ends.ts) leave the core within its 130 (core.test.ts).
- */
-function archesAndCornices(): BufferGeometry {
-  return memo('weston-arches-cornices', () => {
+/** The voussoirs of the three round arches, the pavilion's over its great window and each arched bay's, as one piece in the facade's frame. */
+function arches(): BufferGeometry {
+  return memo('weston-arches', () => {
     const b = new MeshBuilder();
     const ring = voussoirs({ span: WESTON_ARCH_SPAN, depth: 0.5, count: 21, projection: 0.1 });
-    const cornice = moulding({ profile: 'cornice-plain', path: [[-WESTON_ARCH_BAY / 2, 0, 0], [WESTON_ARCH_BAY / 2, 0, 0]], height: 0.8, projection: 0.75 });
-    for (const c of BAYS) {
-      b.append(ring, placed(B_SOUTH_X, L2 + WESTON_ARCH_SPRING, c, FACING.south));
-      b.append(cornice, placed(B_SOUTH_X, CORNICE_Y, c, FACING.south));
-    }
+    for (const c of BAYS) b.append(ring, placed(B_SOUTH_X, L2 + WESTON_ARCH_SPRING, c, FACING.south));
     b.append(voussoirs({ span: PAVILION_WINDOW.width, depth: 0.6, count: 19, projection: 0.12 }), placed(B_SOUTH_X, L2 + PAVILION_WINDOW.spring, CENTRE_Z, FACING.south));
+    return b.build();
+  });
+}
+
+/**
+ * The middle section's cornices, the pavilion's and each arched bay's, with the cornice over the bit of wall beyond the west end block, as one piece
+ * in the facade's frame, standing on one line so it rises where it stands, with the end blocks' mitred cornices (weston-ends.ts).
+ */
+function cornices(): BufferGeometry {
+  return memo('weston-cornices', () => {
+    const b = new MeshBuilder();
+    const cornice = moulding({ profile: 'cornice-plain', path: [[-WESTON_ARCH_BAY / 2, 0, 0], [WESTON_ARCH_BAY / 2, 0, 0]], height: 0.8, projection: 0.75 });
+    for (const c of BAYS) b.append(cornice, placed(B_SOUTH_X, CORNICE_Y, c, FACING.south));
     b.append(moulding({ profile: 'cornice-plain', path: [[-WESTON_PAVILION_HALF, 0, 0], [WESTON_PAVILION_HALF, 0, 0]], height: 0.9, projection: 0.85 }), placed(B_SOUTH_X, CORNICE_Y, CENTRE_Z, FACING.south));
     const tail = WESTON_WEST_END_Z - WEST_Z;
     b.append(cornice, placed(B_SOUTH_X, CORNICE_Y, (WEST_Z + WESTON_WEST_END_Z) / 2, FACING.south).multiply(new Matrix4().makeScale(tail / WESTON_ARCH_BAY, 1, 1)));
@@ -158,7 +174,7 @@ export function westonTrim(kit: Kit): void {
   // The porch's pedestals, edge to edge: the dado stops at them. The main floor's head band stands at the height of the porch's entablature and runs
   // on to it, 1 cm short of what it meets at each height: the frieze, then from the cornice's foot the face of the cornice's bed mouldings (which step
   // back at their foot, so a little brick shows there), and over its soffit its corona. Outward it runs to the end blocks' entablature, which returns
-  // along the face to meet it.
+  // along the face to meet it: below the entablature's crown to its body's return, above it to the crown's, which overhangs the body there.
   const porch0 = CENTRE_Z - PORCH_REACH.pedestals;
   const porch1 = CENTRE_Z + PORCH_REACH.pedestals;
   // The base course, to the end blocks' own, which return round them, and on the bit of wall beyond the west block.
@@ -172,15 +188,23 @@ export function westonTrim(kit: Kit): void {
     elevationBox(kit, e, stone, a0, a1, L1, L1 + WESTON_DADO, 0.1, 0, 1);
   }
   const band = { y0: L1 + WESTON_LOWER_HEAD, y1: L1 + WESTON_LOWER_HEAD + 0.75, cornice: L1 + PORCH_REACH.corniceFrom, soffit: L1 + PORCH_REACH.soffit };
+  const ret = END_ENTABLATURE_RETURN;
   for (const s of [-1, 1]) {
-    const end = CENTRE_Z + s * (WESTON_END_FROM - END_ENTABLATURE_RETURN);
     for (const [reach, y0, y1] of [
       [PORCH_REACH.frieze + 0.01, band.y0, band.cornice],
       [PORCH_REACH.bed + 0.01, band.cornice, band.soffit],
       [PORCH_REACH.corona + 0.01, band.soffit, band.y1],
     ] as const) {
       const near = CENTRE_Z + s * reach;
-      elevationBox(kit, e, stone, Math.min(near, end), Math.max(near, end), y0, y1, 0.16, 0, 3);
+      const parts: (readonly [number, number, number])[] = [
+        [y0, Math.min(y1, ret.crownFrom), ret.body],
+        [Math.max(y0, ret.crownFrom), y1, ret.crown],
+      ];
+      for (const [a, c, back] of parts) {
+        if (c - a <= 1e-6) continue;
+        const end = CENTRE_Z + s * (WESTON_END_FROM - back);
+        elevationBox(kit, e, stone, Math.min(near, end), Math.max(near, end), a, c, 0.16, 0, 3);
+      }
     }
   }
   // Rusticated quoins, long and short blocks in turn, at the pavilion's edges and at the arched bays' outer edges.
@@ -215,7 +239,8 @@ export function westonTrim(kit: Kit): void {
     // The keystone's console, up to the cornice (#33).
     elevationBox(kit, e, stone, z(c, -0.28), z(c, 0.28), crown + 0.2, CORNICE_Y, 0.2, 0, 8);
   });
-  kit.add(archesAndCornices(), stone, new Matrix4(), 7);
+  kit.add(arches(), stone, new Matrix4(), 7);
+  kit.add(cornices(), stone, new Matrix4(), 10);
   // The doorway's reveals and soffit, lined through the wall behind the porch, on its threshold.
   kit.add(holeLining(DOOR_LINED, DOOR_OPENING, OUTER_WALL), stone, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 4);
   addBox(kit, stone, B_SOUTH_X, L1 - DOOR.threshold, CENTRE_Z - DOOR_LINED.width / 2, B_SOUTH_X + OUTER_WALL, L1, CENTRE_Z + DOOR_LINED.width / 2, 4);

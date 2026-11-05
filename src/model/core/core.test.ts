@@ -15,8 +15,9 @@
  * `WESTON_PAVILION_Z`, work unit 19) and under Y 13.2 (9.1 m over the main floor; its railing's top stands 8.5 m over it) may reach 2.9 m into the court.
  * And Weston's two end blocks, which project into the court 1.2 m in brick, 1.32 m to their pilasters' faces and 1.95 m to the front's cornice returned
  * round them, as Heckscher's figs. 26, 28 and 35 and the court's photographs show them (work unit 21; weston-ends.ts): pieces lying wholly within an
- * end block's stretch, from the arched bay's outer edge, where the block's mitred cornice starts, to the court's end (both from constants.ts, as the
- * porch's stretch is), and under the coping's top, may reach 1.35 m in brick and 2.0 m in trim. Red with the blocks projecting 1.5 m.
+ * end block's stretch, for trim from the arched bay's outer edge, where the block's mitred cornice starts, and for brick from the block's own inner
+ * end, to the court's end (from constants.ts, as the porch's stretch is), and under the coping's top, may reach 1.35 m in brick and 2.0 m in trim.
+ * Red with the blocks projecting 1.5 m.
  */
 import { Box3, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -31,7 +32,7 @@ import { palette } from '../palette.js';
 import { holeLining, holeOutline, openWall } from './arches.js';
 import { core } from './materials.js';
 import type { Hole } from './arches.js';
-import { COPING_TOP_Y, EAST_Z, WESTON_ARCH_BAY, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WESTON_WEST_END_Z } from './constants.js';
+import { COPING_TOP_Y, EAST_Z, WESTON_ARCH_BAY, WESTON_END_FROM, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WESTON_WEST_END_Z } from './constants.js';
 import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from './index.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -49,11 +50,12 @@ const TRIM = 1.5;
 const PORCH = { z0: WESTON_PAVILION_Z - 3.5, z1: WESTON_PAVILION_Z + 3.5, y1: 13.2, reach: 2.9 } as const;
 /** How far Weston's end blocks may reach into the Petrie Court, up to the coping's top, and their stretches along the front (see the header). */
 const END_REACH = { brick: 1.35, trim: 2.0, y1: COPING_TOP_Y + 0.01 } as const;
-const BAYS_END = WESTON_PAVILION_HALF + WESTON_ARCH_BAY - 0.01;
-const END_STRETCHES = [
-  [WESTON_WEST_END_Z, WESTON_PAVILION_Z - BAYS_END],
-  [WESTON_PAVILION_Z + BAYS_END, EAST_Z],
-] as const;
+const stretches = (from: number): readonly (readonly [number, number])[] => [
+  [WESTON_WEST_END_Z, WESTON_PAVILION_Z - from],
+  [WESTON_PAVILION_Z + from, EAST_Z],
+];
+/** Trim's stretches start at the arched bays' outer edges, where the blocks' mitred cornices start; brick's at the blocks' own inner ends. */
+const END_STRETCHES = { trim: stretches(WESTON_PAVILION_HALF + WESTON_ARCH_BAY - 0.01), brick: stretches(WESTON_END_FROM - 0.01) } as const;
 const BUDGET = { triangles: 350_000, meshes: 130, lights: 1 } as const;
 
 describe('core steps', () => {
@@ -79,7 +81,7 @@ describe('core steps', () => {
         const west = BLOCKS.z0 - box.min.z;
         const south = BLOCKS.x0 - box.min.x;
         const porch = trim && box.min.z >= PORCH.z0 && box.max.z <= PORCH.z1 && box.max.y <= PORCH.y1;
-        const end = box.max.y <= END_REACH.y1 && END_STRETCHES.some(([z0, z1]) => box.min.z >= z0 - 1e-6 && box.max.z <= z1 + 1e-6);
+        const end = box.max.y <= END_REACH.y1 && END_STRETCHES[trim ? 'trim' : 'brick'].some(([z0, z1]) => box.min.z >= z0 - 1e-6 && box.max.z <= z1 + 1e-6);
         const bad =
           box.max.x > BLOCKS.x1 + SLACK ||
           box.max.z > BLOCKS.z1 + SLACK ||
