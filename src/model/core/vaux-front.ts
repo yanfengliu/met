@@ -14,7 +14,7 @@ import type { Kit } from '../../build/types.js';
 import { MeshBuilder, moulding, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { openWall, type Hole } from './arches.js';
-import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, LG, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_INNER_ORDER, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
+import { A_HALF, COPING_TOP_Y, CORNICE_Y, L1, LG, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAND, VAUX_BAY, VAUX_GROUND_HEIGHT, VAUX_GROUND_SILL, VAUX_HALL_EAST_Z, VAUX_HALL_WALL, VAUX_HALL_WEST_Z, VAUX_INNER_ORDER, VAUX_OCULUS, VAUX_OCULUS_Y, WEST_WALL, WEST_Z } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, memo, placed, runsBetween } from './shapes.js';
 import { CLEAR, COURSE, JOINT, LINTEL_Y, ORDER_PROUD, RUST_Y0, SILL_Y, SPRING_Y, archHoles, darkHead, lightHead } from './vaux-arch.js';
@@ -118,7 +118,7 @@ export function westFrontHeads(kit: Kit): void {
 export function westFrontWindows(kit: Kit): void {
   const disc = cylinder(20);
   for (const z of [VAUX_HALL_WEST_Z - VAUX_HALL_WALL / 2, VAUX_HALL_EAST_Z + VAUX_HALL_WALL / 2]) {
-    kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(2.4, 0.03, 2.4)), 20);
+    kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(VAUX_OCULUS, 0.03, VAUX_OCULUS)), 20);
   }
   const main = windowUnit({ width: CLEAR, height: LINTEL_Y - SILL_Y, cols: 2, rows: 2, frame: 0.1 });
   const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, cols: 2, rows: 2 });

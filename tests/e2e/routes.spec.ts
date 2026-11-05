@@ -16,8 +16,8 @@
  * - Fixed places, each a page placed by `spawn=x,y,z,tx,ty,tz` (src/walk/spawns.ts `placeOf`) looking at a fixed point, its view's picture written to
  *   the test's output folder for a person to inspect (nothing judges it), the walker checked to stand there on its floor: the middle door from the Great
  *   Hall (held, "E Open" from 1.9 m out, opened by E out toward the plaza, walked out, shut behind from before it); Weston's door from the Petrie Court
- *   (held, "E Open" from 1.9 m out, opened by E into wing B, walked through) and from gallery 529 with the doors open (shut by E, opened again by E toward
- *   the walker, walked back out through its porch to the court); R5's doorway into gallery 600; the Grand Staircase's landing; the Temple of Dendur's forecourt and the gate's passage on one
+ *   (held, "E Open" from 1.9 m out, opened by E inward, into its porch, walked through the porch into gallery 529) and from inside its porch with the
+ *   doors open (shut by E, opened again by E toward the walker, walked back out to the court); R5's doorway into gallery 600; the Grand Staircase's landing; the Temple of Dendur's forecourt and the gate's passage on one
  *   level; the dais's south flight walked down; the rail before the gate's riser, which holds the walker on the terrace; the pool's north arm, stepped
  *   into to rest on its floor and out of again; and the Sphinx of Hatshepsut and Ruth Gleaning, each approached at a walk until its card shows within
  *   6 m and turned away. At each the card and the prompt follow the one look target, and the walker never leaves the ground (F55).
@@ -28,8 +28,8 @@
  * capped at 0.1 s), and the walker goes on for its coast (0.14 m at a walk) and for as long as the release takes to reach the page. Where it rests is
  * bounded, not chosen: through the middle door, on the 1.33 m stretch where the body is clear of the leaves' sweep and an open leaf is in reach, so a
  * release up to 0.56 s late still rests where the door can be shut (./route-places.ts `useStretch`; at 4× throttle on 2026-10-29 the releases came
- * 0.005 to 0.12 s late), and a later one fails saying how far it went; through Weston's door, anywhere past the sweep, as gallery 529 is shut and opened
- * again from a place of its own; on the landing, 2.4 m on from the release to its far edge (1.0 s); in the gate's passage, 2.8 m on from it to the riser
+ * 0.005 to 0.12 s late), and a later one fails saying how far it went; through Weston's door, anywhere in gallery 529 past the line a metre beyond the
+ * old front's inner face, as the door is shut and opened again from a place of its own in the porch; on the landing, 2.4 m on from the release to its far edge (1.0 s); in the gate's passage, 2.8 m on from it to the riser
  * (1.3 s); up the front steps, Shift up to 1.0 s late, so the last 1.9 m before the middle door are walked, at least 7 frames with frames capped at 0.1 s.
  * Elsewhere what holds the walker is a stop (the leaves, the rail, the pool arm's far wall) or open floor past the line. The middle door
  * is walked at on its axis and Weston's on its own, the artworks from 7.7 to 26 m off. Each test's deadline is its timeout times the CPU throttle
@@ -42,6 +42,7 @@ import type { Page } from '@playwright/test';
 import { Vector3 } from 'three';
 
 import type { Vec3 } from '../../src/build/types.js';
+import { B_SOUTH_X, OUTER_WALL } from '../../src/model/core/constants.js';
 import { INNER_EAST_Z } from '../../src/model/core/layout.js';
 import { MAIN_FLOOR_Y, SECOND_FLOOR_Y } from '../../src/model/frame.js';
 import { CROSS_HALL_BACK_Z, SCREEN_Z, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from '../../src/model/hunt/dims.js';
@@ -283,7 +284,7 @@ test.describe('the walk through real input', () => {
     await expectClean(page, 'the middle door from the Great Hall', samples);
   });
 
-  test('Weston’s door from the Petrie Court: walked straight at along its axis, closed and solid, "E Open" from 1.9 m out and held; E swings it into wing B, and the walker walks through into gallery 529', async ({ page }) => {
+  test('Weston’s door from the Petrie Court: walked straight at along its axis, closed and solid, "E Open" from 1.9 m out and held; E swings it inward, into its porch, and the walker walks through the porch into gallery 529', async ({ page }) => {
     test.setTimeout(45_000 * throttleRate());
     const door = doorPlan('weston');
     const into529 = outOf(door, 'back');
@@ -303,39 +304,41 @@ test.describe('the walk through real input', () => {
     await page.screenshot({ path: test.info().outputPath('weston-door-held.png') });
     await looksAt(page, 'weston', 'E Open');
     await page.keyboard.press('KeyE');
-    expect((await doorIs(page, 'weston', 'open')).angle, 'a quarter turn into wing B, away from the walker').toBe(90);
-    // Through it into gallery 529, let go once the body is clear of the leaves' sweep: it rests in the gallery, wherever the release lets it.
-    const clear = useStretch(door, 'back', OPEN_SHARE).near;
-    const inside = await holdPast(page, 'through Weston’s door into gallery 529', ['KeyW'], into529, alongXZ(axisPoint(door, 'back', clear - WALK_COAST), into529), samples);
+    expect((await doorIs(page, 'weston', 'open')).angle, 'a quarter turn inward, into the porch, away from the walker').toBe(90);
+    // Through it, the porch and the old front into gallery 529, let go a metre past the old front's inner face: it rests in the gallery, wherever the release lets it.
+    const gallery = B_SOUTH_X + OUTER_WALL;
+    const inside = await holdPast(page, 'through Weston’s door and its porch into gallery 529', ['KeyW'], into529, alongXZ([gallery + 1, door.middle[1]], into529), samples);
     expect(clearOfSwing(inside.eye, door), `metres the body at ${fmt(inside.eye)} keeps clear of all the leaves sweep`).toBeGreaterThan(0);
-    expect(along(inside.eye, door.normal), `in gallery 529 at ${fmt(inside.eye)}, a metre past the leaves' back face`).toBeLessThan(door.back - 1);
+    expect(inside.eye[0], `in gallery 529 at ${fmt(inside.eye)}, past the old front's inner face (X ${gallery.toFixed(2)})`).toBeGreaterThan(gallery + 0.5);
     expect(Math.abs(inside.eye[1] - (MAIN_FLOOR_Y + EYE)), `on gallery 529's floor at ${fmt(inside.eye)}`).toBeLessThan(0.02);
     expectThroughWestonsDoorway(door, samples);
     await expectClean(page, 'Weston’s door from the court', samples);
   });
 
-  test('Weston’s door from gallery 529, standing open (doors=open): shut by E on an open leaf, opened again by E straight on, toward the walker, and walked back through into the court', async ({ page }) => {
+  test('Weston’s door from inside its porch, standing open (doors=open): shut by E on an open leaf, opened again by E straight on, toward the walker, and walked back through into the court', async ({ page }) => {
     test.setTimeout(45_000 * throttleRate());
     const door = doorPlan('weston');
-    // On the axis in gallery 529, clear of the leaves' sweep, with the open leaf in reach and the closed door straight ahead within it.
+    // On the axis inside the porch, clear of the leaves' sweep, with the open leaf in reach and the closed door straight ahead within it; from gallery
+    // 529, past the old front, the open leaves are out of reach.
     const stretch = useStretch(door, 'back', OPEN_SHARE);
     const [x, z] = axisPoint(door, 'back', (stretch.near + Math.min(stretch.far, LOOK)) / 2);
-    await openAt(page, 'weston-door-from-529', [x, MAIN_FLOOR_Y, z], [stretch.leaf[0], MAIN_FLOOR_Y + EYE, stretch.leaf[1]], '&doors=open');
-    expect(await doorFacts(page, 'weston'), 'open at load into wing B, its default with doors=open').toMatchObject({ state: 'open', angle: 90 });
+    expect(x, 'in the porch, before the old front').toBeLessThan(B_SOUTH_X);
+    await openAt(page, 'weston-door-from-the-porch', [x, MAIN_FLOOR_Y, z], [stretch.leaf[0], MAIN_FLOOR_Y + EYE, stretch.leaf[1]], '&doors=open');
+    expect(await doorFacts(page, 'weston'), 'open at load, inward, its default with doors=open').toMatchObject({ state: 'open', angle: 90 });
     const samples: Sample[] = [];
     await looksAt(page, 'weston', 'E Close');
     await page.keyboard.press('KeyE');
-    expect(await doorIs(page, 'weston', 'closed'), 'shut from gallery 529').toMatchObject({ state: 'closed', angle: 0 });
+    expect(await doorIs(page, 'weston', 'closed'), 'shut from inside the porch').toMatchObject({ state: 'closed', angle: 0 });
     // Turned to face it along its axis, straight on: "E Open", and E swings it toward the walker, the one way it opens; back through it into the court.
     await face(page, yawFor(door.normal));
     await looksAt(page, 'weston', 'E Open');
     await page.keyboard.press('KeyE');
-    expect((await doorIs(page, 'weston', 'open')).angle, 'open again into wing B, toward the walker, the one way it opens').toBe(90);
-    // Out through the porch the doorway runs through, let go once past the court's place where the walk from the court sets out (review 0, F0).
-    const court = await holdPast(page, 'back through Weston’s door and its porch into the court', ['KeyW'], door.normal, alongXZ(WESTON_APPROACH, door.normal), samples);
+    expect((await doorIs(page, 'weston', 'open')).angle, 'open again inward, toward the walker, the one way it opens').toBe(90);
+    // Out into the court, let go once past the court's place where the walk from the court sets out (work unit 17, review 0, F0).
+    const court = await holdPast(page, 'back through Weston’s door into the court', ['KeyW'], door.normal, alongXZ(WESTON_APPROACH, door.normal), samples);
     expect(Math.abs(court.eye[1] - (MAIN_FLOOR_Y + EYE)), `back in the court at ${fmt(court.eye)}`).toBeLessThan(0.02);
     expectThroughWestonsDoorway(door, samples);
-    await expectClean(page, 'Weston’s door from gallery 529', samples);
+    await expectClean(page, 'Weston’s door from inside its porch', samples);
   });
 
   test('R5’s doorway into gallery 600: the walker placed in it stands on the second floor', async ({ page }) => {

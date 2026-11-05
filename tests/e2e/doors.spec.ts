@@ -14,7 +14,9 @@
  * standing and then walking to and fro before it through two full open and close cycles (W and S held in turn, the eye moving), and in the entrance bay
  * behind them, its doors standing open (`doors=open`), facing out while it closes and opens, the slowest frame of each swing, and of the walk, takes
  * under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under 16.7 ms (review 0, F9; review 5, F23 and F24;
- * review 8, F32). Walking up to the doors and through them is ./routes.spec.ts's.
+ * review 8, F32); and Weston's door, whose leaves cast a shadow, so that every frame of its swing redraws the shadows: 0.5 m before it in the Petrie
+ * Court, opening and closing, and inside its porch, closing it facing across the porch and opening it facing out, the slowest frame of each swing,
+ * standing, takes under 16.7 ms of work (work unit 18; the walking frames during a swing are timed at the entrance alone). Walking up to the doors and through them is ./routes.spec.ts's.
  * Red proofs: docs/learning/gate-proofs.md, under this file.
  * Bound: each place enters walk mode at load, with no user gesture, so the pointer stays free, drags turn the view and the mouse reaches the
  * bar; the locked click is the browser's own lock, which the headless system Chrome grants a click of the view (work unit 14). A frame's work is timed by a
@@ -35,7 +37,7 @@ import { spawnById } from '../../src/walk/spawns.js';
 import { BODY } from '../../src/walk/walker.js';
 import { changedCells, lumaGrid, lockPointer, open, openReplay, press, settle, watchErrors } from './helpers.js';
 import type { Facts } from './helpers.js';
-import { feetOn, standAt } from './route-places.js';
+import { axisPoint, doorPlan, feetOn, leafPoint, LOOK, standAt, useStretch } from './route-places.js';
 import { along, doorFacts, doorIs, entranceLeaves, face, looksAt, MIDDLE_DOOR, record, still, toward } from './route-walk.js';
 import type { DoorFact, Facing, Sample } from './route-walk.js';
 
@@ -216,6 +218,39 @@ async function scrubTo(page: Page, t: number, n: number): Promise<void> {
   await page.mouse.up();
 }
 
+/** Times every requestAnimationFrame callback, the page's frame among them, from before the page's own scripts run. */
+async function timeFrames(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const raf = window.requestAnimationFrame.bind(window);
+    const log: [number, number][] = [];
+    (window as unknown as { frameWork: [number, number][] }).frameWork = log;
+    window.requestAnimationFrame = (callback) => raf((now) => {
+      const start = performance.now();
+      callback(now);
+      log.push([start, performance.now() - start]);
+    });
+  });
+}
+
+/** The work of every frame timed (`timeFrames`) between the page's clock readings `from` and `to`, milliseconds. */
+function frameWork(page: Page, from: number, to: number): Promise<number[]> {
+  return page.evaluate(([a, b]) => (window as unknown as { frameWork: [number, number][] }).frameWork.filter(([t]) => t >= a && t <= b).map(([, ms]) => ms), [from, to] as const);
+}
+
+/** Presses E and times every frame until door `id` stands `state`: the slowest frame's work, from more than 20 frames, under 16.7 ms. */
+async function timeSwing(page: Page, id: string, state: string, where: string): Promise<DoorFact> {
+  const from = await page.evaluate(() => performance.now());
+  await page.keyboard.press('KeyE');
+  const door = await doorIs(page, id, state);
+  const to = await page.evaluate(() => performance.now());
+  const frames = await frameWork(page, from, to);
+  const slowest = Math.max(...frames);
+  console.log(`a swing ${where}: ${String(frames.length)} frames, slowest ${slowest.toFixed(2)} ms of work`);
+  expect(frames.length, `${where}: frames timed over the swing`).toBeGreaterThan(20);
+  expect(slowest, `${where}: the slowest frame of the swing`).toBeLessThan(16.7);
+  return door;
+}
+
 test.describe('the doors', () => {
   test('the entrance: E Open, E swings it into the building; E Close on an open leaf, a locked click closes it; the scrubber shows the closed leaf, then the door as it was', async ({ page }) => {
     const errors = watchErrors(page);
@@ -372,33 +407,9 @@ test.describe('the doors', () => {
   test('facing into the Great Hall, standing and walking through two door cycles, and in it facing out, the slowest frame of a swing takes under 16.7 ms of work (review 0, F9; review 5, F23)', async ({ page }) => {
     // Two places, four timed swings and two door cycles walked: about 12 s here (11.6 to 12.4 s in three runs, 2026-10-30); four times the slowest for a loaded machine.
     test.setTimeout(50_000);
-    // Times every requestAnimationFrame callback, the page's frame among them, from before the page's own scripts run.
-    await page.addInitScript(() => {
-      const raf = window.requestAnimationFrame.bind(window);
-      const log: [number, number][] = [];
-      (window as unknown as { frameWork: [number, number][] }).frameWork = log;
-      window.requestAnimationFrame = (callback) => raf((now) => {
-        const start = performance.now();
-        callback(now);
-        log.push([start, performance.now() - start]);
-      });
-    });
-    /** The work of every frame timed between the page's clock readings `from` and `to`, milliseconds. */
-    const work = (from: number, to: number): Promise<number[]> =>
-      page.evaluate(([a, b]) => (window as unknown as { frameWork: [number, number][] }).frameWork.filter(([t]) => t >= a && t <= b).map(([, ms]) => ms), [from, to] as const);
-    /** Presses E and times every frame until the middle doorway stands `state`: the slowest frame's work, from more than 20 frames, under 16.7 ms. */
-    const timedSwing = async (state: string, where: string): Promise<DoorFact> => {
-      const from = await page.evaluate(() => performance.now());
-      await page.keyboard.press('KeyE');
-      const door = await doorIs(page, MIDDLE, state);
-      const to = await page.evaluate(() => performance.now());
-      const frames = await work(from, to);
-      const slowest = Math.max(...frames);
-      console.log(`a swing ${where}: ${String(frames.length)} frames, slowest ${slowest.toFixed(2)} ms of work`);
-      expect(frames.length, `${where}: frames timed over the swing`).toBeGreaterThan(20);
-      expect(slowest, `${where}: the slowest frame of the swing`).toBeLessThan(16.7);
-      return door;
-    };
+    await timeFrames(page);
+    const work = (from: number, to: number): Promise<number[]> => frameWork(page, from, to);
+    const timedSwing = (state: string, where: string): Promise<DoorFact> => timeSwing(page, MIDDLE, state, where);
     const errors = watchErrors(page);
     // Before the doors, facing into the Great Hall through the doorway, its hall in view: open, then close by the open leaf, each swing timed.
     const { at } = await atTheEntrance(page);
@@ -442,6 +453,36 @@ test.describe('the doors', () => {
     await face(page, toward(inside.at.eye, 0.35, DOOR_Z));
     await looksAt(page, MIDDLE, 'E Open');
     expect((await timedSwing('open', 'in the Great Hall, facing out')).angle, 'away from the walker inside: out toward the plaza').toBe(-90);
+    errors.expectClean();
+  });
+
+  test('Weston’s door, its leaves casting a shadow: the slowest frame of its swing, which redraws the shadows, takes under 16.7 ms of work, from the Petrie Court, opening and closing, and inside its porch, closing across it and opening facing out (work unit 18)', async ({ page }) => {
+    test.setTimeout(40_000);
+    await timeFrames(page);
+    const errors = watchErrors(page);
+    const door = doorPlan('weston');
+    // On its axis 0.5 m before its leaves, between the porch's pedestals, looking at a leaf at the eye's height: the porch, its doorway and the court in view.
+    const [x, z] = axisPoint(door, 'front', 0.5);
+    const closed = leafPoint(door, 'closed', 'front', 0.5);
+    const { at } = await standAt(page, 'before Weston’s door', [x, MAIN_FLOOR_Y, z], [closed[0], MAIN_FLOOR_Y + BODY.eye, closed[1]]);
+    await looksAt(page, 'weston', 'E Open');
+    expect((await timeSwing(page, 'weston', 'open', 'Weston’s door opening, from the court')).angle, 'inward, away from the walker').toBe(90);
+    // Turned onto the open leaf near its hinge, in reach through the doorway: E closes it.
+    const open = leafPoint(door, 'open', 'back', 0.15);
+    await face(page, toward(at.eye, open[0], open[1]));
+    await looksAt(page, 'weston', 'E Close');
+    expect((await timeSwing(page, 'weston', 'closed', 'Weston’s door closing, from the court')).angle).toBe(0);
+    // Inside the porch on the door's axis, midway along the stretch clear of the swing with an open leaf in reach (./route-places.ts `useStretch`, 0.9 of
+    // the leaf's width out, as ./routes.spec.ts's walk back takes it), standing open (doors=open): closed looking across the porch at that leaf, then,
+    // facing out, opened toward the walker.
+    const stretch = useStretch(door, 'back', 0.9);
+    const [ix, iz] = axisPoint(door, 'back', (stretch.near + Math.min(stretch.far, LOOK)) / 2);
+    const inside = await standAt(page, 'inside Weston’s porch', [ix, MAIN_FLOOR_Y, iz], [stretch.leaf[0], MAIN_FLOOR_Y + BODY.eye, stretch.leaf[1]], '&doors=open');
+    await looksAt(page, 'weston', 'E Close');
+    expect((await timeSwing(page, 'weston', 'closed', 'Weston’s door closing, inside its porch facing out')).angle).toBe(0);
+    await face(page, toward(inside.at.eye, door.middle[0], door.middle[1]));
+    await looksAt(page, 'weston', 'E Open');
+    expect((await timeSwing(page, 'weston', 'open', 'Weston’s door opening, inside its porch facing out')).angle, 'inward, toward the walker').toBe(90);
     errors.expectClean();
   });
 });

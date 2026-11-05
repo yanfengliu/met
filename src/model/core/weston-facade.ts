@@ -19,7 +19,7 @@ import { B_SOUTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, L1, L2, LG, OUTER_WALL, PAR
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, placed } from './shapes.js';
 import { WALL_BASE_Y } from './vaux-front.js';
-import { DOOR, PORCH_REACH, westonRailing } from './weston-porch.js';
+import { DOOR, DOOR_FRAME_OUT, PORCH_REACH, westonRailing } from './weston-porch.js';
 import { GROUND_WINDOW, MAIN_WINDOW, wingWindows, type Elevation, elevationBox } from './wings-walls.js';
 
 const CENTRE_Z = (WEST_Z + EAST_Z) / 2;
@@ -43,16 +43,17 @@ const BESIDE_PORCH = PORCH_REACH.sides + 0.1;
  * The 1888 entrance door (src/model/doors.ts `weston`): a pair of wooden panelled leaves rising to a square head, with no fanlight, which open into the
  * building only (interior.md, Weston's 1888 door). Every source that shows the head shows it square, in a moulded stone architrave: the Petrie Court
  * photographs (interior-images.md #33 at full size; Heckscher fig. 110, 1995), the porch's drawing of April 1888 and the approved elevation of 1885
- * (Heckscher figs. 29 and 28). #33 shows the east leaf a quarter turn open into wing B, the gap at its hinge side lit and crossed by its hinges, and
- * #33 and fig. 110 show stone in the reveals. The opening is the drawing's, 3.29 × 4.91 m (weston-porch.ts `DOOR`), at the porch's front in its
- * architrave, through the porch to the leaves in this wall, 0.3 m behind its face. The reveals and the head's soffit are lined in stone `lining` thick
- * through the wall, over a stone threshold `threshold` deep, as the gallery 600 doorway is (vaux-shell.ts).
+ * (Heckscher figs. 29 and 28). #33 shows the east leaf a quarter turn open inward, the gap at its hinge side lit and crossed by its hinges about 0.35 m
+ * behind the architrave's face, and #33 and fig. 110 show stone in the reveals. The opening is the drawing's, 3.29 × 4.91 m (weston-porch.ts `DOOR`),
+ * and the frame and leaves stand in it near the porch's front, so the leaves open into the porch, toward wing B (the owner, 2026-11-04). Behind the
+ * porch the doorway runs on through this wall, its reveals and head's soffit lined in stone `lining` thick, over a stone threshold `threshold` deep, as
+ * the gallery 600 doorway is (vaux-east.ts).
  */
-/** The door's opening and its lining's outside, in the pavilion wall's frame: the pavilion's hole is the lining's outside, cut down to the threshold. */
+/** The wall's opening and its lining's outside, in the pavilion wall's frame: the pavilion's hole is the lining's outside, cut down to the threshold. */
 const DOOR_OPENING: Hole = { y: L1 - WALL_BASE_Y, width: DOOR.width, height: DOOR.height };
 const DOOR_LINED: Hole = { y: L1 - WALL_BASE_Y, width: DOOR.width + 2 * DOOR.lining, height: DOOR.height + DOOR.lining };
-/** The 1888 entrance door into the Petrie Court: the plane of its frame (X), its middle (Z) and its width, for what must keep clear of it and its swing. */
-export const WESTON_DOOR = { x: B_SOUTH_X + 0.3, z: CENTRE_Z, width: DOOR.width } as const;
+/** The 1888 entrance door into the Petrie Court: the plane of its frame's front (X), its middle (Z) and its width, for what must keep clear of it and its swing. */
+export const WESTON_DOOR = { x: B_SOUTH_X - DOOR_FRAME_OUT, z: CENTRE_Z, width: DOOR.width } as const;
 
 function westonBay(): BufferGeometry {
   const holes: Hole[] = [
@@ -159,7 +160,7 @@ export function westonTrim(kit: Kit): void {
   });
   const w = PAVILION_WINDOW;
   kit.add(bigRing, stone, placed(B_SOUTH_X, L2 + w.spring, CENTRE_Z, FACING.south), 7);
-  // The door's reveals and soffit, lined through the wall behind the porch's doorway, on its threshold.
+  // The doorway's reveals and soffit, lined through the wall behind the porch, on its threshold.
   kit.add(holeLining(DOOR_LINED, DOOR_OPENING, OUTER_WALL), stone, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 4);
   addBox(kit, stone, B_SOUTH_X, L1 - DOOR.threshold, CENTRE_Z - DOOR_LINED.width / 2, B_SOUTH_X + OUTER_WALL, L1, CENTRE_Z + DOOR_LINED.width / 2, 4);
   for (const x of [-3.6, 3.6]) {
@@ -171,7 +172,7 @@ export function westonTrim(kit: Kit): void {
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
 }
 
-/** Windows of the facade and the pavilion, the entrance door, and the railing of the porch's balcony (weston-porch.ts). */
+/** Windows of the facade and the pavilion, the entrance door in the porch's doorway, and the railing of the porch's balcony (weston-porch.ts). */
 export function westonOpenings(kit: Kit): void {
   const { main, ground } = wingWindows();
   const arched = windowUnit({ width: WESTON_ARCH_SPAN, height: WESTON_ARCH_SPRING - ARCH_SILL + WESTON_ARCH_SPAN / 2, shape: 'arch', cols: 3, rows: 3 });

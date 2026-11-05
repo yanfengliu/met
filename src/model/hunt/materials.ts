@@ -61,7 +61,7 @@ export const hunt = Object.freeze({
   /**
    * The bronze of the central doors' leaves, which open (src/model/doors.ts): solid, and casting no shadow, so a swing's frames redraw no shadows. With
    * a shadow pass on each, facing into the Great Hall a swing's frame took 1,285 draw calls instead of 654; the shadow given up is faint, at most 15 of
-   * 255 in a channel, just inside the open doorways (docs/design/spec.md, Doors: The layer; work unit 2, review 5, F23).
+   * 255 in a channel, just inside the open doorways (docs/design/spec.md, Doors: The leaves' shadows; work unit 2, review 5, F23).
    */
   doorLeafBronze: shadowless(named(palette.bronze, 'huntDoorLeafBronze')),
 });

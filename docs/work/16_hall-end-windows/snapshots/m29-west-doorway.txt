@@ -1,0 +1,22 @@
+# #29 (MM29152, 3206 x 4000): the hall's west doorway, seen through the screen's open gate, read on the original at native resolution in the browser, 2026-11-04.
+# Each jamb meets the opening at a dark line, under the inner end of the jamb's capital; outside it a lighter strip about 12 px wide, then a second dark line, the pilaster's edge.
+# Each row: the band's first row (10 rows, mean luminance), then the left and right inner lines and the left and right outer lines (x, pixels), each the minimum of the band's
+# profile within a window (1444-1454, 1731-1739, 1430-1438, 1745-1752), located to a fraction of a pixel by a parabola through the three lowest values.
+D 2980 1448.6 1735.3 1433.6 1749.8
+D 2990 1448.7 1735.2 1432.1 1749.9
+D 3000 1448.6 1735.2 1434.0 1748.9
+D 3010 1448.6 1735.3 1434.2 1748.8
+D 3020 1448.7 1735.2 1434.2 1749.2
+D 3030 1448.6 1735.2 1433.8 1749.4
+D 3040 1448.7 1735.2 1434.0 1749.3
+D 3050 1448.6 1735.2 1433.9 1749.3
+D 3060 1448.6 1735.2 1433.9 1749.4
+D 3070 1448.7 1735.2 1433.7 1750.8
+D 3080 1448.3 1735.3 1433.9 1749.0
+D 3090 1448.3 1735.2 1433.8 1749.1
+D 3100 1447.8 1735.1 1433.6 1749.3
+D 3110 1447.8 1735.3 1433.6 1749.4
+D 3120 1447.9 1735.3 1433.7 1749.4
+D 3130 1447.8 1735.3 1433.7 1749.4
+D 3140 1447.7 1735.5 1432.0 1749.5
+D 3150 1447.7 1735.3 1433.7 1749.2

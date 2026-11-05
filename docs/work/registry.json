@@ -66,8 +66,16 @@
       "theme": "vaux-fronts"
     },
     {
+      "id": 16,
+      "theme": "hall-end-windows"
+    },
+    {
       "id": 17,
       "theme": "weston-porch"
+    },
+    {
+      "id": 18,
+      "theme": "weston-leaves"
     }
   ]
 }

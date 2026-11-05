@@ -1,0 +1,166 @@
+"""Recompute the end-window measurements from the pixel readings taken in the browser (2026-11-04)."""
+import math, itertools
+
+# ---------------- P8 (1944x2592, Nikon Coolpix P5000 at 7.5 mm) ----------------
+CX, CY = 972.0, 1296.0
+def t_of(v, f, yv, k):
+    dy = v - CY
+    vu = CY + dy * (1 + k * dy * dy)          # undo barrel distortion along the centre column
+    th = math.atan(f / (CY - yv))             # pitch from the balusters' vertical vanishing point
+    b = math.atan((CY - vu) / f)
+    return math.tan(th + b), th, th + b, b
+
+FRIEZES = [(653.42, 10.59), (994.67, 8.38), (1112.68, 7.71), (1602.94, 5.09)]   # rows at x=972 and #29's heights
+def fit_screen(f, yv, k):
+    pts = [(t_of(v, f, yv, k)[0], h) for v, h in FRIEZES]
+    n = len(pts); st = sum(p[0] for p in pts); sh = sum(p[1] for p in pts)
+    stt = sum(p[0] ** 2 for p in pts); sth = sum(p[0] * p[1] for p in pts)
+    ds = (n * sth - st * sh) / (n * stt - st * st); hc = (sh - ds * st) / n
+    rms = math.sqrt(sum((h - (hc + ds * t)) ** 2 for t, h in pts) / n)
+    return ds, hc, rms
+
+def p8(f=2700, yv=-5421, k=1.5e-8, D=22.80, setback=0.3):
+    ds, hc, rms = fit_screen(f, yv, k)
+    dw = ds + D                                # camera to the east wall's inner face
+    ring_mid = hc + t_of(1244.6, f, yv, k)[0] * dw
+    ring_top = hc + t_of(1133.2, f, yv, k)[0] * dw
+    ring_bot = hc + t_of(1356.0, f, yv, k)[0] * dw
+    g_top = hc + t_of(1183.0, f, yv, k)[0] * (dw + setback)
+    g_bot = hc + t_of(1324.0, f, yv, k)[0] * (dw + setback)
+    # horizontal glazing at the window's row: x scale = f / z_cam, z_cam = d cos(a-th)/cos a
+    _, th, a, b = t_of(1254.6, f, yv, k)
+    zc = (dw + setback) * math.cos(a - th) / math.cos(a)
+    g_h = 148.0 * zc / f
+    ring_h = 220.0 * dw * math.cos(t_of(1244.6, f, yv, k)[2] - th) / math.cos(t_of(1244.6, f, yv, k)[2]) / f
+    horizon = CY + f * math.tan(th)
+    return dict(ds=ds, hc=hc, rms=rms, dw=dw, cam_z=-106.12 - ds, theta=math.degrees(th), horizon=horizon,
+                ring_centre=ring_mid, ring_vert=ring_top - ring_bot, glaz_vert=g_top - g_bot, glaz_centre=(g_top + g_bot) / 2,
+                glaz_horiz=g_h, ring_horiz=ring_h)
+
+nom = p8()
+print('P8 nominal:', {k: round(v, 3) for k, v in nom.items()})
+rows = []
+for f, yv, k, D in itertools.product([2670, 2700, 2730], [-5200, -5421, -5650], [0, 1.5e-8, 3e-8], [22.4, 22.8, 23.2]):
+    r = p8(f, yv, k, D); rows.append(r)
+for key in ['ring_centre', 'glaz_centre', 'ring_vert', 'glaz_vert', 'glaz_horiz', 'hc', 'ds', 'theta']:
+    vals = [r[key] for r in rows]
+    print(f'  P8 {key}: {min(vals):.2f} .. {max(vals):.2f}')
+# set-back sensitivity of the glazing's centre
+for s in (0.0, 0.3, 0.56):
+    print('  P8 set-back', s, 'glazing centre', round(p8(setback=s)['glaz_centre'], 2), 'vert', round(p8(setback=s)['glaz_vert'], 3), 'horiz', round(p8(setback=s)['glaz_horiz'], 3))
+
+# ---------------- #29 (3206x4000, level view camera, scale 176.04 px/m with 0.8%/1000 px tilt) ----------------
+G = 8e-6; Y0 = 2057.0
+S0 = math.log((1 + G * (3452 - Y0)) / (1 + G * (662 - Y0))) / (15.85 * G)
+def h_screen(y):  # apparent height at the screen's plane of image row y
+    return math.log((1 + G * (3452 - Y0)) / (1 + G * (y - Y0))) / (S0 * G)
+def s_at(y): return S0 * (1 + G * (y - Y0))
+print('#29 s0', round(S0, 3), 'check cross', round(h_screen(662), 3))
+
+FRAME_W = 2670.0          # east doorway's intrados at its west face, x 249..2919 (rows 2100-3300)
+DOOR = 2.28               # both end doorways on the Met's map
+D_EAST_TO_SCREEN = 22.70  # doorway's west face (Z -83.32) to the screen's front (map line -106.12, front ~0.1 m east)
+D_SCREEN_TO_WEST = 11.61  # screen's front to the west wall's inner face (Z -117.63)
+def m29(frame_w=FRAME_W, d_es=D_EAST_TO_SCREEN, d_sw=D_SCREEN_TO_WEST, base_off=0.15, thr=3299.0, base=3452.5, setback=0.5, s_scale=None):
+    s_mid = s_at(2700) if s_scale is None else s_scale
+    # frame_w = f*DOOR/d_east, f = s_mid*ds, ds = d_east + d_es
+    d_east = s_mid * d_es / (frame_w / DOOR - s_mid)
+    ds = d_east + d_es; f = s_mid * ds
+    dw = ds + d_sw
+    r = dw / ds
+    f_floor = s_at((base + thr) / 2) * ds
+    hc = (base - thr) / (f_floor * (1 / (ds - base_off) - 1 / dw))
+    ring_c = h_screen(1323.4); frame_c = h_screen(1346.2)
+    hw = hc + (ring_c - hc) * r
+    ring_d_h = 2 * 209.5 / s_at(1323.4); ring_d_v = h_screen(1323.4 - 209.5) - h_screen(1323.4 + 209.5)
+    gl_out = 2 * 137.2 / s_at(1346.2); gl_mid = 2 * 134.6 / s_at(1346.2); gl_in = 2 * 132.1 / s_at(1346.2)
+    rg = (dw + setback) / ds
+    # set-back implied by the frame's centre showing lower than the ring's
+    s_impl = (frame_c - hc) and ((hw - hc) / (frame_c - hc) * ds - dw)
+    west_door_near = f * DOOR / dw; west_door_far = f * DOOR / (dw + 1.15)
+    return dict(d_east=d_east, ds=ds, f=f, dw=dw, r=r, hc=hc, ring_c_app=ring_c, frame_c_app=frame_c, hw=hw,
+                ring_h=ring_d_h * r, ring_v=ring_d_v * r, gl_out=gl_out * rg, gl_mid=gl_mid * rg, gl_in=gl_in * rg,
+                setback_implied=s_impl, west_door_near_px=west_door_near, west_door_far_px=west_door_far, cam_z=-83.32 + d_east)
+n29 = m29()
+print('#29 nominal:', {k: round(v, 3) for k, v in n29.items()})
+vals = []
+for fw, des, dsw, bo, thr in itertools.product([2670 * 0.9, 2670, 2670 * 1.1], [22.55, 22.70, 22.85], [11.31, 11.61, 11.91], [0.0, 0.15, 0.3], [3296, 3299, 3302]):
+    vals.append(m29(fw, des, dsw, bo, thr))
+for key in ['hw', 'ds', 'hc', 'r', 'ring_h', 'gl_out']:
+    v = [x[key] for x in vals]
+    print(f'  #29 {key}: {min(v):.2f} .. {max(v):.2f}')
+# combined
+a, sa = nom['ring_centre'], 0.55
+b, sb = n29['hw'], 0.20
+w = (a / sa ** 2 + b / sb ** 2) / (1 / sa ** 2 + 1 / sb ** 2)
+print('combined centre over floor', round(w, 2), '+/-', round((1 / sa ** 2 + 1 / sb ** 2) ** -0.5, 2), 'world Y', round(4.11 + w, 2))
+# what P8's camera would see with the screen at the map's place: window centre projected onto the screen's plane
+for hw in (16.19, 17.29):
+    t = (hw - nom['hc']) / nom['dw']
+    print('  P8 projection of a window at', hw, 'on the screen plane:', round(nom['hc'] + t * nom['ds'], 2), 'm')
+# the preset (camera Z -112.9, eye 1.6) with the model's screen at -99.4 and the east wall at -83.32
+for hw in (16.19, 17.29):
+    print('  preset projection at', hw, ':', round(1.6 + (hw - 1.6) * (112.9 - 99.4) / (112.9 - 83.32), 2), 'm')
+
+# ---------------- P8's north arcade: three apexes read by eye on enhanced crops ----------------
+def level(u, v, f=2700, yv=-5421, xv=1060.6, k=1.5e-8):
+    du, dv = u - CX, v - CY
+    r2 = du * du + dv * dv
+    du, dv = du * (1 + k * r2), dv * (1 + k * r2)
+    phi = math.atan2(xv - CX, CY - yv)          # roll from the vertical vanishing point's side offset
+    th = math.atan(f / math.hypot(xv - CX, CY - yv))
+    # un-roll (rotate image coords by -phi)
+    du2 = du * math.cos(phi) - dv * math.sin(phi)
+    dv2 = du * math.sin(phi) + dv * math.cos(phi)
+    cx_, cy_, cz_ = du2, -dv2, f                 # camera ray: right, up, forward
+    wy = cy_ * math.cos(th) + cz_ * math.sin(th)
+    wz = -cy_ * math.sin(th) + cz_ * math.cos(th)
+    return cx_ / wz, wy / wz                     # s (lateral), t (elevation) tangents in the level frame
+apex = [(120, 1810), (311, 1904), (427, 1981)]
+st = [level(u, v) for u, v in apex]
+inv = [1 / abs(s) for s, t in st]                # = d/X
+n = [0, 1, 2]
+mn, mi = sum(n) / 3, sum(inv) / 3
+slope = sum((a - mn) * (b - mi) for a, b in zip(n, inv)) / sum((a - mn) ** 2 for a in n)
+icpt = mi - slope * mn
+X = 5.65 / slope
+ds_ = [X * (icpt + slope * k) for k in n]
+hs_ = [nom['hc'] + t * d for (s, t), d in zip(st, ds_)]
+print('arcade: s,t', [(round(s, 4), round(t, 4)) for s, t in st], 'X', round(X, 2), 'd', [round(d, 2) for d in ds_], 'apex h', [round(h, 2) for h in hs_],
+      'residual 1/s', [round(v - (icpt + slope * k), 4) for v, k in zip(inv, n)])
+print('model screen place: east wall from this camera', round(-83.32 - (-99.4 - nom['ds']), 2))
+
+# ---------------- P8 check of the pitch: a man walking at the far end (head 2349, feet 2496, by eye, x ~705) ----------------
+print('man walking: VP row -> pitch, camera eye, his height and distance, east window centre')
+for yv in (-5000, -5100, -5200, -5300, -5421, -5550, -5650, -5800):
+    for k in (1.5e-8,):
+        ds, hc, rms = fit_screen(2700, yv, k)
+        th_ = t_of(1296, 2700, yv, k)[1]
+        s_h, t_h = level(705, 2349, 2700, yv, 1060.6, k)
+        s_f, t_f = level(705, 2496, 2700, yv, 1060.6, k)
+        H = hc * (1 - t_h / t_f); d = -hc / t_f
+        print(f'  yv {yv}: pitch {math.degrees(th_):.2f}, eye {hc:.2f}, man {H:.2f} m at {d:.1f} m, window {p8(2700, yv, k)["ring_centre"]:.2f}')
+
+# ---------------- P8 range with the pitch held to the man's height (1.65 to 1.90 m) ----------------
+def man_height(f, yv, k):
+    ds, hc, rms = fit_screen(f, yv, k)
+    s_h, t_h = level(705, 2349, f, yv, 1060.6, k)
+    s_f, t_f = level(705, 2496, f, yv, 1060.6, k)
+    return hc * (1 - t_h / t_f)
+lo_hi = []
+for f, k, D in itertools.product([2670, 2700, 2730], [0, 1.5e-8, 3e-8], [22.4, 22.8, 23.2]):
+    for yv in range(-6200, -4800, 10):
+        H = man_height(f, yv, k)
+        if 1.65 <= H <= 1.90:
+            r = p8(f, yv, k, D)
+            lo_hi.append((r['ring_centre'], r['glaz_vert'], r['glaz_horiz'], math.degrees(t_of(1296, f, yv, k)[1])))
+print('P8 with the man 1.65-1.90 m: centre %.2f..%.2f, glazing vert %.2f..%.2f, horiz %.2f..%.2f, pitch %.2f..%.2f' % (
+    min(x[0] for x in lo_hi), max(x[0] for x in lo_hi), min(x[1] for x in lo_hi), max(x[1] for x in lo_hi), min(x[2] for x in lo_hi), max(x[2] for x in lo_hi), min(x[3] for x in lo_hi), max(x[3] for x in lo_hi)))
+a, sa = nom['ring_centre'], 0.25
+w = (a / sa ** 2 + b / sb ** 2) / (1 / sa ** 2 + 1 / sb ** 2)
+print('combined with P8 +/-0.25: %.2f +/- %.2f, world %.2f' % (w, (1 / sa ** 2 + 1 / sb ** 2) ** -0.5, 4.11 + w))
+
+# ---------------- #29: the west doorway's width at the map's screen place against the model's ----------------
+for name, d_es, d_sw in (('map place (Z -106.12)', 22.70, 11.61), ('model place (Z -99.4)', -83.32 + 99.3, -99.3 + 117.63)):
+    r = m29(d_es=d_es, d_sw=d_sw)
+    print(f'#29 {name}: camera {r["ds"]:.2f} m from the screen, west doorway {r["west_door_far_px"]:.0f} to {r["west_door_near_px"]:.0f} px, west window centre {r["hw"]:.2f} m')

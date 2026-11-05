@@ -36,7 +36,8 @@ export const VAUX_HALL_WEST_Z = -117.63; // map gallery 305, west edge (the hall
 export const VAUX_HALL_EAST_Z = -83.32; // map gallery 305, east edge
 export const VAUX_HALL_WALL = 1.1; // the hall's end walls; the map leaves 1.15 m between 520 and 305
 export const VAUX_WEST_PAVILION_WALL_Z = -127.0; // map: the wall between galleries 521 and 520
-export const VAUX_OCULUS_Y = 21.4; // E: centre of the hall's round end windows, 2.4 m across (P8: one high over the end doorway)
+export const VAUX_OCULUS_Y = 20.3; // centre of the hall's round end windows, 16.2 m over its floor, measured on interior-images.md #P8 and #29: the east window 16.8 m up (16.0 to 17.5 over its inputs), the west 16.0 m (15.6 to 16.4), one height for the pair, their average weighted by the inverse squares of the ranges' halves, rounded (interior.md, Medieval Sculpture Hall, "End windows")
+export const VAUX_OCULUS = 2.25; // the windows' glazed opening across, to the iron frame's outer edge: 2.13 and 2.21 m east and 2.26 m west in the same photographs; each sits in a splayed plaster reveal about 3.4 m across at the wall's inner face, not built: it would sit inside the gable wall's brick (docs/work/16_hall-end-windows, F-owner-4)
 // The 1880 arch, as the west front shows it from the Lehman court (exterior-images.md #60 read at native size, 2026-11-04; #61 for its orders;
 // exterior.md section 9): the same arch on the west front, the hall's bays of the side walls and the east front. #60's camera, solved from the landing's
 // row, a 1.70 m visitor on it and the map's 5.8 m bay at the springing's row (24.5 px/m there): about 630 px focal, 23.6 m out, pitched 36° up;

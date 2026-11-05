@@ -119,7 +119,7 @@ const GALLERY_199_TURN_Z = -66;
 const PETRIE_PASSAGE_X = (PETRIE_PASSAGE.a + PETRIE_PASSAGE.b) / 2;
 /** The middle of the court wall's opening from gallery 549 into the Petrie Court nearest the corridor, 3.6 m wide (src/model/roche-south/kravis.ts COURT_SOUTH). */
 export const COURT_OPENING_Z = -97.6;
-/** Where R7 ends: on Weston's door's axis 3.5 m out from its frame in the court, just before the porch's pedestals (src/model/core/weston-door.test.ts). */
+/** Where R7 ends: on Weston's door's axis 3.5 m out from its frame in the court, 3 m before the porch's pedestals (src/model/core/weston-door.test.ts). */
 export const WESTON_APPROACH: readonly [number, number] = [WESTON_DOOR.x - 3.5, WESTON_DOOR.z];
 
 /**
