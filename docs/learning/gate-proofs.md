@@ -86,6 +86,11 @@ With the work as committed, all pass: 14 tests unthrottled in 94 s, inside `npm 
 
 The late keys planted again on 2026-10-30, once work unit 2's next follow-up (reviews 28 on) had taken the lag learning and the stops out of `tests/e2e/route-keys.ts` and left `Keys` there: the short walk red, "at rest 2.45 m out from the leaves … where it can shut the door from 0.95 to 2.28 m out; it went on 1.64 m past where W was let go, 0.75 s of walking after its coast".
 
+Work unit 18 moved Weston's door to its porch's front, and its two walks with it (2026-11-04, review 0, F6): the walk from the court goes on through the porch into gallery 529, and the walk back starts inside the porch. The two proofs above that name Weston's door were planted again on that work's tree and undone, the two Weston tests running unthrottled:
+
+- The leaves' collision left closed while they swing (`door-world.ts` `pose`): both red, stuck in the doorway, the eye at X −51.98 before the leaves from the court and at X −51.22 behind them from the porch.
+- Weston's leaves out of the door world: from the Petrie Court, held at X −37.10 in wing B, 14.5 m past the leaves' face; the walk from the porch, which no closed leaf has to hold, green.
+
 ### `src/model/roche-north/walk.test.ts`
 
 - No trap at Dendur, from every start 2 m apart over the pool's water: red with the 0.6 m pool: 89 starts trapped.

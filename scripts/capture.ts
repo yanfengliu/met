@@ -35,9 +35,10 @@ const UI_VIEWPORTS = [
 const READY_TIMEOUT_MS = 90_000;
 /**
  * Cameras on the doors (`cam=` values, world metres): the entrance's three doorways from the landing a little north of the axis, at a walker's eye; the
- * Petrie Court's side of Weston's door; and the entrance from above and in front, for a cut at 6.5 m through its leaves.
+ * Petrie Court's side of Weston's door, aimed at the middle of its leaves' frame near the porch's front (X −51.66, src/model/core/weston-facade.ts
+ * `WESTON_DOOR`); and the entrance from above and in front, for a cut at 6.5 m through its leaves.
  */
-const DOOR_CAMS = { entrance: '2.2,5.6,8,0,6.2,-1.2', weston: '-57,5.8,-100.5,-49.4,6.4,-103.65', cut: '5,15,9,0,5.2,-2.5' } as const;
+const DOOR_CAMS = { entrance: '2.2,5.6,8,0,6.2,-1.2', weston: '-57,5.8,-100.5,-51.66,6.4,-103.65', cut: '5,15,9,0,5.2,-2.5' } as const;
 
 /** What the page publishes on `window.__met` that this script reads. */
 interface Facts {

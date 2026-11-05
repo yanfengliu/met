@@ -53,7 +53,7 @@ export const core = Object.freeze({
   aluminium: standard('core.aluminium', '#c3c7ca', 0.45, 0.6),
   /**
    * The wood of the 1888 door's leaves (weston-facade.ts), which open: the palette's wood, casting a shadow, unlike the Fifth Avenue entrance's leaves
-   * (docs/design/spec.md, Doors: No shadow from the leaves), so a swing's frames redraw the shadows. At the porch's front the page's one sun
+   * (docs/design/spec.md, Doors: The leaves' shadows), so a swing's frames redraw the shadows. At the porch's front the page's one sun
    * (src/viewer/sun.ts, from the south-east, 46° up) shines into the doorway past its east reveal: without the leaves it lights the passage's floor back to
    * 1.01 m out from the brick face and its west reveal back to 0.97 m, up to 4.65 m, so with no shadow from them 0.88 m² of that floor and 2.2 m² of that
    * reveal behind the closed leaves would be sunlit through a shut door (a probe through the finished model's casters, 2026-11-04, work unit 18).

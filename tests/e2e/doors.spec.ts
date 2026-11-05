@@ -14,9 +14,9 @@
  * standing and then walking to and fro before it through two full open and close cycles (W and S held in turn, the eye moving), and in the entrance bay
  * behind them, its doors standing open (`doors=open`), facing out while it closes and opens, the slowest frame of each swing, and of the walk, takes
  * under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under 16.7 ms (review 0, F9; review 5, F23 and F24;
- * review 8, F32); and 0.5 m before Weston's door in the Petrie Court, whose leaves cast a shadow, so that every frame of its swing redraws the
- * shadows, the slowest frame of its swing, opening and then closing, takes under 16.7 ms of work (work unit 18). Walking up to the doors and through
- * them is ./routes.spec.ts's.
+ * review 8, F32); and Weston's door, whose leaves cast a shadow, so that every frame of its swing redraws the shadows: 0.5 m before it in the Petrie
+ * Court and inside its porch facing out, the slowest frame of each swing, standing, opening and closing, takes under 16.7 ms of work (work unit 18;
+ * the walking frames during a swing are timed at the entrance alone). Walking up to the doors and through them is ./routes.spec.ts's.
  * Red proofs: docs/learning/gate-proofs.md, under this file.
  * Bound: each place enters walk mode at load, with no user gesture, so the pointer stays free, drags turn the view and the mouse reaches the
  * bar; the locked click is the browser's own lock, which the headless system Chrome grants a click of the view (work unit 14). A frame's work is timed by a
@@ -37,7 +37,7 @@ import { spawnById } from '../../src/walk/spawns.js';
 import { BODY } from '../../src/walk/walker.js';
 import { changedCells, lumaGrid, lockPointer, open, openReplay, press, settle, watchErrors } from './helpers.js';
 import type { Facts } from './helpers.js';
-import { axisPoint, doorPlan, feetOn, leafPoint, standAt } from './route-places.js';
+import { axisPoint, doorPlan, feetOn, leafPoint, LOOK, standAt, useStretch } from './route-places.js';
 import { along, doorFacts, doorIs, entranceLeaves, face, looksAt, MIDDLE_DOOR, record, still, toward } from './route-walk.js';
 import type { DoorFact, Facing, Sample } from './route-walk.js';
 
@@ -456,8 +456,8 @@ test.describe('the doors', () => {
     errors.expectClean();
   });
 
-  test('Weston’s door from the Petrie Court, its leaves casting a shadow: the slowest frame of its swing, which redraws the shadows, takes under 16.7 ms of work, opening and closing (work unit 18)', async ({ page }) => {
-    test.setTimeout(30_000);
+  test('Weston’s door, its leaves casting a shadow: the slowest frame of its swing, which redraws the shadows, takes under 16.7 ms of work, from the Petrie Court and from inside its porch facing out, opening and closing (work unit 18)', async ({ page }) => {
+    test.setTimeout(40_000);
     await timeFrames(page);
     const errors = watchErrors(page);
     const door = doorPlan('weston');
@@ -472,7 +472,15 @@ test.describe('the doors', () => {
     await face(page, toward(at.eye, open[0], open[1]));
     await looksAt(page, 'weston', 'E Close');
     expect((await timeSwing(page, 'weston', 'closed', 'Weston’s door closing, from the court')).angle).toBe(0);
+    // Inside the porch, where ./routes.spec.ts uses it, standing open (doors=open), facing out at the open leaf: closed by it, then opened toward the walker.
+    const stretch = useStretch(door, 'back', 0.9);
+    const [ix, iz] = axisPoint(door, 'back', (stretch.near + Math.min(stretch.far, LOOK)) / 2);
+    const inside = await standAt(page, 'inside Weston’s porch', [ix, MAIN_FLOOR_Y, iz], [stretch.leaf[0], MAIN_FLOOR_Y + BODY.eye, stretch.leaf[1]], '&doors=open');
+    await looksAt(page, 'weston', 'E Close');
+    expect((await timeSwing(page, 'weston', 'closed', 'Weston’s door closing, inside its porch facing out')).angle).toBe(0);
+    await face(page, toward(inside.at.eye, door.middle[0], door.middle[1]));
+    await looksAt(page, 'weston', 'E Open');
+    expect((await timeSwing(page, 'weston', 'open', 'Weston’s door opening, inside its porch facing out')).angle, 'inward, toward the walker').toBe(90);
     errors.expectClean();
   });
 });
-

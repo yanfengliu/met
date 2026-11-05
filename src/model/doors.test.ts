@@ -3,7 +3,8 @@
  * and every door tag names one of them; the door layer (src/viewer/doors.ts) builds over the real timeline, with stand-ins for the doors that open and
  * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's stand-ins and doorways counted (17 together; review 0, F9);
  * no leaf of the entrance's doors casts a shadow, so their swings ask for no shadow pass (review 5, F23), and Weston's leaves, at its porch's front, cast
- * one, so its swing asks for one at every frame (work unit 18; src/model/core/materials.ts `westonDoorWood`); with the layer attached and the doors used between
+ * one, so its swing asks for one at every frame, as the orbit view swings it and at every physics step of the walk, where E opens it (work unit 18;
+ * src/model/core/materials.ts `westonDoorWood`; red with the walk's steps reporting the frame alone, `DoorLayer.note`: review 0, F1); with the layer attached and the doors used between
  * random positions, the timeline's state stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door
  * from 2.5 m in front at t = N through the page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors'
  * pieces held shut in the door world), stops against its leaves (red with the locked doors' parts left out of the door world: 4.52 m past the north
@@ -120,14 +121,28 @@ describe('the model’s doors', () => {
     const westons = (mesh: InstancedMesh): boolean => !Array.isArray(mesh.material) && mesh.material === meshesOf.get('weston')?.[0]?.material;
     expect(layer.meshes.filter(westons), 'Weston’s stand-ins').not.toHaveLength(0);
     expect(layer.meshes.map((m) => m.castShadow), 'the stand-ins: Weston’s cast, the entrance’s not').toEqual(layer.meshes.map(westons));
-    // Each opened from in front: the entrance from its landing, Weston's door from the Petrie Court.
+    // Each opened from in front: the entrance from its landing, Weston's door from the Petrie Court; swung as the orbit view swings it (`sync`), and
+    // as walk mode, where E opens a door, swings it in the walker's physics steps and sets it at once (`advance`, `set`, `takeChange`; src/main.ts).
     for (const [id, from, frame] of [['hunt-entrance-middle', new Vector3(0, 5.2, 3), 'moved'], ['weston', new Vector3(WESTON_DOOR.x - 2, 5.7, WESTON_DOOR.z), 'shadows']] as const) {
+      const what = frame === 'moved' ? 'the frame, not the shadows' : 'the frame and the shadows';
       expect(layer.use(id, from), `${id} opens`).toBe(true);
       const frames: string[] = [];
       for (let k = 0; k < 50 && layer.facts().some((d) => d.state === 'opening'); k += 1) frames.push(layer.sync(timeline.n, 1 / 60));
-      expect(new Set(frames), `every frame of ${id}'s swing: ${frame === 'moved' ? 'the frame, not the shadows' : 'the frame and the shadows'}`).toEqual(new Set([frame]));
+      expect(new Set(frames), `every frame of ${id}'s swing: ${what}`).toEqual(new Set([frame]));
       expect(frames.length).toBeGreaterThan(30);
       layer.use(id, null);
+      layer.sync(timeline.n, 0, true);
+      layer.takeChange();
+      expect(layer.use(id, from), `${id} opens again, walking`).toBe(true);
+      const steps: string[] = [];
+      for (let k = 0; k < 100 && layer.facts().some((d) => d.state === 'opening'); k += 1) {
+        layer.advance(1 / 120, () => true);
+        steps.push(layer.takeChange());
+      }
+      expect(new Set(steps), `every physics step of ${id}'s swing while walking: ${what}`).toEqual(new Set([frame]));
+      expect(steps.length).toBeGreaterThan(60);
+      layer.set(id, 0);
+      expect(layer.takeChange(), `${id} set shut at once while walking: ${what}`).toBe(frame);
       layer.sync(timeline.n, 0, true);
     }
   });

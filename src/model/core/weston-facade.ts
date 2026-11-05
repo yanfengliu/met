@@ -47,7 +47,7 @@ const BESIDE_PORCH = PORCH_REACH.sides + 0.1;
  * behind the architrave's face, and #33 and fig. 110 show stone in the reveals. The opening is the drawing's, 3.29 × 4.91 m (weston-porch.ts `DOOR`),
  * and the frame and leaves stand in it near the porch's front, so the leaves open into the porch, toward wing B (the owner, 2026-11-04). Behind the
  * porch the doorway runs on through this wall, its reveals and head's soffit lined in stone `lining` thick, over a stone threshold `threshold` deep, as
- * the gallery 600 doorway is (vaux-shell.ts).
+ * the gallery 600 doorway is (vaux-east.ts).
  */
 /** The wall's opening and its lining's outside, in the pavilion wall's frame: the pavilion's hole is the lining's outside, cut down to the threshold. */
 const DOOR_OPENING: Hole = { y: L1 - WALL_BASE_Y, width: DOOR.width, height: DOOR.height };
