@@ -25,10 +25,11 @@ export const WALL_BASE_Y = LG - 0.3;
 /** World X of the front's five arches, the entrance on the axis, 5.8 m apart (constants.ts VAUX_BAY): five in #53, #60 and #64, two either side of the porch in #49 and #65. */
 export const FRONT_ARCH_X = [-2, -1, 0, 1, 2].map((k) => k * VAUX_BAY);
 /**
- * The arches open to the main floor as doorways. Today the middle three are (#60, #61, #62; the floor map's doors at X −5.78, 0 and +5.76); the two beside
- * the entrance would add passages for the walker between the Lehman Wing and gallery 521, so they wait for the owner (asked 2026-11-04) and hold windows.
+ * The arches that open to the main floor as doorways: the middle three, as today (#60, #61, #62; the floor map's doors at X −5.78, 0 and +5.76, each
+ * about 2.3 m wide). The two beside the entrance join the Lehman Wing's main floor to gallery 521 (the owner's call, 2026-11-04: "Open both"); the
+ * outer two hold windows.
  */
-export const WEST_DOORWAY_X: readonly number[] = [0];
+export const WEST_DOORWAY_X: readonly number[] = [-VAUX_BAY, 0, VAUX_BAY];
 const doorway = (x: number): boolean => WEST_DOORWAY_X.includes(x);
 
 /** The ground storey's windows (#53), on the joints of its courses (vaux-arch.ts). */

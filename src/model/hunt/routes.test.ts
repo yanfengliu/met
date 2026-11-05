@@ -6,11 +6,13 @@
  * Temple of Dendur hall, R4 through the Greek galleries into the Leon Levy and Shelby White Court, R5 up the Grand Staircase and through the cross hall's
  * doorway into gallery 600 (work unit 2, M1), R6 through the Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court (work unit
  * 2, M4), R7 as R4 goes into gallery 153, then through its south wall's door, Exhibition Gallery 199, the corridor through the party wall into
- * gallery 549 and the court wall's opening into the Petrie Court (work unit 2, integration), each both ways. The walker never leaves the ground (no
+ * gallery 549 and the court wall's opening into the Petrie Court (work unit 2, integration), R8 between the Lehman Wing and gallery 521 through the 1880
+ * west front's doorways beside the entrance and R9 between the Hunt Wing's galleries 300 and 301 and gallery 304 through the corridors in its east
+ * front's inner arches (work unit 15, the owner's call of 2026-11-04), each both ways. The walker never leaves the ground (no
  * drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
  * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, R5 crosses the
- * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, and R7
- * the corridor and the court wall's opening on it.
+ * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, R7
+ * the corridor and the court wall's opening on it, R8 both doorways on it, and R9 both corridors on it.
  * Bound: steering turns the walker directly, never by real keys (tests/e2e/routes.spec.ts checks fixed places on the routes in the page); a stall is
  * less than 5 cm of progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts
  * and ends within one frame's two physics steps is not seen.
@@ -26,14 +28,17 @@ import type { DoorWorld } from '../../walk/door-world.js';
 import { DOORS } from '../doors.js';
 import { doorLeavesOf } from '../lib/window.js';
 import { BODY, NO_INPUT, Walker } from '../../walk/walker.js';
-import { INNER_EAST_Z } from '../core/layout.js';
+import { EAST_Z, VAUX_BAY, WEST_Z } from '../core/constants.js';
+import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
+import { CLEAR } from '../core/vaux-arch.js';
+import { eastCorridor } from '../core/vaux-east.js';
 import { MORGAN, PARTY_WALL } from '../mmw/dims.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import { ROMAN_COURT } from '../mmw/wings.js';
 import { COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
 import { COURT, DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../roche-north/plan.js';
 import { CROSS_HALL_BACK_Z, EXT_NORTH_X, EXT_SOUTH_X, MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
-import { GALLERY_600_MID_Z, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, COURT_OPENING_Z, WESTON_APPROACH } from './routes.js';
+import { GALLERY_600_MID_Z, HUNT_SLAB_TOP_Y, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9, COURT_OPENING_Z, WESTON_APPROACH } from './routes.js';
 import type { Route } from './routes.js';
 import { STAIR_LANDING_Y } from './stair.js';
 
@@ -136,7 +141,7 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
     return made;
   };
 
-  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4), ROUTE_R5, reversed(ROUTE_R5), ROUTE_R6, reversed(ROUTE_R6), ROUTE_R7, reversed(ROUTE_R7)])('walks $id end to end on the ground and ends on its floor', (route) => {
+  it.each([ROUTE_R1, reversed(ROUTE_R1), ROUTE_R2, reversed(ROUTE_R2), ROUTE_R3, reversed(ROUTE_R3), ROUTE_R4, reversed(ROUTE_R4), ROUTE_R5, reversed(ROUTE_R5), ROUTE_R6, reversed(ROUTE_R6), ROUTE_R7, reversed(ROUTE_R7), ROUTE_R8, reversed(ROUTE_R8), ROUTE_R9, reversed(ROUTE_R9)])('walks $id end to end on the ground and ends on its floor', (route) => {
     const result = walked(route);
     expect(result.failure).toBeUndefined();
     expect(result.maxRise, `${route.id}: largest step up in a frame, metres`).toBeLessThanOrEqual(BODY.step);
@@ -213,6 +218,37 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
       expect(heightsOff(opening, MAIN), `${route.id}: feet off the main floor in the opening`).toEqual([]);
       const [x, z] = route === ROUTE_R7 ? WESTON_APPROACH : (ROUTE_R7.points[0] ?? [0, 0]);
       expect(Math.hypot(end.x - x, end.z - z), `${route.id}: ends within 0.5 m of its last point at ${where(end)}`).toBeLessThan(0.5);
+    }
+  });
+
+  it('R8 crosses the 1880 west front’s doorways beside the entrance on the main floor’s level, between the Lehman Wing and gallery 521, and back', () => {
+    for (const route of [ROUTE_R8, reversed(ROUTE_R8)]) {
+      const { samples } = walked(route);
+      for (const x of [-VAUX_BAY, VAUX_BAY]) {
+        // Through the 1.5 m wall and a metre either side of it, between the doorway's jambs.
+        const doorway = samples.filter((s) => s.z > WEST_Z - 1 && s.z < INNER_WEST_Z + 1 && Math.abs(s.x - x) < CLEAR / 2);
+        expect(doorway.length, `${route.id}: samples in the doorway at X ${x.toFixed(1)}`).toBeGreaterThan(5);
+        expect(heightsOff(doorway, MAIN), `${route.id}: feet off the main floor in the doorway at X ${x.toFixed(1)}`).toEqual([]);
+      }
+    }
+  });
+
+  it('R9 crosses the corridors through the 1880 east front on the core’s main floor, between galleries 300 and 301 and gallery 304, and back', () => {
+    for (const route of [ROUTE_R9, reversed(ROUTE_R9)]) {
+      const { samples } = walked(route);
+      for (const side of [-1, 1]) {
+        const [x0, x1] = eastCorridor(side);
+        const name = `X ${x0.toFixed(2)}..${x1.toFixed(2)}`;
+        // Through the 1 m wall and a metre either side of it, between the corridor's sides: on the core's main floor inside the wall and in gallery
+        // 304, on it or on the Hunt Wing's bare slab 3 cm lower east of the wall (routes.ts HUNT_SLAB_TOP_Y), and never over the core's floor, as a
+        // lip across the corridor's mouth would lift the walker (review 5, F46).
+        const near = samples.filter((s) => s.z > INNER_EAST_Z - 1 && s.z < EAST_Z + 1 && s.x > x0 && s.x < x1);
+        const inside = near.filter((s) => s.z > INNER_EAST_Z && s.z < EAST_Z);
+        expect(inside.length, `${route.id}: samples in the corridor at ${name}`).toBeGreaterThan(5);
+        expect(heightsOff(inside, MAIN), `${route.id}: feet off the core's main floor in the corridor at ${name}`).toEqual([]);
+        const off = near.filter((s) => Math.abs(s.y - MAIN) > 0.01 && Math.abs(s.y - HUNT_SLAB_TOP_Y) > 0.01).map(where);
+        expect(off, `${route.id}: feet on neither floor within a metre of the corridor at ${name}`).toEqual([]);
+      }
     }
   });
 });

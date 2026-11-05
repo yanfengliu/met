@@ -9,11 +9,12 @@
  * - a hung one has a wall behind its back, within 4 cm, at its middle and corners;
  * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides, a sheet having none:
  *   `meets`, which reads no inside in a sheet, on a fixture too);
- * - it is 1 m clear of the walking routes R1–R7 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court, R7 into the Petrie Court) beyond the walker's
+ * - it is 1 m clear of the walking routes R1–R9 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court, R7 into the Petrie Court, R8 and R9 through the 1880 fronts' openings) beyond the walker's
  *   radius, of the Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into
  *   gallery 600 (hunt/stair.ts), of the Dendur gate's threshold and rail (roche-north/plan.ts), of the Dendur pool, and of the passages into the
- *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts) and through the choir screen's gate (core/choir-screen.ts) and 6 m either side of
- *   their wall or screen, beyond the walker's radius;
+ *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts), through the choir screen's gate (core/choir-screen.ts), through the 1880 west
+ *   front's doorways beside the entrance (core/vaux-front.ts) and the corridors in its east front's inner arches (core/vaux-east.ts), on routes R8 and
+ *   R9, and 6 m either side of their wall or screen, beyond the walker's radius;
  * - each drawn object finds its own artwork in its material's table (material.ts): its entry is where the object stands, every other 5 cm or more away;
  * - the placeholders take at most 110 meshes and 600,000 triangles of the model's budgets.
  * R6 runs from the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court, and
@@ -39,12 +40,15 @@ import type { GroundHit, LineCrossings } from '../../walk/collision.js';
 import { BODY } from '../../walk/walker.js';
 import { GATE_CLEAR } from '../core/choir-screen.js';
 import { SCREEN_Z } from '../core/constants.js';
-import { INNER_EAST_Z } from '../core/layout.js';
+import { EAST_Z, VAUX_BAY, WEST_Z } from '../core/constants.js';
+import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
+import { CLEAR } from '../core/vaux-arch.js';
+import { eastCorridor } from '../core/vaux-east.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
 import { GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING, MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
 import { ENTRANCE_DOOR_Z, OPENINGS } from '../hunt/arches.js';
 import { CROSS_HALL_BACK_Z } from '../hunt/dims.js';
-import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7 } from '../hunt/routes.js';
+import { ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9 } from '../hunt/routes.js';
 import { MORGAN, PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import type { Route } from '../hunt/routes.js';
@@ -62,7 +66,7 @@ const CLEARANCE = 1;
 /** The placeholders' share of the model's budgets (docs/design/spec.md, Budgets; plan 2, review 0, F9). */
 const MAX_MESHES = 110;
 const MAX_TRIANGLES = 600_000;
-const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7];
+const ROUTES: readonly Route[] = [ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9];
 
 /** A plan rectangle on a floor level, kept clear by `margin`: a door's swing, a passage through a door. */
 interface Zone {
@@ -93,6 +97,12 @@ const ZONES: readonly Zone[] = [
   { name: 'Petrie Court passage', y: MAIN_FLOOR_Y, min: [PETRIE_PASSAGE.a, SOUTH_LINK.z0 - 6], max: [PETRIE_PASSAGE.b, SOUTH_LINK.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
   // The Valladolid choir screen's open gate, between its jambs (core/choir-screen.ts), 6 m out each side, as Weston's.
   { name: 'choir screen gate', y: MAIN_FLOOR_Y, min: [-GATE_CLEAR, SCREEN_Z - 6], max: [GATE_CLEAR, SCREEN_Z + 6], margin: CLEARANCE + BODY.radius },
+  // The 1880 west front's doorways beside the entrance, between their jambs, and the corridors in its east front's inner arches, 6 m out each side.
+  ...[-1, 1].map((s): Zone => ({ name: `west front doorway at X ${(s * VAUX_BAY).toFixed(1)}`, y: MAIN_FLOOR_Y, min: [s * VAUX_BAY - CLEAR / 2, WEST_Z - 6], max: [s * VAUX_BAY + CLEAR / 2, INNER_WEST_Z + 6], margin: CLEARANCE + BODY.radius })),
+  ...[-1, 1].map((s): Zone => {
+    const [x0, x1] = eastCorridor(s);
+    return { name: `east front corridor at X ${x0.toFixed(2)}..${x1.toFixed(2)}`, y: MAIN_FLOOR_Y, min: [x0, INNER_EAST_Z - 6], max: [x1, EAST_Z + 6], margin: CLEARANCE + BODY.radius };
+  }),
 ];
 
 /** One piece of an artwork as its step's mesh draws it at t = N. */
