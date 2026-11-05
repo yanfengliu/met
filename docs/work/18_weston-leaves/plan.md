@@ -1,6 +1,6 @@
 # Weston's door leaves at the porch's front
 
-Status: in progress
+Status: complete
 Owner: Claude Code desktop session optimistic-mayer-d1fe0b (2026-11-04)
 Created: 2026-11-04
 Updated: 2026-11-04
@@ -34,7 +34,7 @@ Excluded: the door's place along the front, 2.68 m west of the floor map's (left
 - [x] Every gate green: `npm run verify` on the final revision; `routes.spec.ts` three runs in a row at 1× and at 4×.
 - [x] The standard shots compared with main's, every changed image read at native size.
 - [x] Records: `interior.md` (the leaves moved, the door's place along the front still open), the spec's Doors items, `gate-proofs.md`, the devlog.
-- [ ] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished.
+- [x] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished.
 
 ## Implementation steps
 
@@ -46,8 +46,12 @@ Excluded: the door's place along the front, 2.68 m west of the floor map's (left
 - [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): no blocker or major finding; Claude's F1 to F7 repaired in `9901b5d` (`npm run verify` green on its tree), F2 in part.
 - [x] Merged with main's work unit 16 as `d7272a3`: `npm run verify`, `routes.spec.ts` three runs in a row at 1× and at 4×, and the shots against main's at `59451af` (60 of 64 unchanged; the 4 others only at Weston's door, each read at native size).
 - [x] Review 1 (Codex and Claude, `reviews/1_implementation.md`) of those repairs: five nits (F8 to F12), repaired in wording and comments, F11 reported to work unit 15's owner and F12 in part; `npm run verify` on the repaired tree.
-- [ ] Land through `tmp/land.sh`; the gallery republished.
+- [x] Land: `tmp/land.sh` taken; origin's main (`7c76f40`, work unit 16's last nits, docs only) merged in as `9e47b70`, which needs no new gate, so `060f82d`'s verify stands; pushed to origin's main; the Pages workflow built and deployed it. Gallery: the main checkout fast-forwarded (`tmp/ff-main.sh`), main's shots taken there (clean), the same 4 frames changed against the gallery's `59451af` set, and the owner's gallery republished (version 13).
 
 ## Outcome
 
-Pending. Record the verified revision, checks and limitations at closure.
+Complete. Weston's door leaves stand near the porch's front, where photograph #33 shows them: the frame's front 0.25 m behind the architrave's face and the leaves' hinges 0.345 m behind it (`src/model/core/weston-porch.ts` `DOOR`, `DOOR_FRAME_OUT`; `weston-facade.ts` `WESTON_DOOR`), so the porch is a vestibule 1.84 m deep behind a door that opens a quarter turn inward only. The leaves cast a shadow (`core.westonDoorWood`): at the porch's front the sun reaches into the porch past the doorway's east reveal, and shadowless leaves would have let it light 0.88 m² of floor and 2.2 m² of reveal behind the shut door. Their swing redraws the shadows at every frame, as the orbit view swings it and in the walk's physics steps (`src/model/doors.test.ts`), its slowest frame under 16.7 ms of work from the court and inside the porch (`tests/e2e/doors.spec.ts`; 4.3 to 10.0 ms in this unit's runs). The doorway's passage stays clear of the 528/529 wall, which the swing no longer reaches (`src/model/core/weston-door.test.ts`), and the walks follow the door.
+
+Merged to main at `9e47b70`, the merge of `060f82d` with origin's docs-only `7c76f40`, pushed through `tmp/land.sh`. `npm run verify` passed on `060f82d`'s tree (735 unit tests, 126 e2e); on `d7272a3`, the merge with main's work unit 16, which `060f82d` changes only in wording, comments and records, `npm run verify`, `routes.spec.ts` three runs in a row at 1× and at 4× and the shots passed, 60 of 64 unchanged against main's and the other 4 only at Weston's door, each read at native size. Reviews 0 and 1 (Codex and Claude) found nothing above minor; every finding is repaired, F2 and F12 in part and F11 reported. The Pages workflow deployed `9e47b70`, and the owner's render gallery shows main's shots there (version 13).
+
+Left for the owner: the floor map puts the door 2.68 m east of the model's (`interior.md`). Outside this unit: `src/model/frame.ts:99` and `src/model/hunt/stair.ts:169` still point to `vaux-shell.ts` for the lining work unit 15 moved to `vaux-east.ts`, and the fleet's work-docs check on main stops at work unit 16's review 0, which has no Verification section. A fault in this unit's process: a chain of checks stopped from the session kept running in its child shell and ran two 4× runs while red proofs were planted; they are void, and the clean runs were redone on the final tree (`reviews/0_implementation.md`, Verification). No rule names that risk yet; the unit's closing report proposes one.
