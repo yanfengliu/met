@@ -1,7 +1,8 @@
 """The Medieval Sculpture Hall's end windows (met work unit 16): every number in docs/research/interior.md, "End windows, measured", from the
 pixel readings taken on the original photographs at native resolution in a browser (2026-11-04). Python 3, standard library only.
 Run beside the four readings files kept with it: p8-balusters.txt (P8's 6,641 baluster centres), p8-friezes.txt (P8's frieze edges),
-m29-window-edges.txt (#29's window edges) and m29-west-doorway.txt (#29's west doorway).
+m29-window-edges.txt (#29's window edges) and m29-west-doorway.txt (#29's west doorway). Run inside the repository (or with MET_REPO set to
+it), it reads the model's window constants and floor height from the tree and checks that the model takes the rounded measurement.
 
 Frames. Image rows and columns are pixels of the originals: P8 (Met,_cancellata.JPG, 1944 x 2592) and #29 (MM29152, 3206 x 4000 on Commons).
 Distances are horizontal metres along the hall; heights are metres over the hall floor. Z values are in the world frame of src/model/frame.ts
@@ -10,11 +11,43 @@ Distances are horizontal metres along the hall; heights are metres over the hall
 import itertools
 import math
 import os
+import re
 import sys
 
-# The model's choice, from the average at the end (src/model/core/constants.ts VAUX_OCULUS_Y and VAUX_OCULUS; the hall floor is at 4.11).
-MODEL_Y, MODEL_D, L1 = 20.3, 2.25, 4.11
+# The model's values: VAUX_OCULUS_Y and VAUX_OCULUS in src/model/core/constants.ts and the hall floor, MAIN_FLOOR_Y, in src/model/frame.ts.
+# They are read from the repository, found by walking up from this script's folder or the working directory, or named by MET_REPO. Outside
+# the repository the script falls back on the copies below and says so: the checks at the end then compare with those copies only.
+MODEL_COPIES = dict(VAUX_OCULUS_Y=20.3, VAUX_OCULUS=2.25, MAIN_FLOOR_Y=4.11)
+
+
+def find_repo():
+    for start in (os.environ.get('MET_REPO', ''), os.path.dirname(os.path.abspath(__file__)), os.getcwd()):
+        d = os.path.abspath(start) if start else ''
+        while d:
+            if all(os.path.exists(os.path.join(d, 'src', 'model', *p)) for p in (('core', 'constants.ts'), ('frame.ts',))):
+                return d
+            d = os.path.dirname(d) if os.path.dirname(d) != d else ''
+    return None
+
+
+def read_model():
+    repo = find_repo()
+    if repo is None:
+        return dict(MODEL_COPIES), "this script's own copies (the repository was not found, so no model is checked)"
+    found = {}
+    for rel, names in (('src/model/core/constants.ts', ('VAUX_OCULUS_Y', 'VAUX_OCULUS')), ('src/model/frame.ts', ('MAIN_FLOOR_Y',))):
+        text = open(os.path.join(repo, *rel.split('/')), encoding='utf-8').read()
+        for name in names:
+            m = re.search(r'^export const ' + name + r' = ([0-9.]+);', text, re.M)
+            assert m, f'{name} is not a number literal in {rel}'
+            found[name] = float(m.group(1))
+    return found, "the repository's src/model/core/constants.ts and src/model/frame.ts"
+
+
+MODEL, MODEL_SOURCE = read_model()
+MODEL_Y, MODEL_D, L1 = MODEL['VAUX_OCULUS_Y'], MODEL['VAUX_OCULUS'], MODEL['MAIN_FLOOR_Y']
 MODEL_H = MODEL_Y - L1
+print(f'The model\'s values, from {MODEL_SOURCE}: VAUX_OCULUS_Y {MODEL_Y}, VAUX_OCULUS {MODEL_D}, the hall floor {L1}')
 
 # =====================================================================================================================================
 # Plan, from the Met's floor map (interior-images.md #34), as named planes along the hall (world Z).
@@ -348,13 +381,16 @@ print('  P8 centre, one input at a time: ' + '; '.join(
 
 # Check of the pitch: a man walking at the far end, read by eye at column 705, head row 2,349, legs cut off at row 2,496.
 # Something 0.98 m high on the screen hides his feet, so his distance is only bounded. #29 shows what stands there: the base's die and coping
-# stop 1.22 m from the gate's centre, and inside them the gate's iron jamb, its inner face 1.03 m out, rises to the coping's level.
-t_cop = (0.98 - nom['hc']) / nom['ds']
-row_cop = next(v / 10 for v in range(23000, 26000) if level(705, v / 10)[1] <= t_cop)
-north = -level(705, row_cop)[0] * nom['ds']
-print('P8 man: 0.98 m on the screen falls at row %.0f in his column (his legs end at 2,496), %.2f m north of the camera\'s heading; '
-      'the jamb\'s inner face (1.03 m out) is %.2f m from there, a turn of the heading by %.2f degrees' % (
-          row_cop, north, north - 1.03, math.degrees(math.atan(north / nom['ds']) - math.atan(1.03 / nom['ds']))))
+# stop 1.22 m from the gate's centre, and inside them the gate's iron jamb, its inner face 1.03 m out, rises to the coping's level. How deep
+# in the screen the jamb stands is not measured: it is taken on the screen's west face, where the friezes are, and on its line, where the
+# model builds it (choir-screen.ts), 0.1 m further.
+for plane, d in (('west face', nom['ds']), ('line', nom['ds'] + 0.10)):
+    t_cop = (0.98 - nom['hc']) / d
+    row_cop = next(v / 10 for v in range(23000, 26000) if level(705, v / 10)[1] <= t_cop)
+    north = -level(705, row_cop)[0] * d
+    print('P8 man, the jamb on the screen\'s %s: 0.98 m falls at row %.0f in his column (his legs end at 2,496), %.2f m north of the camera\'s heading; '
+          'the jamb\'s inner face (1.03 m out) is %.2f m from there, a turn of the heading by %.2f degrees' % (
+              plane, row_cop, north, north - 1.03, math.degrees(math.atan(north / d) - math.atan(1.03 / d))))
 s_f, t_f = level(705, 2496)
 print(f'  his distance is at most {-nom["hc"] / t_f:.1f} m')
 for dyv in (-VP_HALF, 0, VP_HALF):
@@ -613,6 +649,17 @@ GLAZ_ROUNDED, GLAZ_MARGIN = rounded(glaz, 0.05)
 print('glazing: P8 %.2f (the mean of its two readings; half-range %.2f), #29 %.3f (half-range %.2f), weighted %.3f m, which rounds to %.2f at 5 cm, '
       '%.0f mm inside its rounding boundary; the model takes %.2f' % (g8, g8h, n29['gl'], g29h, glaz, GLAZ_ROUNDED, GLAZ_MARGIN, MODEL_D))
 assert abs(GLAZ_ROUNDED - MODEL_D) < 1e-9, 'the model does not take the rounded glazing'
+print(f'  checks passed against {MODEL_SOURCE}: VAUX_OCULUS_Y {MODEL_Y} is the average rounded, VAUX_OCULUS {MODEL_D} the glazing rounded')
+G8_LO, G8_HI = min(P8_RANGES['glaz_v'][0], P8_RANGES['glaz_h'][0]), max(P8_RANGES['glaz_v'][1], P8_RANGES['glaz_h'][1])
+print('  the glazing\'s ranges: P8 %.2f .. %.2f (both readings), #29 %.2f .. %.2f; they overlap from %.2f to %.2f' % (
+    G8_LO, G8_HI, *M29_RANGES['gl'], max(G8_LO, M29_RANGES['gl'][0]), min(G8_HI, M29_RANGES['gl'][1])))
+
+
+def glazing(p):
+    """The glazing's weighted average with P8's two readings taken from p8()'s result p and #29's nominal reading, and its rounding."""
+    g = ((p['glaz_v'] + p['glaz_h']) / 2 / g8h ** 2 + n29['gl'] / g29h ** 2) / (1 / g8h ** 2 + 1 / g29h ** 2)
+    r, margin = rounded(g, 0.05)
+    return f'the glazing {g:.3f} m, which rounds to {r:.2f}, {margin:.0f} mm inside'
 
 # Where the model's window falls on the screen's plane: from P8's camera at the map place, from the preset that stands for P8 (Z -112.9,
 # eye 1.6 m) and from P8's camera if the screen stayed at the model's place; with the model's screen at -99.4 and east wall at -83.32.
@@ -637,7 +684,7 @@ def both(k=None, yv=None, dS=0.0):
 for name, kw in (('the friezes\' distortion %.2e with the middle tier\'s vanishing point (row %.0f)' % (K_FRIEZE, YV_M_F), dict(k=K_FRIEZE, yv=YV_M_F)),
                  ('the friezes\' distortion %.2e with the upper tier\'s vanishing point (row %.0f)' % (K_FRIEZE, YV_U_F), dict(k=K_FRIEZE, yv=YV_U_F))):
     e, w_, a = both(**kw)
-    print(f'  {name}: east {e:.2f}, west {w_:.2f}, average {a:.3f} m, {world(a)}')
+    print(f'  {name}: east {e:.2f}, west {w_:.2f}, average {a:.3f} m, {world(a)}; {glazing(p8(**kw))}')
 lo, hi = -1.5, 1.5
 gap = (lambda d: both(dS=d)[0] - both(dS=d)[1])
 s_lo = gap(lo) > 0
@@ -654,7 +701,7 @@ FRIEZES_FACE = [(v, n29['hc'] + n29['ds'] * math.tan(alpha(YV29 + 1 / (h / A_WU4
 pf = p8(friezes=FRIEZES_FACE)
 w_face = (pf['ring_centre'] / hp ** 2 + n29['hw'] / h29 ** 2) / (1 / hp ** 2 + 1 / h29 ** 2)
 print(f'  the friezes on the screen\'s face, at {", ".join(f"{h:.3f}" for _, h in FRIEZES_FACE)} m: east {pf["ring_centre"]:.2f}, west {n29["hw"]:.2f}, '
-      f'average {w_face:.3f} m, {world(w_face)}')
+      f'average {w_face:.3f} m, {world(w_face)}; {glazing(pf)}')
 
 # P8's field: the angles of its top and bottom rows on the centre column, distortion undone.
 top = math.degrees(math.atan((P8_CY - undistort(P8_CX, 0, P8_K)[1]) / P8_F))
