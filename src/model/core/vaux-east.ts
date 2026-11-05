@@ -3,12 +3,12 @@
  * covered middle (exterior-images.md #66), each the 1880 arch (vaux-arch.ts) inside a ring of dark granite blocks round its voussoirs and a moulded light
  * granite arch round a roundel in its head, as the one surviving at the top of the Grand Staircase shows it (#67; exterior.md section 9). Their windows
  * are blind. The inner pair stand on the west front's bay, 0.35 m from the floor map's narrow corridors either side of the Grand Staircase, which
- * Heckscher says pass through them; the outer pair on today's passages into the stair halls, 12 m off the axis.
+ * pass through them, as Heckscher says; the outer pair on today's passages into the stair halls, 12 m off the axis.
  * Today's openings stay as they were (the floor map's; work unit 2, M1): the passages on the main floor on the axis and 12 m either side, the
  * second-floor doors 10.3 m off the axis, which were cut through the outer arches' heads and took their roundels and the stones they cross, and on the
  * axis at the second floor the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand
- * Staircase), lined in granite with a threshold. The corridors through the inner pair wait for the owner (asked 2026-11-04), since they would add
- * passages for the walker; until an answer the inner pair's windows stay blind.
+ * Staircase), lined in granite with a threshold. The corridors through the inner pair, between gallery 304 and the Hunt Wing's galleries 300 and 301,
+ * are open (the owner's call, 2026-11-04: "Open both"); round each the arch stays blind, its opening filled with brick.
  */
 import type { Kit } from '../../build/types.js';
 import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
@@ -17,12 +17,28 @@ import { A_HALF, EAST_Z, L1, L2, OUTER_WALL, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAY
 import { INNER_EAST_Z } from './layout.js';
 import { core } from './materials.js';
 import { FACING, addBox, placed, runsBetween } from './shapes.js';
-import { CLEAR, LINTEL_Y, ORDER_PROUD, SILL_Y, SPRING_Y, archHoles, darkHead, lightHead, type Cut } from './vaux-arch.js';
+import { CLEAR, HEAD_DEPTH, LINTEL_Y, ORDER_PROUD, SILL_Y, SPRING_Y, archHoles, darkHead, lightHead, type Cut } from './vaux-arch.js';
 import { WALL_BASE_Y } from './vaux-front.js';
 
 /** E: the inner pair on the west front's bay; the outer pair on today's passages into the stair halls (as before). */
 const INNER_X = VAUX_BAY;
 const OUTER_X = 12.0;
+/**
+ * The corridors through the inner pair (the floor map's doors between gallery 304 and the Hunt Wing's galleries 300 and 301: X −7.04..−5.26 and
+ * +5.31..+7.06, 1.78 and 1.75 m wide), each 1.78 m wide against its arch's outer jamb, within 6 cm of the map's lines. E: the head, 4 m over the
+ * main floor, as high as the end blocks' doors in the side walls (vaux-sides.ts); the map gives no heights.
+ */
+const CORRIDOR = { width: 1.78, height: 4.0 } as const;
+/** World X of the corridor through the inner arch on side `s` (−1 south, +1 north), from its lower X to its upper. */
+export function eastCorridor(s: number): readonly [number, number] {
+  const outer = s * (INNER_X + CLEAR / 2);
+  const inner = outer - s * CORRIDOR.width;
+  return [Math.min(inner, outer), Math.max(inner, outer)];
+}
+/** The corridors' head. */
+export const EAST_CORRIDOR_TOP_Y = L1 + CORRIDOR.height;
+/** How far the brick round the corridors stands off the wall's inner face and behind the head niches' backs. */
+const INFILL_CLEAR = 0.01;
 /** Today's main-floor passage on the axis: as wide as before, to the old springing's height. */
 const PASSAGE = { width: CLEAR, height: 4.5 } as const;
 /** Today's second-floor doors either side, 10.3 m off the axis (floor map), and the threshold under gallery 600's doorway. */
@@ -34,12 +50,34 @@ function secondCut(sign: number): Cut {
   return [x0 - 0.03, L2 - SPRING_Y - 0.03, x1 + 0.03, L2 + SECOND_DOOR.height - SPRING_Y + 0.03];
 }
 
-/** The east wall from the footings to the parapet, with its arches' blind openings and today's openings. */
+/**
+ * The brick filling an inner arch's opening round its corridor: flush with the east face under the window's sill, where the apron stands, and set
+ * back above it a centimetre deeper than the arches' blind heads, so the arch reads blind round the corridor as it did before; 1 cm short of the
+ * wall's inner face, so in gallery 304 it reads as a panel set in the opening. Set with the east front's trim (vauxEastTrim, in the openings step),
+ * so it arrives with the floor band and apron in front of it, at their order. While it drops, its upper pieces pass through the wall over the
+ * opening and the foot of the head's niche: the centimetre keeps their faces behind the wall's and the niche's, out of their planes (review 6, F54).
+ */
+function eastInfill(kit: Kit, s: number): void {
+  const [c0, c1] = eastCorridor(s);
+  const [o0, o1] = [s * INNER_X - CLEAR / 2, s * INNER_X + CLEAR / 2];
+  const [b0, b1] = s > 0 ? [o0, c0] : [c1, o1];
+  const inner = INNER_EAST_Z + INFILL_CLEAR;
+  const back = EAST_Z - HEAD_DEPTH - INFILL_CLEAR;
+  addBox(kit, core.vauxBrick, b0, L1, inner, b1, SILL_Y, EAST_Z, 12);
+  addBox(kit, core.vauxBrick, b0, SILL_Y, inner, b1, EAST_CORRIDOR_TOP_Y, back, 12);
+  addBox(kit, core.vauxBrick, o0, EAST_CORRIDOR_TOP_Y, inner, o1, LINTEL_Y, back, 12);
+}
+
+/**
+ * The east wall from the footings to the parapet, with its arches' openings: the four lower ones through from the main floor, the inner pair's to be
+ * filled round their corridors with the trim (eastInfill), and their blind heads; and today's openings.
+ */
 export function vauxEastWall(kit: Kit): void {
   const base = WALL_BASE_Y;
   const holes: Hole[] = [{ x: 0, y: L1 - base, width: PASSAGE.width, height: PASSAGE.height }];
   for (const s of [-1, 1]) {
-    holes.push(...archHoles(s * INNER_X, base, { sill: SILL_Y, through: false }));
+    // The inner pair open through from the main floor, filled round their corridors with the trim (eastInfill).
+    holes.push(...archHoles(s * INNER_X, base, { sill: L1, through: true }));
     holes.push(...archHoles(s * OUTER_X, base, { sill: L1, through: true }, false));
     holes.push({ x: s * SECOND_DOOR.x, y: L2 - base, width: SECOND_DOOR.width, height: SECOND_DOOR.height });
   }
@@ -57,22 +95,27 @@ export function vauxEastWall(kit: Kit): void {
   addBox(kit, core.granite, -lined, L2 - DOOR_THRESHOLD, INNER_EAST_Z, lined, L2, EAST_Z, 12);
 }
 
-/** Granite trim of the east front: the main floor's and the impost band, the windows' aprons, the jambs' inner order, and the four heads. */
+/** Granite trim of the east front: the main floor's and the impost band, the windows' aprons, the jambs' inner order, and the four heads; and the brick round the corridors. */
 export function vauxEastTrim(kit: Kit): void {
+  for (const s of [-1, 1]) eastInfill(kit, s);
   const proud = 0.08;
   const box = (x0: number, x1: number, y0: number, y1: number, depth: number): void => {
     addBox(kit, core.granite, x0, y0, EAST_Z, x1, y1, EAST_Z + depth, 12);
   };
   const passages = [0, -OUTER_X, OUTER_X].map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
-  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, passages)) box(x0, x1, L1 - 0.2, L1 + 0.12, proud);
+  const corridors = [-1, 1].map(eastCorridor);
+  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, [...passages, ...corridors])) box(x0, x1, L1 - 0.2, L1 + 0.12, proud);
   box(-A_HALF, A_HALF, LINTEL_Y, SPRING_Y, proud);
   for (const s of [-1, 1]) {
     for (const x of [s * INNER_X, s * OUTER_X]) {
       const window = Math.abs(x) === INNER_X;
-      if (window) box(x - VAUX_ARCH_SPAN / 2, x + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0.05);
+      // An inner arch's apron runs from its inner side to its corridor, whose outer jamb's inner order runs down to the floor.
+      const [c0, c1] = eastCorridor(s);
+      if (window) box(s > 0 ? x - VAUX_ARCH_SPAN / 2 : c1, s > 0 ? c0 : x + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0.05);
       for (const side of [-1, 1]) {
         const edge = x + side * (CLEAR / 2);
-        box(Math.min(edge, edge + side * VAUX_INNER_ORDER), Math.max(edge, edge + side * VAUX_INNER_ORDER), window ? SILL_Y : L1, LINTEL_Y, ORDER_PROUD);
+        const sill = window && side !== s ? SILL_Y : L1;
+        box(Math.min(edge, edge + side * VAUX_INNER_ORDER), Math.max(edge, edge + side * VAUX_INNER_ORDER), sill, LINTEL_Y, ORDER_PROUD);
       }
       // Each head as two pieces placed at its arch, an inner one with its roundel's moulding round its brick (#67); an outer head is cut by the
       // second-floor door beside it.
