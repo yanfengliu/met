@@ -23,8 +23,8 @@
  * 7b7fe94: four entrance leaves through the screen columns' plinths in all 73 poses, the frames through the plinths, the shafts' feet and the
  * capitals. Controls keep both containments and the partner test red: a block round a doorway and its swing, a 1 cm cube in a leaf, a leaf moved
  * 12 mm into its partner, which the check of 6198d1a passed. With Weston's door tagged, red with the porch's doorway, where its frame stands, 2 cm
- * narrower or 2 cm lower than its square-headed frame (work unit 18); its swing stays in the porch, so the 528/529 wall that stood in the doorway
- * behind it is src/model/core/weston-door.test.ts's.
+ * narrower or 2 cm lower than its square-headed frame (work unit 18); its swing stays in the porch, so a wall standing in the doorway behind it
+ * is src/model/core/weston-door.test.ts's.
  */
 import { Box3, BoxGeometry, DoubleSide, Matrix4, Ray, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';

@@ -73,6 +73,7 @@ export const SCREEN_Z = -99.4; // E: across the nave just east of the middle pie
 // --- Wings B and C (history.md section 3; photos 1880_Met_Museum.jpg about 1900 and the Petrie Court 2012) -----------------
 export const WESTON_BAY = 5.6; // E: Petrie Court photo, three windows under each arch
 export const WESTON_PAVILION_HALF = 6.2; // E: the central entrance pavilion, 12.4 m wide
+export const WESTON_PAVILION_Z = -100.97; // M: the pavilion's and its door's middle: the floor map's door into gallery 529 (Z −102.73..−99.21), the middle too of the map's galleries along the front (526 to 533, Z −135.17..−66.77, the pavilion and five bays each side) and of its court (548, Z −137.07..−64.87); interior.md, Weston's 1888 door
 export const WESTON_DADO = 1.9; // E: stone dado with roundels above L1 (Petrie Court photo)
 export const WESTON_LOWER_HEAD = 6.3; // E: main-floor window heads above L1
 export const WESTON_ARCH_SPAN = 4.6; // E: the round arches over the upper windows

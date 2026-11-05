@@ -120,7 +120,7 @@ export const WESTON_APPROACH: readonly [number, number] = [WESTON_DOOR.x - 3.5, 
 /**
  * R7 (work unit 2, integration), into the Petrie Court: R4's way south past the desk and down gallery 153 to its south wall's door; south through it and
  * Exhibition Gallery 199 to 2.2 m short of the Kravis Wing's party wall; along it to the corridor and west through it, down gallery 549 to the court
- * wall's opening; north through it into the court, clear of its artworks' row, which leaves Z −109..−98 free (src/model/collection/spaces-b.ts); and
+ * wall's opening; north through it into the court, clear of its artworks' row, which leaves a gap from Z −112.5 to −94.5 (src/model/collection/spaces-b.ts); and
  * west to Weston's door's axis. The door itself is walked through by the e2e walk (tests/e2e/routes.spec.ts) and src/model/core/weston-door.test.ts.
  */
 export const ROUTE_R7: Route = {

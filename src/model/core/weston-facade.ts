@@ -3,9 +3,12 @@
  * Milton Petrie European Sculpture Court (Kravis Wing), so it is seen from inside that court. After the Petrie Court photograph (interior-images.md
  * #33, J.-C. Benoist 2012) and the about-1900 view 1880_Met_Museum.jpg (exterior-images.md #53): a stone dado with roundels, three tall main-floor windows
  * between stone piers in each bay, an entablature at the second floor, a round arch of rusticated voussoirs over the upper windows, rusticated
- * quoin piers with roundels between the arches, a cornice; at the centre the 1888 entrance pavilion with its porch and balcony (weston-porch.ts) and a
+ * quoin piers with roundels between the arches, a cornice; in the middle the 1888 entrance pavilion with its porch and balcony (weston-porch.ts) and a
  * great round window. Beside the porch the pavilion's main floor is brick between quoins, with no window (interior-images.md #33 and #43). Trim may
  * project up to 1.5 m into the court (coordinator, 2026-10-11), and the porch stands 2.85 m out to its cornice (docs/design/spec.md, World frame).
+ * The pavilion stands where the floor map has its door, at Z −100.97 (constants.ts `WESTON_PAVILION_Z`): the middle of the map's front, five bays
+ * each side, which the model's front, ending on the 1880 building's east line (`EAST_Z`, 4.1 m short of the map's court), cuts to four on the east
+ * (work unit 19; interior.md, Weston's 1888 door).
  */
 import { Matrix4 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -15,21 +18,27 @@ import { doorTag } from '../doors.js';
 import { doorUnit, moulding, voussoirs, windowUnit } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { holeLining, openWall, type Hole } from './arches.js';
-import { B_SOUTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, L1, L2, LG, OUTER_WALL, PARAPET_Y, WESTON_ARCH_SPAN, WESTON_ARCH_SPRING, WESTON_BAY, WESTON_DADO, WESTON_LOWER_HEAD, WESTON_PAVILION_HALF, WEST_Z } from './constants.js';
+import { B_SOUTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, L1, L2, LG, OUTER_WALL, PARAPET_Y, WESTON_ARCH_SPAN, WESTON_ARCH_SPRING, WESTON_BAY, WESTON_DADO, WESTON_LOWER_HEAD, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WEST_Z } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, placed } from './shapes.js';
 import { WALL_BASE_Y } from './vaux-front.js';
 import { DOOR, DOOR_FRAME_OUT, PORCH_REACH, westonRailing } from './weston-porch.js';
 import { GROUND_WINDOW, MAIN_WINDOW, wingWindows, type Elevation, elevationBox } from './wings-walls.js';
 
-const CENTRE_Z = (WEST_Z + EAST_Z) / 2;
+const CENTRE_Z = WESTON_PAVILION_Z;
 const PAV0 = CENTRE_Z - WESTON_PAVILION_HALF;
 const PAV1 = CENTRE_Z + WESTON_PAVILION_HALF;
-/** Bay centres: five each side of the pavilion, working out from it; the leftovers at the corners are plain fills. */
-const BAYS: readonly number[] = [1, 2, 3, 4, 5].flatMap((k) => [PAV0 - WESTON_BAY * (k - 0.5), PAV1 + WESTON_BAY * (k - 0.5)]).sort((a, b) => a - b);
+/** Whole bays each side of the pavilion, working out from it to the front's ends: five on the west, four on the east. */
+const WEST_BAYS = Math.floor((PAV0 - WEST_Z) / WESTON_BAY);
+const EAST_BAYS = Math.floor((EAST_Z - PAV1) / WESTON_BAY);
+/** Bay centres, west to east; the leftovers at the corners are plain fills, 3.13 m on the west and 3.37 m on the east. */
+const BAYS: readonly number[] = [
+  ...Array.from({ length: WEST_BAYS }, (_, k) => PAV0 - WESTON_BAY * (WEST_BAYS - k - 0.5)),
+  ...Array.from({ length: EAST_BAYS }, (_, k) => PAV1 + WESTON_BAY * (k + 0.5)),
+];
 const FILLS: readonly (readonly [number, number])[] = [
-  [WEST_Z, PAV0 - 5 * WESTON_BAY],
-  [PAV1 + 5 * WESTON_BAY, EAST_Z],
+  [WEST_Z, PAV0 - WEST_BAYS * WESTON_BAY],
+  [PAV1 + EAST_BAYS * WESTON_BAY, EAST_Z],
 ];
 export const SOUTH: Elevation = { block: 'b', axis: 'z', face: B_SOUTH_X, facing: FACING.south, inward: 1, thickness: OUTER_WALL, bays: BAYS, fills: FILLS, glazed: true, shared: false };
 
@@ -84,7 +93,7 @@ function z(c: number, x: number): number {
 export function westonWalls(kit: Kit): void {
   const bay = westonBay();
   BAYS.forEach((c, i) => {
-    kit.add(bay, palette.brick, placed(B_SOUTH_X, WALL_BASE_Y, c, FACING.south), i < 5 ? 4 - i : i - 5);
+    kit.add(bay, palette.brick, placed(B_SOUTH_X, WALL_BASE_Y, c, FACING.south), i < WEST_BAYS ? WEST_BAYS - 1 - i : i - WEST_BAYS);
   });
   kit.add(pavilion(), palette.brick, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 0);
   for (const [a0, a1] of FILLS) elevationBox(kit, SOUTH, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, OUTER_WALL, 5);

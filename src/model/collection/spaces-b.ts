@@ -16,8 +16,8 @@ import type { CollectionStepDef, Placement } from './place.js';
 const FACE = { north: Math.PI / 2, south: -Math.PI / 2, east: 0, west: Math.PI } as const;
 
 // --- The Petrie European Sculpture Court (gallery 548; roche-south/kravis.ts, core/weston-facade.ts) -------------------------------------------
-// A row down the court's middle, between its limestone south wall (X −61.45) and Weston's 1888 front (X −49.7), facing east along it, with no
-// artwork from Z −109 to −98, where Weston's porch stands 2.85 m out (Z −107.0..−100.3) and the door's passage (Z −105.30..−102.01) opens into the
+// A row down the court's middle, between its limestone south wall (X −61.45) and Weston's 1888 front (X −49.7), facing east along it, with a gap
+// from Z −112.5 to −94.5 where Weston's porch stands 2.85 m out (Z −104.3..−97.6) and the door's passage (Z −102.62..−99.33) opens into the
 // court; the relief on the south wall between two of its openings (Z −117.7..−110.3), and the bust in a vitrine before the wall between the next
 // two (Z −95.7..−88.3).
 const PETRIE_X = (COURT_X0 + B_SOUTH_X) / 2;
