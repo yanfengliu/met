@@ -110,6 +110,7 @@ The late keys planted again on 2026-10-30, once work unit 2's next follow-up (re
 - `doors=open` and `doors=closed` under `shot=1`, the doors set before the walker is placed and both before the first frame drawn: red with the set-up moved after the placement, after the first frame, marked at load but done after the first frame, or done after the first render in the same callback, which the probe of `7b7fe94`, reading the doors' state at the callback's end, passed.
 - The slowest frame of each swing under 16.7 ms of work: the walked cycles red at 147.8 ms with 12 ms planted in each swing check while walking; red with 40 µs of work planted for each object drawn on a swing's frames: 30.3 ms facing in, which the gate of `d4d716d`, facing out only, passed at 11.5 ms.
 - The locked click now the browser's own lock, taken by a click of the view (work unit 14): with the click while locked using no door (`src/main.ts`), the entrance test red, the wait for the closing swing timing out.
+- Weston's swing, whose leaves cast a shadow, its slowest frame under 16.7 ms of work (work unit 18): with 40 µs of work planted for each draw call on the frames that redraw the shadows (`src/viewer/viewer.ts` `render`), red at 41.0 ms opening, while the entrance's test, whose swings redraw none, stayed green (8.2 ms at most).
 
 Work unit 2's follow-up (reviews 28 on) moved this file's walks up to the doors onto fixed places set by `spawn=x,y,z,tx,ty,tz` (2026-10-30). Each proof above was planted again on that work's tree and undone, the tests named running unthrottled:
 

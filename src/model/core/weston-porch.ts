@@ -10,8 +10,9 @@
  * porch's depth, 2.25 m to its pilasters' faces, comes from three other readings: the 1888 first-floor plan (Heckscher fig. 26) about 2.2 m, the east side in #35 against the
  * porch's height about 2.3 m, and the railing in #33 about 2.0 m from post to post, its posts set in from the top block's edges. In #33 at full size
  * each front corner is a pier with a fluted pilaster on its front and on its side, the capital turning the corner; in #35 and fig. 110 each side is
- * that pilaster, a blind panel and a narrower pilaster against the wall. The doorway runs through the porch, its reveals and soffit in the porch's
- * stone, to the door in the 1888 wall (weston-facade.ts).
+ * that pilaster, a blind panel and a narrower pilaster against the wall. The door's leaves stand in the doorway near the porch's front (`DOOR`), so
+ * the porch is a vestibule closed at its front; behind them the doorway runs on through the porch, its reveals and soffit in the porch's stone, and
+ * through the 1888 wall's lined opening into gallery 529 (weston-facade.ts).
  * Frame: u along the front from the doorway's middle (toward +Z), y up from the main floor (L1), d out from the brick face into the court (toward −X).
  */
 import { Matrix4 } from 'three';
@@ -29,10 +30,14 @@ import { FACING, addBox, cylinder, keyOf, memo, placed } from './shapes.js';
 const CENTRE_Z = (WEST_Z + EAST_Z) / 2;
 
 /**
- * The doorway (interior.md, Weston's 1888 door): its opening as fig. 29 draws it, 3.29 m wide and 4.91 m from the porch floor to its head, and its
- * architrave's width (0.19 to 0.22 m drawn); the stone lining of the 1888 wall's hole round it and the threshold under that (weston-facade.ts).
+ * The doorway (interior.md, Weston's 1888 door): its opening as fig. 29 draws it, 3.29 m wide and 4.91 m from the porch floor to its head; its
+ * architrave's width (0.19 to 0.22 m drawn) and how far it stands proud of the porch's front (estimated); where the door's frame stands, its front
+ * `frame` behind the architrave's face, so that the leaves' hinges, on their back face 0.095 m behind the frame's front (src/model/lib/window.ts
+ * `doorUnit`: a 0.12 m frame, 0.07 m leaves in its middle), stand 0.345 m behind it, where #33 at full size shows the lit gap at the east leaf's hinge,
+ * open a quarter turn, about 0.35 m behind it (interior-images.md #33); and the stone lining of the 1888 wall's hole behind the porch and the threshold
+ * under that (weston-facade.ts).
  */
-export const DOOR = { width: 3.29, height: 4.91, trim: 0.2, lining: 0.15, threshold: 0.03 } as const;
+export const DOOR = { width: 3.29, height: 4.91, trim: 0.2, proud: 0.08, frame: 0.25, lining: 0.15, threshold: 0.03 } as const;
 
 /**
  * The porch's measures in its frame (see the header): measured on fig. 29 where nothing says otherwise. Estimates: the depth (three readings), the
@@ -81,6 +86,9 @@ export const PORCH_REACH = {
   corniceFrom: PORCH.body.height + PORCH.entablature - CORNICE,
   soffit: PORCH.body.height + PORCH.entablature - CORNICE / 2,
 } as const;
+
+/** The door frame's front, out from the brick face: the architrave's face, on the porch body's front, less `DOOR.frame` (1.96 m). */
+export const DOOR_FRAME_OUT = PORCH.body.depth + DOOR.proud - DOOR.frame;
 
 /** The porch's frame in the world: the brick face at the doorway's middle on the main floor, its front toward the court. */
 const FRAME = placed(B_SOUTH_X, L1, CENTRE_Z, FACING.south);
@@ -134,7 +142,7 @@ function masonry(): BufferGeometry {
     const { body } = PORCH;
     const b = new MeshBuilder();
     b.append(openWall({ width: 2 * body.half, height: body.height, thickness: body.depth, holes: [{ width: DOOR.width, height: DOOR.height }] }), placed(0, 0, body.depth));
-    b.append(surround({ width: DOOR.width, height: DOOR.height, trim: DOOR.trim, projection: 0.08, sill: false, head: 'none' }), placed(0, 0, body.depth));
+    b.append(surround({ width: DOOR.width, height: DOOR.height, trim: DOOR.trim, projection: DOOR.proud, sill: false, head: 'none' }), placed(0, 0, body.depth));
     const run = entablature({ path: [[-EDGE, 0, 0], [-EDGE, 0, PORCH.depth], [EDGE, 0, PORCH.depth], [EDGE, 0, 0]], height: PORCH.entablature, modillions: true, dentils: false });
     const on = placed(0, body.height, 0);
     b.append(run.moulding, on);

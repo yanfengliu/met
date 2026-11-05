@@ -64,6 +64,10 @@
     {
       "id": 17,
       "theme": "weston-porch"
+    },
+    {
+      "id": 18,
+      "theme": "weston-leaves"
     }
   ]
 }

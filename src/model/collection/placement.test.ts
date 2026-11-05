@@ -38,7 +38,7 @@ import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import type { GroundHit, LineCrossings } from '../../walk/collision.js';
 import { BODY } from '../../walk/walker.js';
 import { GATE_CLEAR } from '../core/choir-screen.js';
-import { SCREEN_Z } from '../core/constants.js';
+import { B_SOUTH_X, OUTER_WALL, SCREEN_Z } from '../core/constants.js';
 import { INNER_EAST_Z } from '../core/layout.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
 import { GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING, MAIN_FLOOR_Y, SACKLER_MAX_Z, SECOND_FLOOR_Y } from '../frame.js';
@@ -80,7 +80,8 @@ const ZONES: readonly Zone[] = [
   // The central arch's doors swing either way, each leaf at most an opening wide.
   { name: 'Hunt central doors swing', y: MAIN_FLOOR_Y, min: [OPENINGS[0]?.[0] ?? 0, HUNT_DOOR_Z - widest], max: [OPENINGS[2]?.[1] ?? 0, HUNT_DOOR_Z + widest], margin: CLEARANCE },
   { name: 'Weston door swing', y: MAIN_FLOOR_Y, min: [WESTON_DOOR.x - WESTON_DOOR.width, WESTON_DOOR.z - WESTON_DOOR.width / 2], max: [WESTON_DOOR.x + WESTON_DOOR.width, WESTON_DOOR.z + WESTON_DOOR.width / 2], margin: CLEARANCE },
-  { name: 'Weston door passage', y: MAIN_FLOOR_Y, min: [WESTON_DOOR.x - 6, WESTON_DOOR.z - WESTON_DOOR.width / 2], max: [WESTON_DOOR.x + 6, WESTON_DOOR.z + WESTON_DOOR.width / 2], margin: CLEARANCE + BODY.radius },
+  // The Weston door's passage, from its frame near the porch's front through the porch and the old front, 6 m out each side, as the party walls' passages.
+  { name: 'Weston door passage', y: MAIN_FLOOR_Y, min: [WESTON_DOOR.x - 6, WESTON_DOOR.z - WESTON_DOOR.width / 2], max: [B_SOUTH_X + OUTER_WALL + 6, WESTON_DOOR.z + WESTON_DOOR.width / 2], margin: CLEARANCE + BODY.radius },
   // The doorway from the cross hall into gallery 600 with its passage's lining, through both walls; the Dendur gate's threshold and the rail before it.
   { name: 'gallery 600 doorway', y: SECOND_FLOOR_Y, min: [-GALLERY_600_DOOR_HALF_WIDTH - GALLERY_600_DOOR_LINING, INNER_EAST_Z], max: [GALLERY_600_DOOR_HALF_WIDTH + GALLERY_600_DOOR_LINING, CROSS_HALL_BACK_Z], margin: CLEARANCE },
   { name: 'Dendur gate', y: GATE_THRESHOLD.topY, min: [GATE_RAIL.minX, GATE_THRESHOLD.minZ], max: [GATE_RAIL.maxX, GATE_RAIL.z], margin: CLEARANCE },

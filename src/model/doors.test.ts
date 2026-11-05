@@ -2,7 +2,8 @@
  * The model's doors on the real sequence (src/model/doors.ts; docs/design/spec.md, Doors), headless: every door of the list is tagged, in one step,
  * and every door tag names one of them; the door layer (src/viewer/doors.ts) builds over the real timeline, with stand-ins for the doors that open and
  * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's stand-ins and doorways counted (17 together; review 0, F9);
- * no leaf of a door that opens casts a shadow, so no swing asks for a shadow pass (review 5, F23); with the layer attached and the doors used between
+ * no leaf of the entrance's doors casts a shadow, so their swings ask for no shadow pass (review 5, F23), and Weston's leaves, at its porch's front, cast
+ * one, so its swing asks for one at every frame (work unit 18; src/model/core/materials.ts `westonDoorWood`); with the layer attached and the doors used between
  * random positions, the timeline's state stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door
  * from 2.5 m in front at t = N through the page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors'
  * pieces held shut in the door world), stops against its leaves (red with the locked doors' parts left out of the door world: 4.52 m past the north
@@ -111,18 +112,20 @@ describe('the model’s doors', () => {
     for (const id of ['mmw-north-link', 'mmw-south-link', 'bank']) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.layers.mask, `${id} is never hidden`).toBe(1);
   });
 
-  it('asks no shadow pass for the swings of the doors that open, the entrance’s and Weston’s: their leaves cast no shadow, the stand-ins neither (review 5, F23)', () => {
+  it('asks no shadow pass for the entrance’s swings, whose leaves cast none (review 5, F23), and one at every frame of Weston’s, whose leaves cast one (work unit 18)', () => {
     layer.sync(timeline.n, 0, true);
     const opening = DOORS.filter((d) => !d.locked).map((d) => d.id);
     expect(opening).toEqual(['hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-north', 'weston']);
-    for (const id of opening) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.castShadow, `${id}'s closed leaves`).toBe(false);
-    expect(layer.meshes.map((m) => m.castShadow), 'the stand-ins').toEqual(layer.meshes.map(() => false));
+    for (const id of opening) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.castShadow, `${id}'s closed leaves`).toBe(id === 'weston');
+    const westons = (mesh: InstancedMesh): boolean => !Array.isArray(mesh.material) && mesh.material === meshesOf.get('weston')?.[0]?.material;
+    expect(layer.meshes.filter(westons), 'Weston’s stand-ins').not.toHaveLength(0);
+    expect(layer.meshes.map((m) => m.castShadow), 'the stand-ins: Weston’s cast, the entrance’s not').toEqual(layer.meshes.map(westons));
     // Each opened from in front: the entrance from its landing, Weston's door from the Petrie Court.
-    for (const [id, from] of [['hunt-entrance-middle', new Vector3(0, 5.2, 3)], ['weston', new Vector3(WESTON_DOOR.x - 2, 5.7, WESTON_DOOR.z)]] as const) {
+    for (const [id, from, frame] of [['hunt-entrance-middle', new Vector3(0, 5.2, 3), 'moved'], ['weston', new Vector3(WESTON_DOOR.x - 2, 5.7, WESTON_DOOR.z), 'shadows']] as const) {
       expect(layer.use(id, from), `${id} opens`).toBe(true);
       const frames: string[] = [];
       for (let k = 0; k < 50 && layer.facts().some((d) => d.state === 'opening'); k += 1) frames.push(layer.sync(timeline.n, 1 / 60));
-      expect(new Set(frames), `every frame of ${id}'s swing: the frame, not the shadows`).toEqual(new Set(['moved']));
+      expect(new Set(frames), `every frame of ${id}'s swing: ${frame === 'moved' ? 'the frame, not the shadows' : 'the frame and the shadows'}`).toEqual(new Set([frame]));
       expect(frames.length).toBeGreaterThan(30);
       layer.use(id, null);
       layer.sync(timeline.n, 0, true);

@@ -2,17 +2,20 @@
  * Weston's 1888 door against the walker (docs/design/spec.md, Doors), headless, through the page's path on the real sequence at t = N: the whole
  * sequence's Timeline, the page's door layer over it (src/viewer/doors.ts) and the walk's world as walk mode builds it (src/walk/door-world.ts
  * `walkWorld`: the static world without the doors' leaves, and the leaves where the layer stands them), with the walk mode's own walker
- * (src/walk/walker.ts) stepped at 60 frames a second. From the Petrie Court on the door's axis the closed door stops the walker against its leaves;
- * turned onto a leaf 0.15 m off their meeting line, the eye finds the door as the page's look target (src/walk/look.ts, through the page's picker with the
+ * (src/walk/walker.ts) stepped at 60 frames a second. From the Petrie Court on the door's axis the closed door, near the porch's front, stops the walker
+ * against its leaves; turned onto a leaf 0.15 m off their meeting line, the eye finds the door as the page's look target (src/walk/look.ts, through the page's picker with the
  * layer's stand-ins and doorways registered as the page registers them), whose prompt says "E Open"; opened as E opens it (`DoorLayer.use` on the look target, from the walker's
- * eye; red with the layer's meshes left out of the picker, which met nothing there; work unit 2, review 17, F48), it swings a quarter turn into wing B, and the walker walks through the doorway into gallery 529 and back out into
- * the court, past where it set out, beyond the porch the doorway runs through (work unit 17, review 0, F0), on the main floor's level all the way but
- * for the door frame's 8 cm sill. Red with the way back held 4 s, as before that repair: the feet stop at X −51.593, inside the porch, which the old
- * line (`WESTON_DOOR.x - 2`, X −51.40) passed (work unit 17, review 1).
+ * eye; red with the layer's meshes left out of the picker, which met nothing there; work unit 2, review 17, F48), it swings a quarter turn inward, into the porch, and the walker walks
+ * through the porch and the old front into gallery 529 and back out into the court, past where it set out (work unit 17, review 0, F0), on the main floor's level all the way but
+ * for the door frame's 8 cm sill. Red with the way back held 4 s (work unit 17, review 1): the feet stop at X −53.853, 1.31 m short of the line.
+ * Standing open, the doorway's passage is clear from before the porch's pedestals through the porch and the old front to 1.5 m into gallery 529: rays
+ * along it 0.1 m apart across it, inside the open leaves, and at four heights meet nothing (work unit 18), which holds the 528/529 wall on the line of
+ * the doorway's west reveal (src/model/core/galleries.ts `clearOf`; red with that wall on the map's line, where the 16 rays 0.9 to 1.2 m west of the
+ * axis meet its end at X −48.70, the old front's inner face).
  * Bound: the walker walks on the door's axis, square to the facade; positions are the feet's; "no leaf inside the body" is read where the walker stops
- * at the closed door and where it ends, by src/walk/door-testing.ts `gap`, an oracle apart from the collision.
+ * at the closed door and where it ends, by src/walk/door-testing.ts `gap`, an oracle apart from the collision. The rays are level and run along X.
  */
-import { Layers, Matrix4, Vector3 } from 'three';
+import { Layers, Matrix4, Ray, Vector3 } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { SEQUENCE } from '../../build/sequence.js';
@@ -32,13 +35,14 @@ import { MAIN_FLOOR_Y } from '../frame.js';
 import { doorLeavesOf } from '../lib/window.js';
 import { B_SOUTH_X, OUTER_WALL } from './constants.js';
 import { WESTON_DOOR } from './weston-facade.js';
+import { PORCH } from './weston-porch.js';
 
 const FPS = 60;
 const W: WalkInput = { forward: 1, right: 0, run: false };
 /** Yaw facing +X, from the court into wing B, and −X, back out (src/walk/walker.ts: yaw 0 faces −Z and grows turning left). */
 const NORTH = -Math.PI / 2;
 const SOUTH = Math.PI / 2;
-/** Where the walk starts, on the door's axis 3.5 m out in the court just before the porch's pedestals, and the line its way back must pass. */
+/** Where the walk starts, on the door's axis 3.5 m out from its frame in the court, 3 m before the porch's pedestals, and the line its way back must pass. */
 const COURT_X = WESTON_DOOR.x - 3.5;
 
 let timeline: Timeline;
@@ -94,7 +98,7 @@ function hold(walker: Walker, seconds: number, input: WalkInput): { low: number;
 const at = (walker: Walker): string => `(${walker.feet.x.toFixed(3)}, ${walker.feet.y.toFixed(3)}, ${walker.feet.z.toFixed(3)})`;
 
 describe("Weston's 1888 door, walked from the Petrie Court", () => {
-  it('stops a walker at the closed leaves; opened as E opens it, it swings into wing B and the walker walks through into gallery 529 and back out', () => {
+  it('stops a walker at the closed leaves; opened as E opens it, it swings inward and the walker walks through into gallery 529 and back out', () => {
     expect(layer.facts().find((d) => d.id === 'weston'), 'the door, built and closed').toEqual({ id: 'weston', state: 'closed', angle: 0, locked: false, built: true });
     const walker = new Walker(world, floorY);
     walker.place(COURT_X, MAIN_FLOOR_Y, WESTON_DOOR.z, NORTH);
@@ -112,19 +116,37 @@ describe("Weston's 1888 door, walked from the Petrie Court", () => {
     expect(layer.use(target?.id ?? '', walker.eye()), 'E opens it').toBe(true);
     walker.turn(NORTH - walker.yaw, 0);
     hold(walker, 1, NO_INPUT);
-    expect(angle(), 'a quarter turn into the building, away from the walker').toBeCloseTo(90, 6);
+    expect(angle(), 'a quarter turn inward, into the porch, away from the walker').toBeCloseTo(90, 6);
     const through = hold(walker, 3, W);
     const inside = B_SOUTH_X + OUTER_WALL + 1.5;
-    expect(walker.feet.x, `through the doorway into gallery 529, 1.5 m past the old front's inner face, at ${at(walker)}`).toBeGreaterThan(inside);
+    expect(walker.feet.x, `through the porch and the old front into gallery 529, 1.5 m past the old front's inner face, at ${at(walker)}`).toBeGreaterThan(inside);
     expect(walker.onGround).toBe(true);
     expect(through.low - MAIN_FLOOR_Y, 'never below the main floor').toBeGreaterThan(-0.01);
     expect(through.high - MAIN_FLOOR_Y, 'nor above the door frame’s 8 cm sill').toBeLessThan(0.09);
 
     walker.turn(SOUTH - walker.yaw, 0);
     const back = hold(walker, 6, W);
-    expect(walker.feet.x, `back out through the doorway and the porch into the court, past where it set out (X ${COURT_X.toFixed(2)}), at ${at(walker)}`).toBeLessThan(COURT_X);
+    expect(walker.feet.x, `back out through the old front, the porch and the door into the court, past where it set out (X ${COURT_X.toFixed(2)}), at ${at(walker)}`).toBeLessThan(COURT_X);
     expect(walker.feet.y, 'on the court’s floor').toBeCloseTo(MAIN_FLOOR_Y, 2);
     expect(back.low - MAIN_FLOOR_Y, 'never below the main floor').toBeGreaterThan(-0.01);
     expect(gap(layer, walker.feet), 'no leaf inside the body').toBeGreaterThan(-0.002);
+  });
+
+  it('stands its passage clear, open: from before the porch through the old front into gallery 529, nothing across it inside the open leaves', () => {
+    if (layer.facts().find((d) => d.id === 'weston')?.state === 'closed') layer.use('weston', new Vector3(COURT_X, MAIN_FLOOR_Y + BODY.eye, WESTON_DOOR.z));
+    layer.sync(timeline.n, 0, true);
+    expect(angle(), 'standing open, a quarter turn inward').toBeCloseTo(90, 6);
+    // From 0.1 m before the pedestals' front to 1.5 m past the old front's inner face; across the doorway to 1.4 m each side of its axis, where the
+    // open leaves' inner faces stand about 1.47 m out; from 0.3 m over the floor, clear of the frame's sill, to 4.6 m, under its head (4.83 m).
+    const from = B_SOUTH_X - PORCH.pedestal.front - 0.1;
+    const to = B_SOUTH_X + OUTER_WALL + 1.5;
+    const met: string[] = [];
+    for (let k = -14; k <= 14; k += 1) {
+      for (const y of [0.3, 1.6, 3.0, 4.6]) {
+        const found = hit(new Ray(new Vector3(from, MAIN_FLOOR_Y + y, WESTON_DOOR.z + k / 10), new Vector3(1, 0, 0)), { far: to - from });
+        if (found !== null) met.push(`${(k / 10).toFixed(1)} m across, ${y.toFixed(1)} m up: at X ${(from + found.distance).toFixed(2)}`);
+      }
+    }
+    expect(met, `rays along the passage from X ${from.toFixed(2)} to ${to.toFixed(2)} that meet a piece, and where`).toEqual([]);
   });
 });

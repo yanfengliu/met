@@ -58,7 +58,7 @@ export interface FrontDoorway {
  * reveal, and the walls that end on it following it. The 1888 door has one: the wall between galleries 528 and 529 (map Z −104.7), moved 0.80 m
  * west. The decoded floor map (interior.md, Plan source) has the door in the middle of gallery 529, its opening on the old front's line from
  * Z −102.73 to −99.21, but the model's pavilion stands at the facade's middle, 2.68 m west of that, so on the map's line this wall stood 0.80 m
- * inside the doorway and in the swing of the door's west leaf, which opens into the building (src/model/door-fit.test.ts).
+ * inside the doorway, which runs from the door at the porch's front through the old front into gallery 529 (src/model/core/weston-door.test.ts).
  */
 function clearOf(runs: readonly Run[], doorway: FrontDoorway): Run[] {
   const half = PARTITION / 2;
