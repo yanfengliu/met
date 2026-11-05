@@ -18,7 +18,7 @@ import { collectStep } from '../../build/kit.js';
 import { SEQUENCE } from '../../build/sequence.js';
 import { Timeline } from '../../build/timeline.js';
 import type { Kit, StepDef } from '../../build/types.js';
-import { SACKLER_GLASS_TOP_Y } from '../frame.js';
+import { KRAVIS_EAST_Z, SACKLER_GLASS_TOP_Y } from '../frame.js';
 import { AW_PARAPET_Y } from '../roche-north/american.js';
 import { KRAVIS_ROOF_Y } from '../roche-south/kravis.js';
 import { RF_ROOF_Y } from '../roche-south/rockefeller.js';
@@ -40,7 +40,7 @@ const BLOCKS: readonly Rect[] = [
   [88.6, -41.3, 153.1, 9.8],
   [49.4, -96.0, 118.0, -41.3],
   [49.4, -41.3, 88.6, -38.5],
-  [-88.1, -69.0, -49.7, -1.9],
+  [-88.1, KRAVIS_EAST_Z, -49.7, -1.9],
   [-151.5, -38.5, -88.1, 9.9],
 ];
 const OVERSTEP = 0.3;
@@ -176,9 +176,9 @@ describe('mmw shared walls', () => {
     { name: 'Sackler on X 118', strip: [117.2, -96.0, 118.0, -41.3], roof: SACKLER_GLASS_TOP_Y },
     { name: 'Sackler on Z -41.3', strip: [118.0, -41.3, 153.13, -40.5], roof: SACKLER_GLASS_TOP_Y },
     { name: 'American Wing on Z -96', strip: [49.4, -96.0, 118.0, -95.2], roof: AW_PARAPET_Y },
-    { name: 'Rockefeller on X -88.1', strip: [-88.1, -69.0, -87.3, -38.5], roof: RF_ROOF_Y },
+    { name: 'Rockefeller on X -88.1', strip: [-88.1, KRAVIS_EAST_Z, -87.3, -38.5], roof: RF_ROOF_Y },
     { name: 'Rockefeller on Z -38.5', strip: [-151.61, -38.5, -88.1, -37.7], roof: RF_ROOF_Y },
-    { name: 'Kravis on Z -69', strip: [-88.1, -69.0, -49.7, -68.2], roof: KRAVIS_ROOF_Y },
+    { name: 'Kravis on Z -64.94', strip: [-88.1, KRAVIS_EAST_Z, -49.7, KRAVIS_EAST_Z + 0.8], roof: KRAVIS_ROOF_Y },
   ];
 
   it("reach each newer neighbour's roof on every shared line", () => {

@@ -38,6 +38,7 @@ export const FOOTPRINT_AREA_M2 = 46470; // [B00] M: OSM outline area; blocks til
 export const WEST_FACE_Z_CORE = -138.3; // [K1] M: west face, Kravis to American Wing
 export const WEST_FACE_Z_WALLACE = -160.1; // [K1] M: Wallace Wing west face
 export const WEST_FACE_Z_AMERICAN = -161.0; // [K1] M: American Wing outer west face
+export const KRAVIS_EAST_Z = -64.94; // [B1] D: the line between the Kravis Wing and the McKim, Mead & White south link, the Petrie Court's east end: as far east of Weston's door (core WESTON_PAVILION_Z, −100.97) as the court's west end (the Kravis park face, −138.2, less its 1.2 m wall) is west of it, as the floor map's court (−137.10..−64.83) is symmetric about it; the map's floor 2 draws the link's west wall on −64.85 (work unit 22, interior.md, Weston's 1888 front)
 
 // --- Levels ---------------------------------------------------------------------------------
 export const LANDING_Y = 3.63; // [P1] M: top of the front steps, flat Z +3.5..+8.5
@@ -46,7 +47,7 @@ export const GROUND_FLOOR_Y = -2.34; // D: MAIN_FLOOR_Y − 21'-2" (interior.md,
 export const SECOND_FLOOR_Y = 10.97; // D: MAIN_FLOOR_Y + 22'-6" (interior.md, Floor levels), Hunt core only; other wings' second floors differ
 export const CORE_PARAPET_Y = 18.0; // E: parapet top of the 1880–1894 core's outer walls (core area, 2026-10-11, after 1880_Met_Museum.jpg about 1900 and the Petrie Court photo, interior-images.md #33)
 export const CORE_COPING_TOP_Y = 18.15; // D: CORE_PARAPET_Y plus the 0.15 m stone coping; the Petrie Court's glass roof rests on Weston's south front here (Petrie Court photos, interior-images.md #33 and #35)
-export const KRAVIS_PARAPET_Y = 19.6; // D: the Kravis Wing's parapet top: its roof at the Petrie Court's eaves (CORE_COPING_TOP_Y plus the court roof's 0.45 m gutter, roche-south kravis.ts) plus a 1.0 m parapet (E); the south link's park wall on Z −69.0 rises to it (mmw party-walls.ts)
+export const KRAVIS_PARAPET_Y = 19.6; // D: the Kravis Wing's parapet top: its roof at the Petrie Court's eaves (CORE_COPING_TOP_Y plus the court roof's 0.45 m gutter, roche-south kravis.ts) plus a 1.0 m parapet (E); the south link's park wall on KRAVIS_EAST_Z rises to it (mmw party-walls.ts)
 export const GREAT_HALL_RIDGE_Y = 33.37; // D: MAIN_FLOOR_Y + 96'-0" (interior.md, Floor levels), medium-low
 export const ROOF_GARDEN_Y = 21.6; // E: the roof garden deck (map floor 5) on the Wallace Wing, one storey over the Patrons Lounge; photo ref-park-south (Peel 2024, EXIF 17 mm on APS-C) shows nothing of the garden over the south face near the tower, which keeps its parapet within about a metre of the sight line over that face, so this is the lowest storey that fits (roche-south modeller; moved here from wallace-plan.ts on 2026-10-15 for the floor picker)
 

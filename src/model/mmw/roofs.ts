@@ -15,7 +15,7 @@ import type { BufferGeometry, Material } from 'three';
 import type { Kit } from '../../build/types.js';
 import { MeshBuilder, ridgeSkylight } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { END_PARAPET_Y, END_ROOF_Y, LEVEL_2_FRONT, LEVEL_2_NORTH, LINK_ROOF_Y, LINK_TIER, MORGAN_ROOF_Y, SLAB, SOUTH_HIP_RISE } from './dims.js';
+import { END_PARAPET_Y, END_ROOF_Y, LEVEL_2_FRONT, LEVEL_2_NORTH, LINK_ROOF_Y, LINK_TIER, MORGAN_ROOF_Y, PARTY_WALL, SLAB, SOUTH_HIP_RISE, SOUTH_LINK } from './dims.js';
 import { mmwMaterials } from './materials.js';
 import { merged } from './merge.js';
 import { addBox, placed } from './shapes.js';
@@ -38,7 +38,8 @@ const NORTH_PAVILION_WHITE: Rect = [133.6, -24.2, 141.0, -2.8];
 const MORGAN_RIDGES: Rect = [100.0, -95.2, 117.2, -41.3];
 const SOUTH_SKYLIGHT_153: Rect = [-83.0, -18.6, -56.6, -13.7];
 const SOUTH_FRONT_RANGE: Rect = [-87.5, -10.0, -50.0, -3.4];
-const SOUTH_PENTHOUSE: Rect = [-87.3, -68.2, -62.0, -41.0];
+/** The mechanical penthouse behind the south link (exterior.md [R6]: X −89..−51, Z −65..−35), from the party walls' inner faces on X −88.1 and on the link's park end. */
+const SOUTH_PENTHOUSE: Rect = [-87.3, SOUTH_LINK.z0 + PARTY_WALL, -62.0, -41.0];
 
 const WELL_WALL = 0.4;
 

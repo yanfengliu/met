@@ -2,7 +2,9 @@
  * Interior wall lines of the McKim, Mead & White blocks, per floor, from the Met's floor map (interior.md, Plan source; decoded tiles cached under research/cache/,
  * never committed): its 'wall' line strings, which leave gaps at doors, moved into the world frame (X = json x + 3.82, Z = json z − 82.87 + MAP_Z_SHIFT),
  * snapped to the grid, merged where collinear, rounded to 5 cm, and cut to this area's blocks. Lines along this area's own outer and party walls are dropped.
- * Each entry is [x0, z0, x1, z1], axis-aligned. Generated once from the cache by the area worker (2026-10-11); edit by hand only to drop a line.
+ * Each entry is [x0, z0, x1, z1], axis-aligned. Generated once from the cache by the area worker (2026-10-11); edit by hand only to drop a line. Dropped
+ * by hand (work unit 22, 2026-11-05): the south link's four floor 2 lines on and west of Z −64.85, the map's line of its park wall, to which that wall moved
+ * (dims.ts SOUTH_LINK), and the stubs from it into what is now the Kravis Wing.
  */
 export type PlanBlock = 'north-e' | 'north-h' | 'north-f' | 'south-j' | 'south-k';
 export type PlanLevel = 'G' | '1' | '1M' | '2' | '3';
@@ -76,7 +78,7 @@ export const MAP_WALLS: { readonly [B in PlanBlock]: { readonly [L in PlanLevel]
       [-88.1, -22.1, -79, -22.1], [-77.25, -22.1, -68.2, -22.1], [-66.45, -22.1, -57.4, -22.1], [-88.1, -13, -79, -13], [-77.25, -13, -68.2, -13], [-66.45, -13, -57.35, -13],
     ],
     '2': [
-      [-84.7, -64.85, -64.4, -64.85], [-61.45, -64.85, -51.25, -64.85], [-84.7, -68.35, -84.7, -64.85], [-68.6, -32, -68.6, -27.95], [-68.6, -26.2, -68.6, -22.1], [-64.4, -68.35, -64.4, -64.85],
+      [-68.6, -32, -68.6, -27.95], [-68.6, -26.2, -68.6, -22.1],
     ],
     'G': [
       [-69.75, -9.85, -69.75, -3.1],

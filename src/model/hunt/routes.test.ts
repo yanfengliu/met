@@ -32,7 +32,7 @@ import { EAST_Z, VAUX_BAY, WEST_Z } from '../core/constants.js';
 import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
 import { CLEAR } from '../core/vaux-arch.js';
 import { eastCorridor } from '../core/vaux-east.js';
-import { MORGAN, PARTY_WALL } from '../mmw/dims.js';
+import { MORGAN, PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import { ROMAN_COURT } from '../mmw/wings.js';
 import { COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
@@ -208,8 +208,8 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
   it('R7 crosses the corridor through the party wall and the court wall’s opening on the main floor’s level into the Petrie Court, and back', () => {
     for (const route of [ROUTE_R7, reversed(ROUTE_R7)]) {
       const { samples, end } = walked(route);
-      // Through the party wall on Z −69.0 and a metre either side of it, between the corridor's sides.
-      const corridor = samples.filter((s) => s.z > -69 - 1 && s.z < -69 + PARTY_WALL + 1 && s.x > PETRIE_PASSAGE.a && s.x < PETRIE_PASSAGE.b);
+      // Through the party wall at the south link's park end and a metre either side of it, between the corridor's sides.
+      const corridor = samples.filter((s) => s.z > SOUTH_LINK.z0 - 1 && s.z < SOUTH_LINK.z0 + PARTY_WALL + 1 && s.x > PETRIE_PASSAGE.a && s.x < PETRIE_PASSAGE.b);
       expect(corridor.length, `${route.id}: samples in the corridor`).toBeGreaterThan(5);
       expect(heightsOff(corridor, MAIN), `${route.id}: feet off the main floor in the corridor`).toEqual([]);
       // Through the court's limestone wall, a metre either side of it, in its 3.6 m opening.

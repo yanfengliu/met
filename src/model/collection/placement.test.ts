@@ -93,7 +93,7 @@ const ZONES: readonly Zone[] = [
   { name: 'Dendur pool', y: PLATFORM_Y - 0.5, min: [POOL.minX, POOL.basinMinZ], max: [POOL.maxX, SACKLER_MAX_Z], margin: CLEARANCE },
   { name: 'Dendur pool, south arm', y: PLATFORM_Y - 0.5, min: [POOL.minX, POOL.armMinZ], max: [POOL.armSouthMaxX, POOL.basinMinZ], margin: CLEARANCE },
   { name: 'Dendur pool, north arm', y: PLATFORM_Y - 0.5, min: [POOL.armNorthMinX, POOL.armMinZ], max: [POOL.maxX, POOL.basinMinZ], margin: CLEARANCE },
-  // The passages through the party walls on Z −96.0 (into the Engelhard Court) and Z −69.0 (into the Petrie Court's wing), 6 m out each side, as Weston's.
+  // The passages through the party walls on Z −96.0 (into the Engelhard Court) and the south link's park end, Z −64.94 (into the Petrie Court's wing), 6 m out each side, as Weston's.
   { name: 'Engelhard Court passage', y: MAIN_FLOOR_Y, min: [ENGELHARD_PASSAGE.a, MORGAN.z0 - 6], max: [ENGELHARD_PASSAGE.b, MORGAN.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
   { name: 'Petrie Court passage', y: MAIN_FLOOR_Y, min: [PETRIE_PASSAGE.a, SOUTH_LINK.z0 - 6], max: [PETRIE_PASSAGE.b, SOUTH_LINK.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
   // The Valladolid choir screen's open gate, between its jambs (core/choir-screen.ts), 6 m out each side, as Weston's.

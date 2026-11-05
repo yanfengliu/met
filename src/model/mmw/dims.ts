@@ -28,6 +28,7 @@ import {
   BUILDING_MIN_X,
   GROUND_FLOOR_Y,
   HUNT_EXTENSION_FACE_Z,
+  KRAVIS_EAST_Z,
   KRAVIS_PARAPET_Y,
   MAIN_FLOOR_Y,
   MMW_CORNICE_Y,
@@ -56,8 +57,8 @@ export const NORTH_LINK = { x0: MMW_NORTH_LINK_MIN_X, x1: MMW_NORTH_LINK_MAX_X, 
 export const NORTH_END = { x0: MMW_NORTH_END_MIN_X, x1: BUILDING_MAX_X, z0: SACKLER_MAX_Z, z1: MMW_END_PAVILION_FRONT_Z } as const;
 /** Wing F behind the north link: X 49.4..118.0, Z −96.0..−41.3 plus the strip X 49.4..88.6, Z −41.3..−38.5. */
 export const MORGAN = { x0: MMW_NORTH_LINK_MIN_X, x1: 118.0, z0: -96.0, z1: SACKLER_MAX_Z, stripX1: MMW_NORTH_LINK_MAX_X, stripZ1: -38.5 } as const;
-/** The south link's front is 0.1 m in front of the north link's (exterior.md W2, S1 −1.9). */
-export const SOUTH_LINK = { x0: MMW_SOUTH_LINK_MIN_X, x1: MMW_SOUTH_LINK_MAX_X, z0: -69.0, z1: -1.9 } as const;
+/** The south link's front is 0.1 m in front of the north link's (exterior.md W2, S1 −1.9); its park end is the line it shares with the Kravis Wing (frame.ts KRAVIS_EAST_Z, work unit 22). */
+export const SOUTH_LINK = { x0: MMW_SOUTH_LINK_MIN_X, x1: MMW_SOUTH_LINK_MAX_X, z0: KRAVIS_EAST_Z, z1: -1.9 } as const;
 export const SOUTH_END = { x0: BUILDING_MIN_X, x1: MMW_SOUTH_END_MAX_X, z0: -38.5, z1: MMW_END_PAVILION_FRONT_Z } as const;
 
 // --- Levels -------------------------------------------------------------------------------------
@@ -87,7 +88,7 @@ export const FOOTING_DEPTH = 1.2;
 export const END_ARCHITRAVE_Y = 16.5;
 export const END_CORNICE_Y = 19.4;
 export const END_PARAPET_Y = 21.9;
-/** Top of the south link's park wall (Z −69.0) once the Kravis Wing (1990) rose against it: that wing's parapet (frame.ts KRAVIS_PARAPET_Y, shared since 2026-10-13). */
+/** Top of the south link's park wall (on SOUTH_LINK.z0) once the Kravis Wing (1990) rose against it: that wing's parapet (frame.ts KRAVIS_PARAPET_Y, shared since 2026-10-13). */
 export const KRAVIS_LINE_TOP_Y = KRAVIS_PARAPET_Y;
 /** Flat roof decks: the links' behind the coping over their cornice, the end pavilions' behind the parapet. D: each a cornice or parapet upstand below. */
 export const LINK_ROOF_Y = MMW_CORNICE_Y - 0.9;

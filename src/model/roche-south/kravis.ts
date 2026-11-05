@@ -8,7 +8,7 @@
 import { Matrix4 } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
-import { CORE_COPING_TOP_Y, GROUND_FLOOR_Y, KRAVIS_PARAPET_Y, MAIN_FLOOR_Y } from '../frame.js';
+import { CORE_COPING_TOP_Y, GROUND_FLOOR_Y, KRAVIS_EAST_Z, KRAVIS_PARAPET_Y, MAIN_FLOOR_Y } from '../frame.js';
 import { hippedSkylight, laylight, ridgeSkylight, wall } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { OUTER_WALL, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
@@ -26,7 +26,8 @@ const FOOTING_Y = BASE_Y - 1.0;
 const X0 = -88.1;
 const X1 = -49.7;
 const Z_WEST = -138.2;
-const Z_EAST = -69.0;
+/** The line shared with the McKim, Mead & White south link, whose park wall closes the court's east end: as far east of Weston's door as Z_IN is west of it (frame.ts, work unit 22). */
+const Z_EAST = KRAVIS_EAST_Z;
 const Z_IN = Z_WEST + OUTER_WALL;
 
 /** The court: from its limestone south wall to the 1888 front (map gallery 548; the map's edge at X −51.24 is the old front's line). */
@@ -79,7 +80,7 @@ const COURT_SPAN = X1 - 0.2 - COURT_X0;
 const COURT_RIDGE = hippedSkylight({ width: COURT_SPAN, length: RIDGE_Z1 - RIDGE_Z0, pitch: 25, curbHeight: 0.3, bays: 18, bar: 0.08, barDepth: 0.14 });
 const END_WEST = laylight({ width: COURT_SPAN, length: RIDGE_Z0 - Z_IN, cols: 6, rows: 5, frameWidth: 0.1, frameDepth: 0.14 });
 const WEST_LIGHT = ridgeSkylight({ width: 5.0, length: 24.6, pitch: 25, curbHeight: 0.4, bays: 12, bar: 0.07, barDepth: 0.12 });
-const END_EAST = laylight({ width: COURT_SPAN, length: Z_EAST - RIDGE_Z1, cols: 6, rows: 8, frameWidth: 0.1, frameDepth: 0.14 });
+const END_EAST = laylight({ width: COURT_SPAN, length: Z_EAST - RIDGE_Z1, cols: 6, rows: Math.round((Z_EAST - RIDGE_Z1) / 2.0), frameWidth: 0.1, frameDepth: 0.14 });
 
 function structure(kit: Kit): void {
   kit.add(UNIT_BOX, mat.concrete, wallAlong([X0, Z_WEST], [X1, Z_WEST], FOOTING_Y, BASE_Y, 2.0), 0);
@@ -110,14 +111,18 @@ function parkFace(kit: Kit): void {
   kit.add(UNIT_BOX, palette.limestone, wallAlong([COURT_X0 + 1.2, Z_WEST], [X1 - 1.0, Z_WEST], BASE_Y, MAIN_FLOOR_Y, OUTER_WALL), 1);
 }
 
+/** The court's limestone south wall's openings, along it from its middle toward the court's west end (it runs east to west: court() below). */
+const COURT_OPENING_X = [-27.5, -16.5, -5.5, 5.5, 16.5, 27.5] as const;
+/** World Z of the middles of the court wall's six openings, east to west: symmetric about Weston's door, as the court is (work unit 22). */
+export const COURT_OPENINGS_Z: readonly number[] = COURT_OPENING_X.map((x) => (Z_EAST + Z_IN) / 2 - x);
 /** The court's limestone south wall: tall openings into the galleries at the main floor and windows from the second floor. */
 const COURT_SOUTH = wall({
   width: Z_EAST - Z_IN,
   height: PETRIE_EAVE_Y - MAIN_FLOOR_Y,
   thickness: COURT_WALL,
   openings: [
-    ...[-27.5, -16.5, -5.5, 5.5, 16.5, 27.5].map((x) => ({ x, y: 0, width: 3.6, height: 5.4 })),
-    ...[-27.5, -16.5, -5.5, 5.5, 16.5, 27.5].map((x) => ({ x, y: ROCHE_SECOND_FLOOR_Y - MAIN_FLOOR_Y + 0.9, width: 2.4, height: 2.6 })),
+    ...COURT_OPENING_X.map((x) => ({ x, y: 0, width: 3.6, height: 5.4 })),
+    ...COURT_OPENING_X.map((x) => ({ x, y: ROCHE_SECOND_FLOOR_Y - MAIN_FLOOR_Y + 0.9, width: 2.4, height: 2.6 })),
   ],
 });
 
@@ -140,7 +145,7 @@ const MAIN_ROOMS: readonly Room[] = [
 ];
 const UPPER_ROOMS: readonly Room[] = [
   [-88.13, -137.09, -62.59, -75.53],
-  [-88.12, -74.38, -62.59, -69.0],
+  [-88.12, -74.38, -62.59, Z_EAST],
 ];
 
 function galleries(kit: Kit): void {
@@ -207,12 +212,12 @@ function courtGlass(kit: Kit): void {
   glassEnd(X0 + 2.5, COURT_X0 - 2.5, MAIN_FLOOR_Y + 0.6, MAIN_FLOOR_Y + 6.0, 10, 4);
 }
 
-const FOCUS_WING = { kind: 'box', min: [-89, -4, -139], max: [-49, 24, -68] } as const;
+const FOCUS_WING = { kind: 'box', min: [-89, -4, -139], max: [-49, 24, -64] } as const;
 
 export const kravisSteps: readonly StepDef[] = [
   { id: 'kravis-structure', chapter: CHAPTER, year: YEAR, title: 'Kravis Wing floors', detail: 'Footings and floor plates of the wing that fills the corner between the Rockefeller and Wallace wings and the 1888 south wing.', motion: { kind: 'rise' }, stagger: 'order', focus: FOCUS_WING, build: structure },
   { id: 'kravis-park-face', chapter: CHAPTER, year: YEAR, title: 'Kravis Wing face to the park', detail: 'The limestone face on the park, open at the café and full height at the west end of the sculpture court.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: parkFace },
-  { id: 'petrie-court', chapter: CHAPTER, year: YEAR, title: 'The Petrie European Sculpture Court', detail: 'A court 12 m wide and 69 m long whose north wall is Weston’s 1888 brick and stone facade, with a limestone wall opposite.', motion: { kind: 'grow' }, stagger: 'order', focus: { kind: 'view', position: [-70, 30, -150], target: [-56, 6, -100] }, build: court },
+  { id: 'petrie-court', chapter: CHAPTER, year: YEAR, title: 'The Petrie European Sculpture Court', detail: 'A court 12 m wide and 72 m long whose north wall is Weston’s 1888 brick and stone facade, with a limestone wall opposite.', motion: { kind: 'grow' }, stagger: 'order', focus: { kind: 'view', position: [-70, 30, -150], target: [-56, 6, -100] }, build: court },
   { id: 'kravis-galleries', chapter: CHAPTER, year: YEAR, title: 'European sculpture galleries', detail: 'Gallery walls of the European sculpture and decorative arts rooms and the Petrie Court Café, with exhibition galleries above.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: galleries },
   { id: 'kravis-roof', chapter: CHAPTER, year: YEAR, title: 'Kravis Wing roofs', detail: 'Roofs over the galleries, a plant floor on top, and the steel beam along the old facade for the court’s glass roof.', motion: { kind: 'drop' }, stagger: 'order', focus: FOCUS_WING, build: roof },
   { id: 'petrie-glass', chapter: CHAPTER, year: YEAR, title: 'Glass roof over the sculpture court', detail: 'A long glass roof with a central ridge over the court, flatter glazing at its ends, and a glass wall at its west end facing the park.', motion: { kind: 'drop' }, stagger: 'order', weight: 1.5, focus: { kind: 'view', position: [-82, 42, -150], target: [-56, 16, -103] }, build: courtGlass },

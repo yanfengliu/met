@@ -4,6 +4,8 @@
  * Polygons are counter-clockwise lists of (X, Z) in world metres, copied from the block table; the ids are the table's.
  */
 
+import { KRAVIS_EAST_Z } from '../frame.js';
+
 export type Point = readonly [number, number];
 
 export interface Block {
@@ -24,7 +26,7 @@ export const BLOCKS: readonly Block[] = [
   { id: 'mmw-north-e', polygon: rect(49.4, 88.6, -38.5, -2.0) },
   { id: 'mmw-north-h', polygon: rect(88.6, 153.1, -41.3, 9.8) },
   { id: 'mmw-north-f', polygon: [[49.4, -38.5], [88.6, -38.5], [88.6, -41.3], [118.0, -41.3], [118.0, -96.0], [49.4, -96.0]] },
-  { id: 'mmw-south-j', polygon: rect(-88.1, -49.7, -69.0, -1.9) },
+  { id: 'mmw-south-j', polygon: rect(-88.1, -49.7, KRAVIS_EAST_Z, -1.9) },
   { id: 'mmw-south-k', polygon: rect(-151.5, -88.1, -38.5, 9.9) },
   { id: 'core-1880-a', polygon: rect(-14.5, 14.5, -138.3, -69.0) },
   { id: 'core-1888-b', polygon: rect(-49.7, -14.5, -138.3, -69.0) },
@@ -37,7 +39,7 @@ export const BLOCKS: readonly Block[] = [
   { id: 'american-wing', polygon: [[49.4, -96.0], [118.0, -96.0], [118.0, -103.0], [140.6, -103.0], [140.5, -161.0], [87.6, -161.0], [87.6, -138.3], [49.4, -138.3]] },
   { id: 'rockefeller', polygon: rect(-151.6, -88.1, -97.2, -38.5) },
   { id: 'wallace', polygon: [[-88.1, -97.2], [-151.6, -97.2], [-151.6, -104.7], [-141.2, -104.7], [-141.2, -160.1], [-88.2, -160.1]] },
-  { id: 'kravis-petrie', polygon: rect(-88.1, -49.7, -138.2, -69.0) },
+  { id: 'kravis-petrie', polygon: rect(-88.1, -49.7, -138.2, KRAVIS_EAST_Z) },
 ];
 
 interface Prepared {

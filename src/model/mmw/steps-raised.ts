@@ -19,7 +19,7 @@ export const northWallsRaisedStep: StepDef = {
   },
 };
 
-/** 1982–1990: the south link's south wall (X −88.1) against the Rockefeller Wing and its park wall (Z −69.0) against the Kravis Wing. */
+/** 1982–1990: the south link's south wall (X −88.1) against the Rockefeller Wing and its park wall (Z −64.94, frame.ts KRAVIS_EAST_Z) against the Kravis Wing. */
 export const southWallsRaisedStep: StepDef = {
   id: 'mmw-south-walls-raised',
   chapter: 'roche-south-1990',

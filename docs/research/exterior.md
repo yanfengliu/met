@@ -41,6 +41,7 @@ Research run 2026-10-11 by the `research-exterior` worker. Scratch data (OSM, NY
 
 - [B0] Building extents X −151.61..+153.13 (304.7 m along Fifth Avenue), Z −179.81..+9.91 (189.7 m deep). **M** S1. The Met's map (S6) uses the same outline (its "outdoor museum" polygon has identical extents). S2 is slightly larger: X −152.97..+154.60, Z −179.99..+10.22 (307.6 × 190.2 m).
 - [B00] Footprint area 46,470 m² (500,200 sq ft, 11.48 acres). **M** S1 outline. S2: 45,279 m² outer ring, 44,767 m² net of light wells. Published floor area "more than 2 million square feet (190,000 m²)" (S11; 2.1 million sq ft in 21 attached structures, Architectural Record 2024; 1,800,000 sq ft in the 1985 NHL nomination), so the floor-area ratio is about 4.1, which fits G, 1, 1M, 2 over most of the plan plus floors 3–5 over parts.
+- [B1] The line between the Kravis Wing and the MMW south link, Z −64.94 (`src/model/frame.ts` `KRAVIS_EAST_Z`; −69.0 until work unit 22, 2026-11-05, on the owner's "Yes, do it" to carrying Weston's front and the Petrie Court out to their real ends). **D**: as far east of Weston's door (Z −100.97) as the court's west end (the Kravis park face, −138.2, less its 1.2 m wall) is west of it, as the Met's map (S6) draws the court, Z −137.10..−64.83, symmetric about the door, and the link's west wall on floor 2 on −64.85 (`interior.md`, Weston's 1888 front). Moving it moves area between the two blocks only; the cut lines with the core and the Hunt block (Z −69.0) stay.
 
 The blocks below tile the S1 outline exactly: their areas sum to 46,470.5 m², the outline's area, with zero difference (computed by clipping the outline with a strict column-by-row partition). Cut lines come from S6 department and gallery polygons, S5 roof joints and the S1/S2 vertices; inner cut lines are **E** (confidence low to medium) and should be reconciled with the interior research. Polygons are counter-clockwise lists of (X, Z).
 
@@ -50,7 +51,7 @@ The blocks below tile the S1 outline exactly: their areas sum to 46,470.5 m², t
 | mmw-north-e | McKim, Mead & White north link along Fifth Avenue | 1906–1911 (Wing E), MMW | rectangle X 49.4..88.6, Z −38.5..−2.0 | 1,431 |
 | mmw-north-h | MMW north end pavilion (Egyptian galleries) | 1910–1913 (Wing H), MMW | rectangle X 88.6..153.1, Z −41.3..9.8 | 3,295 |
 | mmw-north-f | MMW north rear wings (Arms and Armor, floor 2 Asian/Musical Instruments) | 1908–1910 (J. Pierpont Morgan Wing and rear wings, placement inferred), MMW | (49.4,−38.5) (88.6,−38.5) (88.6,−41.3) (118.0,−41.3) (118.0,−96.0) (49.4,−96.0) | 3,862 |
-| mmw-south-j | MMW south link along Fifth Avenue | 1914–1917 (Wing J), MMW | rectangle X −88.1..−49.7, Z −69.0..−1.9 | 2,576 |
+| mmw-south-j | MMW south link along Fifth Avenue | 1914–1917 (Wing J), MMW | rectangle X −88.1..−49.7, Z −64.94..−1.9 ([B1]) | 2,421 |
 | mmw-south-k | MMW south end pavilion (Greek and Roman, Leon Levy and Shelby White Court) | 1914–1926 (Wing K; Pompeian Court opened 6 Apr 1926), MMW | rectangle X −151.5..−88.1, Z −38.5..9.9 | 3,070 |
 | core-1880-a | Vaux & Mould building (Wing A), west facade surviving inside the Lehman Wing | 1874–1880 (opened 30 Mar 1880), Calvert Vaux and Jacob Wrey Mould | rectangle X −14.5..14.5, Z −138.3..−69.0 | 2,010 |
 | core-1888-b | South wing (Wing B); its south facade survives inside the Petrie Court | 1884–1888, Theodore Weston with Arthur L. Tuckerman | rectangle X −49.7..−14.5, Z −138.3..−69.0 | 2,437 |
@@ -60,7 +61,7 @@ The blocks below tile the S1 outline exactly: their areas sum to 46,470.5 m², t
 | american-wing | American Wing with the Charles Engelhard Court (encloses the 1924 Grosvenor Atterbury wing) | 1980, KRJDA (1924 core by Grosvenor Atterbury); renovated 2009–2012 | (49.4,−96.0) (118.0,−96.0) (118.0,−103.0) (140.6,−103.0) (140.5,−161.0) (87.6,−161.0) (87.6,−138.3) (49.4,−138.3) | 4,901 |
 | rockefeller | Michael C. Rockefeller Wing, glass south wall; floor 2 skylit 19th-century European paintings | 1982, KRJDA; glass wall rebuilt 2021–2025 by WHY with Beyer Blinder Belle | rectangle X −151.6..−88.1, Z −97.2..−38.5 | 3,725 |
 | wallace | Lila Acheson Wallace Wing, Cantor Roof Garden on top | 1987, KRJDA; being replaced by the Tang Wing (ground broken 15 Sep 2026) | (−88.1,−97.2) (−151.6,−97.2) (−151.6,−104.7) (−141.2,−104.7) (−141.2,−160.1) (−88.2,−160.1) | 3,415 |
-| kravis-petrie | Henry R. Kravis Wing and the Carroll and Milton Petrie European Sculpture Court | 1990–1991, KRJDA | rectangle X −88.1..−49.7, Z −138.2..−69.0 | 2,657 |
+| kravis-petrie | Henry R. Kravis Wing and the Carroll and Milton Petrie European Sculpture Court | 1990–1991, KRJDA | rectangle X −88.1..−49.7, Z −138.2..−64.94 ([B1]) | 2,813 |
 
 Notes on the block table:
 

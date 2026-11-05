@@ -83,6 +83,7 @@ export const WESTON_STRIP = 0.9; // E: fig. 28, the plain brick between an arche
 export const WESTON_END_PROJECTION = 1.2; // E: the end blocks' return faces in interior-images.md #33 and #35, face-on
 export const WESTON_END_FROM = WESTON_PAVILION_HALF + WESTON_ARCH_BAY + WESTON_QUOIN + WESTON_STRIP; // the end blocks' inner edges out from the door's middle, 16.28 m (fig. 28: 162 + 217 + 23 px, 16.2 m)
 export const WESTON_WEST_END_Z = -137.0; // the west end block stops at the Kravis Wing's pier framing the court's glass end, Z −138.2..−137.0 in the Roche wings' 1.2 m wall (roche-south/kravis.ts `Z_IN`)
+export const WESTON_EAST_END_Z = 2 * WESTON_PAVILION_Z - WESTON_WEST_END_Z; // −64.94: the east end block stops at the court's east end, the McKim, Mead & White south link's park wall, as far east of the door as the west block's end is west of it, so the blocks match (frame.ts KRAVIS_EAST_Z, work unit 22); 4.06 m east of the core's own east face (EAST_Z), before Hunt's south wall
 export const WESTON_ARCH_SPAN = 6.4; // E: the arched bays' round arches over four-light windows (fig. 28; #33)
 export const WESTON_ARCH_SPRING = 2.0; // E: springing above L2, so the arch's keystone reaches the cornice (fig. 28; #33)
 export const LIGHT_WELL_B = [-30.1, -25.0, -97.2, -84.5] as const; // exterior.md light well (4): X0, X1, Z0, Z1

@@ -22,7 +22,9 @@ import { EAST_Z, VAUX_BAY, VAUX_WEST_PAVILION_WALL_Z, WEST_Z } from '../core/con
 import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
 import { eastCorridor } from '../core/vaux-east.js';
 import { WESTON_DOOR } from '../core/weston-facade.js';
+import { PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
+import { COURT_OPENINGS_Z } from '../roche-south/kravis.js';
 import { PAVING_GAP, walkWestY } from '../site/ground.js';
 import { HALL_X, MAIN, NAVE_MID_Z, SECOND } from './dims.js';
 
@@ -113,20 +115,24 @@ export const ROUTE_R6: Route = {
 
 /** Where R7 leaves R4 to go south: the middle of the door X −68.2..−66.45 in gallery 153's south wall on Z −22.1 (src/model/mmw/plan-data.ts MAP_WALLS). */
 const GALLERY_153_DOOR_X = -67.325;
-/** Where R7 turns in Exhibition Gallery 199 toward the corridor: 2.2 m short of the party wall on Z −69.0 (src/model/mmw/party-walls.ts). */
-const GALLERY_199_TURN_Z = -66;
+/** Where R7 turns in Exhibition Gallery 199 toward the corridor: 2.2 m short of the south link's party wall at its park end (src/model/mmw/party-walls.ts). */
+const GALLERY_199_TURN_Z = SOUTH_LINK.z0 + PARTY_WALL + 2.2;
 /** The middle of the corridor through the party wall into gallery 549 (src/model/mmw/party-walls.ts PETRIE_PASSAGE). */
 const PETRIE_PASSAGE_X = (PETRIE_PASSAGE.a + PETRIE_PASSAGE.b) / 2;
-/** The middle of the court wall's opening from gallery 549 into the Petrie Court nearest the corridor, 3.6 m wide (src/model/roche-south/kravis.ts COURT_SOUTH). */
-export const COURT_OPENING_Z = -97.6;
+/**
+ * The middle of the court wall's opening from gallery 549 into the Petrie Court that R7 takes, 3.6 m wide (src/model/roche-south/kravis.ts COURT_SOUTH): the
+ * nearest west of Weston's door. The court wall's openings stand symmetric about the door (work unit 22), and the one east of it would take R7 within 1 m
+ * of the sculpture at Z −94.5 (src/model/collection/spaces-b.ts).
+ */
+export const COURT_OPENING_Z = Math.max(...COURT_OPENINGS_Z.filter((z) => z < WESTON_DOOR.z));
 /** Where R7 ends: on Weston's door's axis 3.5 m out from its frame in the court, 3 m before the porch's pedestals (src/model/core/weston-door.test.ts). */
 export const WESTON_APPROACH: readonly [number, number] = [WESTON_DOOR.x - 3.5, WESTON_DOOR.z];
 
 /**
  * R7 (work unit 2, integration), into the Petrie Court: R4's way south past the desk and down gallery 153 to its south wall's door; south through it and
- * Exhibition Gallery 199 to 2.2 m short of the Kravis Wing's party wall; along it to the corridor and west through it, down gallery 549 to the court
- * wall's opening; north through it into the court, clear of its artworks' row, which leaves a gap from Z −112.5 to −94.5 (src/model/collection/spaces-b.ts); and
- * west to Weston's door's axis. The door itself is walked through by the e2e walk (tests/e2e/routes.spec.ts) and src/model/core/weston-door.test.ts.
+ * Exhibition Gallery 199 to 2.2 m short of the party wall the south link shares with the Kravis Wing; along it to the corridor and west through it, down
+ * gallery 549 to the court wall's opening; north through it into the court, clear of its artworks' row, which leaves a gap from Z −112.5 to −94.5
+ * (src/model/collection/spaces-b.ts); and east to Weston's door's axis. The door itself is walked through by the e2e walk (tests/e2e/routes.spec.ts) and src/model/core/weston-door.test.ts.
  */
 export const ROUTE_R7: Route = {
   id: 'R7',

@@ -10,10 +10,13 @@
  * sill over each bay, a stone frieze with two roundels on the return, and the front's cornice and coping, all returned round the block.
  * The block projects 1.2 m (#33 and #35 see its return faces face-on) and its bays stand 0.55 m back between the piers (#35 and #46). The parts keep
  * fig. 28's widths (inner pier 2.8, bay 3.4, pier 1.3, bay, pier, bay, of 16.9), but for the last pier, which fig. 28 draws as a corner 3.4 wide and #46
- * shows, where the court's east wall meets the block, no wider than the others; they are scaled to each block's length, the columns 0.6 m whatever the
- * scale. The model's front runs on the 1880 building's lines, west of the real front's middle, so the west block runs 19.75 m to the Kravis Wing's
- * pier and the east one 15.69 m to the court's east end (open for the owner; interior.md). The model shows today's bricked-up bays from 1888, as it
- * shows the 1880 building's side walls (vaux-sides.ts); fig. 35 shows them glazed, and the ground storey's small windows, which the model leaves out.
+ * shows, where the court's east wall meets the block, no wider than the others; they are scaled to the blocks' length, the columns 0.6 m whatever the
+ * scale. Both blocks run 19.75 m, to the court's ends, which stand symmetric about the door as the floor map's court does: the west one to the Kravis
+ * Wing's pier, the east one to the McKim, Mead & White south link's park wall (work unit 22, on the owner's "Yes, do it"; interior.md). The model's
+ * core keeps the 1880 building's east face, Z −69.0, west of the map's, so the east block's last 4.06 m stand before Hunt's south wall, and from 1888
+ * to 1902, before Hunt's wing, past wing B's east end; over them the coping stops at the front's face. The model shows today's bricked-up bays from
+ * 1888, as it shows the 1880 building's side walls (vaux-sides.ts); fig. 35 shows them glazed, and the ground storey's small windows, which the model
+ * leaves out.
  * Frame: `out` measures from the front's brick face (X −49.7) into the court (toward −X); `u` from a block's inner end along it, toward its outer end.
  */
 import { Matrix4 } from 'three';
@@ -33,6 +36,7 @@ import {
   OUTER_WALL,
   PARAPET_Y,
   WESTON_ARCH_BAY,
+  WESTON_EAST_END_Z,
   WESTON_END_FROM,
   WESTON_END_PROJECTION,
   WESTON_LOWER_HEAD,
@@ -53,7 +57,7 @@ export interface EndBlock {
 
 export const END_BLOCKS: readonly EndBlock[] = [
   { side: -1, inner: WESTON_PAVILION_Z - WESTON_END_FROM, outer: WESTON_WEST_END_Z },
-  { side: 1, inner: WESTON_PAVILION_Z + WESTON_END_FROM, outer: EAST_Z },
+  { side: 1, inner: WESTON_PAVILION_Z + WESTON_END_FROM, outer: WESTON_EAST_END_Z },
 ];
 
 /** World X `d` metres out from the front's brick face into the court. */
@@ -92,6 +96,12 @@ const STANDS = { pilaster: 0.12, base: 0.18, consoleLow: 0.2, consoleHigh: 0.28,
 /** A block's length and the scale of the parts on it. */
 function scaleOf(b: EndBlock): number {
   return Math.abs(b.outer - b.inner) / PARTS_LENGTH;
+}
+
+/** How far along the block, from its inner end, the core's wall stands behind it: to the core's east face (EAST_Z) on the east, past its end on the west. */
+function backed(b: EndBlock): number {
+  const length = Math.abs(b.outer - b.inner);
+  return b.side > 0 ? Math.min(length, EAST_Z - b.inner) : length;
 }
 
 /** World Z at `u` along the block from its inner end. */
@@ -233,7 +243,9 @@ export function westonEndTrim(kit: Kit): void {
       kit.add(disc, stone, at.multiply(new Matrix4().makeRotationX((-b.side * Math.PI) / 2)).multiply(new Matrix4().makeScale(0.38, 0.06, 0.38)), 10);
     }
     kit.add(cornice(b), stone, placed(B_SOUTH_X, CORNICE_Y, b.inner, FACING.south), 10);
-    // The coping over the block and the wall behind it, overhanging the block's front and its return.
-    boxOut(kit, b, stone, -OUTER_WALL, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, -STANDS.coping, length, 11);
+    // The coping over the block and the wall behind it, overhanging the block's front and its return; beyond the core's east face, before Hunt's wall, over the block alone.
+    const back = backed(b);
+    boxOut(kit, b, stone, -OUTER_WALL, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, -STANDS.coping, back, 11);
+    if (back < length) boxOut(kit, b, stone, 0, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, back, length, 11);
   }
 }

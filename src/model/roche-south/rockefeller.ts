@@ -6,13 +6,13 @@
  * to −41.3. The eleventh straddles the block line Z −38.5: its north slope rises from the valley at −41.3 to its ridge at −38.6, on the line; its south
  * slope reaches about −36.8 west of X −121 and is cut by the south end pavilion's roof east of it (re-read 2026-10-13 by the integration worker). Ten are
  * built whole, and the eleventh's north slope as a lean-to against the south pavilion's raised wall on the line (mmw party-walls.ts), inside this block.
- * Walls: the wing builds its west wall on Z −97.2 (the Wallace Wing came later) and its north wall on X −88.1 south of Z −69 (the Kravis Wing came
- * later); the McKim, Mead & White blocks build the lines Z −38.5 and X −88.1 north of Z −69.
+ * Walls: the wing builds its west wall on Z −97.2 (the Wallace Wing came later) and its north wall on X −88.1 west of Z −64.94 (the Kravis Wing came
+ * later; frame.ts KRAVIS_EAST_Z); the McKim, Mead & White blocks build the lines Z −38.5 and X −88.1 east of it.
  */
 import { Matrix4 } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
-import { GROUND_FLOOR_Y, MAIN_FLOOR_Y, ROCKEFELLER_GLASS_FACE_X, ROCKEFELLER_GLASS_RISE, ROCKEFELLER_GLASS_RUN, ROCKEFELLER_GLASS_SLOPE_DEG } from '../frame.js';
+import { GROUND_FLOOR_Y, KRAVIS_EAST_Z, MAIN_FLOOR_Y, ROCKEFELLER_GLASS_FACE_X, ROCKEFELLER_GLASS_RISE, ROCKEFELLER_GLASS_RUN, ROCKEFELLER_GLASS_SLOPE_DEG } from '../frame.js';
 import { hippedSkylight, laylight } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { OUTER_WALL, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
@@ -41,8 +41,8 @@ const Z_WEST = -97.2;
 const Z_EAST = -38.5;
 const Z_IN = Z_WEST + OUTER_WALL;
 const X_IN = X0 + OUTER_WALL;
-/** Where the Kravis Wing meets the north wall (south of it the wall is this wing's). */
-const Z_KRAVIS = -69.0;
+/** Where the Kravis Wing meets the north wall (west of it the wall is this wing's; east of it the McKim, Mead & White south link's). */
+const Z_KRAVIS = KRAVIS_EAST_Z;
 
 /** Ridge skylights: valleys from the orthophoto, the west hips just behind the glass wall's fascia, the east ends short of the north wall. */
 const RIDGE_PITCH = 5.47;

@@ -9,7 +9,7 @@
 import type { Kit } from '../../build/types.js';
 import { wall } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { END_PARAPET_Y, KRAVIS_LINE_TOP_Y, LEVEL_1, LEVEL_2_NORTH, LINK_TIER, MORGAN_ROOF_Y, PARTY_WALL, SLAB } from './dims.js';
+import { END_PARAPET_Y, KRAVIS_LINE_TOP_Y, LEVEL_1, LEVEL_2_NORTH, LINK_TIER, MORGAN_ROOF_Y, PARTY_WALL, SLAB, SOUTH_LINK } from './dims.js';
 import { WALL_FOOT_Y } from './facade-parts.js';
 import { COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
 import { addBox, placed } from './shapes.js';
@@ -59,16 +59,17 @@ const PETRIE_CORRIDOR_WIDTH = 1.77;
 
 /**
  * The way from the Greek and Roman galleries into the Petrie Court's wing (work unit 2, M4): the map's corridor from Exhibition Gallery 199 to the east end
- * of gallery 549, whose doors open into the court (interior.md, Other skylit volumes). The map's corridor lies 4.2 m east of this block line, where its 549
- * and court run on to; here it opens through this wall on Z −69.0, as wide as on the map, its north side on the south face of the court's limestone wall
- * (roche-south/kravis.ts; 0.22 m south of the map's), so that wall is not cut. It does not need Weston's 1888 door, which opens (work unit 2, M2b) but which reach.test.ts counts shut.
+ * of gallery 549, whose doors open into the court (interior.md, Other skylit volumes). The map's corridor runs through the link's west wall, which its floor 2
+ * draws on Z −64.85; here it opens through this wall on the block line, 0.09 m west of that (SOUTH_LINK.z0, moved from Z −69.0 by work unit 22 when the court
+ * was carried out to its real east end), as wide as on the map, its north side on the south face of the court's limestone wall (roche-south/kravis.ts;
+ * 0.22 m south of the map's), so that wall is not cut. It does not need Weston's 1888 door, which opens (work unit 2, M2b) but which reach.test.ts counts shut.
  */
 export const PETRIE_PASSAGE: Passage = { a: COURT_X0 - COURT_WALL - PETRIE_CORRIDOR_WIDTH, b: COURT_X0 - COURT_WALL, y0: LEVEL_1, y1: LEVEL_1 + DOORWAY_HEIGHT };
 
 const SACKLER_X118: Party = { x0: 118.0, z0: -96.0, x1: 118.0, z1: -41.3, out: '+x', top: MORGAN_PARAPET_Y };
 const AMERICAN_Z96: Party = { x0: 49.4, z0: -96.0, x1: 118.0, z1: -96.0, out: '-z', top: MORGAN_PARAPET_Y, passages: [ENGELHARD_PASSAGE] };
-const ROCKEFELLER_X88: Party = { x0: -88.1, z0: -69.0, x1: -88.1, z1: -38.5, out: '-x', top: LINK_TIER.top };
-const KRAVIS_Z69: Party = { x0: -88.1, z0: -69.0, x1: -49.7, z1: -69.0, out: '-z', top: LINK_TIER.top, passages: [PETRIE_PASSAGE] };
+const ROCKEFELLER_X88: Party = { x0: -88.1, z0: SOUTH_LINK.z0, x1: -88.1, z1: -38.5, out: '-x', top: LINK_TIER.top };
+const KRAVIS_LINE: Party = { x0: -88.1, z0: SOUTH_LINK.z0, x1: -49.7, z1: SOUTH_LINK.z0, out: '-z', top: LINK_TIER.top, passages: [PETRIE_PASSAGE] };
 
 /**
  * The Temple of Dendur hall runs on past this block line, to Z −35.7 (exterior.md [K3], the roche-north modeller): on the main floor its east walkway lies inside
@@ -80,8 +81,8 @@ const DENDUR_EAST_WALK: Passage = { a: 118.07, b: 151.95, y0: LEVEL_1, y1: LEVEL
 /** North campaign: against the Sackler Wing (Z −41.3 and X 118.0) and the American Wing (Z −96.0). */
 export const NORTH_PARTY: readonly Party[] = [{ x0: 118.0, z0: -41.3, x1: 153.13, z1: -41.3, out: '-z', top: END_PARAPET_Y, passages: [DENDUR_EAST_WALK] }, SACKLER_X118, AMERICAN_Z96];
 
-/** South campaign: against the Kravis Wing (Z −69.0) and the Rockefeller Wing (X −88.1 and Z −38.5). */
-export const SOUTH_PARTY: readonly Party[] = [KRAVIS_Z69, ROCKEFELLER_X88, { x0: -151.61, z0: -38.5, x1: -88.1, z1: -38.5, out: '-z', top: END_PARAPET_Y }];
+/** South campaign: against the Kravis Wing (Z −64.94, SOUTH_LINK.z0) and the Rockefeller Wing (X −88.1 and Z −38.5). */
+export const SOUTH_PARTY: readonly Party[] = [KRAVIS_LINE, ROCKEFELLER_X88, { x0: -151.61, z0: -38.5, x1: -88.1, z1: -38.5, out: '-z', top: END_PARAPET_Y }];
 
 /**
  * 1978–1980: the Dendur hall's glass roof (frame.ts SACKLER_GLASS_TOP_Y 20.6) and the American Wing's parapet and Engelhard Court lean-to (21.4..21.5 at
@@ -98,7 +99,7 @@ export const NORTH_RAISES: readonly Raise[] = [
  */
 export const SOUTH_RAISES: readonly Raise[] = [
   { wall: ROCKEFELLER_X88, top: END_PARAPET_Y },
-  { wall: KRAVIS_Z69, top: KRAVIS_LINE_TOP_Y },
+  { wall: KRAVIS_LINE, top: KRAVIS_LINE_TOP_Y },
 ];
 
 /** The wall's plan box [x0, x1, z0, z1]: its outer face on the line, PARTY_WALL deep on the inner side. */

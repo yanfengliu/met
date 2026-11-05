@@ -5,7 +5,7 @@
  * MAP_Z (docs/design/spec.md, World frame: the map sits 3.1 m +Z).
  * Levels tagged E are estimates; each names the photograph or reasoning it rests on.
  */
-import { MAIN_FLOOR_Y } from '../frame.js';
+import { KRAVIS_EAST_Z, MAIN_FLOOR_Y } from '../frame.js';
 import type { P2 } from './poly.js';
 
 /** Floor-map Z to world Z (docs/design/spec.md, World frame, correction of 2026-10-11). */
@@ -47,12 +47,12 @@ export const WALLACE_BLOCK: readonly P2[] = [
   [-88.2, -160.1],
 ];
 
-/** Henry R. Kravis Wing and the Petrie Court, 1990 (`kravis-petrie`): X −88.1..−49.7, Z −138.2..−69.0. */
+/** Henry R. Kravis Wing and the Petrie Court, 1990 (`kravis-petrie`): X −88.1..−49.7, Z −138.2..−64.94 (frame.ts KRAVIS_EAST_Z, work unit 22). */
 export const KRAVIS_BLOCK: readonly P2[] = [
   [-88.1, -138.2],
   [-49.7, -138.2],
-  [-49.7, -69.0],
-  [-88.1, -69.0],
+  [-49.7, KRAVIS_EAST_Z],
+  [-88.1, KRAVIS_EAST_Z],
 ];
 
 /** Every block of the area, by name, for the containment tests. */

@@ -88,6 +88,10 @@
     {
       "id": 21,
       "theme": "weston-end-blocks"
+    },
+    {
+      "id": 22,
+      "theme": "weston-front-extent"
     }
   ]
 }

@@ -17,7 +17,11 @@
  * round them, as Heckscher's figs. 26, 28 and 35 and the court's photographs show them (work unit 21; weston-ends.ts): pieces lying wholly within an
  * end block's stretch, for trim from the arched bay's outer edge, where the block's mitred cornice starts, and for brick from the block's own inner
  * end, to the court's end (from constants.ts, as the porch's stretch is), and under the coping's top, may reach 1.35 m in brick and 2.0 m in trim.
- * Red with the blocks projecting 1.5 m.
+ * Red with the blocks projecting 1.5 m. The east block runs on 4.06 m past the blocks' east line, to the court's east end (work unit 22): east of that
+ * line only a piece of that stretch may stand, and only in front of the front's face (X −49.7, give or take the 0.3 m), where Hunt's south wall
+ * stands behind it from 1902. Red with the coping carried back 1 m over those 4.06 m, as it is over the wall behind the rest of the block.
+ * Both end blocks run 19.75 m and mirror each other about the door, piece for piece, but for the east block's coping, which divides where the
+ * blocks' east line crosses it (red with the east block ending on that line, as it did before work unit 22).
  */
 import { Box3, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -32,7 +36,9 @@ import { palette } from '../palette.js';
 import { holeLining, holeOutline, openWall } from './arches.js';
 import { core } from './materials.js';
 import type { Hole } from './arches.js';
-import { COPING_TOP_Y, EAST_Z, WESTON_ARCH_BAY, WESTON_END_FROM, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WESTON_WEST_END_Z } from './constants.js';
+import { KRAVIS_EAST_Z } from '../frame.js';
+import { COPING_TOP_Y, PARAPET_Y, WESTON_ARCH_BAY, WESTON_EAST_END_Z, WESTON_END_FROM, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WESTON_WEST_END_Z } from './constants.js';
+import { END_BLOCKS, westonEndTrim, westonEndWalls } from './weston-ends.js';
 import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from './index.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -52,7 +58,7 @@ const PORCH = { z0: WESTON_PAVILION_Z - 3.5, z1: WESTON_PAVILION_Z + 3.5, y1: 13
 const END_REACH = { brick: 1.35, trim: 2.0, y1: COPING_TOP_Y + 0.01 } as const;
 const stretches = (from: number): readonly (readonly [number, number])[] => [
   [WESTON_WEST_END_Z, WESTON_PAVILION_Z - from],
-  [WESTON_PAVILION_Z + from, EAST_Z],
+  [WESTON_PAVILION_Z + from, WESTON_EAST_END_Z],
 ];
 /** Trim's stretches start at the arched bays' outer edges, where the blocks' mitred cornices start; brick's at the blocks' own inner ends. */
 const END_STRETCHES = { trim: stretches(WESTON_PAVILION_HALF + WESTON_ARCH_BAY - 0.01), brick: stretches(WESTON_END_FROM - 0.01) } as const;
@@ -82,9 +88,11 @@ describe('core steps', () => {
         const south = BLOCKS.x0 - box.min.x;
         const porch = trim && box.min.z >= PORCH.z0 && box.max.z <= PORCH.z1 && box.max.y <= PORCH.y1;
         const end = box.max.y <= END_REACH.y1 && END_STRETCHES[trim ? 'trim' : 'brick'].some(([z0, z1]) => box.min.z >= z0 - 1e-6 && box.max.z <= z1 + 1e-6);
+        // East of the blocks' east line, only the east block, in front of the front's face (see the header).
+        const pastEast = end && box.max.x <= BLOCKS.x0 + SLACK;
         const bad =
           box.max.x > BLOCKS.x1 + SLACK ||
-          box.max.z > BLOCKS.z1 + SLACK ||
+          (box.max.z > BLOCKS.z1 + SLACK && !pastEast) ||
           west > (trim ? TRIM : SLACK) + 1e-6 ||
           south > (porch ? PORCH.reach : end ? (trim ? END_REACH.trim : END_REACH.brick) : trim ? TRIM : SLACK) + 1e-6 ||
           box.min.y < -30 ||
@@ -93,6 +101,50 @@ describe('core steps', () => {
       });
     }
     expect(problems).toEqual([]);
+  });
+
+  it("make Weston's two end blocks match: 19.75 m each, mirror images about the door, piece for piece but for the east block's coping", () => {
+    const [west, east] = END_BLOCKS;
+    if (west === undefined || east === undefined) throw new Error('two end blocks');
+    const length = (b: typeof west): number => Math.abs(b.outer - b.inner);
+    expect(length(west)).toBeCloseTo(19.75, 2);
+    expect(length(east)).toBeCloseTo(length(west), 9);
+    expect((west.outer + east.outer) / 2).toBeCloseTo(WESTON_PAVILION_Z, 9);
+    expect(east.outer, "the east block ends at the court's east end (frame.ts KRAVIS_EAST_Z)").toBeCloseTo(KRAVIS_EAST_Z, 6);
+    const step: StepDef = {
+      id: 'weston-end-blocks',
+      chapter: 'weston-tuckerman-1894',
+      title: 'End blocks',
+      motion: { kind: 'grow' },
+      build(kit) {
+        westonEndWalls(kit);
+        westonEndTrim(kit);
+      },
+    };
+    const pieces = collectStep(step).pieces.map((piece) => {
+      const g = piece.geometry;
+      if (g.boundingBox === null) g.computeBoundingBox();
+      return { box: (g.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix), material: piece.material.name };
+    });
+    // The east block's coping divides where the blocks' east line crosses it (weston-ends.ts `backed`): its two lengths together are the west's one.
+    const coping = (p: (typeof pieces)[number]): boolean => Math.abs(p.box.min.y - PARAPET_Y) < 1e-6 && Math.abs(p.box.max.y - COPING_TOP_Y) < 1e-6;
+    const westPieces = pieces.filter((p) => p.box.max.z < WESTON_PAVILION_Z);
+    const eastPieces = pieces.filter((p) => p.box.min.z > WESTON_PAVILION_Z);
+    const eastCoping = eastPieces.filter(coping);
+    const joined = eastCoping.slice(1).reduce((box, p) => box.union(p.box), (eastCoping[0]?.box ?? new Box3()).clone());
+    const eastJoined = [...eastPieces.filter((p) => !coping(p)), ...(eastCoping[0] === undefined ? [] : [{ box: joined, material: eastCoping[0].material }])];
+    expect(westPieces.length + eastPieces.length, 'every piece on one side of the door').toBe(pieces.length);
+    expect(eastJoined.length, 'pieces on each side, the coping joined').toBe(westPieces.length);
+    const mirrored = (b: Box3): Box3 => new Box3(new Vector3(b.min.x, b.min.y, 2 * WESTON_PAVILION_Z - b.max.z), new Vector3(b.max.x, b.max.y, 2 * WESTON_PAVILION_Z - b.min.z));
+    const near = (a: Box3, b: Box3): boolean => a.min.distanceTo(b.min) < 1e-6 && a.max.distanceTo(b.max) < 1e-6;
+    const left = [...westPieces];
+    const unmatched = eastJoined.filter((p) => {
+      const i = left.findIndex((w) => w.material === p.material && near(w.box, mirrored(p.box)));
+      if (i < 0) return true;
+      left.splice(i, 1);
+      return false;
+    });
+    expect(unmatched.map((p) => `${p.material} ${p.box.min.toArray().map((v) => v.toFixed(3)).join(', ')}`), 'east pieces with no mirror in the west block').toEqual([]);
   });
 
   it('stay within the area budget with finite matrices', () => {
