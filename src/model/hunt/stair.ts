@@ -166,7 +166,7 @@ export const stairSteps: readonly StepDef[] = [
       box(kit, palette.plaster, [-CROSS_HALL_HALF, ceiling, CROSS_HALL_BACK_Z], [CROSS_HALL_HALF, ceiling + 0.4, CROSS_HALL_FRONT_Z - WALL_T], 4);
       // The back wall and its round-arched doorway on the axis into gallery 600; behind it the passage, lined in the same stone through the cavity to
       // the core's east wall, on the wing's second-floor plate (./galleries.ts), where the core's own granite lining of the same section takes over
-      // (src/model/core/vaux-shell.ts).
+      // (src/model/core/vaux-east.ts).
       const hw = GALLERY_600_DOOR_HALF_WIDTH;
       const back = wall({ width: 2 * CROSS_HALL_HALF, height: ceiling + 0.4 - SECOND, thickness: WALL_T, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
       kit.add(back, hunt.stairStone, at(0, SECOND, CROSS_HALL_BACK_Z), 4);
