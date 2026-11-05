@@ -8,7 +8,7 @@
 import { Matrix4 } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
-import { CORE_COPING_TOP_Y, GROUND_FLOOR_Y, KRAVIS_EAST_Z, KRAVIS_PARAPET_Y, MAIN_FLOOR_Y } from '../frame.js';
+import { CORE_COPING_TOP_Y, EAST_FACE_Z_CORE, GROUND_FLOOR_Y, KRAVIS_EAST_Z, KRAVIS_PARAPET_Y, MAIN_FLOOR_Y } from '../frame.js';
 import { hippedSkylight, laylight, ridgeSkylight, wall } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { OUTER_WALL, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
@@ -175,8 +175,10 @@ function roof(kit: Kit): void {
   for (const [x, z] of UNITS) kit.add(UNIT_BOX, palette.metalDark, boxAt([x - 0.8, KRAVIS_ROOF_Y, z - 0.8], [x + 0.8, KRAVIS_ROOF_Y + 1.2, z + 0.8]), 3);
   const [px0, pz0, px1, pz1] = PENTHOUSE;
   for (const m of hollowBoxes([px0, KRAVIS_ROOF_Y, pz0], [px1, PENTHOUSE_TOP_Y, pz1], 0.6)) kit.add(UNIT_BOX, palette.limestone, m, 1);
-  // The gutter laid on the old front's coping that carries the court roof's north eave, reaching 0.6 m over the court and onto the coping.
-  kit.add(UNIT_BOX, palette.metalDark, boxAt([X1 - 0.6, CORE_COPING_TOP_Y, Z_IN], [X1 + 0.28, PETRIE_EAVE_Y, Z_EAST]), 2);
+  // The gutter laid on the old front's coping that carries the court roof's north eave, reaching 0.6 m over the court and onto the coping; past the
+  // core's east face, where the old front's east block stands before the Hunt Wing's south wall and its coping stops at the front's face, up to that wall.
+  kit.add(UNIT_BOX, palette.metalDark, boxAt([X1 - 0.6, CORE_COPING_TOP_Y, Z_IN], [X1 + 0.28, PETRIE_EAVE_Y, EAST_FACE_Z_CORE]), 2);
+  kit.add(UNIT_BOX, palette.metalDark, boxAt([X1 - 0.6, CORE_COPING_TOP_Y, EAST_FACE_Z_CORE], [X1, PETRIE_EAVE_Y, Z_EAST]), 2);
 }
 
 function courtGlass(kit: Kit): void {

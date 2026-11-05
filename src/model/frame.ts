@@ -36,6 +36,7 @@ export const BUILDING_MAX_Z = 9.91; // [B0] M: front of the end pavilions
 export const FRONTAGE_LENGTH = 304.74; // [W1] D: BUILDING_MAX_X - BUILDING_MIN_X
 export const FOOTPRINT_AREA_M2 = 46470; // [B00] M: OSM outline area; blocks tile it exactly
 export const WEST_FACE_Z_CORE = -138.3; // [K1] M: west face, Kravis to American Wing
+export const EAST_FACE_Z_CORE = -69.0; // E: the 1880–1894 core's east face, its cut line to the Hunt block (exterior.md section 2's block table); the floor map draws the 1880 east front about 2.2 m further east (section 9)
 export const WEST_FACE_Z_WALLACE = -160.1; // [K1] M: Wallace Wing west face
 export const WEST_FACE_Z_AMERICAN = -161.0; // [K1] M: American Wing outer west face
 export const KRAVIS_EAST_Z = -64.94; // [B1] D: the line between the Kravis Wing and the McKim, Mead & White south link, the Petrie Court's east end: as far east of Weston's door (core WESTON_PAVILION_Z, −100.97) as the court's west end (the Kravis park face, −138.2, less its 1.2 m wall) is west of it, as the floor map's court (−137.10..−64.83) is symmetric about it; the map's floor 2 draws the link's west wall on −64.85 (work unit 22, interior.md, Weston's 1888 front)

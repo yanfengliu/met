@@ -18,10 +18,12 @@
  * end block's stretch, for trim from the arched bay's outer edge, where the block's mitred cornice starts, and for brick from the block's own inner
  * end, to the court's end (from constants.ts, as the porch's stretch is), and under the coping's top, may reach 1.35 m in brick and 2.0 m in trim.
  * Red with the blocks projecting 1.5 m. The east block runs on 4.06 m past the blocks' east line, to the court's east end (work unit 22): east of that
- * line only a piece of that stretch may stand, and only in front of the front's face (X −49.7, give or take the 0.3 m), where Hunt's south wall
- * stands behind it from 1902. Red with the coping carried back 1 m over those 4.06 m, as it is over the wall behind the rest of the block.
+ * line only a piece of that stretch may stand, and only wholly in front of the front's face (X −49.7), where Hunt's podium and south wall stand
+ * behind it from 1898 and 1899. Red with the coping carried back 0.25 m over those 4.06 m (and 1 m, as it is over the wall behind the rest of the block).
  * Both end blocks run 19.75 m and mirror each other about the door, piece for piece, but for the east block's coping, which divides where the
- * blocks' east line crosses it (red with the east block ending on that line, as it did before work unit 22).
+ * blocks' east line crosses it: each of its two lengths is the west's coping mirrored and cut there, the second stopping at the front's face (red with
+ * the east block ending on that line, as it did before work unit 22, with a 1 m gap between the two lengths, and with the second's overhang lost).
+ * The court wall's openings centre on the door, so the court's two ends stand symmetric about it.
  */
 import { Box3, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -37,7 +39,8 @@ import { holeLining, holeOutline, openWall } from './arches.js';
 import { core } from './materials.js';
 import type { Hole } from './arches.js';
 import { KRAVIS_EAST_Z } from '../frame.js';
-import { COPING_TOP_Y, PARAPET_Y, WESTON_ARCH_BAY, WESTON_EAST_END_Z, WESTON_END_FROM, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WESTON_WEST_END_Z } from './constants.js';
+import { COURT_OPENINGS_Z } from '../roche-south/kravis.js';
+import { B_SOUTH_X, COPING_TOP_Y, EAST_Z, PARAPET_Y, WESTON_ARCH_BAY, WESTON_EAST_END_Z, WESTON_END_FROM, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WESTON_WEST_END_Z } from './constants.js';
 import { END_BLOCKS, westonEndTrim, westonEndWalls } from './weston-ends.js';
 import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from './index.js';
 
@@ -89,7 +92,7 @@ describe('core steps', () => {
         const porch = trim && box.min.z >= PORCH.z0 && box.max.z <= PORCH.z1 && box.max.y <= PORCH.y1;
         const end = box.max.y <= END_REACH.y1 && END_STRETCHES[trim ? 'trim' : 'brick'].some(([z0, z1]) => box.min.z >= z0 - 1e-6 && box.max.z <= z1 + 1e-6);
         // East of the blocks' east line, only the east block, in front of the front's face (see the header).
-        const pastEast = end && box.max.x <= BLOCKS.x0 + SLACK;
+        const pastEast = end && box.max.x <= BLOCKS.x0 + 1e-6;
         const bad =
           box.max.x > BLOCKS.x1 + SLACK ||
           (box.max.z > BLOCKS.z1 + SLACK && !pastEast) ||
@@ -111,6 +114,8 @@ describe('core steps', () => {
     expect(length(east)).toBeCloseTo(length(west), 9);
     expect((west.outer + east.outer) / 2).toBeCloseTo(WESTON_PAVILION_Z, 9);
     expect(east.outer, "the east block ends at the court's east end (frame.ts KRAVIS_EAST_Z)").toBeCloseTo(KRAVIS_EAST_Z, 6);
+    const openings = COURT_OPENINGS_Z.reduce((a, z) => a + z, 0) / COURT_OPENINGS_Z.length;
+    expect(openings, "the court wall's openings, and so the court's two ends, centre on the door (roche-south/kravis.ts)").toBeCloseTo(WESTON_PAVILION_Z, 6);
     const step: StepDef = {
       id: 'weston-end-blocks',
       chapter: 'weston-tuckerman-1894',
@@ -126,19 +131,26 @@ describe('core steps', () => {
       if (g.boundingBox === null) g.computeBoundingBox();
       return { box: (g.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix), material: piece.material.name };
     });
-    // The east block's coping divides where the blocks' east line crosses it (weston-ends.ts `backed`): its two lengths together are the west's one.
     const coping = (p: (typeof pieces)[number]): boolean => Math.abs(p.box.min.y - PARAPET_Y) < 1e-6 && Math.abs(p.box.max.y - COPING_TOP_Y) < 1e-6;
     const westPieces = pieces.filter((p) => p.box.max.z < WESTON_PAVILION_Z);
     const eastPieces = pieces.filter((p) => p.box.min.z > WESTON_PAVILION_Z);
-    const eastCoping = eastPieces.filter(coping);
-    const joined = eastCoping.slice(1).reduce((box, p) => box.union(p.box), (eastCoping[0]?.box ?? new Box3()).clone());
-    const eastJoined = [...eastPieces.filter((p) => !coping(p)), ...(eastCoping[0] === undefined ? [] : [{ box: joined, material: eastCoping[0].material }])];
     expect(westPieces.length + eastPieces.length, 'every piece on one side of the door').toBe(pieces.length);
-    expect(eastJoined.length, 'pieces on each side, the coping joined').toBe(westPieces.length);
     const mirrored = (b: Box3): Box3 => new Box3(new Vector3(b.min.x, b.min.y, 2 * WESTON_PAVILION_Z - b.max.z), new Vector3(b.max.x, b.max.y, 2 * WESTON_PAVILION_Z - b.min.z));
     const near = (a: Box3, b: Box3): boolean => a.min.distanceTo(b.min) < 1e-6 && a.max.distanceTo(b.max) < 1e-6;
-    const left = [...westPieces];
-    const unmatched = eastJoined.filter((p) => {
+    const show = (b: Box3): string => [...b.min.toArray(), ...b.max.toArray()].map((v) => v.toFixed(3)).join(', ');
+    // The east block's coping divides where the blocks' east line crosses it (weston-ends.ts `backed`): over the wall behind the block it is the west's
+    // coping mirrored, to that line; past it, before Hunt's south wall, the same but stopping at the front's face.
+    const westCoping = westPieces.filter(coping);
+    const eastCoping = eastPieces.filter(coping).sort((a, b) => a.box.min.z - b.box.min.z);
+    expect([westCoping.length, eastCoping.length], 'coping pieces, west and east').toEqual([1, 2]);
+    const m = mirrored(westCoping[0]?.box ?? new Box3());
+    const expected = [new Box3(m.min, new Vector3(m.max.x, m.max.y, EAST_Z)), new Box3(new Vector3(m.min.x, m.min.y, EAST_Z), new Vector3(B_SOUTH_X, m.max.y, m.max.z))];
+    expect(eastCoping.map((p) => show(p.box)), "the east block's two coping lengths").toEqual(expected.map(show));
+    const westRest = westPieces.filter((p) => !coping(p));
+    const eastRest = eastPieces.filter((p) => !coping(p));
+    expect(eastRest.length, 'pieces on each side but the copings').toBe(westRest.length);
+    const left = [...westRest];
+    const unmatched = eastRest.filter((p) => {
       const i = left.findIndex((w) => w.material === p.material && near(w.box, mirrored(p.box)));
       if (i < 0) return true;
       left.splice(i, 1);

@@ -13,8 +13,9 @@
  * shows, where the court's east wall meets the block, no wider than the others; they are scaled to the blocks' length, the columns 0.6 m whatever the
  * scale. Both blocks run 19.75 m, to the court's ends, which stand symmetric about the door as the floor map's court does: the west one to the Kravis
  * Wing's pier, the east one to the McKim, Mead & White south link's park wall (work unit 22, on the owner's "Yes, do it"; interior.md). The model's
- * core keeps the 1880 building's east face, Z −69.0, west of the map's, so the east block's last 4.06 m stand before Hunt's south wall, and from 1888
- * to 1902, before Hunt's wing, past wing B's east end; over them the coping stops at the front's face. The model shows today's bricked-up bays from
+ * core keeps the 1880 building's east face, Z −69.0, west of the map's, so the east block's last 4.06 m stand before Hunt's podium and south wall,
+ * and from 1888 until those rise behind them (1898 and 1899) past wing B's east end, where fig. 35 shows the front reaching the wing's corner; over
+ * them the coping stops at the front's face. The model shows today's bricked-up bays from
  * 1888, as it shows the 1880 building's side walls (vaux-sides.ts); fig. 35 shows them glazed, and the ground storey's small windows, which the model
  * leaves out.
  * Frame: `out` measures from the front's brick face (X −49.7) into the court (toward −X); `u` from a block's inner end along it, toward its outer end.

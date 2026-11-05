@@ -4,11 +4,11 @@
  * floor levels), the decoded floor map (research/cache/lm_features.json in the canonical frame, world Z = json z − 82.87 − 3.1, coordinator 2026-10-11),
  * the photographs named in docs/research/*-images.md, or E (an estimate, with its reasoning). Data only.
  */
-import { CORE_COPING_TOP_Y, CORE_PARAPET_Y, GROUND_FLOOR_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
+import { CORE_COPING_TOP_Y, CORE_PARAPET_Y, EAST_FACE_Z_CORE, GROUND_FLOOR_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, WEST_FACE_Z_CORE } from '../frame.js';
 
 // --- Blocks (exterior.md section 2, block table; outer faces of the walls lie on these lines) -------------------------
 export const WEST_Z = WEST_FACE_Z_CORE; // -138.3, the park-side face; the Vaux west front
-export const EAST_Z = -69.0; // the cut line to the Hunt block (hunt-d)
+export const EAST_Z = EAST_FACE_Z_CORE; // -69.0, the cut line to the Hunt block (hunt-d)
 export const A_HALF = 14.5; // core-1880-a spans X ±14.5
 export const B_SOUTH_X = -49.7; // core-1888-b's south face: Weston's facade in the Petrie Court
 export const C_NORTH_X = 49.4; // core-1894-c's north face, toward the American Wing
