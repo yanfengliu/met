@@ -76,6 +76,10 @@
     {
       "id": 18,
       "theme": "weston-leaves"
+    },
+    {
+      "id": 19,
+      "theme": "weston-pavilion-place"
     }
   ]
 }
