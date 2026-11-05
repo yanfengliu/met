@@ -1,6 +1,6 @@
 # The 1880 fronts as their photographs show them
 
-Status: active (follow-up: the owner's doorways, 2026-11-04)
+Status: complete
 Owner: Vaux fronts session (claude/vaux-fronts-3c8d7d)
 Created: 2026-11-04
 Updated: 2026-11-04
@@ -84,6 +84,6 @@ The owner chose "Open both" (2026-11-04, relayed by the coordinating session) fo
   - [x] R8 and R9 walked both ways, red with the openings closed again; reach, placement and closure green.
   - [x] Renders of the openings read at native resolution, eight in `tmp/vf/doors/` (ignored), each `shot=1&noui=1&t=163&cam=` with: the south doorway from the Lehman Wing `-9.2,5.8,-143.2,-5.8,6.6,-138.3` and from gallery 521 `-2.6,5.8,-130.6,-5.8,6.2,-136.8`; the north doorway from the Lehman Wing `9.2,5.8,-143.2,5.8,6.6,-138.3` and from gallery 521 `2.6,5.8,-130.6,5.8,6.2,-136.8`; the south corridor from gallery 300 `-7.4,5.8,-61.0,-6.21,6.4,-69.0` and from gallery 304 `-2.8,5.8,-77.4,-6.21,6.0,-70.0`; the north corridor from gallery 301 `7.4,5.8,-61.0,6.21,6.4,-69.0` and from gallery 304 `2.8,5.8,-77.4,6.21,6.0,-70.0` (review 5, F50: the last pair added).
   - [x] `npm run verify` green through the gate lock: on review 5's target, verify-8 met a port its own capture had left open and verify-9 failed two frame budgets far from the change while review probes loaded the machine (unit tests, typecheck, lint and build passed in both, 740 tests); on `ae8f81c`'s tree, verify-10 passed (743 unit tests in 82 files, typecheck, lint, build, 125 e2e, the frame budgets back at their usual times); on review 6's repairs, verify-11 passed (743 unit tests, typecheck, lint, build, 125 e2e).
-  - [ ] The Load rule's runs on the tree that lands.
+  - [x] The Load rule's runs on the merged tree `e7b3fdb`, whose code is what landed: `routes.spec` and `walk.spec` three runs in a row at 4× (21 passed and 2 skipped each, in 179, 219 and 218 s) and three at 1× (23 passed each, in 138, 135 and 136 s).
   - [x] Independent review (Codex and Claude): review 5 of the follow-up (`reviews/5_implementation.md`), nine lesser findings F45 to F53, all repaired; review 6 of those repairs (`reviews/6_implementation.md`), one minor and four nits F54 to F58, all repaired, each new or changed check red with its fault put back (the test files' headers, and R9's below).
-  - [ ] Landed through the slot; the gallery republished.
+  - [x] Landed at `59313d0` through `tmp/land.sh`: the merge `e7b3fdb` of `769c64a` with origin's `9e47b70` (work units 16 and 18; the placement gate's imports taken as both sides' union, the devlog keeping every entry), `npm run verify` green on it (verify-12: 744 unit tests, 126 e2e), then origin's docs-only `843b2df` (work unit 18's record and the canon sync) merged in with `src/repo-conventions.test.ts` green. Review 7, a focused review of review 6's repairs and of the merge, did not run: the owner chose on 2026-11-04 to land without it. The owner's gallery shows main's shots at `59313d0` (version 14): 4 of 64 frames change, the Lehman galleries' view through a doorway onto the arch at X −5.8, now open, and the three main-floor views at the four openings, each read at native size; only those four frames and the page were republished, the rest as version 13 had them.
