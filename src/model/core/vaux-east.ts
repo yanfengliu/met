@@ -37,6 +37,8 @@ export function eastCorridor(s: number): readonly [number, number] {
 }
 /** The corridors' head. */
 export const EAST_CORRIDOR_TOP_Y = L1 + CORRIDOR.height;
+/** How far the brick round the corridors stands off the wall's inner face and behind the head niches' backs. */
+const INFILL_CLEAR = 0.01;
 /** Today's main-floor passage on the axis: as wide as before, to the old springing's height. */
 const PASSAGE = { width: CLEAR, height: 4.5 } as const;
 /** Today's second-floor doors either side, 10.3 m off the axis (floor map), and the threshold under gallery 600's doorway. */
@@ -49,18 +51,21 @@ function secondCut(sign: number): Cut {
 }
 
 /**
- * The brick filling an inner arch's opening round its corridor, through to the wall's inner face: flush with the east face under the window's sill,
- * where the apron stands, and set back as deep as the arches' blind heads above it, so the arch reads blind round the corridor as it did before. Set
- * with the east front's trim (vauxEastTrim, in the openings step), so it arrives with the floor band and apron in front of it, at their order.
+ * The brick filling an inner arch's opening round its corridor: flush with the east face under the window's sill, where the apron stands, and set
+ * back above it a centimetre deeper than the arches' blind heads, so the arch reads blind round the corridor as it did before; 1 cm short of the
+ * wall's inner face, so in gallery 304 it reads as a panel set in the opening. Set with the east front's trim (vauxEastTrim, in the openings step),
+ * so it arrives with the floor band and apron in front of it, at their order. While it drops, its upper pieces pass through the wall over the
+ * opening and the foot of the head's niche: the centimetre keeps their faces behind the wall's and the niche's, out of their planes (review 6, F54).
  */
 function eastInfill(kit: Kit, s: number): void {
   const [c0, c1] = eastCorridor(s);
   const [o0, o1] = [s * INNER_X - CLEAR / 2, s * INNER_X + CLEAR / 2];
   const [b0, b1] = s > 0 ? [o0, c0] : [c1, o1];
-  const back = EAST_Z - HEAD_DEPTH;
-  addBox(kit, core.vauxBrick, b0, L1, INNER_EAST_Z, b1, SILL_Y, EAST_Z, 12);
-  addBox(kit, core.vauxBrick, b0, SILL_Y, INNER_EAST_Z, b1, EAST_CORRIDOR_TOP_Y, back, 12);
-  addBox(kit, core.vauxBrick, o0, EAST_CORRIDOR_TOP_Y, INNER_EAST_Z, o1, LINTEL_Y, back, 12);
+  const inner = INNER_EAST_Z + INFILL_CLEAR;
+  const back = EAST_Z - HEAD_DEPTH - INFILL_CLEAR;
+  addBox(kit, core.vauxBrick, b0, L1, inner, b1, SILL_Y, EAST_Z, 12);
+  addBox(kit, core.vauxBrick, b0, SILL_Y, inner, b1, EAST_CORRIDOR_TOP_Y, back, 12);
+  addBox(kit, core.vauxBrick, o0, EAST_CORRIDOR_TOP_Y, inner, o1, LINTEL_Y, back, 12);
 }
 
 /**

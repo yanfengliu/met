@@ -239,15 +239,15 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
       for (const side of [-1, 1]) {
         const [x0, x1] = eastCorridor(side);
         const name = `X ${x0.toFixed(2)}..${x1.toFixed(2)}`;
-        // Through the 1 m wall and a metre either side of it, between the corridor's sides: on the core's main floor inside the wall and in gallery
-        // 304, on it or on the Hunt Wing's bare slab 3 cm lower east of the wall (routes.ts HUNT_SLAB_TOP_Y), and never over the core's floor, as a
-        // lip across the corridor's mouth would lift the walker (review 5, F46).
+        // Through the 1 m wall and a metre either side of it, between the corridor's sides: on the core's main floor in gallery 304 and inside the
+        // wall; east of it on that floor or the Hunt Wing's bare slab 3 cm lower (routes.ts HUNT_SLAB_TOP_Y), and never over the core's floor, as a lip
+        // across the corridor's mouth would lift the walker (review 5, F46; review 6, F56).
         const near = samples.filter((s) => s.z > INNER_EAST_Z - 1 && s.z < EAST_Z + 1 && s.x > x0 && s.x < x1);
-        const inside = near.filter((s) => s.z > INNER_EAST_Z && s.z < EAST_Z);
-        expect(inside.length, `${route.id}: samples in the corridor at ${name}`).toBeGreaterThan(5);
-        expect(heightsOff(inside, MAIN), `${route.id}: feet off the core's main floor in the corridor at ${name}`).toEqual([]);
-        const off = near.filter((s) => Math.abs(s.y - MAIN) > 0.01 && Math.abs(s.y - HUNT_SLAB_TOP_Y) > 0.01).map(where);
-        expect(off, `${route.id}: feet on neither floor within a metre of the corridor at ${name}`).toEqual([]);
+        const west = near.filter((s) => s.z < EAST_Z);
+        expect(west.filter((s) => s.z > INNER_EAST_Z).length, `${route.id}: samples in the corridor at ${name}`).toBeGreaterThan(5);
+        expect(heightsOff(west, MAIN), `${route.id}: feet off the core's main floor in the corridor or the metre west of it at ${name}`).toEqual([]);
+        const off = near.filter((s) => s.z >= EAST_Z && Math.abs(s.y - MAIN) > 0.01 && Math.abs(s.y - HUNT_SLAB_TOP_Y) > 0.01).map(where);
+        expect(off, `${route.id}: feet on neither floor in the metre east of the corridor at ${name}`).toEqual([]);
       }
     }
   });

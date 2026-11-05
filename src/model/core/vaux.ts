@@ -59,7 +59,7 @@ export const vauxSteps: readonly StepDef[] = [
     id: 'vaux-openings',
     chapter: CHAPTER,
     title: 'Glaze the windows and set the granite trim',
-    detail: 'Windows fill the west arches and the ground storey; granite heads and bands finish the fronts and side walls, and brick fills the east arches round their corridors.',
+    detail: 'Windows fill the west front’s outer arches and the ground storey; granite heads and bands finish the fronts and side walls; brick fills the east arches round their corridors.',
     // A fixed drop by order: the side walls' bands in rising courses (1 to 4), then the heads (5), the west windows by their distance off the axis,
     // the east front's trim with the brick round its corridors (12) and the oculus glass (20). Each head's light and dark pieces share an order and the
     // distance, so they move as one, as the east brick does with the band and apron in front of it; 1.9 m keeps each ground window, starting over its

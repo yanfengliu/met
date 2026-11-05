@@ -17,17 +17,21 @@
  * share an order, so they are drawn alike unless a change gives them different windows, and then their matrices differ at the same moments (both of the
  * Z stagger's drawing problems). It went red alone only with the engine's state changed under it: a light head's mesh hidden, or its count zeroed (Codex,
  * review 4).
- * The openings the owner chose on 2026-11-04 (work unit 15's follow-up; review 5, F45, F47 and F48): the west front's doorways beside the entrance and
- * the corridors through the east front's inner arches stand clear through the wall, each over a box pinned here from its sources rather than read from
- * the code that builds it (rays along Z every 0.1 m across and up each box, 2 cm in from its sides, from 5 cm over the floor to 5 cm under its head,
- * through the wall and 0.3 m out from each face, against every piece of the core, the Hunt Wing and the Lehman Wing); the brick filling each inner arch
- * round its corridor arrives with the floor band and apron in front of it, at one offset from their places and drawn alike at five moments of its
- * step; and while the openings' step drops its pieces, each ground window under a west doorway stays under the main floor, where that doorway begins.
- * Bound: rays, not the walker's capsule, so a gap between rays goes unseen; the brick's motion is read at five moments, as the heads' is, and the
- * ground windows every 0.005 of the step, as a dropping piece stands highest where it starts.
- * Red proofs (2026-11-04): the corridors 1 m wide (640 rays blocked) or 2 m high (760), and the side doorways closed again (2,736), turn the openings'
- * check red; the brick built with the walls, whose step holds no trim in front of it, turns its motion check red (6 problems); the step's earlier
- * 2.5 m drop turns the ground windows' check red (14 samples over the floor).
+ * The openings the owner chose on 2026-11-04 (work unit 15's follow-up; reviews 5 and 6, F45, F47, F48, F54, F55 and F57): the west front's doorways
+ * beside the entrance and the corridors through the east front's inner arches stand clear through the wall, each over a box pinned here from its
+ * sources rather than read from the code that builds it, and each corridor is held by brick or wall on lines 8 cm outside the map's (6 cm, the model's
+ * leave, and 2 cm); the brick filling each inner arch round its corridor arrives with the floor band and apron in front of it, at one offset from
+ * their places and drawn alike, and while it passes through the wall over the opening its faces stay out of the wall's and the head niche's planes;
+ * and each ground window under a west doorway starts its drop under the main floor, where that doorway begins.
+ * Bound: rays, not the walker's capsule: along Z both ways, every 0.1 m across and up each box, 2 cm in from its sides, from 5 cm over the floor to
+ * 5 cm under its head, through the wall and 0.3 m out from each face, against the pieces of the core's 1880 building and medieval hall, the Hunt Wing
+ * and the Lehman Wing, so a gap between rays goes unseen. The brick's motion is read at five moments, as the heads' is, and its faces every 0.01 of its
+ * step; each ground window at the first moment it is drawn, found by halving, where a dropping piece stands highest. The 6 cm between the pinned
+ * corridors and the map's doors is a record of the two sets of numbers here, not a reading of the model.
+ * Red proofs (2026-11-04, rays both ways): the corridors 1 m wide (1,280 rays blocked) or 2 m high (1,520), and the side doorways closed again (5,472),
+ * turn the openings' check red, as the corridors 2.2 m wide turn its brick lines red (160 rays passing); the brick built with the walls, whose step
+ * holds no trim in front of it, turns its motion check red (6 problems), and its faces in the wall's planes, as they were before review 6 (96); a drop
+ * of 2.0 m turns the ground windows' check red (both frames start over the floor), as the step's earlier 2.5 m did.
  */
 import { Box3, Matrix4, Mesh, Raycaster, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';
@@ -172,18 +176,26 @@ const EAST_ARCH_OPENINGS = [
 ] as const;
 /** The east windows' sill, 0.7 m over the main floor: the band and apron under it stand in front of the brick. */
 const EAST_SILL = MAIN_FLOOR + 0.7;
+/** The arches' openings' top, under the impost band, 5.8 m over the main floor; and the head niches' depth behind the east face. */
+const EAST_OPENING_TOP = MAIN_FLOOR + 5.8;
+const NICHE_DEPTH = 0.25;
 
-/** Each piece of `scene` met on rays along +Z through a box, every 0.1 m across X and up Y inside it, 2 cm in from its sides and 5 cm in from floor and head. */
-function blockers(scene: readonly Mesh[], x0: number, x1: number, y0: number, y1: number, z0: number, z1: number): string[] {
+/** Rays along Z, both ways, every 0.1 m across X and up Y inside a box, 2 cm in from its sides and 5 cm in from floor and head: each one that `blocked` turns false for. */
+function sweep(scene: readonly Mesh[], x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, wantHit: boolean): string[] {
   const out: string[] = [];
-  const nx = Math.ceil((x1 - x0 - 0.04) / 0.1);
+  const nx = Math.max(0, Math.ceil((x1 - x0 - 0.04) / 0.1));
   const ny = Math.ceil((y1 - y0 - 0.1) / 0.1);
   for (let i = 0; i <= nx; i++) {
-    const x = x0 + 0.02 + ((x1 - x0 - 0.04) * i) / nx;
+    const x = nx === 0 ? (x0 + x1) / 2 : x0 + 0.02 + ((x1 - x0 - 0.04) * i) / nx;
     for (let j = 0; j <= ny; j++) {
       const y = y0 + 0.05 + ((y1 - y0 - 0.1) * j) / ny;
-      const hit = new Raycaster(new Vector3(x, y, z0), new Vector3(0, 0, 1), 0, z1 - z0).intersectObjects([...scene], false)[0];
-      if (hit !== undefined) out.push(`(${x.toFixed(2)}, ${y.toFixed(2)}): ${hit.object.name} at Z ${hit.point.z.toFixed(2)}`);
+      for (const [from, dir] of [
+        [z0, 1],
+        [z1, -1],
+      ] as const) {
+        const hit = new Raycaster(new Vector3(x, y, from), new Vector3(0, 0, dir), 0, z1 - z0).intersectObjects([...scene], false)[0];
+        if ((hit !== undefined) !== wantHit) out.push(`(${x.toFixed(2)}, ${y.toFixed(2)}) going ${dir > 0 ? '+Z' : '−Z'}: ${hit === undefined ? 'nothing' : `${hit.object.name} at Z ${hit.point.z.toFixed(2)}`}`);
+      }
     }
   }
   return out;
@@ -205,27 +217,33 @@ const yOffset = (p: Placed): number => instanceBox(p.mesh, p.slot).min.y - p.res
 const materialOf = (mesh: InstancedMesh): string => (mesh.material as Material).name;
 
 describe('the openings the owner chose on 2026-11-04', () => {
-  it('stand clear through the wall, each its pinned width and height: the west doorways beside the entrance and the east corridors', () => {
+  it('stand clear through the wall, each its pinned width and height, and each corridor no wider than the map allows', () => {
     for (const [k, [a, b]] of MAP_EAST_DOORS.entries()) {
       const [c, d] = EAST_CORRIDORS[k] ?? [0, 0];
       expect(Math.max(Math.abs(a - c), Math.abs(b - d)), `corridor ${String(k)} against the map's door`).toBeLessThanOrEqual(0.06 + 1e-9);
     }
-    const boxes = [
+    const eastZ = [INNER_EAST_Z - 0.3, EAST_Z + 0.3] as const;
+    const clear = [
       ...WEST_DOORWAYS.map(([x0, x1]) => ({ name: `west doorway X ${String(x0)}..${String(x1)}`, x0, x1, y1: WEST_DOORWAY_HEAD, z0: WEST_Z - 0.3, z1: INNER_WEST_Z + 0.3 })),
-      ...EAST_CORRIDORS.map(([x0, x1]) => ({ name: `east corridor X ${String(x0)}..${String(x1)}`, x0, x1, y1: EAST_CORRIDOR_HEAD, z0: INNER_EAST_Z - 0.3, z1: EAST_Z + 0.3 })),
+      ...EAST_CORRIDORS.map(([x0, x1]) => ({ name: `east corridor X ${String(x0)}..${String(x1)}`, x0, x1, y1: EAST_CORRIDOR_HEAD, z0: eastZ[0], z1: eastZ[1] })),
     ];
+    // Each corridor held on lines 8 cm outside the map's door: brick or wall on every ray there, up to the corridor's head.
+    const held = MAP_EAST_DOORS.flatMap(([a, b]) => [a - 0.08, b + 0.08]).map((x) => ({ name: `east corridor's side at X ${x.toFixed(2)}`, x0: x, x1: x, y1: EAST_CORRIDOR_HEAD, z0: eastZ[0], z1: eastZ[1] }));
     const steps = [...vauxSteps, ...medievalHallSteps, ...huntSteps, ...lehmanStructureSteps, ...lehmanGlassSteps];
+    const all = [...clear, ...held];
     const scene = steps
       .flatMap((step) => collectStep(step).pieces.map((p) => meshOf(step, p)))
       .filter((mesh) => {
         const box = new Box3().setFromObject(mesh);
-        return boxes.some((b) => box.max.x > b.x0 && box.min.x < b.x1 && box.max.y > MAIN_FLOOR && box.min.y < b.y1 && box.max.z > b.z0 && box.min.z < b.z1);
+        return all.some((b) => box.max.x > b.x0 - 0.05 && box.min.x < b.x1 + 0.05 && box.max.y > MAIN_FLOOR && box.min.y < b.y1 && box.max.z > b.z0 && box.min.z < b.z1);
       });
-    const blocked = boxes.flatMap((b) => blockers(scene, b.x0, b.x1, MAIN_FLOOR, b.y1, b.z0, b.z1).map((s) => `${b.name} ${s}`));
+    const blocked = clear.flatMap((b) => sweep(scene, b.x0, b.x1, MAIN_FLOOR, b.y1, b.z0, b.z1, false).map((s) => `${b.name} ${s}`));
     expect(blocked.slice(0, 12), `${String(blocked.length)} rays blocked`).toEqual([]);
+    const open = held.flatMap((b) => sweep(scene, b.x0, b.x1, MAIN_FLOOR, b.y1, b.z0, b.z1, true).map((s) => `${b.name} ${s}`));
+    expect(open.slice(0, 12), `${String(open.length)} rays passing where brick or wall should stand`).toEqual([]);
   });
 
-  it('set the east front’s brick round its corridors with the band and apron in front of it: at five moments of its step, at one offset and drawn alike', () => {
+  it('set the east front’s brick round its corridors with the band and apron in front of it, its faces out of the wall’s planes as it drops through the wall', () => {
     const timeline = new Timeline(vauxSteps);
     const problems: string[] = [];
     let bricks = 0;
@@ -253,15 +271,29 @@ describe('the openings the owner chose on 2026-11-04', () => {
             }
           }
         }
-        timeline.evaluate(i + 1);
       }
+      // While a piece stands over the opening's top it is inside the wall: neither of its Z faces may lie in the wall's inner face, the head niche's back or the east face.
+      const planes = [INNER_EAST_Z, EAST_Z - NICHE_DEPTH, EAST_Z];
+      for (let k = 0; k < 100; k++) {
+        const f = (k + 0.5) / 100;
+        timeline.evaluate(i + f);
+        for (const b of brick) {
+          const now = instanceBox(b.mesh, b.slot);
+          if (!drawnAt(b) || now.max.y <= EAST_OPENING_TOP + 1e-6) continue;
+          for (const z of [now.min.z, now.max.z]) {
+            const plane = planes.find((p) => Math.abs(z - p) < 0.005);
+            if (plane !== undefined) problems.push(`${step.def.id} at f ${f.toFixed(3)}: brick at X ${b.rest.min.x.toFixed(2)}, Y ${b.rest.min.y.toFixed(2)}, its top at ${now.max.y.toFixed(2)}, has a face at Z ${z.toFixed(3)}, in the wall's plane at ${plane.toFixed(2)}`);
+          }
+        }
+      }
+      timeline.evaluate(i + 1);
     });
     expect(problems.slice(0, 12), `${String(problems.length)} problems`).toEqual([]);
     // Three pieces round each of the two corridors.
     expect(bricks).toBe(6);
   });
 
-  it('keep each ground window under a west doorway beneath the main floor while the openings step drops it, so none shows in the doorway over it', () => {
+  it('start each ground window under a west doorway beneath the main floor when the openings step drops it, so none shows in the doorway over it', () => {
     const timeline = new Timeline(vauxSteps);
     const i = timeline.steps.findIndex((s) => s.def.id === 'vaux-openings');
     const step = timeline.steps[i];
@@ -274,16 +306,20 @@ describe('the openings the owner chose on 2026-11-04', () => {
     );
     // Each ground window's frame and bars, and its glass, under the two doorways.
     expect(under.length).toBe(4);
-    // Every 0.005 of the step: a dropping piece is highest where it starts, and the drop's last glimpse of a window over the floor, at 2.5 m, lasted 0.02.
     const over: string[] = [];
-    for (let k = 0; k < 200; k++) {
-      const f = (k + 0.5) / 200;
-      timeline.evaluate(i + f);
-      for (const p of under) {
-        const top = instanceBox(p.mesh, p.slot).max.y;
-        if (drawnAt(p) && top > MAIN_FLOOR + 1e-6) over.push(`f ${f.toFixed(4)}: ${materialOf(p.mesh)} at X ${p.rest.min.x.toFixed(2)}, its top at ${top.toFixed(3)}`);
+    for (const p of under) {
+      // The first moment the piece is drawn, halved to 1e-6 of the step: a dropping piece stands highest there.
+      let [lo, hi] = [0, 1];
+      for (let k = 0; k < 20; k++) {
+        const mid = (lo + hi) / 2;
+        timeline.evaluate(i + mid);
+        if (drawnAt(p)) hi = mid;
+        else lo = mid;
       }
+      timeline.evaluate(i + hi);
+      const top = instanceBox(p.mesh, p.slot).max.y;
+      if (top > MAIN_FLOOR + 1e-6) over.push(`${materialOf(p.mesh)} at X ${p.rest.min.x.toFixed(2)} starts at f ${hi.toFixed(6)} with its top at ${top.toFixed(3)}`);
     }
-    expect(over.slice(0, 8), `${String(over.length)} samples over the floor`).toEqual([]);
+    expect(over).toEqual([]);
   });
 });

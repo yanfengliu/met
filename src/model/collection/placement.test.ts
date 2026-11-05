@@ -20,8 +20,9 @@
  * R6 runs from the Great Hall spawn through the Egyptian and Arms and Armor galleries and the passage from gallery 374 into the Engelhard Court, and
  * R7 through Exhibition Gallery 199 and the corridor from it into the Petrie Court; src/model/hunt/routes.test.ts and tests/e2e/routes.spec.ts walk
  * both of them both ways, and the collection keeps 1 m clear of them and of both passages. Red with a figure on a column, a statue on R4, a sculpture
- * in the Weston passage, a statue 3 m before the choir screen's gate, a painting 10 cm off its wall, a floor 5 cm out, or every artwork piece lifted
- * 10 cm as its step gives it to `kit.addTagged`, which turns the binding, the floor and the solid checks red.
+ * in the Weston passage, a statue 3 m before the choir screen's gate, a Virgin and Child moved to X −6.2, Z −72 in gallery 304, on R9 and in the
+ * south east corridor's zone (work unit 15, review 5, F53), a painting 10 cm off its wall, a floor 5 cm out, or every artwork piece lifted 10 cm as
+ * its step gives it to `kit.addTagged`, which turns the binding, the floor and the solid checks red.
  * Bound: lines 0.1 m apart miss a solid thinner than that between them; a footprint is its pieces' boxes, not their curves; routes and door swings are
  * plan shapes on their floor, compared with artworks within 1 m of that floor.
  */
@@ -39,8 +40,7 @@ import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import type { GroundHit, LineCrossings } from '../../walk/collision.js';
 import { BODY } from '../../walk/walker.js';
 import { GATE_CLEAR } from '../core/choir-screen.js';
-import { SCREEN_Z } from '../core/constants.js';
-import { EAST_Z, VAUX_BAY, WEST_Z } from '../core/constants.js';
+import { EAST_Z, SCREEN_Z, VAUX_BAY, WEST_Z } from '../core/constants.js';
 import { INNER_EAST_Z, INNER_WEST_Z } from '../core/layout.js';
 import { CLEAR } from '../core/vaux-arch.js';
 import { eastCorridor } from '../core/vaux-east.js';

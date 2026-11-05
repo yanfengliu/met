@@ -205,7 +205,7 @@ export function vauxHall(kit: Kit): void {
   }
 }
 
-/** Granite trim of the side walls' hall bays and of the east front (vaux-sides.ts, vaux-east.ts). */
+/** Granite trim of the side walls' hall bays and of the east front, and the brick round the east front's corridors (vaux-sides.ts, vaux-east.ts). */
 export function vauxSideTrim(kit: Kit): void {
   vauxSideArcadeTrim(kit);
   vauxEastTrim(kit);
