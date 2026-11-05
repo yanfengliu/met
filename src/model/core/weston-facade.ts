@@ -6,8 +6,10 @@
  * quoin piers with roundels between the arches, a cornice; in the middle the 1888 entrance pavilion with its porch and balcony (weston-porch.ts) and a
  * great round window. Beside the porch the pavilion's main floor is brick between quoins, with no window (interior-images.md #33 and #43). Trim may
  * project up to 1.5 m into the court (coordinator, 2026-10-11), and the porch stands 2.85 m out to its cornice (docs/design/spec.md, World frame).
- * The pavilion stands where the floor map has its door, at Z −100.97 (constants.ts `WESTON_PAVILION_Z`): the middle of the map's front, five bays
- * each side, which the model's front, ending on the 1880 building's east line (`EAST_Z`, 4.2 m short of the map's court), cuts to four on the east
+ * The pavilion stands where the floor map has its door, at Z −100.97 (constants.ts `WESTON_PAVILION_Z`), the middle of the map's galleries along the
+ * front, whose span is as long as the pavilion and five of the model's bays each side. The bays are laid out from it, five on the west and four on
+ * the east, where the model's front ends on the 1880 building's east line (`EAST_Z`, 4.2 m short of the map's court). The court's photographs show
+ * one arched bay east of the pavilion and then a front of another design, for which the model's further three bays stand in, open for the owner
  * (work unit 19; interior.md, Weston's 1888 door).
  */
 import { Matrix4 } from 'three';
