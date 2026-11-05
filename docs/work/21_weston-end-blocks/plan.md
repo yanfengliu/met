@@ -21,11 +21,11 @@ Excluded: the front's extent (the model's front runs on the 1880 building's line
 
 ## Approach
 
-- Sources and measures: Heckscher figs. 26 (plan), 28 (elevation) and 35 (photograph), read at full size; #33, #35, fg02 and the 2011 view. The plan gives the end blocks about 19 m each and the centre section about 32.6 m on a front of about 70.8 m (its inner span scaled to the floor map's galleries, ±34.18 m); the elevation agrees (19.2 and 32.1 m). From the elevation: the arched bay about 8.7 m, a brick strip of 0.9 m, and the end block's parts in the ratio 2.8 : 3.4 : 1.3 : 3.4 : 1.3 : 3.4 : 3.4 (inner pier, bay, pier, bay, pier, bay, corner pier). The projection, 1.2 m, from the end block's return face in #33 (its courses level and its frieze's roundels round, so seen face-on) and again in #35; the bays' recess, about 0.5 m, from the piers' side faces in #35 and the 2011 view.
-- The model keeps the pavilion (12.4 m) and centres everything on the door (Z −100.97). Arched bays 8.7 m each side, then the 0.9 m strip, then the end blocks to the court's ends: the east block 16.2 m to −69.0, the west block 20.5 m to the Kravis Wing's pier at −137.3; each block's parts scaled to its length, its columns 0.6 m whatever the scale.
-- Each block: a stone podium to 1.0 m over the main floor; brick piers to the entablature, the bays recessed between them; in each bay a Tuscan column (plinth, base, plain shaft of dark granite, capital) carrying the entablature, which is the main floor's head band carried round the block; above, brick with pilasters on stone bases with console capitals, a stone panel on a moulded sill in each bay, a stone frieze with two roundels on the return, and the front's cornice and coping, returned round the block.
+- Sources and measures: Heckscher figs. 26 (plan), 28 (elevation) and 35 (photograph), read at full size; #33, #35, fg02 and the 2011 view. The plan gives the end blocks about 19 m each and the centre section about 32.6 m on a front of about 70.8 m (its inner span scaled to the floor map's galleries, ±34.18 m); the elevation agrees (19.2 and 32.4 m). From the elevation: the arched bay about 8.7 m with its quoins, a brick strip of 0.9 m, and the end block's parts in the ratio 2.8 : 3.4 : 1.3 : 3.4 : 1.3 : 3.4 : 3.4 (inner pier, bay, pier, bay, pier, bay, corner pier); #46 shows the court's east wall meeting the east block one pier as narrow as the others after its third bay, so the model ends each block in a pier of 1.3. The projection, 1.2 m, from the end block's return face in #33 (its courses level and its frieze's roundels round, so seen face-on) and again in #35; the bays' recess, about 0.5 m, from the piers' side faces in #35 and the 2011 view.
+- The model keeps the pavilion (12.4 m) and centres everything on the door (Z −100.97). Arched bays 8.7 m each side between quoins centred on their edges, then 0.9 m of brick from the quoins' outer edge, then the end blocks from 16.28 m out to the court's ends: the east block 15.69 m to −69.0, the west block 19.75 m to the Kravis Wing's pier at −137.0; each block's parts scaled to its length, its columns 0.6 m whatever the scale.
+- Each block: a brick ground storey from the footing on the front's base course, returned round it; a stone podium to 1.0 m over the main floor; brick piers to the entablature, the bays recessed between them; in each bay a Tuscan column (plinth, base, plain shaft of dark granite, capital) carrying the entablature, which is the main floor's head band carried round the block; above, brick with pilasters on stone bases with console capitals, a stone panel on a moulded sill in each bay, a stone frieze with two roundels on the return, and the front's cornice and coping, returned round the block.
 - The arched bays: four windows and four dado roundels, a four-light arched window under a wider arch whose keystone reaches the cornice.
-- The core area is at its budget of 130 instanced meshes (`core.test.ts`, the coordinator's assignment of 2026-10-11), so the blocks add one mesh and save one: the columns are the core's shared stone box and cylinder with a dark granite cylinder for the shafts; the cornice is the arched bays' moulding scaled along each run, so it does not mitre at the blocks' corners; the three arches' voussoirs are one geometry.
+- The core area is at its budget of 130 instanced meshes (`core.test.ts`, the coordinator's assignment of 2026-10-11), so the blocks add one mesh and save one: the columns are the core's shared stone box and cylinder with a dark granite cylinder for the shafts; the middle section's three arches and its cornices are one geometry; each block's cornice, mitred round its return, is one more.
 
 ## Acceptance criteria
 
@@ -38,10 +38,11 @@ Excluded: the front's extent (the model's front runs on the 1880 building's line
 ## Implementation steps
 
 - [x] Read the sources (figs. 26, 28, 35; #33, #35, fg02, the 2011 view) and settle the layout.
-- [ ] Model: the end blocks, the arched bays, the gutter; tests and their bounds.
-- [ ] Gates, shots against main's, renders matched to the photographs.
-- [ ] Records.
-- [ ] Review, land, gallery.
+- [x] Model: the end blocks and the arched bays; the tests and their bounds; the Petrie Court preset.
+- [x] Gates on `bcdc743`: `npm run verify` (754 unit tests, 127 e2e); `routes.spec.ts` with `walk.spec.ts` three runs in a row at 1× and at 4×; the shots against main's, 31 of 64 changed, all along Weston's front, each read at native size; renders matched to the photographs.
+- [x] Records: `interior.md`, `interior-images.md` (#45, #46), the spec's World frame rule and Weston's door item, the devlog.
+- [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): two major findings (the blocks hanging over the ground before 1990; the east block's corner pier against #46) and six minor, with six nits, all repaired in the next commit.
+- [ ] Review 1 of the repairs; land through `tmp/land.sh`; the gallery republished.
 
 ## Outcome
 

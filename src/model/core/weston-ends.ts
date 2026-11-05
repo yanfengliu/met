@@ -3,15 +3,17 @@
  * into the Petrie Court beyond each arched bay and its strip of brick. Weston's approved elevation of 1885 and his 1888 first-floor plan draw them
  * (Heckscher figs. 28 and 26: "projecting flanking sections", their main floor "articulated by pilasters and pairs of double-window openings", their
  * upper wall blind for skylit picture galleries), the photograph of about 1895 from the south-east shows them built (fig. 35), and the court's
- * photographs show them today (interior-images.md #33, #35, #45 and #46; interior.md, Weston's 1888 front). Each block: a stone podium; three bays,
- * each a column with a dark granite shaft between two windows, bricked up since, set back between brick piers, and a wide pier at each end; the main
- * floor's head band carried round the block as the columns' entablature; above, brick with pilasters on stone bases under console capitals, a stone
- * panel on a moulded sill in each bay, a stone frieze with two roundels on the return, and the front's cornice and coping, all returned round the block.
+ * photographs show them today (interior-images.md #33, #35, #45 and #46; interior.md, Weston's 1888 front). Each block: a brick ground storey on the
+ * front's base course, from the footing up to a stone podium at the main floor; three bays, each a column with a dark granite shaft between two
+ * windows, bricked up since, set back between brick piers, a wide pier at the block's inner end and a pier at its outer end; the main floor's head band
+ * carried round the block as the columns' entablature; above, brick with pilasters on stone bases under console capitals, a stone panel on a moulded
+ * sill over each bay, a stone frieze with two roundels on the return, and the front's cornice and coping, all returned round the block.
  * The block projects 1.2 m (#33 and #35 see its return faces face-on) and its bays stand 0.55 m back between the piers (#35 and #46). The parts keep
- * fig. 28's widths (inner pier 2.8, bay 3.4, pier 1.3, bay, pier, bay, corner pier 3.4, of 19.0) scaled to each block's length, the columns 0.6 m
- * whatever the scale: the model's front runs on the 1880 building's lines, west of the real front's middle, so the west block runs 20.4 m to the
- * Kravis Wing's pier and the east one 16.2 m to the court's east end, where the real ones are each about 19 m (open for the owner; interior.md).
- * The model shows today's bricked-up bays from 1888, as it shows the 1880 building's side walls (vaux-sides.ts); fig. 35 shows them glazed.
+ * fig. 28's widths (inner pier 2.8, bay 3.4, pier 1.3, bay, pier, bay, of 16.9), but for the last pier, which fig. 28 draws as a corner 3.4 wide and #46
+ * shows, where the court's east wall meets the block, no wider than the others; they are scaled to each block's length, the columns 0.6 m whatever the
+ * scale. The model's front runs on the 1880 building's lines, west of the real front's middle, so the west block runs 19.75 m to the Kravis Wing's
+ * pier and the east one 15.69 m to the court's east end (open for the owner; interior.md). The model shows today's bricked-up bays from 1888, as it
+ * shows the 1880 building's side walls (vaux-sides.ts); fig. 35 shows them glazed, and the ground storey's small windows, which the model leaves out.
  * Frame: `out` measures from the front's brick face (X −49.7) into the court (toward −X); `u` from a block's inner end along it, toward its outer end.
  */
 import { Matrix4 } from 'three';
@@ -19,10 +21,28 @@ import type { BufferGeometry } from 'three';
 
 import type { Kit } from '../../build/types.js';
 import { moulding } from '../lib/index.js';
+import type { V3 } from '../lib/index.js';
 import { palette } from '../palette.js';
-import { B_SOUTH_X, COPING_TOP_Y, CORNICE_Y, EAST_Z, L1, OUTER_WALL, PARAPET_Y, WESTON_ARCH_BAY, WESTON_END_FROM, WESTON_END_PROJECTION, WESTON_LOWER_HEAD, WESTON_PAVILION_Z, WESTON_STRIP, WESTON_WEST_END_Z } from './constants.js';
+import {
+  B_SOUTH_X,
+  COPING_TOP_Y,
+  CORNICE_Y,
+  EAST_Z,
+  L1,
+  LG,
+  OUTER_WALL,
+  PARAPET_Y,
+  WESTON_ARCH_BAY,
+  WESTON_END_FROM,
+  WESTON_END_PROJECTION,
+  WESTON_LOWER_HEAD,
+  WESTON_PAVILION_HALF,
+  WESTON_PAVILION_Z,
+  WESTON_WEST_END_Z,
+} from './constants.js';
 import { core } from './materials.js';
-import { FACING, addBox, cylinder, placed } from './shapes.js';
+import { FACING, addBox, cylinder, memo, placed } from './shapes.js';
+import { WALL_BASE_Y } from './vaux-front.js';
 
 /** An end block: west (−1) or east (+1) of the pavilion, its inner end (the return face, toward the pavilion) and its outer end, as world Z. */
 export interface EndBlock {
@@ -42,17 +62,21 @@ const out = (d: number): number => B_SOUTH_X - d;
 const PROJ = WESTON_END_PROJECTION;
 /** How far the bays' bricked-up windows stand back from the piers' faces. */
 const RECESS = 0.55;
-/** fig. 28's parts of a block from its inner end: inner pier, bay, pier, bay, pier, bay, corner pier; the bays are the odd ones. */
-const PARTS = [2.8, 3.4, 1.3, 3.4, 1.3, 3.4, 3.4] as const;
+/** The parts of a block from its inner end: inner pier, bay, pier, bay, pier, bay, pier; the bays are the odd ones (see the header). */
+const PARTS = [2.8, 3.4, 1.3, 3.4, 1.3, 3.4, 1.3] as const;
 const PARTS_LENGTH = PARTS.reduce((a, b) => a + b, 0);
 /** The columns' lower diameter (fig. 28, about 0.65 m), their axes on the piers' face line. */
 const COLUMN_D = 0.6;
+/** The cornice's run before each block, on the front's face: from the arched bay's edge, over its quoins and the strip of brick. */
+const STRIP_RUN = WESTON_END_FROM - WESTON_PAVILION_HALF - WESTON_ARCH_BAY;
 
 /** Heights. The podium carries the columns; the entablature runs from the arched bays' head band's foot, 5 cm taller so their tops never meet in one plane. */
 const PODIUM = { bottom: L1 - 0.3, top: L1 + 1.0, out: PROJ + 0.5, cap: 0.12 } as const;
+/** The front's base course (weston-facade.ts), returned round the block's ground storey. */
+const BASE = { top: LG + 0.6, out: PROJ + 0.12 } as const;
 const HEAD = L1 + WESTON_LOWER_HEAD;
 const ENTABLATURE = { top: HEAD + 0.8, out: PROJ + 0.4, crown: 0.25, overhang: 0.2 } as const;
-/** How far the entablature's crown returns along the front's face beyond each block, toward the pavilion: the arched bays' head band stops there. */
+/** How far the entablature returns along the front's face beyond each block, toward the pavilion, its body and crown alike: the arched bays' head band meets it there. */
 export const END_ENTABLATURE_RETURN = ENTABLATURE.out - PROJ + ENTABLATURE.overhang;
 /** The column's parts over the podium: the plinth, the base's torus and fillet, then under the entablature the astragal, the echinus and the abacus. */
 const COLUMN = { plinth: 0.12, torus: 0.12, fillet: 0.06, astragal: 0.06, echinus: 0.14, abacus: 0.16 } as const;
@@ -62,7 +86,7 @@ const PANEL_TOP = UPPER.frieze - 0.12;
 /** How far each piece of the upper wall stands out from the block's brick face. */
 const STANDS = { pilaster: 0.12, base: 0.18, consoleLow: 0.2, consoleHigh: 0.28, panel: 0.04, sill: 0.14, frieze: 0.06, coping: 0.08 } as const;
 
-/** A block's length and the scale of fig. 28's parts on it. */
+/** A block's length and the scale of the parts on it. */
 function scaleOf(b: EndBlock): number {
   return Math.abs(b.outer - b.inner) / PARTS_LENGTH;
 }
@@ -96,18 +120,23 @@ function boxOut(kit: Kit, b: EndBlock, material: Parameters<typeof addBox>[1], d
   addBox(kit, material, out(d1), y0, z0, out(d0), y1, z1, order);
 }
 
-/** The pilasters' middles along the block (u) and their width: flanking the first bay and the last, and on the two piers between. */
+/**
+ * The pilasters' middles along the block (u) and their width, fig. 28's 20 to 28 px: half a pier's width outside each bay, so each panel stands
+ * over its bay's column (fig. 28 centres them on the piers).
+ */
 function pilasters(b: EndBlock): { readonly us: readonly number[]; readonly width: number } {
-  const width = 0.75 * scaleOf(b);
-  const [, bay1 = [0, 0], pier2 = [0, 0], , pier4 = [0, 0], bay5 = [0, 0]] = partsOf(b);
-  return { us: [bay1[0] - width / 2, (pier2[0] + pier2[1]) / 2, (pier4[0] + pier4[1]) / 2, bay5[1] + width / 2], width };
+  const k = scaleOf(b);
+  const [, bay1 = [0, 0], , bay3 = [0, 0], , bay5 = [0, 0]] = partsOf(b);
+  const half = (PARTS[2] * k) / 2;
+  return { us: [bay1[0] - half, bay1[1] + half, bay3[1] + half, bay5[1] + half], width: 0.97 * k };
 }
 
-/** The block's brick: the mass from the main floor's head to the parapet, the piers and the bays' bricked-up windows below it, and the pilasters. */
+/** The block's brick: its ground storey, the mass from the main floor's head to the parapet, the piers and the bays' bricked-up windows between, and the pilasters. */
 export function westonEndWalls(kit: Kit): void {
   for (const b of END_BLOCKS) {
     const length = Math.abs(b.outer - b.inner);
     const parts = partsOf(b);
+    boxOut(kit, b, palette.brick, 0, PROJ, WALL_BASE_Y, PODIUM.bottom, 0, length, 0);
     boxOut(kit, b, palette.brick, 0, PROJ, HEAD, PARAPET_Y, 0, length, 2);
     parts.forEach(([u0, u1], i) => {
       boxOut(kit, b, palette.brick, 0, i % 2 === 1 ? PROJ - RECESS : PROJ, PODIUM.top, HEAD, u0, u1, i % 2 === 1 ? 1 : 0);
@@ -118,16 +147,23 @@ export function westonEndWalls(kit: Kit): void {
 }
 
 /**
- * The arched bays' cornice (weston-facade.ts): the end blocks' cornice is made of it, each run scaled along its length, which keeps its profile, so the
- * front's cornice is one mesh however it turns.
+ * The front's cornice before and round a block, mitred at its corners: along the front's face from the arched bay's edge, out along the return and
+ * along the block (the sweep puts a moulding's front to the right of its path, as the porch's entablature runs; weston-porch.ts). One geometry per
+ * block, where the arched bays' and the pavilion's cornices share one with the arches (weston-facade.ts), so the front's cornice costs the core no mesh.
  */
-export function westonCornice(): BufferGeometry {
-  return moulding({ profile: 'cornice-plain', path: [[-WESTON_ARCH_BAY / 2, 0, 0], [WESTON_ARCH_BAY / 2, 0, 0]], height: 0.8, projection: 0.75 });
-}
-
-/** A run of the cornice `length` long, centred at (x, z), facing `yaw` (its profile projects toward the facing). */
-function corniceRun(x: number, zz: number, length: number, yaw: number): Matrix4 {
-  return placed(x, CORNICE_Y, zz, yaw).multiply(new Matrix4().makeScale(length / WESTON_ARCH_BAY, 1, 1));
+function cornice(b: EndBlock): BufferGeometry {
+  return memo(`weston-end-cornice:${String(b.side)}`, () => {
+    const length = Math.abs(b.outer - b.inner);
+    // In the moulding's frame x runs east: the east block's path from the face out and east; the west block's the same points mirrored and reversed.
+    const east: V3[] = [
+      [-STRIP_RUN, 0, 0],
+      [0, 0, 0],
+      [0, 0, PROJ],
+      [length, 0, PROJ],
+    ];
+    const path = b.side > 0 ? east : east.map(([x, y, z]): V3 => [-x, y, z]).reverse();
+    return moulding({ profile: 'cornice-plain', path, height: 0.8, projection: 0.75 });
+  });
 }
 
 /** A vertical disc or drum of the shared cylinder: `d` across, from y0 to y1, on the axis at (x, z). */
@@ -136,18 +172,18 @@ function drum(x: number, y0: number, y1: number, zz: number, d: number): Matrix4
 }
 
 /**
- * The stone and granite: the podium, the columns, the entablature, the pilasters' bases and capitals, the panels and their sills, the frieze, the
- * cornice and the coping. Everything but the columns' shafts is the core's shared stone box, cylinder and cornice, so the blocks add one mesh: the
- * core keeps to its 130 (core.test.ts).
+ * The stone and granite: the base course, the podium, the columns, the entablature, the pilasters' bases and capitals, the panels and their sills, the
+ * frieze, the cornice and the coping. The columns are the core's shared stone box and cylinder and a dark granite cylinder for the shafts, so the
+ * blocks keep the core within its 130 meshes (core.test.ts).
  */
 export function westonEndTrim(kit: Kit): void {
   const stone = core.westonStone;
   const disc = cylinder(20);
-  const cornice = westonCornice();
   for (const b of END_BLOCKS) {
     const length = Math.abs(b.outer - b.inner);
     const parts = partsOf(b);
-    // The podium and its cap, returned to the front's face.
+    // The base course round the ground storey, and the podium and its cap, returned to the front's face.
+    boxOut(kit, b, stone, 0, BASE.out, WALL_BASE_Y, BASE.top, -(BASE.out - PROJ), length, 0);
     boxOut(kit, b, stone, 0, PODIUM.out, PODIUM.bottom, PODIUM.top - PODIUM.cap, 0, length, 1);
     boxOut(kit, b, stone, 0, PODIUM.out + 0.06, PODIUM.top - PODIUM.cap, PODIUM.top, -0.06, length, 1);
     // A Tuscan column in each bay (#35 and #46): a plinth, a torus and a fillet, the plain shaft of dark granite, an astragal, an echinus and an abacus.
@@ -158,22 +194,20 @@ export function westonEndTrim(kit: Kit): void {
       if (i % 2 === 0) return;
       const x = out(PROJ);
       const zz = zAt(b, (u0 + u1) / 2);
-      const half = (w: number): [number, number] => [zz - w / 2, zz + w / 2];
-      addBox(kit, stone, x - 0.45, PODIUM.top, half(0.9)[0], x + 0.45, PODIUM.top + c.plinth, half(0.9)[1], 3);
+      addBox(kit, stone, x - 0.45, PODIUM.top, zz - 0.45, x + 0.45, PODIUM.top + c.plinth, zz + 0.45, 3);
       kit.add(disc, stone, drum(x, PODIUM.top + c.plinth, PODIUM.top + c.plinth + c.torus, zz, COLUMN_D + 0.2), 3);
       kit.add(disc, stone, drum(x, PODIUM.top + c.plinth + c.torus, shaft0, zz, COLUMN_D + 0.08), 3);
       kit.add(disc, core.westonGranite, drum(x, shaft0, shaft1, zz, COLUMN_D), 4);
       kit.add(disc, stone, drum(x, shaft1, shaft1 + c.astragal, zz, COLUMN_D + 0.06), 5);
       kit.add(disc, stone, drum(x, shaft1 + c.astragal, HEAD - c.abacus, zz, COLUMN_D + 0.14), 5);
-      addBox(kit, stone, x - 0.38, HEAD - c.abacus, half(0.76)[0], x + 0.38, HEAD, half(0.76)[1], 5);
+      addBox(kit, stone, x - 0.38, HEAD - c.abacus, zz - 0.38, x + 0.38, HEAD, zz + 0.38, 5);
     });
-    // The entablature: its body before the piers and round the return, under a crown that overhangs it on both faces.
-    const back = ENTABLATURE.out - PROJ;
+    // The entablature: round the return to the front's face, then its body before the piers under a crown that overhangs it.
+    const back = END_ENTABLATURE_RETURN;
     const crown0 = ENTABLATURE.top - ENTABLATURE.crown;
+    boxOut(kit, b, stone, 0, PROJ, HEAD, ENTABLATURE.top, -back, 0, 6);
     boxOut(kit, b, stone, PROJ, ENTABLATURE.out, HEAD, crown0, -back, length, 6);
-    boxOut(kit, b, stone, 0, PROJ, HEAD, crown0, -back, 0, 6);
-    boxOut(kit, b, stone, PROJ, ENTABLATURE.out + ENTABLATURE.overhang, crown0, ENTABLATURE.top, -back - ENTABLATURE.overhang, length, 6);
-    boxOut(kit, b, stone, 0, PROJ, crown0, ENTABLATURE.top, -back - ENTABLATURE.overhang, 0, 6);
+    boxOut(kit, b, stone, PROJ, ENTABLATURE.out + ENTABLATURE.overhang, crown0, ENTABLATURE.top, -back, length, 6);
     // The pilasters' bases and console capitals.
     const { us, width } = pilasters(b);
     for (const u of us) {
@@ -181,7 +215,7 @@ export function westonEndTrim(kit: Kit): void {
       boxOut(kit, b, stone, PROJ, PROJ + STANDS.consoleLow, UPPER.console, UPPER.console + 0.4, u - width / 2, u + width / 2, 9);
       boxOut(kit, b, stone, PROJ, PROJ + STANDS.consoleHigh, UPPER.console + 0.4, UPPER.frieze, u - width / 2 - 0.07, u + width / 2 + 0.07, 9);
     }
-    // A panel on a moulded sill in each bay, between the pilasters.
+    // A panel on a moulded sill over each bay, between the pilasters.
     for (let j = 0; j + 1 < us.length; j++) {
       const a = (us[j] ?? 0) + width / 2 + 0.06;
       const e = (us[j + 1] ?? 0) - width / 2 - 0.06;
@@ -195,14 +229,8 @@ export function westonEndTrim(kit: Kit): void {
       const at = new Matrix4().makeTranslation(out(PROJ * f), (UPPER.frieze + CORNICE_Y) / 2, zAt(b, -STANDS.frieze));
       kit.add(disc, stone, at.multiply(new Matrix4().makeRotationX((-b.side * Math.PI) / 2)).multiply(new Matrix4().makeScale(0.38, 0.06, 0.38)), 10);
     }
-    // The front's cornice: along the strip of brick on the front's face, round the return and along the block, run on past the return's corner by its
-    // projection so the corner is whole.
-    const reach = 0.75;
-    kit.add(cornice, stone, corniceRun(B_SOUTH_X, zAt(b, -WESTON_STRIP / 2), WESTON_STRIP, FACING.south), 10);
-    kit.add(cornice, stone, corniceRun(out(PROJ / 2), b.inner, PROJ, b.side > 0 ? FACING.west : FACING.east), 10);
-    kit.add(cornice, stone, corniceRun(out(PROJ), zAt(b, (length - reach) / 2), length + reach, FACING.south), 10);
-    // The coping over the block and the wall behind it.
-    const [z0, z1] = span(b, 0, length);
-    addBox(kit, stone, out(PROJ + STANDS.coping), PARAPET_Y, z0, B_SOUTH_X + OUTER_WALL, COPING_TOP_Y, z1, 11);
+    kit.add(cornice(b), stone, placed(B_SOUTH_X, CORNICE_Y, b.inner, FACING.south), 10);
+    // The coping over the block and the wall behind it, overhanging the block's front and its return.
+    boxOut(kit, b, stone, -OUTER_WALL, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, -STANDS.coping, length, 11);
   }
 }

@@ -78,10 +78,11 @@ export const WESTON_DADO = 1.9; // E: stone dado with roundels above L1 (Petrie 
 export const WESTON_LOWER_HEAD = 6.3; // E: main-floor window heads above L1
 // Weston's front each side of the pavilion (interior.md, Weston's 1888 front): one arched bay, a strip of brick, and an end block that projects into the court.
 export const WESTON_ARCH_BAY = 8.7; // E: Heckscher fig. 28, 217 of the front's 1,756 px on a front of about 70.8 m (fig. 26 against the map); four windows under each arch (interior-images.md #33)
-export const WESTON_STRIP = 0.9; // E: fig. 28, the brick between an arched bay's quoins and an end block
+export const WESTON_QUOIN = 0.48; // E: half the long quoin blocks' width, the quoins centred on the arched bays' edges (weston-facade.ts)
+export const WESTON_STRIP = 0.9; // E: fig. 28, the plain brick between an arched bay's quoins and an end block
 export const WESTON_END_PROJECTION = 1.2; // E: the end blocks' return faces in interior-images.md #33 and #35, face-on
-export const WESTON_END_FROM = WESTON_PAVILION_HALF + WESTON_ARCH_BAY + WESTON_STRIP; // the end blocks' inner edges out from the door's middle, 15.8 m
-export const WESTON_WEST_END_Z = -137.2; // the west end block stops at the Kravis Wing's pier framing the court's glass end (roche-south/kravis.ts, Z −138.2..−137.2)
+export const WESTON_END_FROM = WESTON_PAVILION_HALF + WESTON_ARCH_BAY + WESTON_QUOIN + WESTON_STRIP; // the end blocks' inner edges out from the door's middle, 16.28 m (fig. 28: 162 + 217 + 23 px, 16.2 m)
+export const WESTON_WEST_END_Z = -137.0; // the west end block stops at the Kravis Wing's pier framing the court's glass end, Z −138.2..−137.0 in the Roche wings' 1.2 m wall (roche-south/kravis.ts `Z_IN`)
 export const WESTON_ARCH_SPAN = 6.4; // E: the arched bays' round arches over four-light windows (fig. 28; #33)
 export const WESTON_ARCH_SPRING = 2.0; // E: springing above L2, so the arch's keystone reaches the cornice (fig. 28; #33)
 export const LIGHT_WELL_B = [-30.1, -25.0, -97.2, -84.5] as const; // exterior.md light well (4): X0, X1, Z0, Z1

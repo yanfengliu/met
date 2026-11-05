@@ -36,13 +36,14 @@ import {
   WESTON_LOWER_HEAD,
   WESTON_PAVILION_HALF,
   WESTON_PAVILION_Z,
+  WESTON_QUOIN,
   WESTON_WEST_END_Z,
   WEST_Z,
 } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, memo, placed } from './shapes.js';
 import { WALL_BASE_Y } from './vaux-front.js';
-import { END_ENTABLATURE_RETURN, westonCornice } from './weston-ends.js';
+import { END_ENTABLATURE_RETURN } from './weston-ends.js';
 import { DOOR, DOOR_FRAME_OUT, PORCH_REACH, westonRailing } from './weston-porch.js';
 import { GROUND_WINDOW, MAIN_WINDOW, wingWindows, type Elevation, elevationBox } from './wings-walls.js';
 
@@ -61,7 +62,7 @@ const FILLS: readonly (readonly [number, number])[] = [
 export const SOUTH: Elevation = { block: 'b', axis: 'z', face: B_SOUTH_X, facing: FACING.south, inward: 1, thickness: OUTER_WALL, bays: BAYS, fills: FILLS, glazed: true, shared: false };
 
 /** Half the long quoin blocks' width: the quoins at each bay's edges, centred on them. */
-const QUOIN = 0.48;
+const QUOIN = WESTON_QUOIN;
 /** The four main-floor windows across a bay between its quoins, with five equal piers (#33: four windows to a bay). */
 const PIER = (WESTON_ARCH_BAY - 2 * QUOIN - 4 * MAIN_WINDOW.width) / 5;
 const MAIN_X = [-1.5, -0.5, 0.5, 1.5].map((k) => k * (MAIN_WINDOW.width + PIER));
@@ -118,7 +119,7 @@ export function westonWalls(kit: Kit): void {
     kit.add(bay, palette.brick, placed(B_SOUTH_X, WALL_BASE_Y, c, FACING.south), i);
   });
   kit.add(pavilion(), palette.brick, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 0);
-  for (const [a0, a1] of FILLS) elevationBox(kit, SOUTH, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, OUTER_WALL, 5);
+  for (const [a0, a1] of FILLS) elevationBox(kit, SOUTH, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, OUTER_WALL, 0);
 }
 
 /** A disc `d` across and `t` deep standing out of the south face at (y, z): a roundel. */
@@ -127,15 +128,23 @@ function roundelMatrix(y: number, zz: number, d: number, t: number): Matrix4 {
 }
 
 /**
- * The voussoirs of the three round arches, the pavilion's over its great window and each arched bay's, as one piece in the facade's frame: one mesh
- * for the three, so the end blocks' columns (weston-ends.ts) leave the core within its 130 (core.test.ts).
+ * The voussoirs of the three round arches, the pavilion's over its great window and each arched bay's, and the cornices of the middle section, the
+ * pavilion's and each arched bay's, with the cornice over the bit of wall beyond the west end block, as one piece in the facade's frame: one mesh for
+ * them all, so the end blocks' columns and their mitred cornices (weston-ends.ts) leave the core within its 130 (core.test.ts).
  */
-function arches(): BufferGeometry {
-  return memo('weston-arches', () => {
+function archesAndCornices(): BufferGeometry {
+  return memo('weston-arches-cornices', () => {
     const b = new MeshBuilder();
     const ring = voussoirs({ span: WESTON_ARCH_SPAN, depth: 0.5, count: 21, projection: 0.1 });
-    for (const c of BAYS) b.append(ring, placed(B_SOUTH_X, L2 + WESTON_ARCH_SPRING, c, FACING.south));
+    const cornice = moulding({ profile: 'cornice-plain', path: [[-WESTON_ARCH_BAY / 2, 0, 0], [WESTON_ARCH_BAY / 2, 0, 0]], height: 0.8, projection: 0.75 });
+    for (const c of BAYS) {
+      b.append(ring, placed(B_SOUTH_X, L2 + WESTON_ARCH_SPRING, c, FACING.south));
+      b.append(cornice, placed(B_SOUTH_X, CORNICE_Y, c, FACING.south));
+    }
     b.append(voussoirs({ span: PAVILION_WINDOW.width, depth: 0.6, count: 19, projection: 0.12 }), placed(B_SOUTH_X, L2 + PAVILION_WINDOW.spring, CENTRE_Z, FACING.south));
+    b.append(moulding({ profile: 'cornice-plain', path: [[-WESTON_PAVILION_HALF, 0, 0], [WESTON_PAVILION_HALF, 0, 0]], height: 0.9, projection: 0.85 }), placed(B_SOUTH_X, CORNICE_Y, CENTRE_Z, FACING.south));
+    const tail = WESTON_WEST_END_Z - WEST_Z;
+    b.append(cornice, placed(B_SOUTH_X, CORNICE_Y, (WEST_Z + WESTON_WEST_END_Z) / 2, FACING.south).multiply(new Matrix4().makeScale(tail / WESTON_ARCH_BAY, 1, 1)));
     return b.build();
   });
 }
@@ -152,7 +161,9 @@ export function westonTrim(kit: Kit): void {
   // along the face to meet it.
   const porch0 = CENTRE_Z - PORCH_REACH.pedestals;
   const porch1 = CENTRE_Z + PORCH_REACH.pedestals;
-  elevationBox(kit, e, stone, WEST_Z, EAST_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
+  // The base course, to the end blocks' own, which return round them, and on the bit of wall beyond the west block.
+  elevationBox(kit, e, stone, ends[0] + 0.12, ends[1] - 0.12, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
+  elevationBox(kit, e, stone, WEST_Z, WESTON_WEST_END_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
   elevationBox(kit, e, stone, ends[0], ends[1], L1 - 0.45, L1, 0.14, 0, 0);
   for (const [a0, a1] of [
     [ends[0], porch0],
@@ -190,8 +201,6 @@ export function westonTrim(kit: Kit): void {
       elevationBox(kit, e, stone, Math.min(near, far), Math.max(near, far), y, y + 0.54, 0.12, 0, 2 + Math.round((y - L1) / 1.5));
     }
   }
-  const cornice = westonCornice();
-  const pavCornice = moulding({ profile: 'cornice-plain', path: [[-WESTON_PAVILION_HALF, 0, 0], [WESTON_PAVILION_HALF, 0, 0]], height: 0.9, projection: 0.85 });
   const spring = L2 + WESTON_ARCH_SPRING;
   const crown = spring + WESTON_ARCH_SPAN / 2;
   BAYS.forEach((c) => {
@@ -205,9 +214,8 @@ export function westonTrim(kit: Kit): void {
     elevationBox(kit, e, stone, z(c, WESTON_ARCH_SPAN / 2), z(c, WESTON_ARCH_SPAN / 2) + 0.25, spring - 0.3, spring, 0.12, 0, 6);
     // The keystone's console, up to the cornice (#33).
     elevationBox(kit, e, stone, z(c, -0.28), z(c, 0.28), crown + 0.2, CORNICE_Y, 0.2, 0, 8);
-    kit.add(cornice, stone, placed(B_SOUTH_X, CORNICE_Y, c, FACING.south), 10);
   });
-  kit.add(arches(), stone, new Matrix4(), 7);
+  kit.add(archesAndCornices(), stone, new Matrix4(), 7);
   // The doorway's reveals and soffit, lined through the wall behind the porch, on its threshold.
   kit.add(holeLining(DOOR_LINED, DOOR_OPENING, OUTER_WALL), stone, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 4);
   addBox(kit, stone, B_SOUTH_X, L1 - DOOR.threshold, CENTRE_Z - DOOR_LINED.width / 2, B_SOUTH_X + OUTER_WALL, L1, CENTRE_Z + DOOR_LINED.width / 2, 4);
@@ -215,9 +223,8 @@ export function westonTrim(kit: Kit): void {
     kit.add(disc, stone, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 1.25, 0.12), 8);
     kit.add(disc, palette.brick, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 0.85, 0.16), 8);
   }
-  kit.add(pavCornice, stone, placed(B_SOUTH_X, CORNICE_Y, CENTRE_Z, FACING.south), 10);
-  // The coping over the middle section, and over the bit of wall beyond the west end block behind the Kravis Wing's pier.
-  elevationBox(kit, e, stone, ends[0], ends[1], PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
+  // The coping over the middle section, to the end blocks', which overhang their returns, and over the bit of wall beyond the west end block.
+  elevationBox(kit, e, stone, ends[0] + 0.08, ends[1] - 0.08, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
   elevationBox(kit, e, stone, WEST_Z, WESTON_WEST_END_Z, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
 }
 
