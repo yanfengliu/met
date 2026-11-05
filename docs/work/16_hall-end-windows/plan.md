@@ -1,6 +1,6 @@
 # The Medieval Sculpture Hall's end windows measured
 
-Status: active
+Status: complete
 Owner: hall-windows session (claude/hall-windows-1d984d)
 Created: 2026-11-04
 Updated: 2026-11-04
@@ -32,8 +32,8 @@ Each window's surround and glazing edges are then measured as circles and conver
 - [x] Each window's centre height, glazing and surround measured on P8 and #29 with their uncertainty; method and numbers in `docs/research/interior.md`; the two photographs' entries in `interior-images.md` corrected where they no longer hold.
 - [x] The model's oculi match the measurement, or the reason they do not is recorded; one constant per window if the two differ (their ranges overlap only from 16.04 to 16.39 m, so one height for both rests on the hall's symmetry).
 - [x] Renders read at native resolution, before and after. They were taken from P8's and #29's measured camera places, from the preset, near each window and of the gables from outside. They check the change's place and size, not registration with the photographs. The page's `cam=` views take the default 45° field and do not reproduce #29's shifted view, and the model's screen stands 6.7 m east of the photographs' (F-owner-1).
-- [ ] `npm run verify` green through the shared gate lock; independent review (Codex and Claude) with its findings resolved.
-- [ ] Merged to origin's main through the landing slot; the owner's render gallery republished if a render changed.
+- [x] `npm run verify` green through the shared gate lock, after each repair and on the merged tree; independent review (Codex and Claude) in six rounds, F0 to F54 resolved, and F55 to F57, three nits from the last round, left open at the repair cap (Outcome).
+- [x] Merged to origin's main through the landing slot, at `59451af`; the owner's render gallery republished (version 12; 15 of 64 frames changed).
 
 ## Implementation steps
 
@@ -46,7 +46,7 @@ Each window's surround and glazing edges are then measured as circles and conver
 - [x] Review 3 (Codex and Claude, `reviews/3_implementation.md`) of `00ae202`: no major or minor findings; Codex two nits, Claude eight, merged as F38 to F46, all accepted and repaired. #29's cross stands on the screen's line, so #29 reads 15.98 m and the average 16.15 m (world 20.26), still 20.3; each of #29's circles is one diameter between its two conversions; the friezes' pooled error is scaled by their disagreement; P8's focal length is swept exactly ±1%.
 - [x] Review 4 (Codex and Claude, `reviews/4_implementation.md`) of `4288b42`, focused on review 3's repairs: no major findings; Claude two minor and five nits, Codex one nit, merged as F47 to F54, all accepted and repaired. #29's circles are fitted on the wall, in metres, since the readings cover only their upper halves: #29 reads 16.01 m, the average 16.169 m (world 20.279, still 20.3) and the glazing 2.230 m (still 2.25, 5 mm inside its rounding). The script prints every average to the millimetre with its rounding and checks that the model takes them. This was the fifth repair, the cap.
 - [x] Review 5 (Codex and Claude, `reviews/5_implementation.md`) of `0c39a0f`, focused and final: Codex no findings; Claude three nits, F55 to F57, recorded and not repaired, since review 4's repair was the fifth, the cap (R11). They go to the owner (Outcome).
-- [ ] Repairs gated; landing; gallery.
+- [x] Repairs gated (`npm run verify` green on port 5393 after each round). Landed at `59451af`, merging work units 15 and 17 with four conflicts between neighbouring lines; `npm run verify` green on the merged tree (734 unit and 125 end-to-end tests); the Pages deploy succeeded. The gallery shows main's shots at `59451af`.
 
 ## Findings for the owner
 
@@ -57,4 +57,10 @@ Each window's surround and glazing edges are then measured as circles and conver
 
 ## Outcome
 
-Pending.
+Landed on origin's main at `59451af` (2026-11-04), merged with work units 15 and 17. The hall's two round end windows stand at `VAUX_OCULUS_Y` 20.3, 16.19 m over the hall floor (was 21.4, 17.29 m), with a 2.25 m opening (`VAUX_OCULUS`, was 2.4). That is the record's rule applied to its measurement. P8 reads the east window at 16.8 m (16.0 to 17.5 over its inputs) and #29 the west at 16.0 m (15.6 to 16.4). Their weighted average, 16.169 m, rounds to 20.3 in the world frame, 29 mm inside the boundary, and the glazing's 2.230 m rounds to 2.25 m, 5 mm inside. #29 was taken from gallery 304 through the hall's east doorway, not from the east balcony. The method, the numbers and the alternatives are in `docs/research/interior.md`, Medieval Sculpture Hall, "End windows, measured", every number from the script and readings in `snapshots/`.
+
+Reviews 0 to 5 (Codex and Claude): F0 to F54 accepted and repaired. F55 to F57, three nits from review 5, stay open at the repair cap (R11): the script's assertions check its own copies of the model's values; the glazing's margin is not tried under the alternatives; the heading margin is taken on the screen's face, not its line. None moves a model value.
+
+Gates: `npm run verify` green after every repair and on the merged tree, `59451af` (82 test files, 734 unit tests, typecheck, lint, build, 125 end-to-end tests). Renders were read at native resolution before and after the change. Main's standard shots at `59451af` change in 15 of 64 frames, and the owner's gallery shows them (version 12).
+
+For the owner: F-owner-1 to F-owner-4 above (the screen's place, the preset that stands for P8, the end doorways and the windows' surround), and F55 to F57 (`reviews/5_implementation.md`).
