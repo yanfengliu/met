@@ -62,6 +62,10 @@
       "theme": "mouse-look"
     },
     {
+      "id": 15,
+      "theme": "vaux-fronts"
+    },
+    {
       "id": 17,
       "theme": "weston-porch"
     },

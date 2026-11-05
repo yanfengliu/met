@@ -103,9 +103,14 @@ export const BAND_HIGH_Y = LEHMAN_EAVE_Y - 0.2;
 /** Skylight strip along the 1880 front (orthophoto: Z −139.5 to the front, X ±15.5), between the link's inner walls. */
 export const STRIP_WEST_Z = -139.6;
 export const STRIP_HALF_X = 16.3 - OUTER_WALL;
-/** The strip's head, at the brick face of the 1880 front (core, Z −138.3), and its height there over the flat roof. */
+/**
+ * The strip's head, at the brick face of the 1880 front (core, Z −138.3), and its height there. E: over the front's arches, whose crowns stand at about
+ * 14.2 m (core/vaux-arch.ts), and under its string course at 15.9 m (core/vaux-front.ts), on the brick between them. exterior-images.md #60 shows brick
+ * over the crowns up to about 17.5 m, over this string course and the pyramid's eave; a head that high needs the court's east end built anew, which is
+ * left (exterior.md section 9).
+ */
 export const STRIP_EAST_Z = WEST_FACE_Z_CORE;
-export const STRIP_HEAD_Y = LEHMAN_ROOF_Y + 0.9;
+export const STRIP_HEAD_Y = 15.6;
 
 /** |X| where the inner ring wall's outer face crosses the strip's west edge, each side of the court's east tip. */
 function ringCrossingX(): number {

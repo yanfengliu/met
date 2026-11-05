@@ -37,14 +37,22 @@ export const VAUX_HALL_EAST_Z = -83.32; // map gallery 305, east edge
 export const VAUX_HALL_WALL = 1.1; // the hall's end walls; the map leaves 1.15 m between 520 and 305
 export const VAUX_WEST_PAVILION_WALL_Z = -127.0; // map: the wall between galleries 521 and 520
 export const VAUX_OCULUS_Y = 21.4; // E: centre of the hall's round end windows, 2.4 m across (P8: one high over the end doorway)
-export const VAUX_BAY = 4.0; // E: the west front's arch spacing, 7 arches across 29 m; the photographs show five, open with the owner (exterior.md section 9, FRONT_ARCH_X)
-export const VAUX_ARCH_SPAN = 2.6; // E: the main-floor pointed arches, against people in the Lehman-court photo
-export const VAUX_ARCH_RISE = 2.5; // E: lancet heads, rise about the span (Lehman-court photo), more pointed than equilateral (2.25)
-export const VAUX_ARCH_SILL = 0.7; // E: window sills above L1; the central doorway starts at L1
-export const VAUX_ARCH_SPRING = 4.5; // E: springing above L1, where the granite impost band runs across the front (windows 1.35 × their width below it)
-export const VAUX_GROUND_SILL = 1.6; // E: ground-storey windows above LG
-export const VAUX_GROUND_HEIGHT = 2.9; // E: ground-storey segmental windows, sill to crown
-export const VAUX_BAND = 0.32; // E: granite band height (exterior.md [C7]: grey-white granite bands)
+// The 1880 arch, as the west front shows it from the Lehman court (exterior-images.md #60 read at native size, 2026-11-04; #61 for its orders;
+// exterior.md section 9): the same arch on the west front, the hall's bays of the side walls and the east front. #60's camera, solved from the landing's
+// row, a 1.70 m visitor on it and the map's 5.8 m bay at the springing's row (24.5 px/m there): about 630 px focal, 23.6 m out, pitched 36° up;
+// a 1.65 or 1.75 m visitor moves the heights below by up to 0.11 m.
+export const VAUX_BAY = 5.8; // D: the west front's 29 m in five bays; the floor map's three main-floor doors through it stand at X −5.78, 0 and +5.76
+export const VAUX_ARCH_SPAN = 3.2; // M, rounded up: the voussoirs' intrados at the springing, 77 px of #60 (3.14 m); 3.2 leaves the doorways 2.6 m between the inner orders, as wide as before (the floor map's are about 2.3 m)
+export const VAUX_ARCH_RISE = 2.4; // M: the intrados' apex 51 px over the springing in #60, through the solved camera 2.33 to 2.43 m
+export const VAUX_VOUSSOIR = 0.8; // M: the voussoirs' depth at the springing, 20 px of #60
+export const VAUX_VOUSSOIR_CROWN = 1.4; // M: their depth at the crown, 28 px of #60, 1.37 to 1.48 m through the solved camera: the extrados is more pointed than the intrados (#61 alike)
+export const VAUX_INNER_ORDER = 0.3; // M: the smooth light order inside the voussoirs, 7 to 9 px of #60; it runs down the jambs (#61)
+export const VAUX_ARCH_SILL = 0.7; // M, rounded: window sills above L1, the apron's top in exterior-images.md #53 (0.63 m, read at the 6.3 m springing); doorways start at L1
+export const VAUX_ARCH_SPRING = 6.3; // M: springing above L1, the impost band's top, 6.17 to 6.34 m through #60's solved camera: the doorway rises 153 px from the landing to the band
+export const VAUX_IMPOST = 0.5; // M: the impost band across the front at the springing, 12 px of #60 (0.52 m), which runs over the openings as their lintel
+export const VAUX_GROUND_SILL = 2.225; // D: the ground storey's square-headed windows, set on the joints of its courses: #53 puts their sills 3.9 m and heads 1.7 m under the main floor, these 4.2 and 1.9 m
+export const VAUX_GROUND_HEIGHT = 2.3; // M: those windows' height in #53, four of the ten courses (vaux-front.ts)
+export const VAUX_BAND = 0.32; // E: the lesser granite bands (exterior.md [C7]: grey-white granite bands)
 
 // --- Medieval Sculpture Hall (interior.md; map gallery 305 and its 14 columns; photo P8) -----------------------------------
 export const HALL_PIER_X = 7.02; // map: pier rows at X -7.01 and +7.03

@@ -176,7 +176,7 @@ export function hallClerestoryVault(kit: Kit): void {
     ] as const) {
       const face = out * NAVE_OUTER_X;
       kit.add(panel, palette.limestone, placed(face, L2, z, facing), i);
-      kit.add(skin, palette.brick, placed(face + out * 0.04, ROOF_Y, z, facing), i);
+      kit.add(skin, core.vauxBrick, placed(face + out * 0.04, ROOF_Y, z, facing), i);
       const w = placed(face - out * 0.3, HALL_CLERESTORY_SILL_Y, z, facing);
       kit.add(win.frame, palette.metalDark, w, i + 1);
       kit.add(win.bars, palette.metalDark, w, i + 1);
