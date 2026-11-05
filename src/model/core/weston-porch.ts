@@ -23,11 +23,12 @@ import { entablature, MeshBuilder, ORDER_PROPORTIONS, pilasterParts, surround } 
 import type { V3 } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { openWall } from './arches.js';
-import { B_SOUTH_X, EAST_Z, L1, WEST_Z } from './constants.js';
+import { B_SOUTH_X, L1, WESTON_PAVILION_Z } from './constants.js';
 import { core } from './materials.js';
 import { FACING, addBox, cylinder, keyOf, memo, placed } from './shapes.js';
 
-const CENTRE_Z = (WEST_Z + EAST_Z) / 2;
+/** The doorway's middle along the front: the pavilion's, where the floor map has the door (constants.ts `WESTON_PAVILION_Z`). */
+const CENTRE_Z = WESTON_PAVILION_Z;
 
 /**
  * The doorway (interior.md, Weston's 1888 door): its opening as fig. 29 draws it, 3.29 m wide and 4.91 m from the porch floor to its head; its

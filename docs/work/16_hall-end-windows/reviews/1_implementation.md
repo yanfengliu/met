@@ -266,3 +266,13 @@ I used no subagents and changed nothing. `git status` is still clean.
 | F23 | F-owner-4's second reason, that the outer face is not measured, does not stop building the measured inner splay (Claude 9) | Accepted | Dropped from F-owner-4 and the record |
 | F24 | F-owner-1 and the record quoted "265 to 281 measured" though 265 px is the curtains (Claude 10) | Accepted | The record gives all three readings of the doorway's soft edges (265, 281 and 312 px) and F-owner-1 quotes their span |
 | F25 | Plan inputs held fixed move the average: the east wall may stand a full wall west of the line, where the two readings meet at 16.28 m; jointly they place the screen 0.7 m east of the line at 16.48 m; the sweeps' east-of-line ends were unexplained; "halves of their ranges" misnamed the weights (Claude 11) | Accepted | The sweeps run the east wall's face from 0.1 m east of the line to 1.2 m west; the record gives where the two readings meet under each input and calls the weights inverse squares of the half-ranges. The model's 16.29 m stays: it lies inside both ranges and among the alternatives (16.17 to 16.48 m) |
+
+## Verification
+
+- `npm run verify` passed on the reviewed tree, `2a2e6ec` (`tmp/hall-windows/verify-3.log`), and on the repairs' tree, committed as `9833aab` (`verify-4.log`): 732 unit and 125 end-to-end tests each time.
+- Codex reproduced the script's output exactly and built the core area headless (130 meshes, 4,937 pieces, 207,548 triangles, finite matrices); Claude recomputed by hand. Codex read the 12 renders at native resolution and Claude three.
+- Neither reviewer could fetch the photographs, so no one remeasured them; the repository never stores them. Claude's lane could not run Python.
+
+## Round outcome
+
+No major findings. Codex found six minor problems and three nits, Claude three minor and eight nits, merged as F11 to F25. All were accepted and repaired at `9833aab`, chiefly by keeping the readings beside the script so that it reproduces every number. Review 2 re-reviewed the repairs. No finding was rejected, and none stayed open.

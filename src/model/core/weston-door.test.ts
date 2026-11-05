@@ -9,9 +9,9 @@
  * through the porch and the old front into gallery 529 and back out into the court, past where it set out (work unit 17, review 0, F0), on the main floor's level all the way but
  * for the door frame's 8 cm sill. Red with the way back held 4 s (work unit 17, review 1): the feet stop at X −53.853, 1.31 m short of the line.
  * Standing open, the doorway's passage is clear from before the porch's pedestals through the porch and the old front to 1.5 m into gallery 529: rays
- * along it 0.1 m apart across it, inside the open leaves, and at four heights meet nothing (work unit 18), which holds the 528/529 wall on the line of
- * the doorway's west reveal (src/model/core/galleries.ts `clearOf`; red with that wall on the map's line, where the 16 rays 0.9 to 1.2 m west of the
- * axis meet its end at X −48.70, the old front's inner face).
+ * along it 0.1 m apart across it, inside the open leaves, and at four heights meet nothing (work unit 18). The door stands where the floor map has it,
+ * in the middle of gallery 529, so the map's walls keep out of its doorway (work unit 19; red with the door back at the facade's middle, Z −103.65,
+ * where the 16 rays 0.9 to 1.2 m west of the axis meet the 528/529 wall's end at X −48.70, the old front's inner face).
  * Bound: the walker walks on the door's axis, square to the facade; positions are the feet's; "no leaf inside the body" is read where the walker stops
  * at the closed door and where it ends, by src/walk/door-testing.ts `gap`, an oracle apart from the collision. The rays are level and run along X.
  */

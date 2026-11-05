@@ -78,6 +78,10 @@
       "theme": "weston-leaves"
     },
     {
+      "id": 19,
+      "theme": "weston-pavilion-place"
+    },
+    {
       "id": 20,
       "theme": "e2e-cursor"
     }

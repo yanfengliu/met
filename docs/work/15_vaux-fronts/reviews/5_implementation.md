@@ -198,7 +198,9 @@ I ran no tests, to keep load off verify-9. My evidence is the code, hand arithme
 | F52 | The map draws the corridors' doors at Z −66.79, 2.2 m east of the modelled east face, and the records quote only their X (Claude 7) | Accepted | Section 9 says where the map draws them and that the model takes their X and widths through the wall where the exterior's lines put it, as for the central passage |
 | F53 | The new placement zones and routes in the placement gate had never been seen red (Claude 8) | Accepted | Red with a Virgin and Child moved to X −6.2, Z −72 in gallery 304: 0 m from R9 and from the south corridor's zone |
 
-The full verify run beside the review (verify-9) ended red on two frame budgets far from the change (a door swing's slowest walking frame 18.3 ms, the Leon Levy court's render 17.36 ms against 16.7), with the review's own probes and other sessions loading the machine; its unit tests, typecheck, lint and build passed (740 tests). The repairs' verify ran on a quiet machine (the plan).
+## Verification
+
+The full verify run beside the review (verify-9) ended red on two frame budgets far from the change (a door swing's slowest walking frame 18.3 ms, the Leon Levy court's render 17.36 ms against 16.7), with the review's own probes and other sessions loading the machine; its unit tests, typecheck, lint and build passed (740 tests). The repairs' verify, verify-10 on the tree committed as `ae8f81c`, passed on a quiet machine (743 unit tests, 125 e2e; the plan). Each repair's check went red with its fault put back, as the table and `src/model/core/vaux-fronts.test.ts`'s header give.
 
 ## Round outcome
 
