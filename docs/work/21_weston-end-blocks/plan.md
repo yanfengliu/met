@@ -1,6 +1,6 @@
 # Weston's front: its projecting end blocks and four-window arched bays
 
-Status: active
+Status: complete
 Owner: Claude Code desktop session optimistic-mayer-d1fe0b (2026-11-05)
 Created: 2026-11-05
 Updated: 2026-11-05
@@ -25,15 +25,15 @@ Excluded: the front's extent (the model's front runs on the 1880 building's line
 - The model keeps the pavilion (12.4 m) and centres everything on the door (Z −100.97). Arched bays 8.7 m each side between quoins centred on their edges, then 0.9 m of brick from the quoins' outer edge, then the end blocks from 16.28 m out to the court's ends: the east block 15.69 m to −69.0, the west block 19.75 m to the Kravis Wing's pier at −137.0; each block's parts scaled to its length, its columns 0.6 m whatever the scale.
 - Each block: a brick ground storey from the footing on the front's base course, returned round it; a stone podium to 1.0 m over the main floor; brick piers to the entablature, the bays recessed between them; in each bay a Tuscan column (plinth, base, plain shaft of dark granite, capital) carrying the entablature, which is the main floor's head band carried round the block; above, brick with pilasters on stone bases with console capitals, a stone panel on a moulded sill in each bay, a stone frieze with two roundels on the return, and the front's cornice and coping, returned round the block.
 - The arched bays: four windows and four dado roundels, a four-light arched window under a wider arch whose keystone reaches the cornice.
-- The core area is at its budget of 130 instanced meshes (`core.test.ts`, the coordinator's assignment of 2026-10-11), so the blocks add one mesh and save one: the columns are the core's shared stone box and cylinder with a dark granite cylinder for the shafts; the middle section's three arches and its cornices are one geometry; each block's cornice, mitred round its return, is one more.
+- The core area is at its budget of 130 instanced meshes (`core.test.ts`, the coordinator's assignment of 2026-10-11), so the blocks add one mesh and save one: the columns are the core's shared stone box and cylinder with a dark granite cylinder for the shafts; the middle section's walls, its three arches and its cornices are a geometry each, which pays for the granite and the blocks' cornices; each block's cornice, mitred round its return, is one more.
 
 ## Acceptance criteria
 
-- [ ] The front as the sources show it: one four-window arched bay each side of the pavilion; the two end blocks projecting 1.2 m, each with three column bays and three blind panels; the cornice returned round them; nothing else on the front moved.
-- [ ] Renders from the court matched against #33, #35, fg02 and the 2011 view, read at full size, with what still differs recorded.
-- [ ] Every gate green: `npm run verify` on the final revision; `routes.spec.ts` three runs in a row at 1× and at 4×; the containment test's new allowance tight to the end blocks and red past it.
-- [ ] Records: `interior.md`, `interior-images.md` (the new photographs and figures, read at full size), the spec's Weston's door item, the devlog.
-- [ ] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished.
+- [x] The front as the sources show it: one four-window arched bay each side of the pavilion; the two end blocks projecting 1.2 m, each with three column bays and three blind panels; the cornice returned round them; nothing else on the front moved.
+- [x] Renders from the court matched against #33, #35, fg02 and the 2011 view, read at full size, with what still differs recorded.
+- [x] Every gate green: `npm run verify` on the final revision; `routes.spec.ts` three runs in a row at 1× and at 4×; the containment test's new allowance tight to the end blocks and red past it.
+- [x] Records: `interior.md`, `interior-images.md` (the new photographs and figures, read at full size), the spec's Weston's door item, the devlog.
+- [x] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished.
 
 ## Implementation steps
 
@@ -42,8 +42,13 @@ Excluded: the front's extent (the model's front runs on the 1880 building's line
 - [x] Gates on `bcdc743`: `npm run verify` (754 unit tests, 127 e2e); `routes.spec.ts` with `walk.spec.ts` three runs in a row at 1× and at 4×; the shots against main's, 31 of 64 changed, all along Weston's front, each read at native size; renders matched to the photographs.
 - [x] Records: `interior.md`, `interior-images.md` (#45, #46), the spec's World frame rule and Weston's door item, the devlog.
 - [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): two major findings (the blocks hanging over the ground before 1990; the east block's corner pier against #46) and six minor, with six nits, all repaired in the next commit.
-- [ ] Review 1 of the repairs; land through `tmp/land.sh`; the gallery republished.
+- [x] Review 1 (Codex and Claude, `reviews/1_implementation.md`) of the repairs: two minor findings (coplanar ends at the blocks' outer ends; the middle section's cornices arriving with the arches) and three nits, all repaired in `f6ad411`, where `npm run verify`, the shots and `routes.spec.ts` with `walk.spec.ts` three runs in a row at 1× and at 4× passed.
+- [x] Land: main's `931d5d4` (two comment lines) merged in as `1d873cf`, where the unit tests, typecheck, lint and build passed; pushed through `tmp/land.sh` as a fast-forward; the Pages workflow deployed it. Gallery: the main checkout fast-forwarded, main's shots taken there (clean), the same 31 frames changed against the gallery's `748e9b6` set, and the owner's gallery republished (version 16).
 
 ## Outcome
 
-Pending. Record the verified revision, checks and limitations at closure.
+Complete. Weston's 1888 front reads as Weston's drawings (Heckscher figs. 26 and 28), the photograph of about 1895 (fig. 35) and the court's photographs (#33, #35, #45, #46) show it: the pavilion and its porch as before; one arched bay each side, of four windows under a four-light arched window whose keystone reaches the cornice; then 0.9 m of brick and an end block from 16.28 m out from the door, projecting 1.2 m, on its own brick ground storey and a stone podium, with three bays of Tuscan columns with dark granite shafts before bricked-up windows between brick piers, under an entablature returned round the block, blind stone panels over the columns between pilasters with console capitals, a frieze with two roundels on the return, and the front's cornice mitred round it (`src/model/core/weston-facade.ts`, `weston-ends.ts`). Each block ends in a pier as narrow as the others, as #46 shows where the court's east wall meets the east block. The core stays at its 130 meshes.
+
+Merged to main at `1d873cf`, the merge of `f6ad411` with main's `931d5d4` (two comment lines), pushed through `tmp/land.sh` as a fast-forward. On `f6ad411`'s code: `npm run verify` (754 unit tests, 127 e2e), `routes.spec.ts` with `walk.spec.ts` three runs in a row at 1× and at 4×, and the shots, 31 of 64 changed against the owner's gallery set, all where Weston's front shows, each read at native size; on the merge, the unit tests, typecheck, lint and build. The containment test's allowance for the blocks (1.35 m in brick from their inner ends and 2.0 m in trim from the arched bays' edges, under the coping) is red with the blocks projecting 1.5 m and with their brick run into the strip. Reviews 0 and 1 (Codex and Claude) found two major defects, eight minor ones and nine nits, all repaired. The Pages workflow deployed `1d873cf`, and the owner's render gallery shows main's shots there (version 16).
+
+Left for the owner: the front's extent. The model's front runs on the 1880 building's lines, 2.7 m west of the real front's middle, so the west block is 19.75 m long and the east 15.69 m, their bays 3.97 and 3.16 m where the real ones are about 3.4 m; carrying the front and the Kravis Wing's court to their real ends would move the blocks' boundaries with the Hunt and McKim, Mead & White blocks. Recorded and not modelled: the blocks' ground storeys' small windows (figs. 28 and 35), the bays' glazing before 1990 (fig. 35), and the west end's last pier, which no photograph shows near enough. A fault in this unit's process: one `npm run verify` failed in two e2e tests because `src/viewer/presets.ts` was edited while it ran and the dev server reloaded the page; the next run, with nothing edited during it, passed (`reviews/0_implementation.md`, Verification).
