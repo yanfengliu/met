@@ -1,6 +1,6 @@
 # Keep the test browser off the owner's cursor
 
-Status: active
+Status: complete
 Owner: Claude Code desktop session cursor-lock-7e41a2 (2026-11-04)
 Created: 2026-11-04
 Updated: 2026-11-04
@@ -50,6 +50,8 @@ Bound: the browser server listens on `localhost` and checks the Host header, but
 - Review, then the landing.
 
 ## Outcome
+
+Landed on main at `6ee32f5`: the change at `ca16d0f`, merged with origin/main at `d8b1a5c` (work unit 19), whose two conflicts, the registry's and the devlog's, kept both sides. The merged tree's `npm run verify` passed through the gate lock: 754 unit tests in 83 files, typecheck, lint, build and 127 e2e tests in 10.2 minutes, with no clip change and no jump in 660 s. No render changed, so the owner's render gallery was not rebuilt.
 
 On Windows the e2e browser runs in a separate, non-interactive window station and the tests connect to it. Through the gate lock, with a cursor watch outside the browser: `npm run verify` passed on each round's repairs (754 unit tests and 127 e2e tests on review 2's), with no clip change in 629 s, 682 s, 700 s and 725 s of e2e; `routes.spec` and `walk.spec` passed at 4× CPU throttle (21, 2 skipped); a runner killed during a test left nothing of the browser 1 s later; and `tests/e2e/cursor.spec.ts` and the lifecycle test in `scripts/window-station.test.ts` went red with their defects back (`docs/learning/gate-proofs.md`). The criteria for a headed run and for `PWDEBUG`'s inspector are held by `browserPlace`'s unit tests; no headed run was made, since its browser would show on the owner's desktop.
 
