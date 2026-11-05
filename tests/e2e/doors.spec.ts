@@ -15,8 +15,8 @@
  * behind them, its doors standing open (`doors=open`), facing out while it closes and opens, the slowest frame of each swing, and of the walk, takes
  * under 16.7 ms of work, and a GPU-synced render facing into the hall through the open doorway under 16.7 ms (review 0, F9; review 5, F23 and F24;
  * review 8, F32); and Weston's door, whose leaves cast a shadow, so that every frame of its swing redraws the shadows: 0.5 m before it in the Petrie
- * Court and inside its porch facing out, the slowest frame of each swing, standing, opening and closing, takes under 16.7 ms of work (work unit 18;
- * the walking frames during a swing are timed at the entrance alone). Walking up to the doors and through them is ./routes.spec.ts's.
+ * Court, opening and closing, and inside its porch, closing it facing across the porch and opening it facing out, the slowest frame of each swing,
+ * standing, takes under 16.7 ms of work (work unit 18; the walking frames during a swing are timed at the entrance alone). Walking up to the doors and through them is ./routes.spec.ts's.
  * Red proofs: docs/learning/gate-proofs.md, under this file.
  * Bound: each place enters walk mode at load, with no user gesture, so the pointer stays free, drags turn the view and the mouse reaches the
  * bar; the locked click is the browser's own lock, which the headless system Chrome grants a click of the view (work unit 14). A frame's work is timed by a
@@ -456,7 +456,7 @@ test.describe('the doors', () => {
     errors.expectClean();
   });
 
-  test('Weston’s door, its leaves casting a shadow: the slowest frame of its swing, which redraws the shadows, takes under 16.7 ms of work, from the Petrie Court and from inside its porch facing out, opening and closing (work unit 18)', async ({ page }) => {
+  test('Weston’s door, its leaves casting a shadow: the slowest frame of its swing, which redraws the shadows, takes under 16.7 ms of work, from the Petrie Court, opening and closing, and inside its porch, closing across it and opening facing out (work unit 18)', async ({ page }) => {
     test.setTimeout(40_000);
     await timeFrames(page);
     const errors = watchErrors(page);
@@ -472,7 +472,9 @@ test.describe('the doors', () => {
     await face(page, toward(at.eye, open[0], open[1]));
     await looksAt(page, 'weston', 'E Close');
     expect((await timeSwing(page, 'weston', 'closed', 'Weston’s door closing, from the court')).angle).toBe(0);
-    // Inside the porch, where ./routes.spec.ts uses it, standing open (doors=open), facing out at the open leaf: closed by it, then opened toward the walker.
+    // Inside the porch on the door's axis, midway along the stretch clear of the swing with an open leaf in reach (./route-places.ts `useStretch`, 0.9 of
+    // the leaf's width out, as ./routes.spec.ts's walk back takes it), standing open (doors=open): closed looking across the porch at that leaf, then,
+    // facing out, opened toward the walker.
     const stretch = useStretch(door, 'back', 0.9);
     const [ix, iz] = axisPoint(door, 'back', (stretch.near + Math.min(stretch.far, LOOK)) / 2);
     const inside = await standAt(page, 'inside Weston’s porch', [ix, MAIN_FLOOR_Y, iz], [stretch.leaf[0], MAIN_FLOOR_Y + BODY.eye, stretch.leaf[1]], '&doors=open');

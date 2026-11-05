@@ -28,12 +28,12 @@ Excluded: the door's place along the front, 2.68 m west of the floor map's (left
 
 ## Acceptance criteria
 
-- [ ] The frame and leaves stand in the porch's doorway, the hinges 0.345 m behind the architrave's face; the door opens a quarter turn inward only, stops the walker closed and lets it through open into gallery 529 and back (`src/model/core/weston-door.test.ts`; the Weston walks of `tests/e2e/routes.spec.ts`).
-- [ ] The leaves cast a shadow, and their swing asks a shadow pass at every frame (`src/model/doors.test.ts`); the slowest frame of the swing is under 16.7 ms of work from the court, opening and closing (`tests/e2e/doors.spec.ts`), red with work planted on the frames that redraw the shadows.
-- [ ] Open, the doorway's passage is clear from before the porch through the old front into gallery 529 (`src/model/core/weston-door.test.ts`), red with the 528/529 wall on the map's line; door-fit red with the porch's doorway 2 cm narrower or lower than the frame.
-- [ ] Every gate green: `npm run verify` on the final revision; `routes.spec.ts` three runs in a row at 1× and at 4×.
-- [ ] The standard shots compared with main's, every changed image read at native size.
-- [ ] Records: `interior.md` (the leaves moved, the door's place along the front still open), the spec's Doors items, `gate-proofs.md`, the devlog.
+- [x] The frame and leaves stand in the porch's doorway, the hinges 0.345 m behind the architrave's face; the door opens a quarter turn inward only, stops the walker closed and lets it through open into gallery 529 and back (`src/model/core/weston-door.test.ts`; the Weston walks of `tests/e2e/routes.spec.ts`).
+- [x] The leaves cast a shadow, and their swing asks a shadow pass at every frame and every physics step of the walk (`src/model/doors.test.ts`); the slowest frame of the swing is under 16.7 ms of work from the court, opening and closing, and inside the porch (`tests/e2e/doors.spec.ts`), red with work planted on the frames that redraw the shadows.
+- [x] Open, the doorway's passage is clear from before the porch through the old front into gallery 529 (`src/model/core/weston-door.test.ts`), red with the 528/529 wall on the map's line; door-fit red with the porch's doorway 2 cm narrower or lower than the frame.
+- [x] Every gate green: `npm run verify` on the final revision; `routes.spec.ts` three runs in a row at 1× and at 4×.
+- [x] The standard shots compared with main's, every changed image read at native size.
+- [x] Records: `interior.md` (the leaves moved, the door's place along the front still open), the spec's Doors items, `gate-proofs.md`, the devlog.
 - [ ] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished.
 
 ## Implementation steps
@@ -42,9 +42,11 @@ Excluded: the door's place along the front, 2.68 m west of the floor map's (left
 - [x] Model: `weston-porch.ts` (`DOOR.proud`, `DOOR.frame`, `DOOR_FRAME_OUT`), `weston-facade.ts` (`WESTON_DOOR`), `materials.ts` (`westonDoorWood` casts); comments in `galleries.ts` and `routes.ts`.
 - [x] Tests: `weston-door.test.ts` (the passage's check; red proofs: the way back held 4 s, the feet at X −53.853; the 528/529 wall on the map's line, 16 rays meeting its end at X −48.70), `doors.test.ts` (Weston's swing asks a shadow pass), `door-fit.test.ts` (header; red with the porch's doorway 2 cm narrower, and 2 cm lower), `placement.test.ts` (the passage zone), `routes.spec.ts` (the Weston walks), `doors.spec.ts` (Weston's swing's frame budget; red at 41.0 ms with 40 µs planted for each draw call on shadow frames).
 - [x] Records: the spec's Doors items and checks, `interior.md`, `gate-proofs.md`.
-- [ ] `npm run verify` through `tmp/gate.sh`; `routes.spec.ts` three runs in a row at 1× and at 4×; the shots compared.
-- [ ] Review by Codex and Claude, findings resolved.
-- [ ] Land through `tmp/land.sh`; the devlog; the gallery republished.
+- [x] Checks on `27c53a0`: `npm run verify` through `tmp/gate.sh` (733 unit tests, 126 e2e); merged with main's work unit 15 as `77b0c87`, where `npm run verify` (735 unit tests, 126 e2e) and `routes.spec.ts` three runs at 1× passed.
+- [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): no blocker or major finding; Claude's F1 to F7 repaired in `9901b5d` (`npm run verify` green on its tree), F2 in part.
+- [x] Merged with main's work unit 16 as `d7272a3`: `npm run verify`, `routes.spec.ts` three runs in a row at 1× and at 4×, and the shots against main's at `59451af` (60 of 64 unchanged; the 4 others only at Weston's door, each read at native size).
+- [x] Review 1 (Codex and Claude, `reviews/1_implementation.md`) of those repairs: five nits (F8 to F12), repaired in wording and comments, F11 reported to work unit 15's owner and F12 in part; `npm run verify` on the repaired tree.
+- [ ] Land through `tmp/land.sh`; the gallery republished.
 
 ## Outcome
 

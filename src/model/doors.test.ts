@@ -4,8 +4,8 @@
  * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's stand-ins and doorways counted (17 together; review 0, F9);
  * no leaf of the entrance's doors casts a shadow, so their swings ask for no shadow pass (review 5, F23), and Weston's leaves, at its porch's front, cast
  * one, so its swing asks for one at every frame, as the orbit view swings it and at every physics step of the walk, where E opens it (work unit 18;
- * src/model/core/materials.ts `westonDoorWood`; red with the walk's steps reporting the frame alone, `DoorLayer.note`: review 0, F1); with the layer attached and the doors used between
- * random positions, the timeline's state stays byte for byte a timeline's without it (F1); and the walk mode's own walker, walked at each locked door
+ * src/model/core/materials.ts `westonDoorWood`; red with the walk's steps reporting the frame alone, `DoorLayer.note`: work unit 18, review 0, F1); with the layer attached and the doors used between
+ * random positions, the timeline's state stays byte for byte a timeline's without it (work unit 2, review 0, F1); and the walk mode's own walker, walked at each locked door
  * from 2.5 m in front at t = N through the page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors'
  * pieces held shut in the door world), stops against its leaves (red with the locked doors' parts left out of the door world: 4.52 m past the north
  * link door's leaves; review 17, F47), as it does in a static world of every solid piece, where without the leaves it walks on through. Weston's door
