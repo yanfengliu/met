@@ -7,7 +7,7 @@
  * great round window. Beside the porch the pavilion's main floor is brick between quoins, with no window (interior-images.md #33 and #43). Trim may
  * project up to 1.5 m into the court (coordinator, 2026-10-11), and the porch stands 2.85 m out to its cornice (docs/design/spec.md, World frame).
  * The pavilion stands where the floor map has its door, at Z −100.97 (constants.ts `WESTON_PAVILION_Z`): the middle of the map's front, five bays
- * each side, which the model's front, ending on the 1880 building's east line (`EAST_Z`, 4.1 m short of the map's court), cuts to four on the east
+ * each side, which the model's front, ending on the 1880 building's east line (`EAST_Z`, 4.2 m short of the map's court), cuts to four on the east
  * (work unit 19; interior.md, Weston's 1888 door).
  */
 import { Matrix4 } from 'three';
@@ -89,7 +89,7 @@ function z(c: number, x: number): number {
   return c + x;
 }
 
-/** The facade's brick walls: ten bays, the pavilion and the corner fills, footing to parapet. */
+/** The facade's brick walls: nine bays, the pavilion and the corner fills, footing to parapet. */
 export function westonWalls(kit: Kit): void {
   const bay = westonBay();
   BAYS.forEach((c, i) => {
@@ -177,7 +177,8 @@ export function westonTrim(kit: Kit): void {
     kit.add(disc, palette.brick, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 0.85, 0.16), 8);
   }
   kit.add(pavCornice, stone, placed(B_SOUTH_X, CORNICE_Y, CENTRE_Z, FACING.south), 10);
-  for (const [a0, a1] of FILLS) elevationBox(kit, e, stone, a0, a1, CORNICE_Y, CORNICE_Y + 0.8, 0.3, 0, 10);
+  // Over each plain end, 3.13 and 3.37 m wide, the bays' cornice drawn out to the end's width (it runs along its path, so only its length scales).
+  for (const [a0, a1] of FILLS) kit.add(cornice, stone, placed(B_SOUTH_X, CORNICE_Y, (a0 + a1) / 2, FACING.south).multiply(new Matrix4().makeScale((a1 - a0) / WESTON_BAY, 1, 1)), 10);
   elevationBox(kit, e, stone, WEST_Z, EAST_Z, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
 }
 
