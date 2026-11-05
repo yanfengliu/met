@@ -1,0 +1,355 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index fa2ff04..7dc30d2 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -64,7 +64,7 @@ Each gate below is one line on what it checks. Read more when the work reaches i
+ - `npm run typecheck`: `tsc --noEmit`, strict plus `noUncheckedIndexedAccess`, over `src/`, `scripts/`, `tests/` and the root configs.
+ - `npm run lint`: ESLint with typescript-eslint strict type-checked rules, `--max-warnings 0`.
+ - `npm run build`: `tsc --noEmit && vite build`, the two-page site (`index.html`, `parts.html`) into `dist/`.
+-- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts: the specs below, most of them through real input. On Windows its Chrome runs in a separate, non-interactive window station, where its pointer lock cannot confine or move the owner's cursor, and the workers connect to it (`tests/e2e/global-setup.ts`, `scripts/window-station.ts`). A headed run, `PWDEBUG`'s inspector or `MET_E2E_DESKTOP=1` keeps it on the desktop, where the lock confines and moves the cursor; the setup decides once, so a browser to be shown needs `--headed` when the run starts.
++- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts: the specs below, most of them through real input. On Windows its Chrome runs in a separate, non-interactive window station, where its pointer lock cannot confine or move the owner's cursor, and the workers connect to it (`tests/e2e/global-setup.ts`, `scripts/window-station.ts`). A headed run, `PWDEBUG`'s inspector or `MET_E2E_DESKTOP=1` keeps it on the desktop, where the lock confines and moves the cursor; `MET_E2E_DESKTOP=1` needs the owner's agreement and fails `cursor.spec`. The setup decides once, so a browser to be shown needs `--headed` when the run starts.
+ 
+ The e2e specs:
+ 
+diff --git a/docs/learning/defect-register.md b/docs/learning/defect-register.md
+index dbe8c4f..29b9280 100644
+--- a/docs/learning/defect-register.md
++++ b/docs/learning/defect-register.md
+@@ -10,7 +10,7 @@ Defects the owner reported, each with the symptom as they saw it, what the inves
+ 
+ **Cause:** Walk mode takes the real pointer lock, and on Windows Chrome holds it on the one system cursor whether or not its window shows. So every e2e run of a spec that walks with the lock, every `npm run verify` and every direct `npx playwright test` of one, confined and moved the owner's cursor while the owner worked. No gate looked outside the browser.
+ 
+-**Check:** `tests/e2e/cursor.spec.ts` takes the real lock in the e2e browser and reads the system cursor's clip from its worker on the desktop, which must be the whole screen; it is red with the setup starting no server (`docs/learning/gate-proofs.md`). It bounds the class, an e2e browser on the owner's desktop. It skips a headed run and `MET_E2E_DESKTOP=1`, which put the browser on the desktop on purpose, and fails a run with `PWDEBUG`'s inspector, which shows it; it does not see a script outside the e2e suite that launches its own browser and takes the lock, as capture does not.
++**Check:** `tests/e2e/cursor.spec.ts` takes the real lock in the e2e browser and reads the system cursor's clip from its worker on the desktop, which must be the whole screen; it is red with the setup starting no server (`docs/learning/gate-proofs.md`). It bounds the class, an e2e browser on the owner's desktop. It skips a headed run, which shows its browser on purpose, and fails a run with `MET_E2E_DESKTOP=1` or `PWDEBUG`'s inspector, which put it on the desktop; it does not see a script outside the e2e suite that launches its own browser and takes the lock, as capture does not.
+ 
+ ## AGENTS.md outgrows what Codex reads (2026-10-29)
+ 
+diff --git a/docs/work/20_e2e-cursor/plan.md b/docs/work/20_e2e-cursor/plan.md
+index a202e05..14f4ea1 100644
+--- a/docs/work/20_e2e-cursor/plan.md
++++ b/docs/work/20_e2e-cursor/plan.md
+@@ -29,16 +29,16 @@ The prototype (ignored `tmp/cursor-lock/`, its logs in `tmp/cursor-lock/evidence
+ 
+ A hidden desktop stops the moves, since `SetCursorPos` needs the input desktop, but not the confinement, which `ClipCursor` checks against the window station. Only administrators may name a window station, so the launcher asks for an unnamed one, which Windows names after the logon session. In it the GPU was still the RTX 4090 through Direct3D 11. With the whole Playwright run inside, the full suite passed (126 tests in 10.2 minutes) and `routes.spec` and `walk.spec` at 4× CPU throttle passed (21, 2 skipped), the watch seeing no clip change and no jump in 612 s and 151 s.
+ 
+-Chosen: only the browser moves. A global setup starts `chromium.launchServer` inside the window station through `scripts/window-station.ps1` and gives its endpoint to the workers, which connect through `use.connectOptions`. So `npm run test:e2e`, `npm run verify` and a direct `npx playwright test` are covered alike, and the runner, the dev server and the reporters stay on the desktop with live output. The launcher puts the browser's process tree in a job that ends with the launcher, and the server closes Chrome when the runner's pipe closes, the browser's start included; the server's temporary folder, Chrome's profile in it, is its own, and the launcher, which outlives a dead runner, removes it once the job has ended. Tradeoff: the tests drive a connected browser instead of a launched one, so the whole suite through it is the acceptance check.
++Chosen: only the browser moves. A global setup starts `chromium.launchServer` inside the window station through `scripts/window-station.ps1` and gives its endpoint to the workers, which connect through `use.connectOptions`. So `npm run test:e2e`, `npm run verify` and a direct `npx playwright test` are covered alike, and the runner, the dev server and the reporters stay on the desktop with live output. The launcher puts the browser's process tree in a job that ends with the launcher, and the server closes Chrome when the runner's pipe closes, the browser's start included; the server's temporary folder, Chrome's profile in it, is its own, and the launcher, which outlives a dead runner, removes it once the job has ended; a kill of the runner's whole process tree ends the launcher too and leaves the folder, as Playwright's own profiles were left before (review 2, F3). `MET_E2E_DESKTOP=1`, the way out where the window station cannot be made, needs the owner's agreement, and the gate fails under it (review 2, F9). Tradeoff: the tests drive a connected browser instead of a launched one, so the whole suite through it is the acceptance check.
+ 
+-Bound: the browser server listens on `localhost` and checks the Host header, but Playwright gives its endpoint's path to any local request for `/json`, so while a run lasts any process on this machine can find the e2e browser and drive it, another account's too: the browser runs as the owner, so such a process could read the owner's files through `file://` pages and write files through downloads (reviews 0 and 1, F1). The owner's own processes could do that anyway, and before this unit the browser listened on no port. Closing the rest needs a transport Playwright's `launchServer` and `connect` do not offer, or the whole run in the window station, which would put the runner's output behind a pipe.
++Bound: the browser server listens on `localhost` and checks the Host header, but Playwright gives its endpoint's path to any local request for `/json`, so while a run lasts any process on this machine can find the e2e browser and drive it, another account's too: the browser runs as the owner, so such a process could read the owner's files through `file://` pages and save a download it serves to any path the owner can write, a script the next run executes or the Startup folder among them, which is running code as the owner (reviews 0 to 2, F1). The owner's own processes could do all that anyway, and before this unit the browser listened on no port. Closing the rest needs a transport Playwright's `launchServer` and `connect` do not offer, or the whole run in the window station, which would put the runner's output behind a pipe.
+ 
+ ## Acceptance criteria
+ 
+ - On Windows a headless e2e run's browser cannot confine the system cursor: `tests/e2e/cursor.spec.ts` takes the real pointer lock and reads the cursor's clip from its worker on the desktop, and it is the whole screen. The spec fails with the browser started on the desktop.
+ - The full e2e suite passes through the connected browser, and `routes.spec` and `walk.spec` pass at 4× CPU throttle, while a cursor watch sees no clip change and no jump.
+ - `npm run verify` passes on the merged tree.
+-- A run stopped midway leaves no browser or server running, and no temporary folder of the server's.
++- A run stopped midway leaves no browser or server running, and no temporary folder of the server's unless the launcher was killed with the runner.
+ - `--headed` runs and `PWDEBUG`'s inspector start the browser on the desktop as before.
+ - Independent review of the change, with its findings resolved.
+ 
+diff --git a/docs/work/20_e2e-cursor/reviews/2_implementation.md b/docs/work/20_e2e-cursor/reviews/2_implementation.md
+new file mode 100644
+index 0000000..b117764
+--- /dev/null
++++ b/docs/work/20_e2e-cursor/reviews/2_implementation.md
+@@ -0,0 +1,124 @@
++# Review 2: implementation
++
++## Target
++
++The uncommitted change in the worktree `.claude/worktrees/cursor-lock-7e41a2` against its base `59313d01bee19cd27153240ce78c2a481b106827`, after review 1's repairs: the diff kept as [snapshots/2_target.patch.txt](../snapshots/2_target.patch.txt) (78,052 bytes, SHA-256 `7590b516ee52875aae01b0317c98d43cd8a153bdf0b522964c1d3afaff2dc812`), which leaves out the two other files the target held, `snapshots/0_target.patch.txt` and `snapshots/1_target.patch.txt`, at the bytes reviews 0 and 1 record. The whole target's patch, those included, had SHA-256 `8f1ea5b634c70a34b70a8c38cecb0ef7156b6279097a2fdb7d6ce9509bd7fec4`. This round was focused: the repairs of review 1's findings and anything they brought.
++
++## Reviewers and coverage
++
++- Codex 0.163.0, `gpt-6-astra` at `xhigh`, read-only sandbox, from `fleet/tmp/review-runs/met-u20-r2/` (ignored). Kept: no command result exited `-1073741502`, and it cited `tests/e2e/helpers.ts:79` outside the diff. It ran typecheck, ESLint on the changed files, PowerShell's parser, the size limits and the whitespace check, and ran the new test's callback against an in-memory child; it launched no browser.
++- Claude Code 2.1.308, `claude-opus-5-5[1m]` at `--effort max`, with the runbook's read-only limits (`system/init`: Read, Glob, Grep, Task and Bash, `dontAsk`, no MCP server), a 60-minute bound and a prompt asking for about 20 minutes. Kept: one `result` event, `success`, its `modelUsage` only the pin; 37 tool calls, its one Bash call refused, no delegation, no test run. The tree's status and diff were byte for byte the same after both lanes as before them.
++
++Both lanes named their new finding F8. The owner keeps Codex's as F8 and numbers Claude's F9 below; the reports keep their own words.
++
++## Reports
++
++### Codex (gpt-6-astra)
++
++- **F1 — Medium, unchanged; disclosure corrected — [browser-server.ts:43](C:/Users/38909/Documents/github/met/.claude/worktrees/cursor-lock-7e41a2/tests/e2e/browser-server.ts:43).** The endpoint remains unauthenticated and discoverable through `/json`. Another local account can control Chrome running as the owner, including accessing the owner’s files. The revised header and plan accurately disclose this; they do not mitigate it. **Fix:** authenticated or access-controlled transport, or an isolation arrangement without the listening endpoint.
++
++- **F8 — Low — Lifecycle test can hang on fragmented stdout — [window-station.test.ts:136](C:/Users/38909/Documents/github/met/.claude/worktrees/cursor-lock-7e41a2/scripts/window-station.test.ts:136).** The test searches each individual chunk for `wsEndpoint`. A valid split such as `{"wsEnd` followed by `point":"ws://…"}\n` never closes stdin, so the server keeps running and the test waits until Vitest’s timeout. There is no bounded cleanup protecting this failure path. Executing the actual test callback with an in-memory child reproduced zero stdin closes and an unresolved test. **Fix:** accumulate and parse a complete endpoint line, and add a deadline with `finally` cleanup that closes or terminates and waits for the owned launcher.
++
++Checks behind these findings:
++
++- **F0:** placement matched the installed Playwright environment/debug functions across 729 combinations, including `console`, debug-off values and npm precedence.
++- **F3:** traced launcher-owned directory removal, `EndJob`, and the runner’s fallback cleanup. Reviewed native layouts, inheritance, station lifetime and error paths against the source and Microsoft’s [process-creation](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw) and [job-termination](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-terminatejobobject) contracts.
++- **F4–F6:** confirmed independent gate skips, omission of an absent connection option, clearing the desktop-run endpoint, and the browser-crash diagnostic forwarded through stderr.
++- **F7:** committed checks now cover startup EOF, normal shutdown and directory removal; F8 concerns their failure handling.
++- Traced worker environment inheritance/config reload, CLI/UI/watch paths, remote context teardown, CDP and trace transfer. Outside the diff, read [helpers.ts:79](C:/Users/38909/Documents/github/met/.claude/worktrees/cursor-lock-7e41a2/tests/e2e/helpers.ts:79), including CPU throttling.
++- TypeScript, changed-file ESLint, PowerShell parsing, file-size limits and whitespace checks excluding snapshots passed.
++
++No files were edited. No browser, launcher, Vitest or e2e suite was run; native lifecycle conclusions are source-reviewed.
++
++### Claude (claude-opus-5-5[1m])
++
++I found no high or medium defect. The round-1 repairs of F0, F4, F5, F6 and F7 are right and complete. F3 holds whenever the launcher outlives the runner, but not when the whole process tree is killed. F1's bound is accurate but undersells what a download can write. There is one new low finding, F8. Bash was denied in this session, so I ran nothing: no typecheck, lint, Vitest or e2e. Everything below comes from reading the files and the installed Playwright 1.64.0.
++
++#### Findings
++
++**F1 (low, records): the bound undersells the write**
++- **Where:** `tests/e2e/browser-server.ts:10-13` and `docs/work/20_e2e-cursor/plan.md:34`.
++- **What's wrong:** "write files through downloads" reads as files landing in a downloads folder. In fact `ArtifactDispatcher.saveAs` copies a finished download to whatever path the client names. It runs on the server, as the owner, and creates folders as needed (`coreBundle.js:54358-54359`: `await mkdirIfNeeded(params2.path); await ...copyFile(localPath, params2.path)`). The client also chooses the content, because it serves the download from a page it controls.
++- **What does hold:** new launches are refused (`denyLaunch: true` at `coreBundle.js:58485`, checked at `:56961`). So a client cannot start an arbitrary program directly.
++- **Failure scenario:** during a 10-minute verify, another account's process finds the port and reads `/json`. If the owner uses WSL with mirrored networking, which shares the host's loopback, a process in WSL can do the same. The client connects, serves a download, and saves it over `scripts/window-station.ps1`, which the next e2e run executes with `-ExecutionPolicy Bypass`. Saving into the owner's Startup folder works too. Either way it runs code as the owner.
++- **Fix:** in both places, say that a download can be saved to any path the owner can write, with content the client chooses, so the reach is running code as the owner. The decision stays the owner's.
++
++**F3 (low): the repair needs the launcher to outlive the runner, and a tree kill stops all of them**
++- **Where:**
++  - `tests/e2e/global-setup.ts:8-9` ("even when the runner has died").
++  - `plan.md:32` ("the launcher, which outlives a dead runner").
++  - `plan.md:41`: "A run stopped midway leaves … no temporary folder of the server's".
++- **What's wrong:** the parent-PID chain runs runner → launcher → server → Chrome. So `taskkill /T /F` on the runner, or a harness ending a timed-out command's tree, kills the launcher too.
++- **Failure scenario:**
++  - No process is left: the job's kill-on-close covers anything taskkill misses.
++  - But neither cleanup runs: not the ps1's removal (lines 142-150), and not the setup's `rmSync` (line 110).
++  - So `%TEMP%\met-e2e-browser-*`, with Chrome's profile in it, stays. `window-station.test.ts`'s `met-e2e-test-*` folders stay the same way.
++- **Not a regression:** before this unit, Playwright's own `playwright_chromiumdev_profile-*` folders stayed in this case too. The problem is that the records claim more than the code holds.
++- **Fix:** state this bound and narrow criterion 41. Don't sweep old folders at setup, because another worktree's live run shares `%TEMP%`.
++
++**F8 (low, new): the setup's failure message recommends the switch that turns off both the protection and its gate**
++- **Where:** `tests/e2e/global-setup.ts:43-47`, together with `tests/e2e/cursor.spec.ts:30`.
++- **What's wrong:** when the window station fails, the error ends "Set MET_E2E_DESKTOP=1 to start it on the desktop instead". With that variable set, the browser goes back on the owner's desktop and `cursor.spec` skips. `npm run verify` is then green, with only "1 skipped" in the list reporter.
++- **Failure scenario:** a transient failure, such as "no endpoint within 60 s" while several sessions load the machine. A session follows the message to get green, and every walking spec confines and moves the owner's cursor again, with every gate green.
++- **Fix:**
++  - Have the message say the variable puts the browser back on the owner's desktop and needs the owner's OK, rather than offering it as the remedy.
++  - Consider failing instead of skipping on a headless Windows run with `MET_E2E_DESKTOP=1`. A headed run would still skip.
++
++#### Round-1 repairs checked in the files
++
++- **F0:** right and complete.
++  - `playwrightInspector` (`scripts/window-station.ts:48-51`) matches `getFromENV` (`coreBundle.js:8835-8839`) and `debugMode()` (`:8888-8893`).
++  - `??` keeps `PWDEBUG=''` from falling through, as `=== void 0` does there.
++  - `--debug` sets both `use.headless = false` and `PWDEBUG=1` (`playwright/lib/cli/testActions.js:153-155`), so the spec skips it as a headed run. A bare `PWDEBUG=1` fails the gate, as the records say.
++  - `--debug=cli` sets neither, so its browser stays in the window station.
++- **F4:** right. The three skips (`cursor.spec.ts:28-30`) read nothing from `browserPlace`. They differ from the setup's decision only for the inspector, which now fails the gate.
++- **F5:** right.
++  - With an endpoint, the spread key replaces Playwright's own fixture (`playwright/lib/index.js:192-193`).
++  - Without one, the key is absent, so `connectOptionsFromEnv() || _optionConnectOptions` applies again.
++  - The desktop path's `''` reads as no endpoint.
++  - UI mode's `runGlobalSetup` tears down first and passes the environment on (`runner/index.js:6896-6908`).
++- **F6:** right. Playwright emits `close` from the browser process's `onclose` (`coreBundle.js:58679-58682`), and `ending` silences the deliberate close. Node makes stdout and stderr pipes blocking on Windows, so the message is written before `process.exit(1)`. The setup forwards it (`global-setup.ts:65-68`).
++- **F7:** right.
++  - Both server tests would go red without the ps1's removal, since nothing else removes the outer folder.
++  - The first would go red with the listeners below the launch, as the gate proof records.
++  - The first test also passes on any exit 1, including the launcher's own failure. The second test and the node.exe test catch that case.
++
++#### New code read for defects (none found)
++
++- **`window-station.ps1:76-81, 134-151`:**
++  - `EndJob` uses the same static `job` that `Run` set, with the right `TerminateJobObject(HANDLE, UINT)` signature, and does nothing when there is no job.
++  - It runs after both a normal end and a throw.
++  - The removal retries for up to 10 s, then reports and keeps the command's status.
++  - .NET Framework's console stream ignores broken pipes, so the late stderr write is safe after the runner has gone.
++  - Worst case is the 10 s close plus 10 s of removal, inside the setup's 30 s `STOP_MS`.
++- **`global-setup.ts`:**
++  - `stop()` returns early once the launcher has exited.
++  - `kill()`, through kill-on-close, covers a hung launcher.
++  - `rmSync(force)` handles either order of cleanup.
++  - A failed start cleans up and rethrows without falling back to the desktop.
++- **Connected browser:** no spec uses downloads, browser-level CDP or the `browser` fixture. `tests/e2e/helpers.ts:79` (`page.context().newCDPSession(page)`) works through the connection.
++- **Conventions:** every new file is under 500 lines (the ps1 is the longest at 151). Only the four files that existed before the change have CRLF in the working tree; the new files are LF.
++
++#### Not checked
++
++- I ran no commands, so typecheck, lint, the unit tests and the e2e suite are all unchecked, and I did not measure AGENTS.md's size.
++- I could not check the two lifecycle tests' time under the full `npm test`. Each compiles C# and starts Chrome, and `scripts/test-headroom.ts:31` fails any test over 10 s. They are recorded as passing only when the file runs alone, so this round's `npm run verify` will be the first to show it.
++
++## Findings and disposition
++
++| ID | Finding | Disposition and reason | Repair or follow-up |
++|---|---|---|---|
++| F1 | Other local accounts can still find and drive the e2e browser (Codex); the bound undersold it: a served download can be saved to any path the owner can write, which is running code as the owner (Claude) | Accepted as a stated bound, as in reviews 0 and 1 | The bound in `browser-server.ts` and the plan now says a download can be saved to any path the owner can write, a script the next run executes or the Startup folder among them, which is running code as the owner, and that Playwright refuses a new launch. The owner's call |
++| F3 | A kill of the runner's whole process tree ends the launcher too, so neither cleanup runs and the server's folder stays in `%TEMP%` (Claude) | Accepted as a stated bound: nothing keeps running, since the job ends with the launcher, and Playwright's own profiles were left the same way before | Written in `global-setup.ts`'s header and the plan, and the acceptance criterion narrowed to "unless the launcher was killed with the runner"; no sweep of old folders, since another worktree's run shares `%TEMP%` |
++| F8 | The lifecycle test looked for the endpoint in each output chunk, so a split line would hang it until Vitest's timeout with the server still running (Codex) | Accepted | The test gathers the output and ends the server's input once the whole line is there; each lifecycle test now has a 20 s deadline that ends the launcher, and a `finally` that ends it and removes its folder. Round 3 |
++| F9 | The setup's failure message recommended `MET_E2E_DESKTOP=1`, under which the browser goes back on the owner's desktop and the gate skipped, so a session could get a green run while taking the cursor (Claude's F8) | Accepted | `cursor.spec.ts` no longer skips for `MET_E2E_DESKTOP=1`, so a run under it fails; the message says the variable puts the browser on the owner's desktop, needs the owner's agreement and fails the gate; AGENTS.md, the defect register, `browserPlace`'s comment and the plan say the same. Round 3 |
++
++## Verification
++
++On the reviewed target, through the gate lock with a cursor watch outside the browser: `npm run verify` passed, 754 unit tests in 83 files, the two lifecycle tests inside the 10 s headroom among them, typecheck, lint, build and 127 e2e tests in 11.0 minutes, with no clip change and no jump in 700 s. That answers the lane's last open point.
++
++On the repairs: typecheck, ESLint on the changed files, and `scripts/window-station.test.ts`'s 10 tests. Not run on them yet: `npm run verify`.
++
++## Round outcome
++
++Both lanes reported, neither with a high or medium defect but F1, which stands as a stated bound for the owner. The repairs of F0, F4, F5, F6 and F7 were confirmed; F3 holds while the launcher outlives the runner and is bounded where it does not. F8 and F9 are repaired and go to round 3, which reviews the change since this round's target.
+diff --git a/scripts/window-station.test.ts b/scripts/window-station.test.ts
+index 437d30b..cb2e0e1 100644
+--- a/scripts/window-station.test.ts
++++ b/scripts/window-station.test.ts
+@@ -7,7 +7,7 @@
+  * that the launcher removes the temporary folder it was given (review 1, F7). Whether the cursor stays free is tests/e2e/cursor.spec.ts's to check.
+  */
+ import type { ChildProcess } from 'node:child_process';
+-import { existsSync, mkdtempSync } from 'node:fs';
++import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+ import { tmpdir } from 'node:os';
+ import { join } from 'node:path';
+ 
+@@ -36,11 +36,22 @@ function finished(child: ChildProcess): Promise<{ readonly status: number | null
+   });
+ }
+ 
+-/** Starts the e2e browser server in the window station with a temporary folder of its own, as tests/e2e/global-setup.ts does. */
+-function startServer(): { readonly child: ChildProcess; readonly temp: string } {
++/**
++ * Starts the e2e browser server in the window station with a temporary folder of its own, as tests/e2e/global-setup.ts does. A server that has not ended 20 s on,
++ * under the test's own timeout, is ended with its launcher and job, and `cleanup` ends it and removes the folder, so a failing test leaves nothing running (review 2, F8).
++ */
++function startServer(): { readonly child: ChildProcess; readonly temp: string; readonly cleanup: () => void } {
+   const temp = mkdtempSync(join(tmpdir(), 'met-e2e-test-'));
+   const child = startInWindowStation([process.execPath, SERVER, 'chrome'], ROOT, ['pipe', 'pipe', 'pipe'], { TEMP: temp, TMP: temp, MET_WINDOW_STATION_TEMP: temp });
+-  return { child, temp };
++  const deadline = setTimeout(() => {
++    child.kill();
++  }, 20_000);
++  const cleanup = (): void => {
++    clearTimeout(deadline);
++    if (child.exitCode === null && child.signalCode === null) child.kill();
++    rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
++  };
++  return { child, temp, cleanup };
+ }
+ 
+ describe('windowsArgument', () => {
+@@ -120,25 +131,36 @@ describe('startInWindowStation', () => {
+ 
+ describe('the e2e browser server in the window station', () => {
+   it.runIf(process.platform === 'win32')('ends at once when its input ends while the browser starts, and its folder is removed (review 1, F7)', async () => {
+-    const { child, temp } = startServer();
+-    const done = finished(child);
+-    child.stdin?.end();
+-    const { status, out } = await done;
+-    // 1 is the exit before the browser is up; a server that heard the end only once the browser was up would close it and end with 0 (review 0, F2).
+-    expect(status).toBe(1);
+-    expect(out).toBe('');
+-    expect(existsSync(temp)).toBe(false);
++    const { child, temp, cleanup } = startServer();
++    try {
++      const done = finished(child);
++      child.stdin?.end();
++      const { status, out } = await done;
++      // 1 is the exit before the browser is up; a server that heard the end only once the browser was up would close it and end with 0 (review 0, F2).
++      expect(status).toBe(1);
++      expect(out).toBe('');
++      expect(existsSync(temp)).toBe(false);
++    } finally {
++      cleanup();
++    }
+   });
+ 
+   it.runIf(process.platform === 'win32')('closes the browser and ends with 0 when its input ends after its endpoint, and its folder is removed', async () => {
+-    const { child, temp } = startServer();
+-    const done = finished(child);
+-    child.stdout?.on('data', (chunk: string) => {
+-      if (chunk.includes('wsEndpoint')) child.stdin?.end();
+-    });
+-    const { status, out } = await done;
+-    expect(out).toMatch(/^\{"wsEndpoint":"ws:\/\/[^"]+"\}\n$/u);
+-    expect(status).toBe(0);
+-    expect(existsSync(temp)).toBe(false);
++    const { child, temp, cleanup } = startServer();
++    try {
++      const done = finished(child);
++      let printed = '';
++      child.stdout?.on('data', (chunk: string) => {
++        // The whole line, which may come in more than one chunk (review 2, F8).
++        printed += chunk;
++        if (printed.includes('\n')) child.stdin?.end();
++      });
++      const { status, out } = await done;
++      expect(out).toMatch(/^\{"wsEndpoint":"ws:\/\/[^"]+"\}\n$/u);
++      expect(status).toBe(0);
++      expect(existsSync(temp)).toBe(false);
++    } finally {
++      cleanup();
++    }
+   });
+ });
+diff --git a/scripts/window-station.ts b/scripts/window-station.ts
+index 01d09d0..1e9b69c 100644
+--- a/scripts/window-station.ts
++++ b/scripts/window-station.ts
+@@ -52,7 +52,8 @@ function playwrightInspector(env: NodeJS.ProcessEnv): boolean {
+ 
+ /**
+  * The e2e browser runs in a separate window station on Windows, unless the run shows it: a headed run, `PWDEBUG`'s inspector, or `MET_E2E_DESKTOP=1`, the way
+- * out for a host where the window station cannot be made. On the desktop its pointer lock confines and moves the cursor again.
++ * out for a host where the window station cannot be made, which needs the owner's agreement: tests/e2e/cursor.spec.ts fails under it (review 2, F9). On the desktop
++ * its pointer lock confines and moves the cursor again.
+  */
+ export function browserPlace(platform: NodeJS.Platform, headless: boolean, env: NodeJS.ProcessEnv): BrowserPlace {
+   if (platform !== 'win32') return { place: 'desktop', reason: 'the separate window station is a Windows mechanism; elsewhere Playwright launches the browser itself' };
+diff --git a/tests/e2e/browser-server.ts b/tests/e2e/browser-server.ts
+index d726dfc..f12027c 100644
+--- a/tests/e2e/browser-server.ts
++++ b/tests/e2e/browser-server.ts
+@@ -9,8 +9,9 @@
+  * message, so the tests after it fail saying why, where before a fresh worker launched a fresh browser (review 1, F6).
+  * Bound: Playwright listens on localhost only and checks the Host header, but it gives the endpoint's path to any local request for /json, so while a run lasts any
+  * process on this machine can find this browser and drive it, another account's too. The browser runs as the owner, so such a process could read the owner's files
+- * through file:// pages and write files through downloads (reviews 0 and 1, F1). The owner's own processes could do that anyway; before work unit 20 the browser
+- * listened on no port, since Playwright launched it with --remote-debugging-pipe.
++ * through file:// pages, and save a download it serves to any path the owner can write, a script the next run executes or the Startup folder among them: that is
++ * running code as the owner. Playwright refuses it a new launch (reviews 0 to 2, F1). The owner's own processes could do all that anyway; before work unit 20 the
++ * browser listened on no port, since Playwright launched it with --remote-debugging-pipe.
+  */
+ import { chromium } from '@playwright/test';
+ import type { BrowserServer } from '@playwright/test';
+diff --git a/tests/e2e/cursor.spec.ts b/tests/e2e/cursor.spec.ts
+index cb8ccb3..fc1f639 100644
+--- a/tests/e2e/cursor.spec.ts
++++ b/tests/e2e/cursor.spec.ts
+@@ -5,9 +5,10 @@
+  * browser runs in a separate, non-interactive window station, where tests/e2e/global-setup.ts starts it. This test takes the real lock on a blank page, moves the
+  * mouse to the window's corner as the walking specs do, and while the page holds the lock reads the system cursor's clip rectangle from this worker, which runs on
+  * the owner's desktop: it must be the whole screen.
+- * Bound: Windows, skipped only for the run's own choice of the desktop, a headed run or MET_E2E_DESKTOP=1, read apart from scripts/window-station.ts
+- * `browserPlace`, so a wrong answer there fails this test instead of skipping it (review 1, F4); PWDEBUG's inspector, which shows the browser, fails it too. It reads
+- * the clip, which only a program sets, not the cursor's position, which the owner's hand moves too; another program confining the cursor during the read would fail it.
++ * Bound: Windows, skipped only for a headed run, which shows its browser on purpose, read apart from scripts/window-station.ts `browserPlace`, so a wrong answer
++ * there fails this test instead of skipping it (review 1, F4). A run with MET_E2E_DESKTOP=1 or PWDEBUG's inspector puts the browser on the desktop and fails it, so a
++ * green run means the cursor stayed free (review 2, F9). It reads the clip, which only a program sets, not the cursor's position, which the owner's hand moves too;
++ * another program confining the cursor during the read would fail it.
+  * Red: with the setup starting no server, the browser launched on the desktop and confined the cursor to its window (docs/learning/gate-proofs.md).
+  */
+ import { execFileSync } from 'node:child_process';
+@@ -27,7 +28,6 @@ function cursorClip(): { readonly clip: string; readonly screen: string } {
+ test('a pointer lock in the e2e browser leaves the system cursor free', async ({ page }, testInfo) => {
+   test.skip(process.platform !== 'win32', 'the window station, and this read of the clip, are Windows mechanisms');
+   test.skip(testInfo.project.use.headless === false, 'a headed run shows its browser on the desktop by choice');
+-  test.skip(process.env['MET_E2E_DESKTOP'] === '1', 'MET_E2E_DESKTOP=1 puts the browser on the desktop by choice');
+   await page.setContent('<div id="pad" style="position: fixed; inset: 0"></div>');
+   await page.locator('#pad').evaluate((pad) => {
+     pad.addEventListener('click', () => {
+diff --git a/tests/e2e/global-setup.ts b/tests/e2e/global-setup.ts
+index 729a64c..9269c0b 100644
+--- a/tests/e2e/global-setup.ts
++++ b/tests/e2e/global-setup.ts
+@@ -8,8 +8,9 @@
+  * ended within 30 s, ends the launcher, which ends the job and everything in it. The server's temporary folder, which holds Chrome's profile, is its own: the launcher
+  * removes it once the server and the rest of its job have ended, even when the runner has died, and this removes it too should the launcher have been ended first
+  * (reviews 0 and 1, F3). A run that puts the browser on the desktop clears MET_TEST_BROWSER_WS, so a value left from elsewhere cannot connect its workers (review 1, F5).
+- * Bound: one server per run, given 60 s to start, decided once, so a browser shown later, as UI mode's "show browser" asks, needs `--headed` when the run starts;
+- * tests/e2e/cursor.spec.ts is the gate.
++ * Bound: one server per run, given 60 s to start, decided once, so a browser shown later, as UI mode's "show browser" asks, needs `--headed` when the run starts.
++ * A kill of the runner's whole process tree, as `taskkill /T` does, ends the launcher with it, so neither removes the folder: nothing keeps running, since the job
++ * ends with the launcher, but the folder stays in %TEMP%, as Playwright's own profiles did before (review 2, F3). tests/e2e/cursor.spec.ts is the gate.
+  */
+ import type { ChildProcess } from 'node:child_process';
+ import { mkdtempSync, rmSync } from 'node:fs';
+@@ -43,7 +44,8 @@ function endpointOf(server: ChildProcess): Promise<string> {
+       reject(
+         new Error(
+           `The e2e browser did not start in a separate window station: ${why}.${err === '' ? '' : ` It said: ${err.trim()}`} ` +
+-            'Set MET_E2E_DESKTOP=1 to start it on the desktop instead, where its pointer lock confines and moves the cursor.',
++            "MET_E2E_DESKTOP=1 starts it on the owner's desktop instead, where its pointer lock confines and moves the owner's cursor, so set it only with the " +
++            "owner's agreement; tests/e2e/cursor.spec.ts fails under it (review 2, F9).",
+         ),
+       );
+     };

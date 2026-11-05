@@ -76,6 +76,10 @@
     {
       "id": 18,
       "theme": "weston-leaves"
+    },
+    {
+      "id": 20,
+      "theme": "e2e-cursor"
     }
   ]
 }

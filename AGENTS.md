@@ -64,7 +64,7 @@ Each gate below is one line on what it checks. Read more when the work reaches i
 - `npm run typecheck`: `tsc --noEmit`, strict plus `noUncheckedIndexedAccess`, over `src/`, `scripts/`, `tests/` and the root configs.
 - `npm run lint`: ESLint with typescript-eslint strict type-checked rules, `--max-warnings 0`.
 - `npm run build`: `tsc --noEmit && vite build`, the two-page site (`index.html`, `parts.html`) into `dist/`.
-- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts: the specs below, most of them through real input.
+- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts: the specs below, most of them through real input. On Windows its Chrome runs in a separate, non-interactive window station, where its pointer lock cannot confine or move the owner's cursor, and the workers connect to it (`tests/e2e/global-setup.ts`, `scripts/window-station.ts`). A headed run, `PWDEBUG`'s inspector or `MET_E2E_DESKTOP=1` keeps it on the desktop, where the lock confines and moves the cursor; `MET_E2E_DESKTOP=1` needs the owner's agreement and fails `cursor.spec`. The setup decides once, so a browser to be shown needs `--headed` when the run starts.
 
 The e2e specs:
 
@@ -84,6 +84,7 @@ The e2e specs:
 - `labels.spec`, `labels-view.spec`: an artwork's card in walk mode and on a click in the orbit view, its fields and link, its place at both sizes, what hides it, and with the pointer locked its hint and place and Esc, held or not, keeping it for its link.
 - `doors.spec`, `door-look.spec`: at fixed places set by `spawn=x,y,z,tx,ty,tz`, a door's prompt, E and the locked click, the scrubber through the doors' step, the prompt's band, a swing's frame budget, and the prompt between a pair's leaves; `doors=` in the first frame.
 - `mixed-pointers.spec`: a finger joining a mouse drag, and a mouse joining a finger's drag that lifts first, through the browser's own mouse and touch, throw nothing and turn the view as the pointer that holds the camera alone does.
+- `cursor.spec`: on Windows a pointer lock in the e2e browser leaves the system cursor free: while the page holds the lock, the cursor's clip, read from the worker on the desktop, is the whole screen; in `npm test`, `scripts/window-station.test.ts` holds the launcher's quoting, a run through it, and the browser server ending with its input, its temporary folder removed.
 
 The unit gates, in `npm test`:
 

@@ -1,0 +1,662 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index e634f0c..bc7907f 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -64,7 +64,7 @@ Each gate below is one line on what it checks. Read more when the work reaches i
+ - `npm run typecheck`: `tsc --noEmit`, strict plus `noUncheckedIndexedAccess`, over `src/`, `scripts/`, `tests/` and the root configs.
+ - `npm run lint`: ESLint with typescript-eslint strict type-checked rules, `--max-warnings 0`.
+ - `npm run build`: `tsc --noEmit && vite build`, the two-page site (`index.html`, `parts.html`) into `dist/`.
+-- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts: the specs below, most of them through real input.
++- `npm run test:e2e`: Playwright (`tests/e2e/`) against a dev server it starts: the specs below, most of them through real input. On Windows its Chrome runs in a separate, non-interactive window station, where its pointer lock cannot confine or move the owner's cursor, and the workers connect to it (`tests/e2e/global-setup.ts`, `scripts/window-station.ts`). A headed run, `PWDEBUG` or `MET_E2E_DESKTOP=1` keeps it on the desktop, where the lock confines and moves the cursor.
+ 
+ The e2e specs:
+ 
+@@ -84,6 +84,7 @@ The e2e specs:
+ - `labels.spec`, `labels-view.spec`: an artwork's card in walk mode and on a click in the orbit view, its fields and link, its place at both sizes, what hides it, and with the pointer locked its hint and place and Esc, held or not, keeping it for its link.
+ - `doors.spec`, `door-look.spec`: at fixed places set by `spawn=x,y,z,tx,ty,tz`, a door's prompt, E and the locked click, the scrubber through the doors' step, the prompt's band, a swing's frame budget, and the prompt between a pair's leaves; `doors=` in the first frame.
+ - `mixed-pointers.spec`: a finger joining a mouse drag, and a mouse joining a finger's drag that lifts first, through the browser's own mouse and touch, throw nothing and turn the view as the pointer that holds the camera alone does.
++- `cursor.spec`: on Windows a pointer lock in the e2e browser leaves the system cursor free: while the page holds the lock, the cursor's clip, read from the worker on the desktop, is the whole screen; in `npm test`, `scripts/window-station.test.ts` holds the launcher's quoting and a run through it.
+ 
+ The unit gates, in `npm test`:
+ 
+diff --git a/docs/learning/defect-register.md b/docs/learning/defect-register.md
+index fbef07d..c56238a 100644
+--- a/docs/learning/defect-register.md
++++ b/docs/learning/defect-register.md
+@@ -2,6 +2,16 @@
+ 
+ Defects the owner reported, each with the symptom as they saw it, what the investigation found, the cause, and the check that covers the defect's class from now on. An entry stays after its gate lands: this is the list of what the gates could not see, which is where the next defect comes from.
+ 
++## The browser tests move the owner's mouse (2026-11-04)
++
++**Reported symptom:** The owner asked "What keeps moving my mouse? It is teleporting my mouse.", then said "It is definitely something claude is doing".
++
++**Investigation:** At 19:07 one session's worktree was running `routes.spec.ts` and `walk.spec.ts`, and its Playwright-launched `chrome.exe --headless` was the only automated browser on the machine. In Chromium's source for Windows, `DesktopWindowTreeHostWin::LockMouse` confines the cursor with `::ClipCursor` to the page's screen rectangle inset 5 px, `MoveCursorToCenter` moves it with `::SetCursorPos`, and the unlock frees it and moves it again. Headless Chrome on Windows still makes a real window, only cloaked (`hwnd_message_handler_headless.cc`), and none of these calls has a headless exception. A probe of 6 locks in the headless system Chrome, run under the gate lock with a cursor watch outside the browser, saw 12 clip changes to the hidden 1280×720 window's rectangle and 12 jumps. Each lock jumped the cursor to the box's centre and each unlock to (18, 65) at 150% display scale, where the first snapshot had found the owner's cursor, (27, 97) in physical pixels. A hidden desktop in the interactive window station stopped the jumps but not the confinement (12 clip changes, 0 jumps); a separate, unnamed window station stopped both, every lock still granted and the GPU still the RTX 4090 (work unit 20's plan).
++
++**Cause:** Walk mode takes the real pointer lock, and on Windows Chrome holds it on the one system cursor whether or not its window shows. So every e2e run of a spec that walks with the lock, every `npm run verify` and every direct `npx playwright test` of one, confined and moved the owner's cursor while the owner worked. No gate looked outside the browser.
++
++**Check:** `tests/e2e/cursor.spec.ts` takes the real lock in the e2e browser and reads the system cursor's clip from its worker on the desktop, which must be the whole screen; it is red with the setup starting no server (`docs/learning/gate-proofs.md`). It bounds the class, an e2e browser on the owner's desktop. It does not see a headed or `PWDEBUG` run, which shows its browser on purpose, nor a script outside the e2e suite that launches its own browser and takes the lock, as capture does not.
++
+ ## AGENTS.md outgrows what Codex reads (2026-10-29)
+ 
+ **Reported symptom:** The owner asked why so much is kept in AGENTS.md and directed: "There are other documents that can be used. You should also follow progressive disclosure." At `8a6a0c2` the file held 69,223 bytes, and Codex reads only the first 32 KiB of a project doc, so its reviews of met saw less than half of it.
+diff --git a/docs/learning/gate-proofs.md b/docs/learning/gate-proofs.md
+index e8235d6..2f656f5 100644
+--- a/docs/learning/gate-proofs.md
++++ b/docs/learning/gate-proofs.md
+@@ -240,3 +240,7 @@ Mouse-look and Esc (work unit 14, 2026-10-29): each mutation made on the work an
+ 
+ - The card left behind on leaving walk mode, the old `frame` (work unit 14): `art-label.test.ts`'s keep test red ("left looking at it: the orbit view keeps its card: expected null to be '11013'"); `labels.spec`'s locked test red at both sizes ("the card kept in the orbit view": null).
+ - A preset's dismissal not dropping the card leaving would keep: the keep test red ("a preset chosen while walking: none: expected '11013' to be null").
++
++### `tests/e2e/cursor.spec.ts`
++
++- The browser back on the desktop (work unit 20, 2026-11-04, on the change's own tree before its commit): `tests/e2e/global-setup.ts` made to start no server, with a `return undefined;` before its first line, so the workers launched Chrome on the desktop as before. The spec went red ("while the e2e browser held a pointer lock the system cursor was confined to 17,68,847,473 of the screen 0,0,2560,1440", at 150% display scale), and a cursor watch outside the browser saw the clip change twice and the cursor jump twice, to (445, 305) on the lock and to (18, 65) on the unlock. With the setup restored the spec passed in 4.4 s and the watch saw no change.
+diff --git a/docs/work/20_e2e-cursor/plan.md b/docs/work/20_e2e-cursor/plan.md
+new file mode 100644
+index 0000000..0c76aa0
+--- /dev/null
++++ b/docs/work/20_e2e-cursor/plan.md
+@@ -0,0 +1,52 @@
++# Keep the test browser off the owner's cursor
++
++Status: active
++Owner: Claude Code desktop session cursor-lock-7e41a2 (2026-11-04)
++Created: 2026-11-04
++Updated: 2026-11-04
++
++## Problem and outcome
++
++The owner reported (2026-11-04): "What keeps moving my mouse? It is teleporting my mouse.", then "It is definitely something claude is doing". The cause is the e2e suite. Walk mode takes the pointer lock, and on Windows Chrome implements the lock on the one system cursor, headless or not: `DesktopWindowTreeHostWin::LockMouse` confines it with `::ClipCursor` to the page's screen rectangle inset 5 px, `MoveCursorToCenter` moves it with `::SetCursorPos`, and the unlock frees it and moves it again (Chromium's `render_widget_host_view_event_handler.cc` and `desktop_window_tree_host_win.cc`; headless Chrome on Windows still makes a real window, cloaked, `hwnd_message_handler_headless.cc`). Measured on 59313d0 with a probe of 6 locks and a cursor watch: 12 clip changes to the hidden 1280×720 window's rectangle and 12 jumps, to the box's centre on each lock and to (18, 65) on each unlock, at 150% display scale. Every session's `npm run verify`, and every direct `npx playwright test` of a spec that walks with the real lock, did this to the owner's cursor.
++
++Outcome: on Windows the e2e browser runs in a separate, non-interactive window station, where Windows refuses its cursor calls. The tests, the dev server and the reporters stay where they are and connect to it. A gate fails when the e2e browser confines the system cursor.
++
++## Scope
++
++Included: how the e2e browser starts (`playwright.config.ts`, a global setup, a browser server, the window-station launcher), a gate spec, unit tests for the launcher, and the records: AGENTS.md's gates, the defect register, the gate proof and the devlog.
++
++Excluded: headed and debug runs (`--headed`, `--debug`, `PWDEBUG`), which need a visible window and keep the browser on the desktop; `npm run shots` and `npm run sweep`, which never take the lock (`walk=1` leaves the pointer free until a click, and capture never clicks); hosts other than Windows, where nothing changes.
++
++## Approach
++
++The prototype (ignored `tmp/cursor-lock/`, its logs in `tmp/cursor-lock/evidence/`) compared three places for the browser under the gate lock, with a cursor watch outside it:
++
++| Where the browser ran | Locks granted | Clip changes | Jumps |
++|---|---|---|---|
++| The desktop, as before | 6 of 6 | 12 | 12 |
++| A hidden desktop in the interactive window station | 6 of 6 | 12 | 0 |
++| A hidden desktop in a separate, unnamed window station | 6 of 6 | 0 | 0 |
++
++A hidden desktop stops the moves, since `SetCursorPos` needs the input desktop, but not the confinement, which `ClipCursor` checks against the window station. Only administrators may name a window station, so the launcher asks for an unnamed one, which Windows names after the logon session. In it the GPU was still the RTX 4090 through Direct3D 11. With the whole Playwright run inside, the full suite passed (126 tests in 10.2 minutes) and `routes.spec` and `walk.spec` at 4× CPU throttle passed (21, 2 skipped), the watch seeing no clip change and no jump in 612 s and 151 s.
++
++Chosen: only the browser moves. A global setup starts `chromium.launchServer` inside the window station through `scripts/window-station.ps1` and gives its endpoint to the workers, which connect through `use.connectOptions`. So `npm run test:e2e`, `npm run verify` and a direct `npx playwright test` are covered alike, and the runner, the dev server and the reporters stay on the desktop with live output. The launcher puts the browser's process tree in a job that ends with the launcher, and the server closes Chrome when the runner's pipe closes. Tradeoff: the tests drive a connected browser instead of a launched one, so the whole suite through it is the acceptance check.
++
++## Acceptance criteria
++
++- On Windows a headless e2e run's browser cannot confine the system cursor: `tests/e2e/cursor.spec.ts` takes the real pointer lock and reads the cursor's clip from its worker on the desktop, and it is the whole screen. The spec fails with the browser started on the desktop.
++- The full e2e suite passes through the connected browser, and `routes.spec` and `walk.spec` pass at 4× CPU throttle, while a cursor watch sees no clip change and no jump.
++- `npm run verify` passes on the merged tree.
++- A run stopped midway leaves no browser or server running.
++- `--headed` and `PWDEBUG` runs start the browser on the desktop as before.
++- Independent review of the change, with its findings resolved.
++
++## Implementation steps
++
++- The launcher `scripts/window-station.ps1` and its Node side `scripts/window-station.ts`, with unit tests.
++- The browser server `tests/e2e/browser-server.ts`, the global setup `tests/e2e/global-setup.ts` and `playwright.config.ts`.
++- The gate `tests/e2e/cursor.spec.ts`, its red proof, and the records.
++- Review, then the landing.
++
++## Outcome
++
++Pending.
+diff --git a/docs/work/registry.json b/docs/work/registry.json
+index b1af312..f650df7 100644
+--- a/docs/work/registry.json
++++ b/docs/work/registry.json
+@@ -76,6 +76,10 @@
+     {
+       "id": 18,
+       "theme": "weston-leaves"
++    },
++    {
++      "id": 20,
++      "theme": "e2e-cursor"
+     }
+   ]
+ }
+diff --git a/playwright.config.ts b/playwright.config.ts
+index e0a8a69..e288357 100644
+--- a/playwright.config.ts
++++ b/playwright.config.ts
+@@ -1,11 +1,14 @@
+ import { defineConfig } from '@playwright/test';
+ 
+ import { metPort } from './scripts/met-port.js';
++import { testBrowserConnection } from './scripts/window-station.js';
+ 
+ /**
+  * Browser tests run on the Chrome installed on this machine (`channel: 'chrome'`); no browser is downloaded.
+  * The suite starts its own Vite dev server on this worktree's `MET_PORT` and never reuses one that is already running,
+  * so a test cannot reach the server of another worktree. If the port is taken the run fails instead of borrowing it.
++ * On Windows the global setup starts that Chrome in a separate, non-interactive window station, where its pointer lock cannot confine or move the owner's
++ * cursor, and the workers connect to it (`connectOptions`, read here once the setup has set it); a headed or debug run launches it on the desktop as before.
+  */
+ const port = metPort();
+ const origin = `http://127.0.0.1:${String(port)}`;
+@@ -18,12 +21,14 @@ export default defineConfig({
+   forbidOnly: true,
+   reporter: 'list',
+   outputDir: 'test-results',
++  globalSetup: './tests/e2e/global-setup.ts',
+   use: {
+     baseURL: origin,
+     channel: 'chrome',
+     headless: true,
+     viewport: { width: 1280, height: 720 },
+     trace: 'retain-on-failure',
++    connectOptions: testBrowserConnection(process.env),
+   },
+   webServer: {
+     command: 'npm run dev',
+diff --git a/scripts/window-station.ps1 b/scripts/window-station.ps1
+new file mode 100644
+index 0000000..be4afcf
+--- /dev/null
++++ b/scripts/window-station.ps1
+@@ -0,0 +1,134 @@
++# Runs one command in a separate, non-interactive window station, where nothing it starts can confine or move the owner's cursor, and waits for it (work unit 20).
++# Why: on Windows, Chrome's pointer lock confines the system cursor to the page (ClipCursor) and moves it (SetCursorPos), headless or not, and Windows refuses both to a program in a non-interactive window station.
++# A hidden desktop in the interactive window station is not enough: it stops the moves but not the confinement (measured 2026-11-04, docs/work/20_e2e-cursor/plan.md).
++# Only administrators may name a window station, so this asks for an unnamed one, which Windows names after the logon session; the desktop in it is named met-e2e.
++# The command gets this script's standard input, output and error, working directory and environment, and its exit status is this script's. A failure here exits 1 and says why on standard error; this script writes nothing to standard output.
++# The command and everything it starts run in a job that Windows ends when this script ends, however it ends. Windows deletes the window station and the desktop with their last handle and process.
++# Usage: scripts/window-station.ts sets MET_WINDOW_STATION_COMMAND to the quoted command line, so PowerShell's own parsing never sees it, and starts this script with -File.
++$ErrorActionPreference = 'Stop'
++$commandLine = $env:MET_WINDOW_STATION_COMMAND
++if (-not $commandLine) {
++  [Console]::Error.WriteLine('window-station.ps1: MET_WINDOW_STATION_COMMAND is empty. scripts/window-station.ts sets it to the command line to run in the window station.')
++  exit 1
++}
++Add-Type -TypeDefinition @'
++using System;
++using System.ComponentModel;
++using System.Runtime.InteropServices;
++using System.Text;
++
++public static class MetWindowStation {
++  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
++  struct STARTUPINFO {
++    public int cb; public string lpReserved; public string lpDesktop; public string lpTitle;
++    public int dwX, dwY, dwXSize, dwYSize, dwXCountChars, dwYCountChars, dwFillAttribute, dwFlags;
++    public short wShowWindow, cbReserved2; public IntPtr lpReserved2, hStdInput, hStdOutput, hStdError;
++  }
++  [StructLayout(LayoutKind.Sequential)]
++  struct PROCESS_INFORMATION { public IntPtr hProcess, hThread; public int dwProcessId, dwThreadId; }
++  [StructLayout(LayoutKind.Sequential)]
++  struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
++    public long PerProcessUserTimeLimit, PerJobUserTimeLimit; public uint LimitFlags;
++    public UIntPtr MinimumWorkingSetSize, MaximumWorkingSetSize; public uint ActiveProcessLimit;
++    public UIntPtr Affinity; public uint PriorityClass, SchedulingClass;
++  }
++  [StructLayout(LayoutKind.Sequential)]
++  struct IO_COUNTERS { public ulong ReadOperationCount, WriteOperationCount, OtherOperationCount, ReadTransferCount, WriteTransferCount, OtherTransferCount; }
++  [StructLayout(LayoutKind.Sequential)]
++  struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
++    public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation; public IO_COUNTERS IoInfo;
++    public UIntPtr ProcessMemoryLimit, JobMemoryLimit, PeakProcessMemoryUsed, PeakJobMemoryUsed;
++  }
++
++  [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)] static extern IntPtr CreateWindowStationW(string name, uint flags, uint access, IntPtr sa);
++  [DllImport("user32.dll", SetLastError = true)] static extern IntPtr GetProcessWindowStation();
++  [DllImport("user32.dll", SetLastError = true)] static extern bool SetProcessWindowStation(IntPtr station);
++  [DllImport("user32.dll", SetLastError = true)] static extern bool CloseWindowStation(IntPtr station);
++  [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)] static extern bool GetUserObjectInformationW(IntPtr obj, int index, StringBuilder info, int length, out int needed);
++  [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)] static extern IntPtr CreateDesktopW(string name, IntPtr device, IntPtr devmode, uint flags, uint access, IntPtr sa);
++  [DllImport("user32.dll", SetLastError = true)] static extern bool CloseDesktop(IntPtr desktop);
++  [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] static extern IntPtr CreateJobObjectW(IntPtr sa, string name);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern bool SetInformationJobObject(IntPtr job, int infoClass, ref JOBOBJECT_EXTENDED_LIMIT_INFORMATION info, int length);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr GetStdHandle(int which);
++  [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] static extern bool CreateProcessW(string app, StringBuilder cmd, IntPtr pa, IntPtr ta, bool inherit, uint flags, IntPtr env, string cwd, ref STARTUPINFO si, out PROCESS_INFORMATION pi);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern uint ResumeThread(IntPtr thread);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern bool TerminateProcess(IntPtr process, uint code);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern uint WaitForSingleObject(IntPtr h, uint ms);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern bool GetExitCodeProcess(IntPtr h, out uint code);
++  [DllImport("kernel32.dll", SetLastError = true)] static extern bool CloseHandle(IntPtr h);
++
++  const uint WINSTA_ALL_ACCESS = 0x37F;
++  const uint GENERIC_ALL = 0x10000000;
++  const int UOI_NAME = 2;
++  const int JOB_OBJECT_EXTENDED_LIMIT_INFORMATION = 9;
++  const uint JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
++  const uint CREATE_SUSPENDED = 0x4;
++  const uint CREATE_NO_WINDOW = 0x08000000;
++  const int STARTF_USESTDHANDLES = 0x100;
++  const uint INFINITE = 0xFFFFFFFF;
++  const string DESKTOP = "met-e2e";
++
++  // Never closed here: Windows closes it when this process ends, and with it ends every process in the job.
++  static IntPtr job;
++
++  static Win32Exception Failed(string what) {
++    int err = Marshal.GetLastWin32Error();
++    return new Win32Exception(err, what + " failed with Windows error " + err + ": " + new Win32Exception(err).Message);
++  }
++
++  public static int Run(string commandLine, string workDir) {
++    job = CreateJobObjectW(IntPtr.Zero, null);
++    if (job == IntPtr.Zero) throw Failed("CreateJobObject");
++    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
++    limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
++    if (!SetInformationJobObject(job, JOB_OBJECT_EXTENDED_LIMIT_INFORMATION, ref limits, Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION)))) throw Failed("SetInformationJobObject");
++
++    IntPtr station = CreateWindowStationW(null, 0, WINSTA_ALL_ACCESS, IntPtr.Zero);
++    if (station == IntPtr.Zero) throw Failed("CreateWindowStation");
++    StringBuilder name = new StringBuilder(256);
++    int needed;
++    if (!GetUserObjectInformationW(station, UOI_NAME, name, name.Capacity * 2, out needed)) throw Failed("GetUserObjectInformation");
++    IntPtr own = GetProcessWindowStation();
++    if (!SetProcessWindowStation(station)) throw Failed("SetProcessWindowStation");
++    IntPtr desktop = CreateDesktopW(DESKTOP, IntPtr.Zero, IntPtr.Zero, 0, GENERIC_ALL, IntPtr.Zero);
++    Win32Exception desktopFailed = desktop == IntPtr.Zero ? Failed("CreateDesktop") : null;
++    SetProcessWindowStation(own);
++    if (desktopFailed != null) throw desktopFailed;
++
++    STARTUPINFO si = new STARTUPINFO();
++    si.cb = Marshal.SizeOf(typeof(STARTUPINFO));
++    si.lpDesktop = name.ToString() + "\\" + DESKTOP;
++    si.dwFlags = STARTF_USESTDHANDLES;
++    si.hStdInput = GetStdHandle(-10);
++    si.hStdOutput = GetStdHandle(-11);
++    si.hStdError = GetStdHandle(-12);
++    PROCESS_INFORMATION pi;
++    if (!CreateProcessW(null, new StringBuilder(commandLine), IntPtr.Zero, IntPtr.Zero, true, CREATE_SUSPENDED | CREATE_NO_WINDOW, IntPtr.Zero, workDir, ref si, out pi)) throw Failed("CreateProcess in " + si.lpDesktop);
++    if (!AssignProcessToJobObject(job, pi.hProcess)) {
++      Win32Exception assignFailed = Failed("AssignProcessToJobObject");
++      TerminateProcess(pi.hProcess, 1);
++      throw assignFailed;
++    }
++    ResumeThread(pi.hThread);
++    CloseHandle(pi.hThread);
++    // The desktop and window station stay open until the command ends: a process connects to them only when it first draws or reads input.
++    WaitForSingleObject(pi.hProcess, INFINITE);
++    uint code;
++    GetExitCodeProcess(pi.hProcess, out code);
++    CloseHandle(pi.hProcess);
++    CloseDesktop(desktop);
++    CloseWindowStation(station);
++    return (int)code;
++  }
++}
++'@
++try {
++  $code = [MetWindowStation]::Run($commandLine, [Environment]::CurrentDirectory)
++} catch {
++  $reason = $_.Exception
++  while ($reason.InnerException) { $reason = $reason.InnerException }
++  [Console]::Error.WriteLine('window-station.ps1: could not run the command in a separate window station. ' + $reason.Message)
++  exit 1
++}
++exit $code
+diff --git a/scripts/window-station.test.ts b/scripts/window-station.test.ts
+new file mode 100644
+index 0000000..831424e
+--- /dev/null
++++ b/scripts/window-station.test.ts
+@@ -0,0 +1,85 @@
++/**
++ * The window-station launcher: scripts/window-station.ts and scripts/window-station.ps1 (work unit 20).
++ *
++ * Bound: the quoting, the browser's place and the workers' connection are checked on every host. Only on Windows, one run through the launcher starts node.exe in
++ * the window station and checks that its arguments arrive unchanged, its output comes back and its exit status is the launcher's. Whether the cursor stays free is
++ * tests/e2e/cursor.spec.ts's to check.
++ */
++import { describe, expect, it } from 'vitest';
++
++import { browserPlace, startInWindowStation, TEST_BROWSER_ENDPOINT, testBrowserConnection, windowsArgument, windowsCommandLine } from './window-station.js';
++
++const B = '\\';
++
++describe('windowsArgument', () => {
++  it('leaves an argument with no space or quote as it is, backslashes and all', () => {
++    for (const arg of ['plain', `C:${B}dir${B}file.ts`, `trailing${B}`, '--flag=1', 'ü✓']) expect(windowsArgument(arg)).toBe(arg);
++  });
++
++  it('quotes an empty argument and one with a space, a tab or a quote, doubling only the backslashes before a quote', () => {
++    expect(windowsArgument('')).toBe('""');
++    expect(windowsArgument('two words')).toBe('"two words"');
++    expect(windowsArgument('tab\there')).toBe('"tab\there"');
++    expect(windowsArgument('a"quote')).toBe(`"a${B}"quote"`);
++    expect(windowsArgument(`slash${B}"quote`)).toBe(`"slash${B}${B}${B}"quote"`);
++    expect(windowsArgument(`C:${B}Program Files${B}x${B}`)).toBe(`"C:${B}Program Files${B}x${B}${B}"`);
++    expect(windowsArgument(`a b${B}${B}`)).toBe(`"a b${B}${B}${B}${B}"`);
++  });
++
++  it('joins a command line, the program first', () => {
++    expect(windowsCommandLine([`C:${B}Program Files${B}node.exe`, 'x.ts', ''])).toBe(`"C:${B}Program Files${B}node.exe" x.ts ""`);
++  });
++});
++
++describe('browserPlace', () => {
++  it('puts a headless run on Windows in the window station', () => {
++    expect(browserPlace('win32', true, {})).toEqual({ place: 'window station' });
++  });
++
++  it('keeps it on the desktop off Windows, for a headed or PWDEBUG run, and for MET_E2E_DESKTOP=1, saying why', () => {
++    for (const [platform, headless, env] of [
++      ['linux', true, {}],
++      ['win32', false, {}],
++      ['win32', true, { PWDEBUG: '1' }],
++      ['win32', true, { MET_E2E_DESKTOP: '1' }],
++    ] as const) {
++      const place = browserPlace(platform, headless, env);
++      expect(place.place).toBe('desktop');
++      expect(place.place === 'desktop' && place.reason.length > 0).toBe(true);
++    }
++  });
++
++  it('ignores an empty PWDEBUG and a MET_E2E_DESKTOP other than 1', () => {
++    expect(browserPlace('win32', true, { PWDEBUG: '', MET_E2E_DESKTOP: '0' })).toEqual({ place: 'window station' });
++  });
++});
++
++describe('testBrowserConnection', () => {
++  it('connects to the endpoint the setup set, and to nothing before it has set one', () => {
++    expect(testBrowserConnection({ [TEST_BROWSER_ENDPOINT]: 'ws://127.0.0.1:1234/abc' })).toEqual({ wsEndpoint: 'ws://127.0.0.1:1234/abc' });
++    expect(testBrowserConnection({})).toBeUndefined();
++    expect(testBrowserConnection({ [TEST_BROWSER_ENDPOINT]: '' })).toBeUndefined();
++  });
++});
++
++describe('startInWindowStation', () => {
++  it.runIf(process.platform === 'win32')('runs node.exe in the window station with every argument unchanged, its output and its exit status', async () => {
++    const args = ['plain', '', 'two words', 'a"quote', `trailing${B}`, `slash${B}"quote`, `C:${B}Program Files${B}x${B}`, 'ü ✓ —'];
++    const code = 'process.stdout.write(JSON.stringify(process.argv.slice(1))); process.exit(7)';
++    const child = startInWindowStation([process.execPath, '-e', code, ...args], process.cwd(), ['ignore', 'pipe', 'pipe']);
++    let out = '';
++    let err = '';
++    child.stdout?.setEncoding('utf8').on('data', (chunk: string) => {
++      out += chunk;
++    });
++    child.stderr?.setEncoding('utf8').on('data', (chunk: string) => {
++      err += chunk;
++    });
++    const status = await new Promise<number | null>((resolve) => {
++      child.on('exit', resolve);
++    });
++    expect(err).toBe('');
++    expect(status).toBe(7);
++    expect(JSON.parse(out)).toEqual(args);
++  });
++});
+diff --git a/scripts/window-station.ts b/scripts/window-station.ts
+new file mode 100644
+index 0000000..40e75ae
+--- /dev/null
++++ b/scripts/window-station.ts
+@@ -0,0 +1,73 @@
++/**
++ * Starts a command where nothing it starts can confine or move the owner's cursor (work unit 20, docs/learning/defect-register.md).
++ *
++ * On Windows, Chrome's pointer lock confines the system cursor to the page (`ClipCursor`) and moves it (`SetCursorPos`), headless or not, and the e2e specs that walk take that lock.
++ * Windows refuses both to a program in a separate, non-interactive window station, which `scripts/window-station.ps1` makes and runs the command in; a hidden desktop in the interactive window station stops only the moves.
++ * `tests/e2e/global-setup.ts` starts the e2e browser there, `playwright.config.ts` connects the workers to it, and `tests/e2e/cursor.spec.ts` is the gate.
++ * Bound: `windowsCommandLine` quotes for programs that split their command line as the Microsoft C runtime does, as node.exe does; `browserPlace` decides only from what it is given.
++ */
++import { spawn } from 'node:child_process';
++import type { ChildProcess, StdioOptions } from 'node:child_process';
++import { join } from 'node:path';
++
++/** The PowerShell launcher that makes the window station and runs the command in it (its header says how). */
++export const WINDOW_STATION_LAUNCHER = join(import.meta.dirname, 'window-station.ps1');
++
++/** The variable that carries the e2e browser server's endpoint from the global setup to the workers. */
++export const TEST_BROWSER_ENDPOINT = 'MET_TEST_BROWSER_WS';
++
++/** Quotes one argument so that a program splitting its command line as the Microsoft C runtime does gets it back unchanged. */
++export function windowsArgument(arg: string): string {
++  if (arg !== '' && !/[\s"]/u.test(arg)) return arg;
++  let quoted = '"';
++  let backslashes = 0;
++  for (const ch of arg) {
++    if (ch === '\\') {
++      backslashes += 1;
++      continue;
++    }
++    // Backslashes are literal except before a quote, where each must be doubled and the quote itself escaped.
++    quoted += ch === '"' ? `${'\\'.repeat(backslashes * 2 + 1)}"` : `${'\\'.repeat(backslashes)}${ch}`;
++    backslashes = 0;
++  }
++  return `${quoted}${'\\'.repeat(backslashes * 2)}"`;
++}
++
++/** The Windows command line that runs `argv`, the program first. */
++export function windowsCommandLine(argv: readonly string[]): string {
++  return argv.map(windowsArgument).join(' ');
++}
++
++/** Where the e2e browser runs, and when it is the desktop, why. */
++export type BrowserPlace = { readonly place: 'window station' } | { readonly place: 'desktop'; readonly reason: string };
++
++/**
++ * The e2e browser runs in a separate window station on Windows, unless the run shows it: a headed run, a `PWDEBUG` run, or `MET_E2E_DESKTOP=1`, the way out for a host
++ * where the window station cannot be made. On the desktop its pointer lock confines and moves the cursor again.
++ */
++export function browserPlace(platform: NodeJS.Platform, headless: boolean, env: NodeJS.ProcessEnv): BrowserPlace {
++  if (platform !== 'win32') return { place: 'desktop', reason: 'the separate window station is a Windows mechanism; elsewhere Playwright launches the browser itself' };
++  if (!headless) return { place: 'desktop', reason: 'a headed run shows its browser, on the desktop, where its pointer lock confines and moves the cursor' };
++  if ((env['PWDEBUG'] ?? '') !== '') return { place: 'desktop', reason: 'a PWDEBUG run shows its browser and the inspector, on the desktop' };
++  if (env['MET_E2E_DESKTOP'] === '1') return { place: 'desktop', reason: 'MET_E2E_DESKTOP=1 asks for the browser on the desktop' };
++  return { place: 'window station' };
++}
++
++/**
++ * Starts `argv`, the program first, in a separate, non-interactive window station through `scripts/window-station.ps1`, in `cwd`, with this process's environment
++ * and the standard streams `stdio` names. The returned process is the launcher's, and its exit status is the command's; ending it ends the command and all it started.
++ */
++export function startInWindowStation(argv: readonly string[], cwd: string, stdio: StdioOptions): ChildProcess {
++  return spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', WINDOW_STATION_LAUNCHER], {
++    cwd,
++    stdio,
++    env: { ...process.env, MET_WINDOW_STATION_COMMAND: windowsCommandLine(argv) },
++    windowsHide: true,
++  });
++}
++
++/** The workers' connection to the e2e browser server the global setup started, or none when it started none, as before it has run. */
++export function testBrowserConnection(env: NodeJS.ProcessEnv): { readonly wsEndpoint: string } | undefined {
++  const wsEndpoint = env[TEST_BROWSER_ENDPOINT] ?? '';
++  return wsEndpoint === '' ? undefined : { wsEndpoint };
++}
+diff --git a/tests/e2e/browser-server.ts b/tests/e2e/browser-server.ts
+new file mode 100644
+index 0000000..fe8b536
+--- /dev/null
++++ b/tests/e2e/browser-server.ts
+@@ -0,0 +1,29 @@
++/**
++ * The e2e browser as a Playwright browser server, which tests/e2e/global-setup.ts runs in a separate, non-interactive window station (scripts/window-station.ts),
++ * where the browser's pointer lock cannot confine or move the owner's cursor (work unit 20).
++ *
++ * Usage: node tests/e2e/browser-server.ts <channel>, an empty channel for Playwright's own Chromium. It prints one line, {"wsEndpoint":"ws://..."}, once the browser is up,
++ * and closes the browser when its standard input ends, as it does when the setup's teardown ends it or the test run exits.
++ * Bound: it serves whoever has the endpoint, which only this run's workers are given; the endpoint's path is random.
++ */
++import { chromium } from '@playwright/test';
++
++const channel = process.argv[2] ?? '';
++const server = await chromium.launchServer(channel === '' ? { headless: true } : { channel, headless: true });
++process.stdout.write(`${JSON.stringify({ wsEndpoint: server.wsEndpoint() })}\n`);
++
++let closing = false;
++function close(): void {
++  if (closing) return;
++  closing = true;
++  server.close().then(
++    () => process.exit(0),
++    (error: unknown) => {
++      console.error(`browser-server.ts: the browser did not close: ${String(error)}`);
++      process.exit(1);
++    },
++  );
++}
++process.stdin.on('end', close);
++process.stdin.on('error', close);
++process.stdin.resume();
+diff --git a/tests/e2e/cursor.spec.ts b/tests/e2e/cursor.spec.ts
+new file mode 100644
+index 0000000..d6840d4
+--- /dev/null
++++ b/tests/e2e/cursor.spec.ts
+@@ -0,0 +1,46 @@
++/**
++ * Gate: a pointer lock in the e2e browser leaves the owner's cursor free (work unit 20, docs/learning/defect-register.md).
++ *
++ * On Windows, Chrome's pointer lock confines the one system cursor to the page's window (`ClipCursor`) and moves it (`SetCursorPos`), headless or not, unless the
++ * browser runs in a separate, non-interactive window station, where tests/e2e/global-setup.ts starts it. This test takes the real lock on a blank page, moves the
++ * mouse to the window's corner as the walking specs do, and while the page holds the lock reads the system cursor's clip rectangle from this worker, which runs on
++ * the owner's desktop: it must be the whole screen.
++ * Bound: Windows, in runs whose browser belongs in the window station (scripts/window-station.ts `browserPlace`). It reads the clip, which only a program sets, not
++ * the cursor's position, which the owner's hand moves too; another program confining the cursor during the read would fail it.
++ * Red: with the setup starting no server, the browser launched on the desktop and confined the cursor to its window (docs/learning/gate-proofs.md).
++ */
++import { execFileSync } from 'node:child_process';
++
++import { expect, test } from '@playwright/test';
++
++import { browserPlace } from '../../scripts/window-station.js';
++
++/** The system cursor's clip rectangle and the virtual screen, each as "x,y,width,height", as PowerShell reads them on this worker's desktop. */
++function cursorClip(): { readonly clip: string; readonly screen: string } {
++  const script =
++    'Add-Type -AssemblyName System.Windows.Forms; $c = [System.Windows.Forms.Cursor]::Clip; $s = [System.Windows.Forms.SystemInformation]::VirtualScreen; ' +
++    "'{0},{1},{2},{3} {4},{5},{6},{7}' -f $c.X, $c.Y, $c.Width, $c.Height, $s.X, $s.Y, $s.Width, $s.Height";
++  const out = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', windowsHide: true }).trim();
++  const [clip = '', screen = ''] = out.split(' ');
++  return { clip, screen };
++}
++
++test('a pointer lock in the e2e browser leaves the system cursor free', async ({ page }, testInfo) => {
++  const place = browserPlace(process.platform, testInfo.project.use.headless !== false, process.env);
++  test.skip(place.place === 'desktop', place.place === 'desktop' ? place.reason : '');
++  await page.setContent('<div id="pad" style="position: fixed; inset: 0"></div>');
++  await page.locator('#pad').evaluate((pad) => {
++    pad.addEventListener('click', () => {
++      void pad.requestPointerLock();
++    });
++  });
++  await page.mouse.click(640, 360);
++  await page.waitForFunction(() => document.pointerLockElement !== null, undefined, { timeout: 5000 });
++  // Near the window's border, where Chrome moves the cursor back to the middle.
++  await page.mouse.move(1275, 715, { steps: 4 });
++  const { clip, screen } = cursorClip();
++  await page.evaluate(() => {
++    document.exitPointerLock();
++  });
++  expect(clip, `while the e2e browser held a pointer lock the system cursor was confined to ${clip} of the screen ${screen}`).toBe(screen);
++});
+diff --git a/tests/e2e/global-setup.ts b/tests/e2e/global-setup.ts
+new file mode 100644
+index 0000000..7fc6322
+--- /dev/null
++++ b/tests/e2e/global-setup.ts
+@@ -0,0 +1,98 @@
++/**
++ * Starts the e2e browser where its pointer lock cannot confine or move the owner's cursor (work unit 20, docs/learning/defect-register.md).
++ *
++ * On Windows, Chrome's pointer lock confines the system cursor to the page and moves it, headless or not. Unless the run shows its browser (scripts/window-station.ts
++ * `browserPlace`), this starts the browser as a Playwright browser server (tests/e2e/browser-server.ts) in a separate, non-interactive window station, where Windows
++ * refuses those calls, and sets MET_TEST_BROWSER_WS before the workers start; each worker reads it in playwright.config.ts and connects instead of launching.
++ * The runner, the dev server and the reporters stay on the desktop. The teardown ends the server's standard input, which closes the browser, then ends the launcher
++ * if it lingers, which ends the job and everything in it.
++ * Bound: one server per run, given 60 s to start and 15 s to close; tests/e2e/cursor.spec.ts is the gate.
++ */
++import type { ChildProcess } from 'node:child_process';
++import { join } from 'node:path';
++import { setTimeout as delay } from 'node:timers/promises';
++
++import type { FullConfig } from '@playwright/test';
++
++import { browserPlace, startInWindowStation, TEST_BROWSER_ENDPOINT } from '../../scripts/window-station.js';
++
++const SERVER = join(import.meta.dirname, 'browser-server.ts');
++const START_MS = 60_000;
++const CLOSE_MS = 15_000;
++
++/** Reads the server's endpoint line, failing with what it said on standard error if it ends or gives none in time. */
++function endpointOf(server: ChildProcess): Promise<string> {
++  return new Promise((resolve, reject) => {
++    let out = '';
++    let err = '';
++    let settled = false;
++    const settle = (endpoint: string | undefined, why: string): void => {
++      if (settled) return;
++      settled = true;
++      clearTimeout(timer);
++      if (endpoint !== undefined) {
++        resolve(endpoint);
++        return;
++      }
++      server.kill();
++      reject(
++        new Error(
++          `The e2e browser did not start in a separate window station: ${why}.${err === '' ? '' : ` It said: ${err.trim()}`} ` +
++            'Set MET_E2E_DESKTOP=1 to start it on the desktop instead, where its pointer lock confines and moves the cursor.',
++        ),
++      );
++    };
++    const timer = setTimeout(() => {
++      settle(undefined, `no endpoint within ${String(START_MS / 1000)} s`);
++    }, START_MS);
++    server.stdout?.setEncoding('utf8').on('data', (chunk: string) => {
++      out += chunk;
++      for (const line of out.split('\n')) {
++        if (!line.startsWith('{')) continue;
++        try {
++          const parsed: unknown = JSON.parse(line);
++          if (typeof parsed === 'object' && parsed !== null && 'wsEndpoint' in parsed && typeof parsed.wsEndpoint === 'string') settle(parsed.wsEndpoint, '');
++        } catch {
++          // A partial line; the rest comes with the next chunk.
++        }
++      }
++    });
++    server.stderr?.setEncoding('utf8').on('data', (chunk: string) => {
++      err += chunk;
++      process.stderr.write(chunk);
++    });
++    server.on('error', (error) => {
++      settle(undefined, `the launcher could not start (${error.message})`);
++    });
++    server.on('exit', (code) => {
++      settle(undefined, `the launcher ended with status ${String(code)}`);
++    });
++  });
++}
++
++/** Ends the server's standard input, which closes the browser, and ends the launcher, and so its job, if it has not ended in time. */
++async function stop(server: ChildProcess): Promise<void> {
++  if (server.exitCode !== null || server.signalCode !== null) return;
++  const exited = new Promise<void>((resolve) => {
++    server.once('exit', () => {
++      resolve();
++    });
++  });
++  server.stdin?.end();
++  const ended = await Promise.race([exited.then(() => true), delay(CLOSE_MS).then(() => false)]);
++  if (!ended) {
++    server.kill();
++    await exited;
++  }
++}
++
++export default async function globalSetup(config: FullConfig): Promise<(() => Promise<void>) | undefined> {
++  const headless = config.projects.every((project) => project.use.headless !== false);
++  if (browserPlace(process.platform, headless, process.env).place === 'desktop') return undefined;
++  const channel = config.projects[0]?.use.channel ?? '';
++  const server = startInWindowStation([process.execPath, SERVER, channel], config.rootDir, ['pipe', 'pipe', 'pipe']);
++  process.env[TEST_BROWSER_ENDPOINT] = await endpointOf(server);
++  return async () => {
++    await stop(server);
++  };
++}

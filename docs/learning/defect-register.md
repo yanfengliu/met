@@ -2,6 +2,16 @@
 
 Defects the owner reported, each with the symptom as they saw it, what the investigation found, the cause, and the check that covers the defect's class from now on. An entry stays after its gate lands: this is the list of what the gates could not see, which is where the next defect comes from.
 
+## The browser tests move the owner's mouse (2026-11-04)
+
+**Reported symptom:** The owner asked "What keeps moving my mouse? It is teleporting my mouse.", then said "It is definitely something claude is doing".
+
+**Investigation:** At 19:07 one session's worktree was running `routes.spec.ts` and `walk.spec.ts`, and its Playwright-launched `chrome.exe --headless` was the only automated browser on the machine. In Chromium's source for Windows, `DesktopWindowTreeHostWin::LockMouse` confines the cursor with `::ClipCursor` to the page's screen rectangle inset 5 px, `MoveCursorToCenter` moves it with `::SetCursorPos`, and the unlock frees it and moves it again. Headless Chrome on Windows still makes a real window, only cloaked (`hwnd_message_handler_headless.cc`), and none of these calls has a headless exception. A probe of 6 locks in the headless system Chrome, run under the gate lock with a cursor watch outside the browser, saw 12 clip changes to the hidden 1280×720 window's rectangle and 12 jumps. Each lock jumped the cursor to the box's centre and each unlock to (18, 65) at 150% display scale, where the first snapshot had found the owner's cursor, (27, 97) in physical pixels. A hidden desktop in the interactive window station stopped the jumps but not the confinement (12 clip changes, 0 jumps); a separate, unnamed window station stopped both, every lock still granted and the GPU still the RTX 4090 (work unit 20's plan).
+
+**Cause:** Walk mode takes the real pointer lock, and on Windows Chrome holds it on the one system cursor whether or not its window shows. So every e2e run of a spec that walks with the lock, every `npm run verify` and every direct `npx playwright test` of one, confined and moved the owner's cursor while the owner worked. No gate looked outside the browser.
+
+**Check:** `tests/e2e/cursor.spec.ts` takes the real lock in the e2e browser and reads the system cursor's clip from its worker on the desktop, which must be the whole screen; it is red with the setup starting no server (`docs/learning/gate-proofs.md`). It bounds the class, an e2e browser on the owner's desktop. It skips a headed run, which shows its browser on purpose, and fails a run with `MET_E2E_DESKTOP=1` or `PWDEBUG`'s inspector, which put it on the desktop; it does not see a script outside the e2e suite that launches its own browser and takes the lock, as capture does not.
+
 ## AGENTS.md outgrows what Codex reads (2026-10-29)
 
 **Reported symptom:** The owner asked why so much is kept in AGENTS.md and directed: "There are other documents that can be used. You should also follow progressive disclosure." At `8a6a0c2` the file held 69,223 bytes, and Codex reads only the first 32 KiB of a project doc, so its reviews of met saw less than half of it.

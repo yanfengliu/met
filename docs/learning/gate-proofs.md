@@ -240,3 +240,11 @@ Mouse-look and Esc (work unit 14, 2026-10-29): each mutation made on the work an
 
 - The card left behind on leaving walk mode, the old `frame` (work unit 14): `art-label.test.ts`'s keep test red ("left looking at it: the orbit view keeps its card: expected null to be '11013'"); `labels.spec`'s locked test red at both sizes ("the card kept in the orbit view": null).
 - A preset's dismissal not dropping the card leaving would keep: the keep test red ("a preset chosen while walking: none: expected '11013' to be null").
+
+### `tests/e2e/cursor.spec.ts`
+
+- The browser back on the desktop (work unit 20, 2026-11-04, on the change's own tree before its commit): `tests/e2e/global-setup.ts` made to start no server, with a `return undefined;` before its first line, so the workers launched Chrome on the desktop as before. The spec went red ("while the e2e browser held a pointer lock the system cursor was confined to 17,68,847,473 of the screen 0,0,2560,1440", at 150% display scale), and a cursor watch outside the browser saw the clip change twice and the cursor jump twice, to (445, 305) on the lock and to (18, 65) on the unlock. With the setup restored the spec passed in 4.4 s and the watch saw no change.
+
+### `scripts/window-station.test.ts`
+
+- The browser server hearing its input's end only once the browser is up, review 0's F2 (work unit 20, review 1, F7, on the change's own tree before its commit): `tests/e2e/browser-server.ts`'s three input listeners moved below `chromium.launchServer`. "ends at once when its input ends while the browser starts" went red ("expected +0 to be 1": the server closed the browser it had finished starting, where it must exit before the browser is up), and green with the listeners restored.
