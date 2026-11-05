@@ -6,6 +6,7 @@
 import type { StepDef } from '../../build/types.js';
 import { B_SOUTH_X, L1 } from './constants.js';
 import { galleryWalls, laylightFrames, lightWellWalls, mainFloorWalls, roofWithSkylights } from './galleries.js';
+import { westonEndTrim, westonEndWalls } from './weston-ends.js';
 import { westonOpenings, westonTrim, westonWalls } from './weston-facade.js';
 import { westonPorch } from './weston-porch.js';
 import { ELEVATIONS, elevationTrim, elevationWalls, elevationWindows, wingFloors, wingFoundations } from './wings-walls.js';
@@ -47,14 +48,16 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     year: '1888',
     title: "Build Weston's south facade",
-    detail: 'The new main front: arched bays round an entrance pavilion with its porch and balcony. It survives as the north wall of the Petrie Court.',
+    detail: 'The new main front: an entrance pavilion with its porch and balcony between arched bays, and two projecting end blocks on granite columns. It survives as the north wall of the Petrie Court.',
     motion: { kind: 'grow' },
     stagger: 'order',
     weight: 1.3,
     focus: { kind: 'view', position: [B_SOUTH_X - 26, L1 + 4, -84], target: [B_SOUTH_X, L1 + 6, -104] },
     build: (kit) => {
       westonWalls(kit);
+      westonEndWalls(kit);
       westonTrim(kit);
+      westonEndTrim(kit);
       westonPorch(kit);
     },
   },

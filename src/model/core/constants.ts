@@ -71,13 +71,19 @@ export const SCREEN_HEIGHT = 15.85; // interior.md
 export const SCREEN_Z = -99.4; // E: across the nave just east of the middle pier pair, whose faces are 12.74 m apart (the screen is 12.80 m wide); P8's perspective puts it about 12 m from the camera and 17 m from the end wall behind it, and the Met calls it centrally placed
 
 // --- Wings B and C (history.md section 3; photos 1880_Met_Museum.jpg about 1900 and the Petrie Court 2012) -----------------
-export const WESTON_BAY = 5.6; // E: Petrie Court photo, three windows under each arch
+export const WESTON_BAY = 5.6; // E: the north wing's bays (wings-walls.ts), after the Petrie Court photo
 export const WESTON_PAVILION_HALF = 6.2; // E: the central entrance pavilion, 12.4 m wide
-export const WESTON_PAVILION_Z = -100.97; // map: the pavilion's and its door's middle, the map's door into gallery 529 (Z −102.73..−99.21); the middle too, within 1 cm, of the map's galleries along the front (526 to 529 and 531 to 533, Z −135.14..−66.78, ±34.18 m, as long as the pavilion and five of the model's 5.6 m bays each side) and of its court (548, Z −137.10..−64.83); interior.md, Weston's 1888 door
+export const WESTON_PAVILION_Z = -100.97; // map: the pavilion's and its door's middle, the map's door into gallery 529 (Z −102.73..−99.21); the middle too, within 1 cm, of the map's galleries along the front (526 to 529 and 531 to 533, Z −135.14..−66.78, ±34.18 m) and of its court (548, Z −137.10..−64.83); interior.md, Weston's 1888 door
 export const WESTON_DADO = 1.9; // E: stone dado with roundels above L1 (Petrie Court photo)
 export const WESTON_LOWER_HEAD = 6.3; // E: main-floor window heads above L1
-export const WESTON_ARCH_SPAN = 4.6; // E: the round arches over the upper windows
-export const WESTON_ARCH_SPRING = 2.3; // E: springing above L2
+// Weston's front each side of the pavilion (interior.md, Weston's 1888 front): one arched bay, a strip of brick, and an end block that projects into the court.
+export const WESTON_ARCH_BAY = 8.7; // E: Heckscher fig. 28, 217 of the front's 1,756 px on a front of about 70.8 m (fig. 26 against the map); four windows under each arch (interior-images.md #33)
+export const WESTON_STRIP = 0.9; // E: fig. 28, the brick between an arched bay's quoins and an end block
+export const WESTON_END_PROJECTION = 1.2; // E: the end blocks' return faces in interior-images.md #33 and #35, face-on
+export const WESTON_END_FROM = WESTON_PAVILION_HALF + WESTON_ARCH_BAY + WESTON_STRIP; // the end blocks' inner edges out from the door's middle, 15.8 m
+export const WESTON_WEST_END_Z = -137.2; // the west end block stops at the Kravis Wing's pier framing the court's glass end (roche-south/kravis.ts, Z −138.2..−137.2)
+export const WESTON_ARCH_SPAN = 6.4; // E: the arched bays' round arches over four-light windows (fig. 28; #33)
+export const WESTON_ARCH_SPRING = 2.0; // E: springing above L2, so the arch's keystone reaches the cornice (fig. 28; #33)
 export const LIGHT_WELL_B = [-30.1, -25.0, -97.2, -84.5] as const; // exterior.md light well (4): X0, X1, Z0, Z1
 export const LIGHT_WELL_C = [24.2, 36.7, -95.5, -84.4] as const; // exterior.md light well (2)
 

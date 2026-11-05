@@ -37,6 +37,12 @@ export const core = Object.freeze({
   vauxBrick: standard('core.vauxBrick', '#9a7971', 0.9),
   /** Weston's light grey stone base, piers, arches and cornice (Petrie Court photo). */
   westonStone: standard('core.westonStone', '#c4c0b7', 0.78),
+  /**
+   * The dark granite of the shafts of Weston's end blocks' columns (weston-ends.ts): about 0.37 of the light stone's value and warm grey, as
+   * interior-images.md #33 and #35 read them (two shafts in #33 sampled at 3c3733 and 38322d against the stone's a4a1a0; 0.37 in #35); polished, so
+   * smoother than the stone.
+   */
+  westonGranite: standard('core.westonGranite', '#4a4540', 0.45),
   /** The Medieval Sculpture Hall's plaster walls and vault (interior.md #dcd8d0). */
   hallPlaster: standard('core.hallPlaster', '#dcd8d0', 0.9),
   /** Dark marble and slate of the hall floor pattern. */

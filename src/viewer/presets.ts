@@ -67,7 +67,8 @@ export const PRESETS: readonly ViewPreset[] = [
   { id: 'int-medieval-hall-east', label: 'Medieval Sculpture Hall, looking east', group: 'interior', camera: look([0, L1 + EYE, -112.9], [0, L1 + 10.4, -92.9], 62) },
   { id: 'int-lehman-pyramid-up', label: 'Lehman Wing court, looking up', group: 'interior', camera: look([-11.3, LG + 1.5, -150.8], [3.5, 25.3, -150.8], 55.5) },
   // The collection's spaces that had no view of their own (src/model/collection/spaces-b.ts), each with its artworks in view.
-  { id: 'int-petrie-court', label: 'Petrie Court, looking west', group: 'interior', camera: look([-51.2, L1 + EYE, -70.4], [-57.8, L1 + 1.2, -112], 52) },
+  // The Petrie Court's camera stands 1.4 m clear of the east end block's podium (src/model/core/weston-ends.ts), which reaches 1.7 m out from the 1888 front.
+  { id: 'int-petrie-court', label: 'Petrie Court, looking west', group: 'interior', camera: look([-52.8, L1 + EYE, -70.4], [-57.8, L1 + 1.2, -112], 52) },
   { id: 'int-lehman-galleries', label: 'Lehman Wing, a paintings room', group: 'interior', camera: look([-18.5, L1 + EYE, -163.2], [-14.8, L1 + 1.9, -159.5], 72) },
   { id: 'int-great-hall-balcony-west', label: 'Great Hall balcony and its cases', group: 'interior', camera: look([28.6, L2 + EYE, -29.0], [-24, L2 + 0.9, -30.4], 55) },
   { id: 'int-european-paintings-600', label: 'European Paintings, gallery 600', group: 'interior', camera: look([6.2, L2 + EYE, -70.3], [-6, L2 + 2.6, -74.6], 76) },
