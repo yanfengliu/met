@@ -135,3 +135,14 @@ Codex found nothing. Claude found no major or minor problem and three nits, F55 
 | F57 | The heading margin is taken on the screen's west face, but the model builds the gate's jambs on the screen's line (`choir-screen.ts:192`), 0.1 m further; there the man's column crosses 1.10 m north and the margins are 0.07 m and 0.32°, so 0.28° is finer than the geometry supports (Claude 3) | Accepted | The script takes the jamb on the screen's west face and on its line: 1.09 and 1.10 m north, margins 0.06 and 0.07 m, 0.28 and 0.32°. The record says about 0.3°, gives both, and says the jamb's depth is not measured |
 
 Not a finding: Claude noted that F47's disposition says the surrounds read about 3.4 m "wherever 3.45 m stood", while P8's entry (`interior-images.md` #P8) keeps "about 3.45 m". That entry is right as it stands: it gives P8's own up-and-down reading, 3.46 m, not the pair's.
+
+## Verification
+
+- `npm run verify` passed on the reviewed tree, `0c39a0f` (`tmp/hall-windows/verify-7.log`), and on the merged tree that landed, `59451af` (`verify-8-merged.log`: 82 test files, 734 unit and 125 end-to-end tests). The Pages deploy of `59451af` succeeded.
+- Codex reproduced the output with Python 3.13.9. It checked the wall fit across all 729 sweep cases and on a synthetic partial circle, and recomputed every average, rounding and margin. It also compared the script's copies of the model's values with `constants.ts` and `frame.ts`. Claude checked by hand.
+- The repairs of F55 to F57, at `7c76f40`: run inside the repository, the script reproduces its output and reads the model's values from the tree. In a stand-in tree with `VAUX_OCULUS_Y` 20.4, or `VAUX_OCULUS` 2.2, it stops with its check's error. They change only the record and the script, so `npm run verify` was not run again, and no reviewer checked them.
+- Neither reviewer could fetch the photographs, so no one remeasured them; the repository never stores them. Claude's lane could not run Python or shell loops.
+
+## Round outcome
+
+Codex found nothing; Claude found three nits, F55 to F57. They were first left at the repair cap, then repaired at `7c76f40` on the owner's go-ahead, without another review. No finding remains open, and no reviewer dissented. The owner's open questions are the plan's F-owner-1 to F-owner-4.

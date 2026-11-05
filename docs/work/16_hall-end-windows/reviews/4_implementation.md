@@ -196,3 +196,14 @@ Neither lane found a major problem: Claude two minor findings and five nits, Cod
 | F54 | The heading margin was computed as atan((north − 1.03)/d) where rotating an off-axis ray needs atan(north/d) − atan(1.03/d): 0.28°, not 0.29° (Codex 1) | Accepted | The script takes the angles' difference; the record says 0.28° |
 
 Not a finding: Claude noted that `verify-6.log` does not name its revision. It ran on the tree committed as `4288b42`, whose only change under `src/` was the comment in `constants.ts`; the gate of this repair is `verify-7.log`.
+
+## Verification
+
+- `npm run verify` passed on the reviewed tree, `4288b42` (`tmp/hall-windows/verify-6.log`), and on the repairs' tree, committed as `0c39a0f` (`verify-7.log`: 732 unit and 125 end-to-end tests).
+- Codex reproduced the output and projected all 729 sweep cases forward for F38. It recomputed the friezes' statistics and the frieze heights on the screen's face, and gave every alternative's height unrounded. Claude recomputed by hand; its finding 1's figures are hand estimates, which the repaired script confirmed.
+- From `0c39a0f` the script asserts that the model takes the rounded average and glazing, though at that revision against its own copies of the model's values (F55).
+- Neither reviewer could fetch the photographs, so no one remeasured them; the repository never stores them. Claude's lane could not run Python or copy files.
+
+## Round outcome
+
+No major findings. Claude found two minor problems and five nits, Codex one nit, merged as F47 to F54. All were accepted and repaired at `0c39a0f`, among them fitting #29's circles on the wall. It was the unit's fifth repair, which reached the cap on automatic repairs (R11). `VAUX_OCULUS_Y` stayed 20.3 and `VAUX_OCULUS` 2.25. Review 5, focused and final, re-reviewed the repairs; none of this round's findings stayed open.
