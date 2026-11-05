@@ -1,6 +1,6 @@
 # Weston's pavilion and door at the floor map's place
 
-Status: active
+Status: complete
 Owner: Claude Code desktop session optimistic-mayer-d1fe0b (2026-11-04)
 Created: 2026-11-04
 Updated: 2026-11-04
@@ -32,7 +32,7 @@ Excluded: the front's extent and design east of the pavilion's first bay (the mo
 - [x] Every gate green: `npm run verify` on the final revision; `routes.spec.ts` three runs in a row at 1× and at 4×; the passage check red with the door at the old middle.
 - [x] The shots compared with main's; every changed image read at native size.
 - [x] Records: `interior.md` (the map's evidence, the photographs, what is open), `interior-images.md`, the spec's Weston's door item, `collection.md`, the devlog.
-- [ ] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished.
+- [x] Independent review by Codex and Claude with its findings resolved; merged to main and pushed through `tmp/land.sh`; the owner's render gallery republished.
 
 ## Implementation steps
 
@@ -43,8 +43,12 @@ Excluded: the front's extent and design east of the pavilion's first bay (the mo
 - [x] Review 0 (Codex and Claude, `reviews/0_implementation.md`): no blocker or major finding; Claude's F1 to F4 repaired in `515de57`, where `npm run verify` passed.
 - [x] Merged with main's newer work (work unit 15's follow-up, the canon sync and the review records) as `62ca6a1`: there `npm run verify` (744 unit tests, 126 e2e), `routes.spec.ts` three runs in a row at 1× and at 4×, and the shots against main's at `59313d0`, the same 30 images changed, all along Weston's front; the plain ends' cornice rendered at the court's two ends.
 - [x] Review 1 (Codex and Claude, `reviews/1_implementation.md`) of the repairs: two minor findings and three nits (F5 to F9), repaired in comments and records, F8 recorded; `npm run verify` on the repaired tree.
-- [ ] Land through `tmp/land.sh`; the gallery republished.
+- [x] Land: `tmp/land.sh` taken; origin's main had not moved since `62ca6a1`'s merge, so `748e9b6` went to it as a fast-forward; the Pages workflow built and deployed it. Gallery: the main checkout fast-forwarded (`tmp/ff-main.sh`), main's shots taken there (dirty only from another unit's reservation), the same 30 frames changed against the gallery's `59313d0` set, and the owner's gallery republished (version 15).
 
 ## Outcome
 
-Pending. Record the verified revision, checks and limitations at closure.
+Complete. Weston's 1888 pavilion, its porch and the door stand at the floor map's place, Z −100.97 (`src/model/core/constants.ts` `WESTON_PAVILION_Z`), 2.68 m east of the model's old middle, in the middle of gallery 529, where the middles of the map's door, of its galleries along the front and of its court agree within 1 cm. The front's bays are laid out from the pavilion (`src/model/core/weston-facade.ts`): five on the west and four on the east, with plain ends of 3.13 and 3.37 m under the bays' cornice, since the model's front still ends on the 1880 building's lines. The 528/529 wall stands on its map line and `clearOf` is gone; the passage check in `src/model/core/weston-door.test.ts` holds the doorway clear, red with the door at the old middle. The door works and is walked as before: the walks, the collection's zones and the e2e follow `WESTON_DOOR`.
+
+Merged to main at `748e9b6`, pushed through `tmp/land.sh` as a fast-forward of origin's main. `npm run verify` passed on `748e9b6`'s tree (744 unit tests, 126 e2e); on `62ca6a1`, the merge with main's newer work, which `748e9b6` changes only in comments and records, `npm run verify`, `routes.spec.ts` three runs in a row at 1× and at 4× and the shots passed, 34 of 64 within 9 of 255 in every channel against main's and the other 30 changed only along Weston's front, each read at native size. Reviews 0 and 1 (Codex and Claude) found nothing above minor; every finding is repaired but F8, which is recorded. The Pages workflow deployed `748e9b6`, and the owner's render gallery shows main's shots there (version 15).
+
+Left for the owner: the front east of the pavilion's first bay, where photographs #33 and #35 show a front of another design, with granite columns and blind stone panels, and the model's three further arched bays and plain end stand in for it; and the front's extent, from −138.3 to −69.0 on the 1880 building's lines, 1.2 m further west and 4.2 m less far east than the map's court (−137.10 to −64.83), with the Kravis Wing's court ending on the same lines. Recorded, not changed (F8): the west plain end's cornice, like the front's other trims, runs 0.1 m past the Kravis Wing's park face. Outside this unit: `src/model/frame.ts:99` and `src/model/hunt/stair.ts:169` still point to `vaux-shell.ts` for the gallery 600 doorway's lining, which work unit 15 moved to `vaux-east.ts`.
