@@ -147,3 +147,24 @@ Both lanes approved with findings, no blocker or major. Every finding was accept
 | F7 | The cross-ratio was said to come from the two columns' centres alone; a third point is needed (Claude F6). | Accepted: the third point was the second door's arch, at about 460 px, and the record did not name it. | `interior-images.md` #48 and `interior.md` name it. It was read roughly, and 100 px either way moves the results by under 20 px. |
 | F8 | #35's entry counted "four column capitals" past the last arch, where #48 and #49 show two columns (Claude F7). | Accepted. | Four capitals, which #48 and #49 show to be two columns' and the piers' pilaster capitals. |
 | F9 | `kravis.ts` still called the eighth door's square head an estimate out of view (Claude F8). | Accepted: #47 shows it. | The comment cites #47. |
+
+## Verification
+
+On `aad9170`, through `tmp/gate.sh`:
+- `npm run verify`: 769 unit tests, typecheck, lint, build, and 127 e2e tests in 10.3 min. A first run failed only test headroom on two tests the change does not touch, `scripts/window-station.test.ts` and the closure grid, under load: the whole suite took 41.7 s against 18.7 s when repeated. The repeat and the next verify passed.
+- `npm run shots`: 51 of 64 within 9 of 255 of the owner's gallery set (`cb0a862`). The other 13 change only where the court's south wall shows: the Petrie Court preset broadly, and in a few pixels the cuts, floors and plans over the court. The exception is one pixel of a glass pane's edge in `preset-front`, 16 of 255 apart.
+- `routes.spec.ts` with `walk.spec.ts`: three runs at 1× (23 passed each) and three at 4× (21 passed, the two frame budgets skipped).
+- Renders at native size from eight cameras: as #47, #48, #49 and #35, the café's front face-on, from inside the café, from gallery 549, and a plan cut at the main floor.
+- The red proofs each test's header names, each run.
+
+On the repairs, merged with origin's main (`0cfd010`, a canon sync of `AGENTS.md`) at `75abdd3`:
+- Each repaired check red as the findings say.
+- `npm run verify`: 770 unit tests and 127 e2e tests in 10.8 min. A first run failed only the Dendur hall's walking frame budget, with the frame 2 to 4 times slower than in every other run (a 7.9 ms interval against 4.2 ms, the GPU at 16.78 ms against 3 to 7 ms), so the machine was busy. It passed on the rerun, unchanged.
+- The shots: the same 13 changed.
+- The six load runs again, all passed.
+
+Not run: neither lane could view the photographs, and the reviewers' own test runs were refused by their limits (Claude) or the sandbox (Codex), which used a standalone adapter instead.
+
+## Round outcome
+
+Both lanes approved with findings. All ten were accepted and repaired; no material finding remains and there is no dissent. No further round: the findings were minor or nits, and their repairs are checked by the red proofs and the gates above.
