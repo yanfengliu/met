@@ -96,6 +96,10 @@
     {
       "id": 23,
       "theme": "core-east-face"
+    },
+    {
+      "id": 24,
+      "theme": "petrie-court-doors"
     }
   ]
 }

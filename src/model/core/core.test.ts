@@ -23,7 +23,7 @@
  * Both end blocks run 19.75 m and mirror each other about the door, piece for piece, but for the east block's coping, which divides where the
  * blocks' east line crosses it: each of its two lengths is the west's coping mirrored and cut there, the second stopping at the front's face (red with
  * the east block ending on that line, as it did before work unit 22, with a 1 m gap between the two lengths, and with the second's overhang lost).
- * The court wall's openings centre on the door, so the court's two ends stand symmetric about it.
+ * The court's two ends stand symmetric about the door (roche-south/kravis.ts COURT_ENDS_Z; red with its east end back on Z −69.0).
  */
 import { Box3, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -39,7 +39,7 @@ import { holeLining, holeOutline, openWall } from './arches.js';
 import { core } from './materials.js';
 import type { Hole } from './arches.js';
 import { KRAVIS_EAST_Z } from '../frame.js';
-import { COURT_OPENINGS_Z } from '../roche-south/kravis.js';
+import { COURT_ENDS_Z } from '../roche-south/kravis.js';
 import { B_SOUTH_X, COPING_TOP_Y, EAST_Z, PARAPET_Y, WESTON_ARCH_BAY, WESTON_EAST_END_Z, WESTON_END_FROM, WESTON_PAVILION_HALF, WESTON_PAVILION_Z, WESTON_WEST_END_Z } from './constants.js';
 import { END_BLOCKS, westonEndTrim, westonEndWalls } from './weston-ends.js';
 import { europeanPaintingsGlazing2023Steps, medievalHallSteps, vauxSteps, westonTuckermanSteps } from './index.js';
@@ -114,8 +114,8 @@ describe('core steps', () => {
     expect(length(east)).toBeCloseTo(length(west), 9);
     expect((west.outer + east.outer) / 2).toBeCloseTo(WESTON_PAVILION_Z, 9);
     expect(east.outer, "the east block ends at the court's east end (frame.ts KRAVIS_EAST_Z)").toBeCloseTo(KRAVIS_EAST_Z, 6);
-    const openings = COURT_OPENINGS_Z.reduce((a, z) => a + z, 0) / COURT_OPENINGS_Z.length;
-    expect(openings, "the court wall's openings, and so the court's two ends, centre on the door (roche-south/kravis.ts)").toBeCloseTo(WESTON_PAVILION_Z, 6);
+    const [courtWest, courtEast] = COURT_ENDS_Z;
+    expect((courtWest + courtEast) / 2, "the court's two ends stand symmetric about the door (roche-south/kravis.ts)").toBeCloseTo(WESTON_PAVILION_Z, 6);
     const step: StepDef = {
       id: 'weston-end-blocks',
       chapter: 'weston-tuckerman-1894',

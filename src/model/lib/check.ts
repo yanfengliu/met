@@ -391,3 +391,33 @@ export function openAlong(geometry: THREE.BufferGeometry, direction: THREE.Vecto
   }
   return total < MIN_OPEN ? null : { length: total, at };
 }
+
+/** A geometry's triangles placed by `matrix`, as their corners. */
+export function worldTriangles(geometry: THREE.BufferGeometry, matrix: THREE.Matrix4): [THREE.Vector3, THREE.Vector3, THREE.Vector3][] {
+  const position = geometry.getAttribute('position');
+  const index = geometry.getIndex();
+  const corner = (c: number): THREE.Vector3 => new THREE.Vector3().fromBufferAttribute(position, index === null ? c : index.getX(c)).applyMatrix4(matrix);
+  const out: [THREE.Vector3, THREE.Vector3, THREE.Vector3][] = [];
+  for (let c = 0; c + 2 < (index?.count ?? position.count); c += 3) out.push([corner(c), corner(c + 1), corner(c + 2)]);
+  return out;
+}
+
+/**
+ * Whether the segment from `origin` along the unit vector `direction`, up to `length` past it, meets the triangle (a, b, c), its edges included
+ * (Möller–Trumbore). A segment in the triangle's plane meets it nowhere, nor one that only reaches its plane at either end.
+ */
+export function segmentMeets(origin: THREE.Vector3, direction: THREE.Vector3, length: number, a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3): boolean {
+  const e1 = new THREE.Vector3().subVectors(b, a);
+  const e2 = new THREE.Vector3().subVectors(c, a);
+  const p = new THREE.Vector3().crossVectors(direction, e2);
+  const det = e1.dot(p);
+  if (Math.abs(det) < 1e-12) return false;
+  const s = new THREE.Vector3().subVectors(origin, a);
+  const u = s.dot(p) / det;
+  if (u < 0 || u > 1) return false;
+  const q = new THREE.Vector3().crossVectors(s, e1);
+  const v = direction.dot(q) / det;
+  if (v < 0 || u + v > 1) return false;
+  const t = e2.dot(q) / det;
+  return t > 0 && t < length;
+}

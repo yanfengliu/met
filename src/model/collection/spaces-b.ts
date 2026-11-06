@@ -8,7 +8,7 @@ import { MAIN_FLOOR_Y, SECOND_FLOOR_Y } from '../frame.js';
 import { HALL_WEST_Z, HALL_X, WALL_BACK_Z } from '../hunt/dims.js';
 import { MAP_WALLS } from '../mmw/plan-data.js';
 import { PARTITION as MMW_PARTITION } from '../mmw/structure.js';
-import { COURT_X0 } from '../roche-south/kravis.js';
+import { COURT_DOORS, COURT_X0 } from '../roche-south/kravis.js';
 import { ROOM_WALL, ROOM_WALLS } from '../roche-south/lehman.js';
 import { collectionStep } from './place.js';
 import type { CollectionStepDef, Placement } from './place.js';
@@ -18,9 +18,16 @@ const FACE = { north: Math.PI / 2, south: -Math.PI / 2, east: 0, west: Math.PI }
 // --- The Petrie European Sculpture Court (gallery 548; roche-south/kravis.ts, core/weston-facade.ts) -------------------------------------------
 // A row down the court's middle, between its limestone south wall (X −61.45) and Weston's 1888 front (X −49.7), facing east along it, with a gap
 // from Z −112.5 to −94.5 where Weston's porch stands 2.85 m out (Z −104.3..−97.6) and the door's passage (Z −102.62..−99.33) opens into the
-// court; the relief on the south wall where it stands solid between two of its openings (Z −115.67..−108.27), and the bust in a vitrine before the
-// wall where it stands solid between two more (Z −93.67..−86.27): roche-south/kravis.ts COURT_OPENINGS_Z, centred on Weston's door since work unit 22.
+// court; the relief on the south wall in the middle of its solid stretch between the floor map's second and third doors (Z −113.11..−108.87), and the
+// bust in a vitrine before the wall in the middle of the stretch between the fifth and sixth (Z −93.05..−88.84): roche-south/kravis.ts COURT_DOORS
+// (work unit 24).
 const PETRIE_X = (COURT_X0 + B_SOUTH_X) / 2;
+/** The middle of the court wall's solid stretch between its doors `k` and `k` + 1, counted from 1 west to east (roche-south/kravis.ts COURT_DOORS). */
+function betweenCourtDoors(k: number): number {
+  const [west, east] = [COURT_DOORS[k - 1], COURT_DOORS[k]];
+  if (west === undefined || east === undefined) throw new Error(`the court wall has no doors ${String(k)} and ${String(k + 1)}`);
+  return (west.z1 + east.z0) / 2;
+}
 const PETRIE: readonly Placement[] = [
   { id: 204758, x: PETRIE_X, z: -131.5, floor: MAIN_FLOOR_Y, facing: FACE.east },
   { id: 204619, x: PETRIE_X, z: -125.0, floor: MAIN_FLOOR_Y, facing: FACE.east },
@@ -30,8 +37,8 @@ const PETRIE: readonly Placement[] = [
   { id: 204620, x: PETRIE_X, z: -88.5, floor: MAIN_FLOOR_Y, facing: FACE.east },
   { id: 204804, x: PETRIE_X, z: -82.0, floor: MAIN_FLOOR_Y, facing: FACE.east },
   { id: 192714, x: PETRIE_X, z: -76.0, floor: MAIN_FLOOR_Y, facing: FACE.east },
-  { id: 231004, x: COURT_X0, z: -114.0, floor: MAIN_FLOOR_Y, facing: FACE.north },
-  { id: 824469, x: COURT_X0 + 0.9, z: -92.0, floor: MAIN_FLOOR_Y, facing: FACE.north },
+  { id: 231004, x: COURT_X0, z: betweenCourtDoors(2), floor: MAIN_FLOOR_Y, facing: FACE.north },
+  { id: 824469, x: COURT_X0 + 0.9, z: betweenCourtDoors(5), floor: MAIN_FLOOR_Y, facing: FACE.north },
 ];
 
 export const petrieSpace: CollectionStepDef = {

@@ -26,6 +26,7 @@ import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import type { GroundHit } from '../../walk/collision.js';
 import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAIR_CENTRE_X_INNER, HUNT_PAIR_CENTRE_X_OUTER } from '../frame.js';
+import { segmentMeets, worldTriangles } from '../lib/check.js';
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
 import { palette } from '../palette.js';
@@ -272,23 +273,6 @@ describe('the walk routes through the wing', () => {
   });
 });
 
-/** Whether the segment from `o` along `d`, up to `length`, meets the triangle (a, b, c) (Möller–Trumbore). */
-function segmentMeets(o: Vector3, d: Vector3, length: number, a: Vector3, b: Vector3, c: Vector3): boolean {
-  const e1 = new Vector3().subVectors(b, a);
-  const e2 = new Vector3().subVectors(c, a);
-  const p = new Vector3().crossVectors(d, e2);
-  const det = e1.dot(p);
-  if (Math.abs(det) < 1e-12) return false;
-  const s = new Vector3().subVectors(o, a);
-  const u = s.dot(p) / det;
-  if (u < 0 || u > 1) return false;
-  const q = new Vector3().crossVectors(s, e1);
-  const v = d.dot(q) / det;
-  if (v < 0 || u + v > 1) return false;
-  const t = e2.dot(q) / det;
-  return t > 0 && t < length;
-}
-
 describe("the 1880 east front's openings", () => {
   it('are clear through the core’s east wall and half a metre on into the Hunt wing (work unit 23, reviews 0 and 1)', () => {
     // A grid of 9 by 9 lines through each clear opening the front lists (src/model/core/vaux-east.ts eastOpenings), 5 cm in from its edges, from the
@@ -299,7 +283,6 @@ describe("the 1880 east front's openings", () => {
     const length = BACK_Z + 0.5 - z0;
     const steps = [...AREA, ...vauxSteps, ...westonTuckermanSteps];
     const problems = new Set<string>();
-    const corner = [new Vector3(), new Vector3(), new Vector3()] as const;
     const along = new Vector3(0, 0, 1);
     for (const step of steps) {
       collectStep(step).pieces.forEach((piece, i) => {
@@ -309,14 +292,7 @@ describe("the 1880 east front's openings", () => {
         if (box.min.z > z0 + length || box.max.z < z0) return;
         const near = openings.filter((o) => box.max.x > o.x0 && box.min.x < o.x1 && box.max.y > o.y0 && box.min.y < o.y1);
         if (near.length === 0) return;
-        const position = g.getAttribute('position');
-        const index = g.index;
-        const count = index === null ? position.count : index.count;
-        const triangles: [Vector3, Vector3, Vector3][] = [];
-        for (let t = 0; t + 2 < count; t += 3) {
-          corner.forEach((c, k) => c.fromBufferAttribute(position, index === null ? t + k : index.getX(t + k)).applyMatrix4(piece.matrix));
-          triangles.push([corner[0].clone(), corner[1].clone(), corner[2].clone()]);
-        }
+        const triangles = worldTriangles(g, piece.matrix);
         for (const o of near) {
           for (let ix = 0; ix < 9; ix++) {
             for (let iy = 0; iy < 9; iy++) {

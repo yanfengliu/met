@@ -2,14 +2,15 @@
  * The Henry R. Kravis Wing and the Carroll and Milton Petrie European Sculpture Court (KRJDA, 1990), last wing of chapter `roche-south-1990`.
  * Sources: history.md section 8; interior.md, "Other skylit volumes" (the court, map gallery 548, X −61.44 to −51.24) and the Petrie Court photograph
  * (interior-images.md #33): Weston's 1888 brick-and-stone south facade, built by the core area on X −49.7, is the court's north wall; the
- * court's south wall is limestone; a long glass roof with a central ridge spans the court (orthophoto: ridge at X −56.2, hipped ends near Z −128 and
+ * court's south wall is limestone, with the floor map's eight doors from gallery 549 into the court and windows over its arched ones from the second
+ * floor (work unit 24; COURT_DOORS); a long glass roof with a central ridge spans the court (orthophoto: ridge at X −56.2, hipped ends near Z −128 and
  * −85, flatter glazing beyond them). Every line of this block but the park face Z −138.2 belongs to an older block, which builds the wall there.
  */
 import { Matrix4 } from 'three';
 
 import type { Kit, StepDef } from '../../build/types.js';
 import { CORE_COPING_TOP_Y, EAST_FACE_Z_CORE, GROUND_FLOOR_Y, KRAVIS_EAST_Z, KRAVIS_PARAPET_Y, MAIN_FLOOR_Y } from '../frame.js';
-import { hippedSkylight, laylight, ridgeSkylight, wall } from '../lib/index.js';
+import { hippedSkylight, laylight, ridgeSkylight, wall, type Opening } from '../lib/index.js';
 import { palette } from '../palette.js';
 import { OUTER_WALL, ROCHE_SECOND_FLOOR_Y } from './blocks.js';
 import { mat } from './materials.js';
@@ -111,19 +112,78 @@ function parkFace(kit: Kit): void {
   kit.add(UNIT_BOX, palette.limestone, wallAlong([COURT_X0 + 1.2, Z_WEST], [X1 - 1.0, Z_WEST], BASE_Y, MAIN_FLOOR_Y, OUTER_WALL), 1);
 }
 
-/** The court's limestone south wall's openings, along it from its middle toward the court's west end (it runs east to west: court() below). */
-const COURT_OPENING_X = [-27.5, -16.5, -5.5, 5.5, 16.5, 27.5] as const;
-/** World Z of the middles of the court wall's six openings, east to west: symmetric about Weston's door, as the court is (work unit 22). */
-export const COURT_OPENINGS_Z: readonly number[] = COURT_OPENING_X.map((x) => (Z_EAST + Z_IN) / 2 - x);
-/** The court's limestone south wall: tall openings into the galleries at the main floor and windows from the second floor. */
+/** The court's two ends, west and east: symmetric about Weston's door (work unit 22; core/core.test.ts). */
+export const COURT_ENDS_Z: readonly [number, number] = [Z_IN, Z_EAST];
+
+/**
+ * D: the floor map's eight doors from gallery 549 into the court, on X −61.44 (research/cache/lm_features.json, Floor 1; interior.md, Other skylit
+ * volumes; work unit 24), world Z spans, west to east. The first seven stand in pairs about Weston's door, each pair's middles' mean within 1 cm of its
+ * axis and the fourth door's middle 4.5 cm east of it; the eighth, at the court's east end, has no partner.
+ */
+const COURT_DOOR_SPANS: readonly (readonly [number, number])[] = [
+  [-125.56, -120.97],
+  [-115.4, -113.11],
+  [-108.87, -106.58],
+  [-102.11, -99.74],
+  [-95.34, -93.05],
+  [-88.84, -86.52],
+  [-80.95, -76.38],
+  [-74.63, -70.07],
+];
+/** A door from gallery 549 into the court: its world Z span, west to east, and whether its head is a round arch (else square). */
+export interface CourtDoor {
+  readonly z0: number;
+  readonly z1: number;
+  readonly arched: boolean;
+}
+/**
+ * The court's doors, at the map's spans, the narrow ones round-arched and the wide ones square-headed, as the Petrie Court photograph taken from the
+ * balcony at the court's east end shows them (interior-images.md #35): its five round arches stand where the map has the second to the sixth doors (one
+ * perspective map fits their middles in a 900 px copy to those doors' within 0.5 px, to the third to the seventh's only within 8 px), the seventh door, nearest, is square-headed between
+ * pilasters under an entablature, and past the fifth arch there is none, so the first door, the seventh's mirror about Weston's door, is not arched
+ * either. E: the eighth, out of the photograph's view, square-headed as the seventh, its twin in width.
+ */
+export const COURT_DOORS: readonly CourtDoor[] = COURT_DOOR_SPANS.map(([z0, z1]) => ({ z0, z1, arched: z1 - z0 < 3 }));
+/** E: the arches spring 4.25 m over the court's floor, so their crowns stand at 5.4 m, the old openings' head. */
+const DOOR_SPRING = 4.25;
+/** E: the square-headed doors as tall as the arches. */
+const SQUARE_DOOR_HEIGHT = 5.4;
+/**
+ * A window over each arched door, the sill 0.9 m over the second floor: #35 shows the upper storey with a tall narrow window centred over each arch, about
+ * half its width, recessed blind panels between them and a blind panel over the square-headed doors. E: its size, which #35, scaled from an arch's crown,
+ * gives within about half a metre.
+ */
+const COURT_WINDOW = { width: 1.2, height: 3.0, sill: ROCHE_SECOND_FLOOR_Y - MAIN_FLOOR_Y + 0.9 } as const;
+/** A clear opening through the court's south wall: its world Z span, west to east, and over the court's floor its sill, springing and crown (a square head springs at its crown). */
+export interface CourtOpening {
+  readonly name: string;
+  readonly z0: number;
+  readonly z1: number;
+  readonly sill: number;
+  readonly spring: number;
+  readonly crown: number;
+}
+/** The court wall's openings, as the wall cuts them: its doors, west to east, then the windows over the arched ones. */
+export function courtOpenings(): CourtOpening[] {
+  const doors = COURT_DOORS.map(({ z0, z1, arched }, k): CourtOpening => {
+    const spring = arched ? DOOR_SPRING : SQUARE_DOOR_HEIGHT;
+    return { name: `door ${String(k + 1)}`, z0, z1, sill: 0, spring, crown: arched ? spring + (z1 - z0) / 2 : spring };
+  });
+  const top = COURT_WINDOW.sill + COURT_WINDOW.height;
+  const windows = COURT_DOORS.flatMap(({ z0, z1, arched }, k): CourtOpening[] => {
+    const mid = (z0 + z1) / 2;
+    return arched ? [{ name: `window over door ${String(k + 1)}`, z0: mid - COURT_WINDOW.width / 2, z1: mid + COURT_WINDOW.width / 2, sill: COURT_WINDOW.sill, spring: top, crown: top }] : [];
+  });
+  return [...doors, ...windows];
+}
+/** A world Z on the court wall as the wall's own x: it runs east to west (court() below), its middle at the court's. */
+const alongWall = (z: number): number => (Z_EAST + Z_IN) / 2 - z;
+/** The court's limestone south wall: the doors into the galleries at the main floor and the windows from the second floor. */
 const COURT_SOUTH = wall({
   width: Z_EAST - Z_IN,
   height: PETRIE_EAVE_Y - MAIN_FLOOR_Y,
   thickness: COURT_WALL,
-  openings: [
-    ...COURT_OPENING_X.map((x) => ({ x, y: 0, width: 3.6, height: 5.4 })),
-    ...COURT_OPENING_X.map((x) => ({ x, y: ROCHE_SECOND_FLOOR_Y - MAIN_FLOOR_Y + 0.9, width: 2.4, height: 2.6 })),
-  ],
+  openings: courtOpenings().map(({ z0, z1, sill, spring, crown }): Opening => ({ shape: crown > spring ? 'arch' : 'rect', x: alongWall((z0 + z1) / 2), y: sill, width: z1 - z0, height: crown - sill })),
 });
 
 function court(kit: Kit): void {
@@ -219,7 +279,7 @@ const FOCUS_WING = { kind: 'box', min: [-89, -4, -139], max: [-49, 24, -64] } as
 export const kravisSteps: readonly StepDef[] = [
   { id: 'kravis-structure', chapter: CHAPTER, year: YEAR, title: 'Kravis Wing floors', detail: 'Footings and floor plates of the wing that fills the corner between the Rockefeller and Wallace wings and the 1888 south wing.', motion: { kind: 'rise' }, stagger: 'order', focus: FOCUS_WING, build: structure },
   { id: 'kravis-park-face', chapter: CHAPTER, year: YEAR, title: 'Kravis Wing face to the park', detail: 'The limestone face on the park, open at the café and full height at the west end of the sculpture court.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: parkFace },
-  { id: 'petrie-court', chapter: CHAPTER, year: YEAR, title: 'The Petrie European Sculpture Court', detail: 'A court 12 m wide and 72 m long whose north wall is Weston’s 1888 brick and stone facade, with a limestone wall opposite.', motion: { kind: 'grow' }, stagger: 'order', focus: { kind: 'view', position: [-70, 30, -150], target: [-56, 6, -100] }, build: court },
+  { id: 'petrie-court', chapter: CHAPTER, year: YEAR, title: 'The Petrie European Sculpture Court', detail: 'A court 12 m wide and 72 m long whose north wall is Weston’s 1888 brick and stone facade, with a limestone wall opposite, eight doors through it from the galleries.', motion: { kind: 'grow' }, stagger: 'order', focus: { kind: 'view', position: [-70, 30, -150], target: [-56, 6, -100] }, build: court },
   { id: 'kravis-galleries', chapter: CHAPTER, year: YEAR, title: 'European sculpture galleries', detail: 'Gallery walls of the European sculpture and decorative arts rooms and the Petrie Court Café, with exhibition galleries above.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: galleries },
   { id: 'kravis-roof', chapter: CHAPTER, year: YEAR, title: 'Kravis Wing roofs', detail: 'Roofs over the galleries, a plant floor on top, and the steel beam along the old facade for the court’s glass roof.', motion: { kind: 'drop' }, stagger: 'order', focus: FOCUS_WING, build: roof },
   { id: 'petrie-glass', chapter: CHAPTER, year: YEAR, title: 'Glass roof over the sculpture court', detail: 'A long glass roof with a central ridge over the court, flatter glazing at its ends, and a glass wall at its west end facing the park.', motion: { kind: 'drop' }, stagger: 'order', weight: 1.5, focus: { kind: 'view', position: [-82, 42, -150], target: [-56, 16, -103] }, build: courtGlass },

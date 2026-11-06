@@ -12,7 +12,8 @@
  * - it is 1 m clear of the walking routes R1–R9 (src/model/hunt/routes.ts; R5 into gallery 600, R6 into the Engelhard Court, R7 into the Petrie Court, R8 and R9 through the 1880 fronts' openings) beyond the walker's
  *   radius, of the Weston door's passage, of the swing of the doors that open (the Hunt central arch's three, the Weston door), of the doorway into
  *   gallery 600 (hunt/stair.ts), of the Dendur gate's threshold and rail (roche-north/plan.ts), of the Dendur pool, and of the passages into the
- *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts), through the choir screen's gate (core/choir-screen.ts), through the 1880 west
+ *   Engelhard Court and the Petrie Court's wing (mmw/party-walls.ts), through the Petrie Court's south wall's eight doors (roche-south/kravis.ts
+ *   COURT_DOORS) and 1 m out each side of it, through the choir screen's gate (core/choir-screen.ts), through the 1880 west
  *   front's doorways beside the entrance (core/vaux-front.ts) and the corridors in its east front's inner arches (core/vaux-east.ts), on routes R8 and
  *   R9, and 6 m either side of their wall or screen, beyond the walker's radius;
  * - each drawn object finds its own artwork in its material's table (material.ts): its entry is where the object stands, every other 5 cm or more away;
@@ -53,6 +54,7 @@ import { MORGAN, PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import type { Route } from '../hunt/routes.js';
 import { GATE_RAIL, GATE_THRESHOLD, PLATFORM_Y, POOL } from '../roche-north/plan.js';
+import { COURT_DOORS, COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
 import { artTableOf, giltMaterial, plinthMaterial, vitrineGlass } from './material.js';
 import { SPACES } from './picks.js';
 import { entryOf, stepArtworks } from './place.js';
@@ -96,6 +98,8 @@ const ZONES: readonly Zone[] = [
   // The passages through the party walls on Z −96.0 (into the Engelhard Court) and the south link's park end, Z −64.94 (into the Petrie Court's wing), 6 m out each side, as Weston's.
   { name: 'Engelhard Court passage', y: MAIN_FLOOR_Y, min: [ENGELHARD_PASSAGE.a, MORGAN.z0 - 6], max: [ENGELHARD_PASSAGE.b, MORGAN.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
   { name: 'Petrie Court passage', y: MAIN_FLOOR_Y, min: [PETRIE_PASSAGE.a, SOUTH_LINK.z0 - 6], max: [PETRIE_PASSAGE.b, SOUTH_LINK.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
+  // The Petrie Court's doors from gallery 549 (work unit 24), between their jambs, through the court's south wall and 1 m out each side of it.
+  ...COURT_DOORS.map((d, k): Zone => ({ name: `Petrie Court door ${String(k + 1)}`, y: MAIN_FLOOR_Y, min: [COURT_X0 - COURT_WALL - 1, d.z0], max: [COURT_X0 + 1, d.z1], margin: CLEARANCE })),
   // The Valladolid choir screen's open gate, between its jambs (core/choir-screen.ts), 6 m out each side, as Weston's.
   { name: 'choir screen gate', y: MAIN_FLOOR_Y, min: [-GATE_CLEAR, SCREEN_Z - 6], max: [GATE_CLEAR, SCREEN_Z + 6], margin: CLEARANCE + BODY.radius },
   // The 1880 west front's doorways beside the entrance, between their jambs, and the corridors in its east front's inner arches, 6 m out each side.

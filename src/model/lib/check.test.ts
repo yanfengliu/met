@@ -6,12 +6,14 @@
  * On fixtures it finds closed solids closed and a box with no bottom open by its footprint, 14 m; it goes red without its joining of ends 30 µm apart
  * or its splitting of edges.
  * Bound: fixtures only; src/model/closure.test.ts runs it over the finished model.
+ * The line cast the openings tests share (`segmentMeets` over `worldTriangles`, src/model/hunt/hunt.test.ts and src/model/roche-south/roche-south.test.ts)
+ * on a placed box: a segment through it meets it, one stopping short or beside it does not, nor one in a triangle's own plane.
  */
 import { BoxGeometry, CylinderGeometry, Matrix4, PlaneGeometry, SphereGeometry, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { MeshBuilder } from './builder.js';
-import { openAlong } from './check.js';
+import { openAlong, segmentMeets, worldTriangles } from './check.js';
 
 const UP = new Vector3(0, 1, 0);
 
@@ -81,5 +83,32 @@ describe('openAlong', () => {
     expect(openAlong(box(['-y']).build(), turned)).not.toBeNull();
     expect(openAlong(box(['+x', '-x']).build(), turned)).toBeNull();
     expect(openAlong(box(['+z']).build(), turned)).not.toBeNull();
+  });
+});
+
+describe('segmentMeets over worldTriangles', () => {
+  // A 1 m box placed with its middle at (5, 0, 0).
+  const triangles = worldTriangles(new BoxGeometry(1, 1, 1), new Matrix4().makeTranslation(5, 0, 0));
+  const meets = (origin: Vector3, direction: Vector3, length: number): boolean => triangles.some(([a, b, c]) => segmentMeets(origin, direction, length, a, b, c));
+  const east = new Vector3(1, 0, 0);
+
+  it('places the triangles by the matrix', () => {
+    expect(triangles.length).toBe(12);
+    expect(Math.min(...triangles.flat().map((v) => v.x))).toBeCloseTo(4.5, 9);
+    expect(Math.max(...triangles.flat().map((v) => v.x))).toBeCloseTo(5.5, 9);
+  });
+
+  it('meets the box along a segment through it, or into it, and not short of it or beside it', () => {
+    expect(meets(new Vector3(0, 0.2, 0.1), east, 10), 'through').toBe(true);
+    expect(meets(new Vector3(0, 0.2, 0.1), east, 4.6), 'into its west face').toBe(true);
+    expect(meets(new Vector3(0, 0.2, 0.1), east, 4.4), 'short of it').toBe(false);
+    expect(meets(new Vector3(0, 0.6, 0.1), east, 10), 'beside it').toBe(false);
+    expect(meets(new Vector3(10, 0.2, 0.1), east, 10), 'beyond it, looking away').toBe(false);
+  });
+
+  it("meets a triangle across its plane, and not along it", () => {
+    const [a, b, c] = [new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(0, 0, 1)];
+    expect(segmentMeets(new Vector3(0.2, 1, 0.2), new Vector3(0, -1, 0), 2, a, b, c), 'across').toBe(true);
+    expect(segmentMeets(new Vector3(-1, 0, 0.2), east, 10, a, b, c), 'along').toBe(false);
   });
 });
