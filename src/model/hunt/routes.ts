@@ -160,7 +160,7 @@ export const ROUTE_R8: Route = {
 
 /** The Hunt Wing's main-floor slab, bare in its galleries; the Great Hall's marble stands 3 cm on it (src/model/hunt/podium.ts, hall.ts). */
 export const HUNT_SLAB_TOP_Y = MAIN - 0.03;
-/** R9's ends in galleries 300 and 301, 9 m east of the core's east front; its crossing in gallery 304, 2.5 m from the front's inner face and from the iron posts on Z −75.06 (src/model/core/vaux-shell.ts). */
+/** R9's ends in galleries 300 and 301, 9 m east of the core's east front; its crossing in gallery 304, 2.5 m from the front's inner face, clear of the iron posts on Z −75.06 (src/model/core/vaux-shell.ts). */
 const BYZANTINE_Z = EAST_Z + 9;
 const GALLERY_304_Z = INNER_EAST_Z - 2.5;
 const corridorMid = (s: number): number => {

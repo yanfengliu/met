@@ -49,6 +49,11 @@ const TIERS = [
 ] as const;
 /** An end block's main-floor door, cut through its bare brick. */
 const END_DOOR_HEIGHT = 4.0;
+/**
+ * Where the floor map's second-floor doors through the side walls, X ±14.79 from Z −68.85 to −66.78, begin; they run on to the east wall's inner
+ * face, inside the core since its east face moved to the map's line (work unit 23, review 0), as high as the side walls' other second-floor doors.
+ */
+const EAST_END_DOOR_Z = -68.85;
 
 /** The openings of one bay: a hall bay's arch, blind or a door, or an end bay's round-headed openings; and today's doors. */
 function sideBay(hall: boolean, door: boolean): BufferGeometry {
@@ -85,7 +90,11 @@ export function vauxSideWalls(kit: Kit): void {
     }
     const inner = side === 'south' ? x + PARTY_WALL : x - PARTY_WALL;
     addBox(kit, core.vauxBrick, x, WALL_BASE_Y, INNER_WEST_Z, inner, WALL_BASE_Y + height, SIDE_LINES[0] ?? 0, 0);
-    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, SIDE_LINES[SIDE_LINES.length - 1] ?? 0, inner, WALL_BASE_Y + height, INNER_EAST_Z, SIDE_LINES.length);
+    // Beyond the last bay to the east wall, the floor map's second-floor door into gallery 603 or 633 (EAST_END_DOOR_Z to the wall's inner face).
+    const last = SIDE_LINES[SIDE_LINES.length - 1] ?? 0;
+    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, last, inner, WALL_BASE_Y + height, EAST_END_DOOR_Z, SIDE_LINES.length);
+    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, EAST_END_DOOR_Z, inner, L2, INNER_EAST_Z, SIDE_LINES.length);
+    addBox(kit, core.vauxBrick, x, L2 + SECOND_DOOR.height, EAST_END_DOOR_Z, inner, WALL_BASE_Y + height, INNER_EAST_Z, SIDE_LINES.length);
   }
 }
 

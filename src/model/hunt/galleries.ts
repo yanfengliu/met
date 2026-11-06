@@ -10,6 +10,7 @@ import { palette } from '../palette.js';
 import {
   BACK_Z,
   CROSS_HALL_FRONT_Z,
+  CROSS_HALL_SIDE_X,
   EXT_FACE_Z,
   EXT_NORTH_X,
   EXT_SOUTH_X,
@@ -17,16 +18,18 @@ import {
   HALL_END_WALL_X,
   HALL_WEST_WALL_Z,
   MAIN,
+  PARTITION_T,
   SECOND,
   SLAB,
   STAIR_HALF,
   WING_DOORS_NORTH,
   WING_DOORS_SOUTH,
 } from './dims.js';
+import { EAST_FRONT_SECOND_DOOR_WIDTH, EAST_FRONT_SECOND_DOOR_X } from '../frame.js';
 import { box } from './shapes.js';
 import { GALLERY_ROOF_Y, WING_ROOF_Y } from './roof.js';
 
-const WALL = 0.4;
+const WALL = PARTITION_T;
 const DOOR = 2.0;
 const SIDE = 1.2;
 
@@ -88,12 +91,14 @@ export const gallerySteps: readonly StepDef[] = [
         partition(kit, [-45.6, -13.65], [-HALL_END_WALL_X, -13.65], lo, wingTop, [0.5], order);
         partition(kit, [-45.6, -21.6], [-HALL_END_WALL_X, -21.6], lo, wingTop, [0.5], order);
         partition(kit, [-45.6, front], [-45.6, HALL_WEST_WALL_Z], lo, wingTop, f === 0 ? WING_DOORS_SOUTH : [0.2, 0.62], order);
-        for (const x of [-9.75, 9.75]) partition(kit, [x, HALL_WEST_WALL_Z], [x, BACK_Z], lo, hi, [0.2, 0.55, 0.85], order);
+        for (const x of [-CROSS_HALL_SIDE_X, CROSS_HALL_SIDE_X]) partition(kit, [x, HALL_WEST_WALL_Z], [x, BACK_Z], lo, hi, [0.2, 0.55, 0.85], order);
         partition(kit, [-28.67, -37.72], [-28.67, -57.53], lo, hi, [0.5], order);
         partition(kit, [-28.67, -37.72], [-9.75, -37.72], lo, hi, [0.5], order);
         partition(kit, [-28.67, -57.53], [-9.75, -57.53], lo, hi, [0.5], order);
         partition(kit, [44.38, HALL_WEST_WALL_Z], [44.38, -65.65], lo, hi, [0.3, 0.7], order);
-        partition(kit, [9.75, -65.65], [44.38, -65.65], lo, hi, [0.5], order);
+        // On the second floor a door on the 1880 east front's second-floor door on this side, the map's door on Z −65.61 (frame.ts EAST_FRONT_SECOND_DOOR_*).
+        const door = [EAST_FRONT_SECOND_DOOR_X - EAST_FRONT_SECOND_DOOR_WIDTH / 2, EAST_FRONT_SECOND_DOOR_X + EAST_FRONT_SECOND_DOOR_WIDTH / 2] as const;
+        partition(kit, [9.75, -65.65], [44.38, -65.65], lo, hi, f === 1 ? [door, 0.5] : [0.5], order);
       });
       // Second floor only: the Balcony Lounge and the shop's walls on the north, gallery 690's on the south.
       partition(kit, [20.12, HALL_WEST_WALL_Z], [20.12, -55.16], SECOND, GALLERY_ROOF_Y - 0.4, [0.5], 4);

@@ -3,11 +3,11 @@
  * Corinthian columns on the walls' tops carry a full entablature with a deep modillioned cornice, in front of an arcade of five arches on each side that
  * opens onto the galleries beside the stair; a white barrel vault with transverse ribs; the arched opening into the cross hall at the top.
  * Plan: the floor map in the canonical frame (interior.md, The Grand Staircase; Z − 3.1): flight X ±3.69, foot at Z −36.57, landing −46.87..−49.88,
- * top −56.89, cross hall −59.74..−66.79. Risers and goings are not published: 27 and 19 risers of 0.149 m divide the measured rise and run (an estimate).
+ * top −56.89, cross hall −59.74..−66.79, its back wall on the map's line and so 0.8 m inside the room since work unit 23 (dims.ts CROSS_HALL_BACK_Z). Risers and goings are not published: 27 and 19 risers of 0.149 m divide the measured rise and run (an estimate).
  * Evidence: P3 (颐园居 2024) for the coupled columns, the entablature and its modillions, the ribbed vault and the arched opening at the top; LPC77 for
  * the five arches a side and Bitter's angels in their spandrels (blocked out here as plain spandrels). The cross hall's back wall opens on the axis into
- * gallery 600 through a round-arched doorway (interior.md, The Grand Staircase; interior-images.md #36 and #42; work unit 2, M1), with a stone-lined
- * passage behind it through the core's east wall.
+ * gallery 600 through a round-arched doorway (interior.md, The Grand Staircase; interior-images.md #36 and #42; work unit 2, M1), the passage running on
+ * through the core's east wall, on which it stands, lined in granite (src/model/core/vaux-east.ts).
  */
 import type { Kit, StepDef } from '../../build/types.js';
 import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH } from '../frame.js';
@@ -16,10 +16,12 @@ import { archivolt, barrelVault, columnParts, entablature, stairFlight, stairLan
 import {
   BACK_Z,
   CROSS_HALL_BACK_Z,
+  CROSS_HALL_SIDE_X,
   CROSS_HALL_FRONT_Z,
   CROSS_HALL_HALF,
   HALL_WEST_WALL_Z,
   MAIN,
+  PARTITION_T,
   SECOND,
   SLAB,
   STAIR_FOOT_Z,
@@ -167,7 +169,8 @@ export const stairSteps: readonly StepDef[] = [
       // The back wall and its round-arched doorway on the axis into gallery 600, standing on the core's east wall (from BACK_Z to the hall's back face,
       // dims.ts), whose own granite lining of the same section carries the doorway on into the gallery (src/model/core/vaux-east.ts).
       const hw = GALLERY_600_DOOR_HALF_WIDTH;
-      const back = wall({ width: 2 * CROSS_HALL_HALF, height: ceiling + 0.4 - SECOND, thickness: CROSS_HALL_BACK_Z - BACK_Z, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
+      // Between the hall's side walls' inner faces, so no face of it lies with theirs on the core's (work unit 23, review 0, F1).
+      const back = wall({ width: 2 * (CROSS_HALL_SIDE_X - PARTITION_T / 2), height: ceiling + 0.4 - SECOND, thickness: CROSS_HALL_BACK_Z - BACK_Z, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
       kit.add(back, hunt.stairStone, at(0, SECOND, CROSS_HALL_BACK_Z), 4);
     },
   },

@@ -5,13 +5,14 @@
  * are blind. The inner pair stand on the west front's bay, 0.35 m from the floor map's narrow corridors either side of the Grand Staircase, which
  * pass through them, as Heckscher says; the outer pair on today's passages into the stair halls, 12 m off the axis.
  * Today's openings stay as they were (the floor map's; work unit 2, M1): the passages on the main floor on the axis and 12 m either side, the
- * second-floor doors 10.3 m off the axis, which were cut through the outer arches' heads and took their roundels and the stones they cross, and on the
+ * second-floor doors on the outer arches' axes (frame.ts EAST_FRONT_SECOND_DOOR_*; 10.3 m off the axis until work unit 23, from the map's doors at
+ * the corridors' ends, Z −68.84, which now fall inside the core), which were cut through the outer arches' heads and took their roundels and the stones they cross, and on the
  * axis at the second floor the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand
  * Staircase), lined in granite with a threshold. The corridors through the inner pair, between gallery 304 and the Hunt Wing's galleries 300 and 301,
  * are open (the owner's call, 2026-11-04: "Open both"); round each the arch stays blind, its opening filled with brick.
  */
 import type { Kit } from '../../build/types.js';
-import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
+import { EAST_FRONT_SECOND_DOOR_WIDTH, EAST_FRONT_SECOND_DOOR_X, GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
 import { holeLining, openWall, type Hole } from './arches.js';
 import { A_HALF, EAST_Z, L1, L2, OUTER_WALL, PARAPET_Y, VAUX_ARCH_SPAN, VAUX_BAY, VAUX_INNER_ORDER } from './constants.js';
 import { INNER_EAST_Z } from './layout.js';
@@ -41,13 +42,35 @@ export const EAST_CORRIDOR_TOP_Y = L1 + CORRIDOR.height;
 const INFILL_CLEAR = 0.01;
 /** Today's main-floor passage on the axis: as wide as before, to the old springing's height. */
 const PASSAGE = { width: CLEAR, height: 4.5 } as const;
-/** Today's second-floor doors either side, 10.3 m off the axis (floor map), and the threshold under gallery 600's doorway. */
-const SECOND_DOOR = { x: 10.3, width: 2.6, height: 3.2 } as const;
+/** Today's second-floor doors either side, on the outer arches' axes (frame.ts), 3.2 m high (E), and the threshold under gallery 600's doorway. */
+const SECOND_DOOR = { x: EAST_FRONT_SECOND_DOOR_X, width: EAST_FRONT_SECOND_DOOR_WIDTH, height: 3.2 } as const;
 const DOOR_THRESHOLD = 0.03;
 /** A second-floor door as a cut through the outer arch on its side, in that arch's frame (x from the arch's middle, y from the springing). */
 function secondCut(sign: number): Cut {
   const [x0, x1] = [sign * SECOND_DOOR.x - SECOND_DOOR.width / 2 - sign * OUTER_X, sign * SECOND_DOOR.x + SECOND_DOOR.width / 2 - sign * OUTER_X];
   return [x0 - 0.03, L2 - SPRING_Y - 0.03, x1 + 0.03, L2 + SECOND_DOOR.height - SPRING_Y + 0.03];
+}
+
+/** A clear opening through the east front, its world X and Y: the arches and the doorway up to their springing. */
+export interface EastOpening {
+  readonly name: string;
+  readonly x0: number;
+  readonly x1: number;
+  readonly y0: number;
+  readonly y1: number;
+}
+
+/** Every opening through the east front, for the Hunt wing's check that none of its faces stands in one on the front's outer face (hunt/hunt.test.ts). */
+export function eastOpenings(): readonly EastOpening[] {
+  const out: EastOpening[] = [{ name: 'main-floor passage', x0: -PASSAGE.width / 2, x1: PASSAGE.width / 2, y0: L1, y1: L1 + PASSAGE.height }];
+  for (const s of [-1, 1]) {
+    const [c0, c1] = eastCorridor(s);
+    out.push({ name: `corridor at X ${(s * INNER_X).toFixed(1)}`, x0: c0, x1: c1, y0: L1, y1: EAST_CORRIDOR_TOP_Y });
+    out.push({ name: `passage at X ${(s * OUTER_X).toFixed(1)}`, x0: s * OUTER_X - CLEAR / 2, x1: s * OUTER_X + CLEAR / 2, y0: L1, y1: LINTEL_Y });
+    out.push({ name: `second-floor door at X ${(s * SECOND_DOOR.x).toFixed(2)}`, x0: s * SECOND_DOOR.x - SECOND_DOOR.width / 2, x1: s * SECOND_DOOR.x + SECOND_DOOR.width / 2, y0: L2, y1: L2 + SECOND_DOOR.height });
+  }
+  out.push({ name: "gallery 600's doorway", x0: -GALLERY_600_DOOR_HALF_WIDTH, x1: GALLERY_600_DOOR_HALF_WIDTH, y0: L2, y1: L2 + GALLERY_600_DOOR_CROWN - GALLERY_600_DOOR_HALF_WIDTH });
+  return out;
 }
 
 /**
@@ -81,8 +104,8 @@ export function vauxEastWall(kit: Kit): void {
     holes.push(...archHoles(s * OUTER_X, base, { sill: L1, through: true }, false));
     holes.push({ x: s * SECOND_DOOR.x, y: L2 - base, width: SECOND_DOOR.width, height: SECOND_DOOR.height });
   }
-  // The doorway into gallery 600, cut for its granite lining and a threshold under it, flush with the floors on both sides; the Hunt wing lines the
-  // passage on through the cavity to its cross hall in the same section (hunt/stair.ts).
+  // The doorway into gallery 600, cut for its granite lining and a threshold under it, flush with the floors on both sides; the cross hall's back wall
+  // stands on this wall's outer face with its own arch of the same section (hunt/stair.ts).
   const sill = L2 - base;
   const lined = GALLERY_600_DOOR_HALF_WIDTH + GALLERY_600_DOOR_LINING;
   const outer: Hole = { head: 'round', x: 0, y: sill, width: 2 * lined, height: GALLERY_600_DOOR_CROWN + GALLERY_600_DOOR_LINING };

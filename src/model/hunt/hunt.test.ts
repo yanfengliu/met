@@ -28,6 +28,8 @@ import { ENTRANCE_DOOR_Z, LUNETTE_GRILLE } from './arches.js';
 import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BACK_Z, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
+import { eastOpenings } from '../core/vaux-east.js';
+import type { EastOpening } from '../core/vaux-east.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TOLERANCE = 0.3;
@@ -264,3 +266,63 @@ describe('the walk routes through the wing', () => {
   });
 });
 
+/** The area of a polygon in the XY plane inside an axis-aligned rectangle (Sutherland–Hodgman against its four sides, then the shoelace). */
+function areaWithin(polygon: readonly (readonly [number, number])[], r: EastOpening): number {
+  let pts: [number, number][] = polygon.map(([x, y]): [number, number] => [x, y]);
+  const clip = (inside: (p: [number, number]) => boolean, cut: (a: [number, number], b: [number, number]) => [number, number]): void => {
+    const out: [number, number][] = [];
+    pts.forEach((p, k) => {
+      const q = pts[(k + 1) % pts.length] ?? p;
+      if (inside(p)) {
+        out.push(p);
+        if (!inside(q)) out.push(cut(p, q));
+      } else if (inside(q)) out.push(cut(p, q));
+    });
+    pts = out;
+  };
+  const atX = (x: number) => (a: [number, number], b: [number, number]): [number, number] => [x, a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0])];
+  const atY = (y: number) => (a: [number, number], b: [number, number]): [number, number] => [a[0] + ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]), y];
+  clip((p) => p[0] >= r.x0, atX(r.x0));
+  clip((p) => p[0] <= r.x1, atX(r.x1));
+  clip((p) => p[1] >= r.y0, atY(r.y0));
+  clip((p) => p[1] <= r.y1, atY(r.y1));
+  let twice = 0;
+  pts.forEach((p, k) => {
+    const q = pts[(k + 1) % pts.length] ?? p;
+    twice += p[0] * q[1] - q[0] * p[1];
+  });
+  return Math.abs(twice) / 2;
+}
+
+describe("the 1880 east front's openings", () => {
+  it("show no face of the wing on the front's outer face, where the wing begins (work unit 23, review 0, F1)", () => {
+    // Every face of the wing's pieces on the plane Z = BACK_Z, the core's east face, against each clear opening through the core's east wall
+    // (src/model/core/vaux-east.ts eastOpenings), 2 cm in from its edges: a face there stands in the opening, as the cross hall's back wall and its
+    // side wall did in the second-floor doors, flickering where the two met (red with those doors back at X ±10.3, 2.6 m wide).
+    const openings = eastOpenings().map((o): EastOpening => ({ ...o, x0: o.x0 + 0.02, x1: o.x1 - 0.02, y0: o.y0 + 0.02, y1: o.y1 - 0.02 }));
+    expect(openings.length, 'openings: the main floor passage on the axis, a corridor, a passage and a second-floor door each side, the doorway').toBe(8);
+    const problems = new Set<string>();
+    const corner = [new Vector3(), new Vector3(), new Vector3()] as const;
+    for (const step of AREA) {
+      collectStep(step).pieces.forEach((piece, i) => {
+        const g = piece.geometry;
+        if (g.boundingBox === null) g.computeBoundingBox();
+        const box = (g.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
+        if (box.min.z > BACK_Z + 1e-4 || box.max.z < BACK_Z - 1e-4) return;
+        if (!openings.some((o) => box.max.x > o.x0 && box.min.x < o.x1 && box.max.y > o.y0 && box.min.y < o.y1)) return;
+        const position = g.getAttribute('position');
+        const index = g.index;
+        const count = index === null ? position.count : index.count;
+        for (let t = 0; t + 2 < count; t += 3) {
+          corner.forEach((c, k) => c.fromBufferAttribute(position, index === null ? t + k : index.getX(t + k)).applyMatrix4(piece.matrix));
+          if (corner.some((c) => Math.abs(c.z - BACK_Z) > 1e-4)) continue;
+          for (const o of openings) {
+            const area = areaWithin(corner.map((c): [number, number] => [c.x, c.y]), o);
+            if (area > 1e-4) problems.add(`${step.id} piece ${String(i)} (${piece.material.name}) in the ${o.name}`);
+          }
+        }
+      });
+    }
+    expect([...problems]).toEqual([]);
+  });
+});
