@@ -1,6 +1,6 @@
 # The core's east face on the floor map's line
 
-Status: active
+Status: complete
 Owner: claude/optimistic-mayer-d1fe0b
 Created: 2026-11-05
 Updated: 2026-11-05
@@ -28,22 +28,26 @@ Out: the core's west face and its other lines; the Hunt Wing's own rooms beyond 
 
 ## Acceptance criteria
 
-- [ ] The core's and Hunt's containment tests hold on the new line, and are red with a piece of either carried 1 m over it.
-- [ ] Weston's east block stands 1.85 m past the core's east face, its coping and the court's gutter dividing there; the blocks still mirror each other (`core.test.ts`).
-- [ ] The cross hall's back wall and the core's east wall meet on the line with no face shared one way; the doorway's passage runs through both (`routes.test.ts` R5, `tests/e2e/routes.spec.ts`).
-- [ ] The routes (R5, R9 and the rest), reach, placement, closure and spawn tests pass; the core within its 130 meshes.
-- [ ] `npm run verify` passes; `routes.spec` and `walk.spec` pass three runs in a row at 1× and three at 4×.
-- [ ] `npm run shots` changes only where the core's east end, the cross hall, gallery 600, wing C's north front and the fin show; renders read at native size.
-- [ ] Independent review (Codex and Claude) finds no defect left unanswered.
-- [ ] Merged to main and pushed, the owner's render gallery republished.
+- [x] The core's and Hunt's containment tests hold on the new line, and are red with a piece of either carried 1 m over it.
+- [x] Weston's east block stands 1.85 m past the core's east face, its coping and the court's gutter dividing there; the blocks still mirror each other (`core.test.ts`).
+- [x] The cross hall's back wall and the core's east wall meet on the line with no face shared one way; the doorway's passage runs through both (`routes.test.ts` R5, `tests/e2e/routes.spec.ts`).
+- [x] The routes (R5, R9 and the rest), reach, placement, closure and spawn tests pass; the core within its 130 meshes.
+- [x] `npm run verify` passes; `routes.spec` and `walk.spec` pass three runs in a row at 1× and three at 4×.
+- [x] `npm run shots` changes only where the core's east end, the cross hall, gallery 600, wing C's north front and the fin show; renders read at native size.
+- [x] Independent review (Codex and Claude) finds no defect left unanswered.
+- [x] Merged to main and pushed, the owner's render gallery republished.
 
 ## Implementation steps
 
-- [ ] The line, the cross hall's back wall, the map runs, gallery 600 and R5, the tests and the site's blocks.
-- [ ] The records.
-- [ ] Gates, the load runs and the shots; renders read at native size.
-- [ ] Review, repairs, landing, the gallery, the devlog and the hand-over note.
+- [x] The line, the cross hall's back wall, the map runs, gallery 600 and R5, the tests and the site's blocks.
+- [x] The records.
+- [x] Gates, the load runs and the shots; renders read at native size.
+- [x] Review, repairs, landing, the gallery, the devlog and the hand-over note.
 
 ## Outcome
 
-Pending. Record the verified revision, checks and limitations at closure.
+Complete. Merged to main at `25a1257` (the change `ff95d73`, review 0's repairs `de997c7`, review 1's repairs `25a1257`) and pushed; the Pages workflow built and deployed `25a1257`; the owner's render gallery shows main's shots at `25a1257` (artifact version 18). The coordinator relayed the owner's "Match the floor map" during the work, which confirmed this move.
+
+Checks on `25a1257`'s content, through `tmp/gate.sh` with the machine's CPU at 27 to 34%: `npm run verify` (755 unit tests; typecheck; lint; build; 127 e2e in 10.3 min); `routes.spec.ts` with `walk.spec.ts` three runs in a row at 1× (23 passed each) and three at 4× (21 passed, the two frame budgets skipped); `npm run shots` at `25a1257`, clean: 26 of 64 within 9 of 255 of the gallery's set at `c75b0e9`, the other 38 where the core's east end, the cross hall, gallery 600, gallery 304, wing C's north front and the 1888 fin show; the model 27,286 pieces, 743 meshes and 1,596,109 triangles at t = N. Earlier runs on the way, under other work's load (CPU 96 to 97%), failed only walking frame budgets (the plaza's and the Great Hall's GPU-synced render 19.5 and 17.7 ms against 16.7) and passed when rerun. Red proofs: the containment tests with a core footing and a Hunt plate each carried 1 m over the line; the openings test with the second-floor door back at X 10.3 and with the north head not cut. Review: two rounds, Codex and Claude (`reviews/0_implementation.md`, `reviews/1_implementation.md`), every finding accepted, two in part.
+
+Limitations: the map draws a second line 1.2 m east, on −65.6, read as the 1880 wall's east face, which would put the face flush with the real front's end and the cross hall into the old wall (exterior.md [B2], recorded as an open reading); the cross hall is 0.8 m shallower than the map's room; the Hunt partition on −65.65 leaves the map's 1.14 m strip behind the north second-floor door; on the main floor the core's wall stands 0.5 m west of the map's line drawn as its middle; the map's second-floor doors at the corridors' ends (Z −68.84) stand in no wall now; the Hunt wing's back is open between the core's east wall (18.0 m) and the wing's roofs (20.1 m), older than this unit (review 1, F13).
