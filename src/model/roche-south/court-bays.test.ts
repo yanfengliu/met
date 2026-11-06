@@ -8,8 +8,9 @@
  * between its jamb and its column's plinth as the map's spans and columns give them, not reckoned from the builder's data, so the walk reads the bays
  * rather than agreeing with them.
  * Red with the wall cut without the café's opening: both café lanes stopped at X −61.10, the wall's court face less the body's radius.
- * Bound: one line through each bay, its middle, whose body spans ±0.35 m of the bay's ±0.87 m; walking, not running, at 60 frames a second; nothing
- * over the body's 1.75 m is read; positions are the feet's.
+ * Bound: one line through each bay, its middle, whose body spans ±0.35 m of the bay's ±0.87 to ±0.88 m, so what stands within 0.52 m of a jamb or
+ * a column's plinth is left to src/model/roche-south/roche-south.test.ts's line cast; walking, not running, at 60 frames a second; nothing over the
+ * body's 1.75 m is read; positions are the feet's.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -35,12 +36,12 @@ const NORTH = -Math.PI / 2;
 const LANES = [
   { name: "the café's west bay", z: -130.99 },
   { name: "the café's east bay", z: -128.18 },
-  { name: "door 1's west bay", z: -124.69 },
-  { name: "door 1's east bay", z: -121.86 },
+  { name: "door 1's west bay", z: -124.68 },
+  { name: "door 1's east bay", z: -121.85 },
   { name: "door 7's west bay", z: -80.07 },
   { name: "door 7's east bay", z: -77.25 },
-  { name: "door 8's west bay", z: -73.74 },
-  { name: "door 8's east bay", z: -70.93 },
+  { name: "door 8's west bay", z: -73.75 },
+  { name: "door 8's east bay", z: -70.94 },
 ] as const;
 /** Where the walks start in the court and end behind the wall, world X. */
 const IN_COURT = COURT_X0 + 2.5;

@@ -119,19 +119,19 @@ export const COURT_ENDS_Z: readonly [number, number] = [Z_IN, Z_EAST];
 
 /**
  * D: the floor map's eight doors from gallery 549 into the court, on X −61.44 (research/cache/lm_features.json, Floor 1; interior.md, The court's south
- * wall; work unit 24), world Z spans, west to east, and in each of the three wide ones the centre of the round column the map draws in its middle, 0.71 m
- * across (work unit 25). The first seven stand in pairs about Weston's door, each pair's middles' mean within 1 cm of its axis and the fourth door's
- * middle 4.5 cm east of it; the eighth, at the court's east end, pairs with the café's opening (CAFE_OPENING).
+ * wall; work unit 24), world Z spans, west to east, and in each of the three wide ones the centre (the map's own centroid) of the round column the map
+ * draws in its middle, 0.71 m across (work unit 25). The first seven stand in pairs about Weston's door, each pair's middles' mean within 1 cm of its
+ * axis and the fourth door's middle 4.5 cm east of it; the eighth, at the court's east end, pairs with the café's opening (CAFE_OPENING).
  */
 const COURT_DOOR_SPANS: readonly (readonly [number, number, number | null])[] = [
-  [-125.56, -120.97, -123.28],
+  [-125.56, -120.97, -123.27],
   [-115.4, -113.11, null],
   [-108.87, -106.58, null],
   [-102.11, -99.74, null],
   [-95.34, -93.05, null],
   [-88.84, -86.52, null],
   [-80.95, -76.38, -78.66],
-  [-74.63, -70.07, -72.32],
+  [-74.63, -70.07, -72.34],
 ];
 /**
  * A doorway through the court wall at the main floor: its name, its world Z span, west to east, whether its head is a round arch (else square), and the
@@ -149,8 +149,9 @@ export interface CourtDoor {
  * balcony at the court's east end shows them (interior-images.md #35): its five round arches stand where the map has the second to the sixth doors (one
  * perspective map fits their middles in a 900 px copy to those doors' within 0.5 px, to the third to the seventh's only within 8 px), the seventh door, nearest, is square-headed between
  * pilasters under an entablature, and past the fifth arch there is none, so the first door, the seventh's mirror about Weston's door, is not arched
- * either. E: the eighth, out of the photograph's view, square-headed as the seventh, its twin in width. The wide doors' columns stand as the photographs
- * of the court's two ends show them, a round column between square piers (interior-images.md #47, #48 and #49; work unit 25).
+ * either. The eighth, out of that photograph's view, is square-headed like the seventh, as the photograph of the court's east end shows them both
+ * (interior-images.md #47). The wide doors' columns stand as the photographs of the court's two ends show them, a round column between square piers
+ * (interior-images.md #47, #48 and #49; work unit 25).
  */
 export const COURT_DOORS: readonly CourtDoor[] = COURT_DOOR_SPANS.map(([z0, z1, column], k) => ({ name: `door ${String(k + 1)}`, z0, z1, arched: z1 - z0 < 3, column }));
 /**
