@@ -13,6 +13,7 @@ import {
   EXT_WALL_T,
   FOOTING_Y,
   FRONT_LIMIT_Z,
+  GALLERY_OUTER_X,
   GROUND,
   HALL_END_WALL_X,
   HALL_WEST_WALL_Z,
@@ -55,8 +56,8 @@ const WALL_LINES: readonly (readonly [number, number, number, number, number])[]
   // Grand Staircase hall and the galleries beside it.
   [-STAIR_HALF - 0.4, HALL_WEST_WALL_Z, -STAIR_HALF - 0.4, BACK_Z, 0.8],
   [STAIR_HALF + 0.4, HALL_WEST_WALL_Z, STAIR_HALF + 0.4, BACK_Z, 0.8],
-  [-9.75, HALL_WEST_WALL_Z, -9.75, BACK_Z, 0.8],
-  [9.75, HALL_WEST_WALL_Z, 9.75, BACK_Z, 0.8],
+  [-GALLERY_OUTER_X, HALL_WEST_WALL_Z, -GALLERY_OUTER_X, BACK_Z, 0.8],
+  [GALLERY_OUTER_X, HALL_WEST_WALL_Z, GALLERY_OUTER_X, BACK_Z, 0.8],
 ];
 
 /** Footings' tops, where the basement walls, the podium and the wings' fronts start: below the site's pad at GROUND_FLOOR_Y − 0.1. */

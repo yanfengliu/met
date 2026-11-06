@@ -16,9 +16,9 @@ import { archivolt, barrelVault, columnParts, entablature, stairFlight, stairLan
 import {
   BACK_Z,
   CROSS_HALL_BACK_Z,
-  CROSS_HALL_SIDE_X,
   CROSS_HALL_FRONT_Z,
   CROSS_HALL_HALF,
+  GALLERY_OUTER_X,
   HALL_WEST_WALL_Z,
   MAIN,
   PARTITION_T,
@@ -169,8 +169,8 @@ export const stairSteps: readonly StepDef[] = [
       // The back wall and its round-arched doorway on the axis into gallery 600, standing on the core's east wall (from BACK_Z to the hall's back face,
       // dims.ts), whose own granite lining of the same section carries the doorway on into the gallery (src/model/core/vaux-east.ts).
       const hw = GALLERY_600_DOOR_HALF_WIDTH;
-      // Between the hall's side walls' inner faces, so no face of it lies with theirs on the core's (work unit 23, review 0, F1).
-      const back = wall({ width: 2 * (CROSS_HALL_SIDE_X - PARTITION_T / 2), height: ceiling + 0.4 - SECOND, thickness: CROSS_HALL_BACK_Z - BACK_Z, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
+      // Between the hall's side walls' inner faces, so no face of it lies with theirs on the core's (work unit 23, review 0, F2 and F3).
+      const back = wall({ width: 2 * (GALLERY_OUTER_X - PARTITION_T / 2), height: ceiling + 0.4 - SECOND, thickness: CROSS_HALL_BACK_Z - BACK_Z, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
       kit.add(back, hunt.stairStone, at(0, SECOND, CROSS_HALL_BACK_Z), 4);
     },
   },

@@ -4,9 +4,10 @@
  * granite arch round a roundel in its head, as the one surviving at the top of the Grand Staircase shows it (#67; exterior.md section 9). Their windows
  * are blind. The inner pair stand on the west front's bay, 0.35 m from the floor map's narrow corridors either side of the Grand Staircase, which
  * pass through them, as Heckscher says; the outer pair on today's passages into the stair halls, 12 m off the axis.
- * Today's openings stay as they were (the floor map's; work unit 2, M1): the passages on the main floor on the axis and 12 m either side, the
- * second-floor doors on the outer arches' axes (frame.ts EAST_FRONT_SECOND_DOOR_*; 10.3 m off the axis until work unit 23, from the map's doors at
- * the corridors' ends, Z −68.84, which now fall inside the core), which were cut through the outer arches' heads and took their roundels and the stones they cross, and on the
+ * Today's openings, the floor map's (work unit 2, M1; work unit 23): the passages on the main floor on the axis and 12 m either side, the
+ * second-floor door on the north outer arch's axis (frame.ts EAST_FRONT_SECOND_DOOR_*), cut through that arch's head, taking its roundel and the stones
+ * it crosses, where the south outer head stands whole, as #67 shows it at gallery 690's entrance (until work unit 23 a door either side, 10.3 m off the
+ * axis, from the map's doors at the corridors' ends, Z −68.84, which now fall inside the core), and on the
  * axis at the second floor the doorway from the Grand Staircase's cross hall into gallery 600 (frame.ts GALLERY_600_DOOR_*; interior.md, The Grand
  * Staircase), lined in granite with a threshold. The corridors through the inner pair, between gallery 304 and the Hunt Wing's galleries 300 and 301,
  * are open (the owner's call, 2026-11-04: "Open both"); round each the arch stays blind, its opening filled with brick.
@@ -42,7 +43,7 @@ export const EAST_CORRIDOR_TOP_Y = L1 + CORRIDOR.height;
 const INFILL_CLEAR = 0.01;
 /** Today's main-floor passage on the axis: as wide as before, to the old springing's height. */
 const PASSAGE = { width: CLEAR, height: 4.5 } as const;
-/** Today's second-floor doors either side, on the outer arches' axes (frame.ts), 3.2 m high (E), and the threshold under gallery 600's doorway. */
+/** Today's second-floor door on the north, on the outer arch's axis (frame.ts), 3.2 m high (E), and the threshold under gallery 600's doorway. */
 const SECOND_DOOR = { x: EAST_FRONT_SECOND_DOOR_X, width: EAST_FRONT_SECOND_DOOR_WIDTH, height: 3.2 } as const;
 const DOOR_THRESHOLD = 0.03;
 /** A second-floor door as a cut through the outer arch on its side, in that arch's frame (x from the arch's middle, y from the springing). */
@@ -67,8 +68,8 @@ export function eastOpenings(): readonly EastOpening[] {
     const [c0, c1] = eastCorridor(s);
     out.push({ name: `corridor at X ${(s * INNER_X).toFixed(1)}`, x0: c0, x1: c1, y0: L1, y1: EAST_CORRIDOR_TOP_Y });
     out.push({ name: `passage at X ${(s * OUTER_X).toFixed(1)}`, x0: s * OUTER_X - CLEAR / 2, x1: s * OUTER_X + CLEAR / 2, y0: L1, y1: LINTEL_Y });
-    out.push({ name: `second-floor door at X ${(s * SECOND_DOOR.x).toFixed(2)}`, x0: s * SECOND_DOOR.x - SECOND_DOOR.width / 2, x1: s * SECOND_DOOR.x + SECOND_DOOR.width / 2, y0: L2, y1: L2 + SECOND_DOOR.height });
   }
+  out.push({ name: `second-floor door at X ${SECOND_DOOR.x.toFixed(2)}`, x0: SECOND_DOOR.x - SECOND_DOOR.width / 2, x1: SECOND_DOOR.x + SECOND_DOOR.width / 2, y0: L2, y1: L2 + SECOND_DOOR.height });
   out.push({ name: "gallery 600's doorway", x0: -GALLERY_600_DOOR_HALF_WIDTH, x1: GALLERY_600_DOOR_HALF_WIDTH, y0: L2, y1: L2 + GALLERY_600_DOOR_CROWN - GALLERY_600_DOOR_HALF_WIDTH });
   return out;
 }
@@ -101,9 +102,10 @@ export function vauxEastWall(kit: Kit): void {
   for (const s of [-1, 1]) {
     // The inner pair open through from the main floor, filled round their corridors with the trim (eastInfill).
     holes.push(...archHoles(s * INNER_X, base, { sill: L1, through: true }));
-    holes.push(...archHoles(s * OUTER_X, base, { sill: L1, through: true }, false));
-    holes.push({ x: s * SECOND_DOOR.x, y: L2 - base, width: SECOND_DOOR.width, height: SECOND_DOOR.height });
+    // The outer pair open through from the main floor too; the north head gave way to the second-floor door, the south keeps its niche.
+    holes.push(...archHoles(s * OUTER_X, base, { sill: L1, through: true }, s < 0));
   }
+  holes.push({ x: SECOND_DOOR.x, y: L2 - base, width: SECOND_DOOR.width, height: SECOND_DOOR.height });
   // The doorway into gallery 600, cut for its granite lining and a threshold under it, flush with the floors on both sides; the cross hall's back wall
   // stands on this wall's outer face with its own arch of the same section (hunt/stair.ts).
   const sill = L2 - base;
@@ -140,9 +142,9 @@ export function vauxEastTrim(kit: Kit): void {
         const sill = window && side !== s ? SILL_Y : L1;
         box(Math.min(edge, edge + side * VAUX_INNER_ORDER), Math.max(edge, edge + side * VAUX_INNER_ORDER), sill, LINTEL_Y, ORDER_PROUD);
       }
-      // Each head as two pieces placed at its arch, an inner one with its roundel's moulding round its brick (#67); an outer head is cut by the
-      // second-floor door beside it.
-      const cut = window ? undefined : secondCut(s);
+      // Each head as two pieces placed at its arch, with its roundel's moulding round its brick (#67, the south outer one); the north outer head is
+      // cut by the second-floor door.
+      const cut = !window && s > 0 ? secondCut(s) : undefined;
       const at = placed(x, SPRING_Y, EAST_Z, FACING.east);
       kit.add(lightHead('east', cut), core.granite, at, 12);
       kit.add(darkHead('east', cut), core.graniteDark, at, 12);

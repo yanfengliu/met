@@ -9,6 +9,11 @@
  * and looks like the palette's, while the palette and the other glazing stay solid; the floor is whole behind the three arches' screens and under the
  * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's walk collision at t = N,
  * src/walk/collision.ts).
+ * The 1880 east front's openings (work unit 23, reviews 0 and 1): a 9 by 9 grid of lines through each clear opening the front lists
+ * (src/model/core/vaux-east.ts eastOpenings: the main floor passage, the corridors, the outer passages, the north second-floor door, gallery 600's
+ * doorway below its springing), 5 cm in from its edges, from the wall's inner face to 0.5 m past its outer face, meets no piece of the core's or this
+ * wing's steps. Red with the second-floor door back at X 10.3, 2.6 m wide (the cross hall's side partition in it), and with the north outer head
+ * not cut for the door (its stones in it). Bound: only the openings the module lists; a hole cut in the wall without being listed is not seen.
  */
 import { Box3, Vector3 } from 'three';
 import type { Material } from 'three';
@@ -28,8 +33,9 @@ import { ENTRANCE_DOOR_Z, LUNETTE_GRILLE } from './arches.js';
 import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BACK_Z, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
 import { lunetteGrille } from './shapes.js';
+import { vauxSteps, westonTuckermanSteps } from '../core/index.js';
+import { INNER_EAST_Z } from '../core/layout.js';
 import { eastOpenings } from '../core/vaux-east.js';
-import type { EastOpening } from '../core/vaux-east.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TOLERANCE = 0.3;
@@ -266,59 +272,59 @@ describe('the walk routes through the wing', () => {
   });
 });
 
-/** The area of a polygon in the XY plane inside an axis-aligned rectangle (Sutherland–Hodgman against its four sides, then the shoelace). */
-function areaWithin(polygon: readonly (readonly [number, number])[], r: EastOpening): number {
-  let pts: [number, number][] = polygon.map(([x, y]): [number, number] => [x, y]);
-  const clip = (inside: (p: [number, number]) => boolean, cut: (a: [number, number], b: [number, number]) => [number, number]): void => {
-    const out: [number, number][] = [];
-    pts.forEach((p, k) => {
-      const q = pts[(k + 1) % pts.length] ?? p;
-      if (inside(p)) {
-        out.push(p);
-        if (!inside(q)) out.push(cut(p, q));
-      } else if (inside(q)) out.push(cut(p, q));
-    });
-    pts = out;
-  };
-  const atX = (x: number) => (a: [number, number], b: [number, number]): [number, number] => [x, a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0])];
-  const atY = (y: number) => (a: [number, number], b: [number, number]): [number, number] => [a[0] + ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]), y];
-  clip((p) => p[0] >= r.x0, atX(r.x0));
-  clip((p) => p[0] <= r.x1, atX(r.x1));
-  clip((p) => p[1] >= r.y0, atY(r.y0));
-  clip((p) => p[1] <= r.y1, atY(r.y1));
-  let twice = 0;
-  pts.forEach((p, k) => {
-    const q = pts[(k + 1) % pts.length] ?? p;
-    twice += p[0] * q[1] - q[0] * p[1];
-  });
-  return Math.abs(twice) / 2;
+/** Whether the segment from `o` along `d`, up to `length`, meets the triangle (a, b, c) (Möller–Trumbore). */
+function segmentMeets(o: Vector3, d: Vector3, length: number, a: Vector3, b: Vector3, c: Vector3): boolean {
+  const e1 = new Vector3().subVectors(b, a);
+  const e2 = new Vector3().subVectors(c, a);
+  const p = new Vector3().crossVectors(d, e2);
+  const det = e1.dot(p);
+  if (Math.abs(det) < 1e-12) return false;
+  const s = new Vector3().subVectors(o, a);
+  const u = s.dot(p) / det;
+  if (u < 0 || u > 1) return false;
+  const q = new Vector3().crossVectors(s, e1);
+  const v = d.dot(q) / det;
+  if (v < 0 || u + v > 1) return false;
+  const t = e2.dot(q) / det;
+  return t > 0 && t < length;
 }
 
 describe("the 1880 east front's openings", () => {
-  it("show no face of the wing on the front's outer face, where the wing begins (work unit 23, review 0, F1)", () => {
-    // Every face of the wing's pieces on the plane Z = BACK_Z, the core's east face, against each clear opening through the core's east wall
-    // (src/model/core/vaux-east.ts eastOpenings), 2 cm in from its edges: a face there stands in the opening, as the cross hall's back wall and its
-    // side wall did in the second-floor doors, flickering where the two met (red with those doors back at X ±10.3, 2.6 m wide).
-    const openings = eastOpenings().map((o): EastOpening => ({ ...o, x0: o.x0 + 0.02, x1: o.x1 - 0.02, y0: o.y0 + 0.02, y1: o.y1 - 0.02 }));
-    expect(openings.length, 'openings: the main floor passage on the axis, a corridor, a passage and a second-floor door each side, the doorway').toBe(8);
+  it('are clear through the core’s east wall and half a metre on into the Hunt wing (work unit 23, reviews 0 and 1)', () => {
+    // A grid of 9 by 9 lines through each clear opening the front lists (src/model/core/vaux-east.ts eastOpenings), 5 cm in from its edges, from the
+    // wall's inner face to 0.5 m past its outer face, against every piece of the core's and the wing's steps: a piece there stands in the opening.
+    const openings = eastOpenings();
+    expect(openings.map((o) => o.name).length, 'openings: the main floor passage on the axis, a corridor and a passage each side, the north second-floor door, the doorway').toBe(7);
+    const z0 = INNER_EAST_Z + 0.01;
+    const length = BACK_Z + 0.5 - z0;
+    const steps = [...AREA, ...vauxSteps, ...westonTuckermanSteps];
     const problems = new Set<string>();
     const corner = [new Vector3(), new Vector3(), new Vector3()] as const;
-    for (const step of AREA) {
+    const along = new Vector3(0, 0, 1);
+    for (const step of steps) {
       collectStep(step).pieces.forEach((piece, i) => {
         const g = piece.geometry;
         if (g.boundingBox === null) g.computeBoundingBox();
         const box = (g.boundingBox ?? new Box3()).clone().applyMatrix4(piece.matrix);
-        if (box.min.z > BACK_Z + 1e-4 || box.max.z < BACK_Z - 1e-4) return;
-        if (!openings.some((o) => box.max.x > o.x0 && box.min.x < o.x1 && box.max.y > o.y0 && box.min.y < o.y1)) return;
+        if (box.min.z > z0 + length || box.max.z < z0) return;
+        const near = openings.filter((o) => box.max.x > o.x0 && box.min.x < o.x1 && box.max.y > o.y0 && box.min.y < o.y1);
+        if (near.length === 0) return;
         const position = g.getAttribute('position');
         const index = g.index;
         const count = index === null ? position.count : index.count;
+        const triangles: [Vector3, Vector3, Vector3][] = [];
         for (let t = 0; t + 2 < count; t += 3) {
           corner.forEach((c, k) => c.fromBufferAttribute(position, index === null ? t + k : index.getX(t + k)).applyMatrix4(piece.matrix));
-          if (corner.some((c) => Math.abs(c.z - BACK_Z) > 1e-4)) continue;
-          for (const o of openings) {
-            const area = areaWithin(corner.map((c): [number, number] => [c.x, c.y]), o);
-            if (area > 1e-4) problems.add(`${step.id} piece ${String(i)} (${piece.material.name}) in the ${o.name}`);
+          triangles.push([corner[0].clone(), corner[1].clone(), corner[2].clone()]);
+        }
+        for (const o of near) {
+          for (let ix = 0; ix < 9; ix++) {
+            for (let iy = 0; iy < 9; iy++) {
+              const x = o.x0 + 0.05 + ((o.x1 - o.x0 - 0.1) * ix) / 8;
+              const y = o.y0 + 0.05 + ((o.y1 - o.y0 - 0.1) * iy) / 8;
+              const from = new Vector3(x, y, z0);
+              if (triangles.some(([a, b, c]) => segmentMeets(from, along, length, a, b, c))) problems.add(`${step.id} piece ${String(i)} (${piece.material.name}) in the ${o.name}`);
+            }
           }
         }
       });

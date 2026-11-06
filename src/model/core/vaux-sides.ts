@@ -12,7 +12,7 @@ import type { BufferGeometry } from 'three';
 
 import type { Kit } from '../../build/types.js';
 import { openWall, type Hole } from './arches.js';
-import { A_HALF, HALL_PIER_Z, L1, L2, LG, PARTY_WALL, ROOF_Y, VAUX_ARCH_SPAN, VAUX_INNER_ORDER } from './constants.js';
+import { A_HALF, HALL_PIER_Z, L1, L2, LG, PARTITION, PARTY_WALL, ROOF_Y, VAUX_ARCH_SPAN, VAUX_INNER_ORDER } from './constants.js';
 import { INNER_EAST_Z, INNER_WEST_Z } from './layout.js';
 import { core } from './materials.js';
 import { FACING, addBox, placed, runsBetween } from './shapes.js';
@@ -50,10 +50,11 @@ const TIERS = [
 /** An end block's main-floor door, cut through its bare brick. */
 const END_DOOR_HEIGHT = 4.0;
 /**
- * Where the floor map's second-floor doors through the side walls, X ±14.79 from Z −68.85 to −66.78, begin; they run on to the east wall's inner
- * face, inside the core since its east face moved to the map's line (work unit 23, review 0), as high as the side walls' other second-floor doors.
+ * Where the floor map's second-floor doors through the side walls, X ±14.79 from Z −68.85 to −66.78, begin: at the face of the map's partition on
+ * −68.85 (0.4 m thick) that meets the wall there, so its end stands in no door (work unit 23, review 1). They run on to the east wall's inner face,
+ * inside the core since its east face moved to the map's line (work unit 23, review 0), as high as the side walls' other second-floor doors.
  */
-const EAST_END_DOOR_Z = -68.85;
+const EAST_END_DOOR_Z = -68.85 + PARTITION / 2;
 
 /** The openings of one bay: a hall bay's arch, blind or a door, or an end bay's round-headed openings; and today's doors. */
 function sideBay(hall: boolean, door: boolean): BufferGeometry {

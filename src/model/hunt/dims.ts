@@ -163,14 +163,13 @@ export const CROSS_HALL_FRONT_Z = -59.74;
 /**
  * The cross hall's back face: its stone back wall, 0.8 m thick with the round-arched doorway into gallery 600 (./stair.ts), stands on the core's east face,
  * the map's line, where the map ends the hall (−66.79), so the two walls stand astride that line, the core's 1.0 m west of it and the hall's 0.8 m east,
- * and the hall is 0.8 m shallower than the map's room (work unit 23, review 0, F3).
+ * and the hall is 0.8 m shallower than the map's room (work unit 23, review 0, F5).
  */
 export const CROSS_HALL_BACK_Z = BACK_Z + 0.8;
-/** The cross hall's side walls on the second floor: the wing's partitions on the map's room lines at X ±9.75 (./galleries.ts), between whose inner faces the back wall spans (./stair.ts). */
-export const CROSS_HALL_SIDE_X = 9.75;
 /** The wing's partitions' thickness (./galleries.ts). */
 export const PARTITION_T = 0.4;
 export const CROSS_HALL_HALF = 9.8;
+/** The Byzantine galleries' and the cross hall's side walls, on the map's room lines at X ±9.75 (./galleries.ts, ./podium.ts), between whose inner faces the cross hall's back wall spans (./stair.ts). */
 export const GALLERY_OUTER_X = 9.75;
 
 // --- Passages into the McKim, Mead & White wings (floor map, main floor; map Z − 3.1) ----------------------------------------

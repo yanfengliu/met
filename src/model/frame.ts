@@ -99,8 +99,8 @@ export const HUNT_EXTENSION_PARAPET_Y = 22.5; // [H14] E: top of the extensions'
 export const GALLERY_600_DOOR_HALF_WIDTH = 1.75; // D: the floor map's door on the axis, X -1.75..+1.76
 export const GALLERY_600_DOOR_CROWN = 5.0; // E low-medium: the round arch's crown over SECOND_FLOOR_Y, 1.4 to 1.5 times its width on the Met's photograph scaled by the 5.59 m Triumph of Marius (interior-images.md #42)
 export const GALLERY_600_DOOR_LINING = 0.3; // E: the stone lining of the passage, its jambs and arch this thick round the opening, through the core's east wall (granite, core/vaux-east.ts), on which the cross hall's back wall stands since work unit 23 (hunt/stair.ts), so no brick shows
-// The second-floor doors through the 1880 east front either side of the cross hall, on its outer arches' axes (12 m off the axis), shared by the core's wall and the Hunt partition behind it
-export const EAST_FRONT_SECOND_DOOR_X = 11.95; // M: the floor map's door through the old wall's east face on the north, X 11.07..12.83 on Z −65.61 (work unit 23, review 0); the south one mirrored, as the front is symmetric (the map draws none there)
+// The second-floor door through the 1880 east front north of the cross hall, on the outer arch's axis (12 m off the axis), shared by the core's wall and the Hunt partition behind it; the map draws none on the south, where exterior-images.md #67 shows that arch's head whole
+export const EAST_FRONT_SECOND_DOOR_X = 11.95; // M: the floor map's door through the old wall's east face, X 11.07..12.83 on Z −65.61 (work unit 23, reviews 0 and 1)
 export const EAST_FRONT_SECOND_DOOR_WIDTH = 1.76; // M: the same door's width
 
 // --- McKim, Mead & White wings --------------------------------------------------------------
