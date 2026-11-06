@@ -1,6 +1,6 @@
 # The Petrie Court's south wall with the floor map's eight doors
 
-Status: active
+Status: complete
 Owner: claude/optimistic-mayer-d1fe0b
 Created: 2026-11-05
 Updated: 2026-11-06
@@ -27,12 +27,12 @@ Out, recorded and not changed (the coordinator: "If anything else along this fro
 
 ## Acceptance criteria
 
-- [ ] The wall has the eight doors at the map's places and widths and five windows, nothing standing in them, as built and as the renders show it (`kravis.ts`, `roche-south.test.ts`; renders at native size).
-- [ ] The court stays symmetric about Weston's door, read from its ends (`core.test.ts`, red with its east end back on −69.0).
-- [ ] R7 crosses the fourth door both ways; the reach, placement, closure and routes tests pass; the relief hangs on solid wall.
-- [ ] `npm run verify` passes; `routes.spec` and `walk.spec` pass three runs in a row at 1× and three at 4×; `npm run shots` changes only where the court's south wall shows.
-- [ ] Independent review (Codex and Claude) finds no defect left unanswered.
-- [ ] Merged to main and pushed, the owner's render gallery republished.
+- [x] The wall has the eight doors at the map's places and widths and five windows, nothing standing in them, as built and as the renders show it (`kravis.ts`, `roche-south.test.ts`; renders at native size).
+- [x] The court stays symmetric about Weston's door, read from its ends (`core.test.ts`, red with its east end back on −69.0).
+- [x] R7 crosses the fourth door both ways; the reach, placement, closure and routes tests pass; the relief hangs on solid wall.
+- [x] `npm run verify` passes; `routes.spec` and `walk.spec` pass three runs in a row at 1× and three at 4×; `npm run shots` changes only where the court's south wall shows.
+- [x] Independent review (Codex and Claude) finds no defect left unanswered.
+- [x] Merged to main and pushed, the owner's render gallery republished.
 
 ## Implementation steps
 
@@ -40,8 +40,14 @@ Out, recorded and not changed (the coordinator: "If anything else along this fro
 - [x] The records.
 - [x] Gates, the load runs and the shots; renders read at native size.
 - [x] Review 0 (`reviews/0_implementation.md`): Codex approved, Claude approved with four minor findings and a nit, all repaired.
-- [ ] Review, repairs, landing, the gallery, the devlog and the hand-over note.
+- [x] Review, repairs, landing, the gallery, the devlog and the hand-over note.
 
 ## Outcome
 
-Pending. Record the verified revision, checks and limitations at closure.
+Complete. Merged to main at `cb0a862` (the change `70d0563`, review 0's repairs `cb0a862`) and pushed; the Pages workflow built and deployed `cb0a862`; the owner's render gallery shows main's shots at `cb0a862` (artifact version 19).
+
+Checks on `70d0563`'s content, through `tmp/gate.sh` with the machine's CPU at 6 to 25%: `npm run verify` (760 unit tests; typecheck; lint; build; 127 e2e in 9.5 min); `routes.spec.ts` with `walk.spec.ts` three runs in a row at 1× (23 passed each) and three at 4× (21 passed, the two frame budgets skipped); `npm run shots`: 44 of 64 within 9 of 255 of the gallery's set at `25a1257`, the other 20 only where the court's south wall shows. On `cb0a862`: `npm run verify` again (760 unit tests, 127 e2e in 9.7 min) and the shots, clean, the same 20 changed; the model 27,286 pieces, 743 meshes and 1,596,851 triangles at t = N. Red proofs: the line cast with the wall's six old openings and with a 0.2 m post behind the second door (a first grid of 9 lines to a side missed it, so the lines are at most 0.1 m apart); the court's symmetry check with its east end on −69.0; R7's door check with R7 turned through the third door. Renders at native size from six cameras and a plan cut. Review: one round, Codex and Claude (`reviews/0_implementation.md`): Codex approved, Claude approved with four minor findings and a nit, all accepted and repaired.
+
+The photograph reading changed while building: the plan's first draft read #35's nearest doorway as the eighth door and its first arch as the seventh, so it had seven arches; read again at native size, a perspective map fits the five arches to the map's second to sixth doors, so the narrow doors are arched and the wide ones square-headed. No photograph here contradicts the map's doors, so nothing went to the owner.
+
+Limitations: the eighth door is out of every photograph here and is estimated square-headed like the seventh; the arches' and square heads' heights and the windows' size are estimates; the doors' frames, the voussoirs, the lower storey's banded rustication, the cornice between the storeys and the blind panels are not built. Recorded and not changed: west of Z −126.34 the map draws no wall on the court's south side, the café opening onto the court through columns (#35), where the model's wall runs on; and the court's east wall has three windows behind a balustraded balcony over the court's name (#33, #46), where the model's is plain.
