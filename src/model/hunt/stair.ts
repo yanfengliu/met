@@ -10,7 +10,7 @@
  * passage behind it through the core's east wall.
  */
 import type { Kit, StepDef } from '../../build/types.js';
-import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH, GALLERY_600_DOOR_LINING } from '../frame.js';
+import { GALLERY_600_DOOR_CROWN, GALLERY_600_DOOR_HALF_WIDTH } from '../frame.js';
 import { palette } from '../palette.js';
 import { archivolt, barrelVault, columnParts, entablature, stairFlight, stairLanding, wall, type V3 } from '../lib/index.js';
 import {
@@ -29,7 +29,7 @@ import {
   STAIR_TOP_Z,
 } from './dims.js';
 import { hunt } from './materials.js';
-import { archedPassage, at, box } from './shapes.js';
+import { at, box } from './shapes.js';
 import { STAIR_GABLE_TOP_Y, STAIR_VAULT_SPRING_Y } from './walls.js';
 
 /** The landing's level: 27 of the 46 risers. */
@@ -164,14 +164,11 @@ export const stairSteps: readonly StepDef[] = [
       kit.add(end, hunt.stairStone, at(0, SECOND, CROSS_HALL_FRONT_Z), 3);
       const ceiling = SECOND + 6.6;
       box(kit, palette.plaster, [-CROSS_HALL_HALF, ceiling, CROSS_HALL_BACK_Z], [CROSS_HALL_HALF, ceiling + 0.4, CROSS_HALL_FRONT_Z - WALL_T], 4);
-      // The back wall and its round-arched doorway on the axis into gallery 600; behind it the passage, lined in the same stone through the cavity to
-      // the core's east wall, on the wing's second-floor plate (./galleries.ts), where the core's own granite lining of the same section takes over
-      // (src/model/core/vaux-east.ts).
+      // The back wall and its round-arched doorway on the axis into gallery 600, standing on the core's east wall (from BACK_Z to the hall's back face,
+      // dims.ts), whose own granite lining of the same section carries the doorway on into the gallery (src/model/core/vaux-east.ts).
       const hw = GALLERY_600_DOOR_HALF_WIDTH;
-      const back = wall({ width: 2 * CROSS_HALL_HALF, height: ceiling + 0.4 - SECOND, thickness: WALL_T, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
+      const back = wall({ width: 2 * CROSS_HALL_HALF, height: ceiling + 0.4 - SECOND, thickness: CROSS_HALL_BACK_Z - BACK_Z, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
       kit.add(back, hunt.stairStone, at(0, SECOND, CROSS_HALL_BACK_Z), 4);
-      const behind = CROSS_HALL_BACK_Z - WALL_T;
-      kit.add(archedPassage(hw, GALLERY_600_DOOR_LINING, GALLERY_600_DOOR_CROWN - hw, behind - BACK_Z), hunt.stairStone, at(0, SECOND, behind), 4);
     },
   },
 ];

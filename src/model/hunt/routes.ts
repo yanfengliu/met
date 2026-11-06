@@ -60,8 +60,8 @@ export const ROUTE_R2: Route = {
   endY: SECOND,
 };
 
-/** Gallery 600's middle on the axis: between the core's east wall (inner face Z −70.0) and its wall with gallery 601 (Z −75.05; core/plan-data.ts). */
-export const GALLERY_600_MID_Z = -72.5;
+/** Gallery 600's middle on the axis: between the core's east wall (its inner face, core/layout.ts) and its wall with gallery 601 (Z −75.05; core/plan-data.ts). */
+export const GALLERY_600_MID_Z = (INNER_EAST_Z + -75.05) / 2;
 
 export const ROUTE_R5: Route = {
   id: 'R5',

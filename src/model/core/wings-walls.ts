@@ -33,7 +33,7 @@ export interface Elevation {
   /** Plain runs between and beyond the bays, [from, to] along the run. */
   readonly fills: readonly (readonly [number, number])[];
   readonly glazed: boolean;
-  /** On a line shared with a newer block (the Hunt block at Z −69.0, the American Wing at X 49.4): trim stands out at most 0.3 m. */
+  /** On a line shared with a newer block (the Hunt block at Z −66.79, the American Wing at X 49.4): trim stands out at most 0.3 m. */
   readonly shared: boolean;
 }
 

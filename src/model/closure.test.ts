@@ -35,7 +35,7 @@
  * where it meets an edge), which read a part whose open ends line up along vertical lines and wind inside out between them, as `openAlong` reads such
  * a part closed; and no piece of the model, all 27,043 at 3ac62d7, mirrored by its matrix.
  * Red with an Attic base's bottom left out (src/model/lib/column.ts: 8 shapes open, also read open by the walk), with `openWall`'s bottom left out (14
- * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage in `grand-stair-vault`), with main's crossing rule, which counted hits
+ * shapes open and misread) or `archedPassage`'s feet (the gallery 600 passage in `grand-stair-vault`, until work unit 23 put the cross hall's back wall on the core's), with main's crossing rule, which counted hits
  * within 1 µm once (206 shapes misread), with the walk's instance numbering off by a mesh (863 shapes misread), with the urn plinth's underside
  * turned up (src/model/lib/fittings.ts: 169 lines unbalanced), with the medieval piers' half shafts made whole cylinders, half in the core (3.9 m of
  * overlap), with one Hunt medallion of each pair three times as tall (2.27 m, which the piece measured reads as 0.76 m), with the piers' core left

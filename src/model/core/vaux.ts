@@ -1,6 +1,6 @@
 /**
  * Chapter `vaux-mould-1880`: Calvert Vaux and Jacob Wrey Mould's building, ground broken 1874, opened 30 March 1880 (history.md section 2),
- * block core-1880-a (X ±14.5, Z −138.3..−69.0). Steps follow history.md's proposal in constructional order: foundations, walls, the west front,
+ * block core-1880-a (X ±14.5, Z −138.3..−66.79). Steps follow history.md's proposal in constructional order: foundations, walls, the west front,
  * the iron frame and floors, openings and trim, the central hall, the skylit upper galleries, and the roofs last.
  */
 import type { StepDef } from '../../build/types.js';

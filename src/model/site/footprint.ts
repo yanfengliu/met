@@ -4,7 +4,7 @@
  * Polygons are counter-clockwise lists of (X, Z) in world metres, copied from the block table; the ids are the table's.
  */
 
-import { KRAVIS_EAST_Z } from '../frame.js';
+import { EAST_FACE_Z_CORE, KRAVIS_EAST_Z } from '../frame.js';
 
 export type Point = readonly [number, number];
 
@@ -22,15 +22,15 @@ const rect = (x0: number, x1: number, z0: number, z1: number): readonly Point[] 
 
 /** exterior.md section 2, the block table. */
 export const BLOCKS: readonly Block[] = [
-  { id: 'hunt-d', polygon: [[-49.7, -69.0], [49.4, -69.0], [49.4, -2.0], [30.4, -2.0], [30.4, 1.2], [-30.4, 1.2], [-30.4, -1.9], [-49.7, -1.9]] },
+  { id: 'hunt-d', polygon: [[-49.7, EAST_FACE_Z_CORE], [49.4, EAST_FACE_Z_CORE], [49.4, -2.0], [30.4, -2.0], [30.4, 1.2], [-30.4, 1.2], [-30.4, -1.9], [-49.7, -1.9]] },
   { id: 'mmw-north-e', polygon: rect(49.4, 88.6, -38.5, -2.0) },
   { id: 'mmw-north-h', polygon: rect(88.6, 153.1, -41.3, 9.8) },
   { id: 'mmw-north-f', polygon: [[49.4, -38.5], [88.6, -38.5], [88.6, -41.3], [118.0, -41.3], [118.0, -96.0], [49.4, -96.0]] },
   { id: 'mmw-south-j', polygon: rect(-88.1, -49.7, KRAVIS_EAST_Z, -1.9) },
   { id: 'mmw-south-k', polygon: rect(-151.5, -88.1, -38.5, 9.9) },
-  { id: 'core-1880-a', polygon: rect(-14.5, 14.5, -138.3, -69.0) },
-  { id: 'core-1888-b', polygon: rect(-49.7, -14.5, -138.3, -69.0) },
-  { id: 'core-1894-c', polygon: rect(14.5, 49.4, -138.3, -69.0) },
+  { id: 'core-1880-a', polygon: rect(-14.5, 14.5, -138.3, EAST_FACE_Z_CORE) },
+  { id: 'core-1888-b', polygon: rect(-49.7, -14.5, -138.3, EAST_FACE_Z_CORE) },
+  { id: 'core-1894-c', polygon: rect(14.5, 49.4, -138.3, EAST_FACE_Z_CORE) },
   {
     id: 'lehman',
     polygon: [[-17.5, -138.3], [-16.3, -139.4], [-16.3, -143.1], [-19.1, -146.0], [-29.1, -145.9], [-29.1, -156.4], [-5.6, -179.8], [5.5, -179.8], [29.0, -156.3], [29.0, -145.9], [19.0, -145.9], [16.2, -143.1], [16.2, -139.4], [17.5, -138.3]],

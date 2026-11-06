@@ -5,6 +5,7 @@
  * Plan positions from the floor map are taken in the canonical frame (map Z − 3.1 m, coordinator's frame correction of 2026-10-11).
  */
 import {
+  EAST_FACE_Z_CORE,
   GROUND_FLOOR_Y,
   HUNT_ARCH_CROWN_Y,
   HUNT_ARCH_SPAN,
@@ -35,8 +36,8 @@ export const PAVILION_HALF = 30.4;
 export const EXT_SOUTH_X = -49.7;
 export const EXT_NORTH_X = 49.4;
 export const EXT_FACE_Z = HUNT_EXTENSION_FACE_Z;
-/** The block's back line, where the 1880–1894 core begins (the core builds the wall on it). */
-export const BACK_Z = -69.0;
+/** The block's back line, where the 1880–1894 core begins (the core builds the wall on it): frame.ts EAST_FACE_Z_CORE, the floor map's line. */
+export const BACK_Z = EAST_FACE_Z_CORE;
 /** The pavilion's front elements (piers, pedestals, columns, breaks) may project to here (coordinator, 2026-10-11). */
 export const FRONT_LIMIT_Z = 3.5;
 
@@ -159,7 +160,11 @@ export const STAIR_MID_FRONT_Z = -46.87;
 export const STAIR_MID_BACK_Z = -49.88;
 export const STAIR_TOP_Z = -56.89;
 export const CROSS_HALL_FRONT_Z = -59.74;
-export const CROSS_HALL_BACK_Z = -66.79;
+/**
+ * The cross hall's back face: its stone back wall, 0.8 m thick with the round-arched doorway into gallery 600 (./stair.ts), stands on the core's east face,
+ * the map's line, where the map ends the hall (−66.79), so the two walls together stand centred on that line (work unit 23).
+ */
+export const CROSS_HALL_BACK_Z = BACK_Z + 0.8;
 export const CROSS_HALL_HALF = 9.8;
 export const GALLERY_OUTER_X = 9.75;
 

@@ -1,5 +1,5 @@
 /**
- * The 1880 building's east front at Z −69.0, toward Fifth Avenue until the Hunt Wing closed against it in 1902: two large arches either side of its
+ * The 1880 building's east front at Z −66.79 (frame.ts EAST_FACE_Z_CORE, the floor map's line since work unit 23), toward Fifth Avenue until the Hunt Wing closed against it in 1902: two large arches either side of its
  * covered middle (exterior-images.md #66), each the 1880 arch (vaux-arch.ts) inside a ring of dark granite blocks round its voussoirs and a moulded light
  * granite arch round a roundel in its head, as the one surviving at the top of the Grand Staircase shows it (#67; exterior.md section 9). Their windows
  * are blind. The inner pair stand on the west front's bay, 0.35 m from the floor map's narrow corridors either side of the Grand Staircase, which

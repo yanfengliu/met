@@ -177,7 +177,7 @@ function hallWalls(kit: Kit, floor: number, wingTop: number): void {
 const SEAM_WALL_T = 1.2;
 
 /**
- * A side wall on a McKim, Mead & White seam, from Z −69 to the extension's front, `floor` to `top`, with its main-floor passage (dims.ts SEAM_PASSAGE_*)
+ * A side wall on a McKim, Mead & White seam, from the core's east face (BACK_Z) to the extension's front, `floor` to `top`, with its main-floor passage (dims.ts SEAM_PASSAGE_*)
  * from the main floor to the underside of the second floor. `x` is its face toward the hall; `side` is +1 for the north wall (its body to +X), −1 for the south.
  */
 function seamWall(kit: Kit, x: number, side: 1 | -1, passage: { readonly z0: number; readonly z1: number }, floor: number, top: number, order: number): void {

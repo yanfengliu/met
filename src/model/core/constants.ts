@@ -8,7 +8,7 @@ import { CORE_COPING_TOP_Y, CORE_PARAPET_Y, EAST_FACE_Z_CORE, GROUND_FLOOR_Y, MA
 
 // --- Blocks (exterior.md section 2, block table; outer faces of the walls lie on these lines) -------------------------
 export const WEST_Z = WEST_FACE_Z_CORE; // -138.3, the park-side face; the Vaux west front
-export const EAST_Z = EAST_FACE_Z_CORE; // -69.0, the cut line to the Hunt block (hunt-d)
+export const EAST_Z = EAST_FACE_Z_CORE; // -66.79, the line with the Hunt block (hunt-d), on the floor map's (exterior.md [B2])
 export const A_HALF = 14.5; // core-1880-a spans X ±14.5
 export const B_SOUTH_X = -49.7; // core-1888-b's south face: Weston's facade in the Petrie Court
 export const C_NORTH_X = 49.4; // core-1894-c's north face, toward the American Wing
@@ -83,7 +83,7 @@ export const WESTON_STRIP = 0.9; // E: fig. 28, the plain brick between an arche
 export const WESTON_END_PROJECTION = 1.2; // E: the end blocks' return faces in interior-images.md #33 and #35, face-on
 export const WESTON_END_FROM = WESTON_PAVILION_HALF + WESTON_ARCH_BAY + WESTON_QUOIN + WESTON_STRIP; // the end blocks' inner edges out from the door's middle, 16.28 m (fig. 28: 162 + 217 + 23 px, 16.2 m)
 export const WESTON_WEST_END_Z = -137.0; // the west end block stops at the Kravis Wing's pier framing the court's glass end, Z −138.2..−137.0 in the Roche wings' 1.2 m wall (roche-south/kravis.ts `Z_IN`)
-export const WESTON_EAST_END_Z = 2 * WESTON_PAVILION_Z - WESTON_WEST_END_Z; // −64.94: the east end block stops at the court's east end, the McKim, Mead & White south link's park wall, as far east of the door as the west block's end is west of it, so the blocks match (frame.ts KRAVIS_EAST_Z, work unit 22); 4.06 m east of the core's own east face (EAST_Z), before Hunt's south wall
+export const WESTON_EAST_END_Z = 2 * WESTON_PAVILION_Z - WESTON_WEST_END_Z; // −64.94: the east end block stops at the court's east end, the McKim, Mead & White south link's park wall, as far east of the door as the west block's end is west of it, so the blocks match (frame.ts KRAVIS_EAST_Z, work unit 22); 1.85 m east of the core's own east face (EAST_Z, the map's line since work unit 23), before Hunt's south wall
 export const WESTON_ARCH_SPAN = 6.4; // E: the arched bays' round arches over four-light windows (fig. 28; #33)
 export const WESTON_ARCH_SPRING = 2.0; // E: springing above L2, so the arch's keystone reaches the cornice (fig. 28; #33)
 export const LIGHT_WELL_B = [-30.1, -25.0, -97.2, -84.5] as const; // exterior.md light well (4): X0, X1, Z0, Z1

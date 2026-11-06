@@ -8,9 +8,7 @@
  * The walk routes (plan docs/work/1_first-person-walk, M2; the whole walks are in routes.test.ts): the central doors' glazing is passable to the walk mode
  * and looks like the palette's, while the palette and the other glazing stay solid; the floor is whole behind the three arches' screens and under the
  * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's walk collision at t = N,
- * src/walk/collision.ts). `archedPassage` (./shapes.ts), the gallery 600 passage in `grand-stair-vault`, is closed along vertical lines and the faces
- * its feet stand on look down (`levelFaces`), as src/model/core/core.test.ts reads `openWall` with each kind of hole and `holeLining` (red with
- * `openWall`'s bottom or the passage's feet wound up).
+ * src/walk/collision.ts).
  */
 import { Box3, Vector3 } from 'three';
 import type { Material } from 'three';
@@ -23,19 +21,18 @@ import { GeometryBvhs } from '../../walk/bvh-cache.js';
 import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import type { GroundHit } from '../../walk/collision.js';
 import { HUNT_COLUMN_AXIS_Z, HUNT_COLUMN_COUNT, HUNT_PAIR_AXIS_SPACING, HUNT_PAIR_CENTRE_X_INNER, HUNT_PAIR_CENTRE_X_OUTER } from '../frame.js';
-import { levelFaces, openAlong } from '../lib/check.js';
 import { columnParts } from '../lib/index.js';
 import { HUNT_COLUMN_DIAMETER_LOWER, HUNT_COLUMN_DIAMETER_UPPER, HUNT_COLUMN_HEIGHT } from '../frame.js';
 import { palette } from '../palette.js';
 import { ENTRANCE_DOOR_Z, LUNETTE_GRILLE } from './arches.js';
-import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
+import { ARCH_CROWN_Y, ARCH_INNER_SPAN, ARCH_SPRING_Y, BACK_Z, BAY_X, CROSS_HALL_FRONT_Z, MAIN, SCREEN_HEAD_Y, SCREEN_Z, SECOND, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { greatHallDesk1970Steps, huntSteps } from './index.js';
-import { archedPassage, lunetteGrille } from './shapes.js';
+import { lunetteGrille } from './shapes.js';
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TOLERANCE = 0.3;
 /** Block hunt-d (exterior.md section 2) and the pavilion's allowed projection (coordinator, 2026-10-11). */
-const BLOCK = { south: -49.7, north: 49.4, back: -69.0, wingFrontSouth: -1.9, wingFrontNorth: -2.0, pavilion: 30.4, pavilionFront: 1.2, projection: 3.5 } as const;
+const BLOCK = { south: -49.7, north: 49.4, back: BACK_Z, wingFrontSouth: -1.9, wingFrontNorth: -2.0, pavilion: 30.4, pavilionFront: 1.2, projection: 3.5 } as const;
 const MOULDING_ALLOWANCE = 1.5;
 const BUDGET = { triangles: 650_000, meshes: 170, lights: 2 } as const;
 
@@ -55,14 +52,14 @@ function boxes(stepIndex: number): Box3[] {
 /**
  * How far a world box oversteps the block's outline (0 when inside), and along which edge. On the building's outer outline (the wings' fronts and the
  * pavilion's sides in front of them) mouldings may project up to 1.5 m (spec, Build-step API); walls get the 0.3 m tolerance only. The seams on X −49.7
- * and +49.4 and the back on Z −69 get the tolerance only, and so does the pavilion's projection line at Z +3.5.
+ * and +49.4 and the back on Z −66.79 (dims.ts BACK_Z, the core's east face) get the tolerance only, and so does the pavilion's projection line at Z +3.5.
  */
 function overstep(b: Box3, stepId: string): { by: number; edge: string } {
   const allowance = stepId === 'hunt-walls' ? 0 : MOULDING_ALLOWANCE - TOLERANCE;
   const out: { by: number; edge: string }[] = [
     { by: BLOCK.south - b.min.x, edge: 'south seam X −49.7' },
     { by: b.max.x - BLOCK.north, edge: 'north seam X +49.4' },
-    { by: BLOCK.back - b.min.z, edge: 'back Z −69' },
+    { by: BLOCK.back - b.min.z, edge: 'back Z −66.79' },
     { by: b.max.z - BLOCK.projection, edge: 'pavilion projection Z +3.5' },
   ];
   for (const side of [-1, 1] as const) {
@@ -267,12 +264,3 @@ describe('the walk routes through the wing', () => {
   });
 });
 
-describe('the arched passage', () => {
-  it('is closed along vertical lines, its feet on the floor looking down (src/model/lib/check.ts openAlong; work unit 3, review 2, F13)', () => {
-    const passage = archedPassage(1.0, 0.3, 2.6, 1.41);
-    expect(openAlong(passage, new Vector3(0, 1, 0))).toBeNull();
-    const feet = levelFaces(passage, 0);
-    expect(feet.length, 'faces on the floor').toBeGreaterThan(0);
-    expect(feet.filter((ny) => ny > -0.999), 'faces on the floor not looking down').toEqual([]);
-  });
-});

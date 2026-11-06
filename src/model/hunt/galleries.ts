@@ -1,7 +1,7 @@
 /**
- * The rest of Hunt's wing back to the 1880–1894 core (Z −69): simplified gallery floors and walls on the floor map's room lines (canonical frame, map Z − 3.1):
+ * The rest of Hunt's wing back to the 1880–1894 core (Z −66.79, dims.ts BACK_Z): simplified gallery floors and walls on the floor map's room lines (canonical frame, map Z − 3.1):
  * the second-floor plates of the flanking wings and of the ranges behind the Great Hall (the Vélez Blanco patio left open), and the main partitions on
- * both floors with door gaps. The core builds the wall on Z −69; these floors run up to it.
+ * both floors with door gaps. The core builds the wall on that line; these floors run up to it.
  * Room lines (interior.md and the map's Floor 1 and Floor 2 rooms): wings at Z −10.95/−24.4 (north) and −13.65/−21.6 (south), X ±45.4; galleries 200/201
  * and the Byzantine galleries on X ±9.75; gallery 534 on X −28.67, Z −37.72 and −57.53; gallery 099 on X 44.38 and Z −65.65.
  */
@@ -88,7 +88,7 @@ export const gallerySteps: readonly StepDef[] = [
         partition(kit, [-45.6, -13.65], [-HALL_END_WALL_X, -13.65], lo, wingTop, [0.5], order);
         partition(kit, [-45.6, -21.6], [-HALL_END_WALL_X, -21.6], lo, wingTop, [0.5], order);
         partition(kit, [-45.6, front], [-45.6, HALL_WEST_WALL_Z], lo, wingTop, f === 0 ? WING_DOORS_SOUTH : [0.2, 0.62], order);
-        for (const x of [-9.75, 9.75]) partition(kit, [x, HALL_WEST_WALL_Z], [x, -66.79], lo, hi, [0.2, 0.55, 0.85], order);
+        for (const x of [-9.75, 9.75]) partition(kit, [x, HALL_WEST_WALL_Z], [x, BACK_Z], lo, hi, [0.2, 0.55, 0.85], order);
         partition(kit, [-28.67, -37.72], [-28.67, -57.53], lo, hi, [0.5], order);
         partition(kit, [-28.67, -37.72], [-9.75, -37.72], lo, hi, [0.5], order);
         partition(kit, [-28.67, -57.53], [-9.75, -57.53], lo, hi, [0.5], order);

@@ -7,7 +7,7 @@
  * nine lines along Z through it (red with a crossing pair taken: the front face 92.8 m² where it should cover 86.2 m²), whichever cache entry came
  * first (red with a key that read a niche's depth as a door's).
  * Bound: geometry is built in Node without WebGL, so counts and bounds are exact but nothing here looks at a rendered pixel.
- * Blocks: core-1880-a, core-1888-b and core-1894-c tile X −49.7..49.4, Z −138.3..−69.0 (exterior.md section 2). A piece may overstep that by
+ * Blocks: core-1880-a, core-1888-b and core-1894-c tile X −49.7..49.4, Z −138.3..−66.79 (exterior.md section 2, [B2]). A piece may overstep that by
  * 0.3 m; trim (any non-brick piece) on the west face (into the Lehman court and the park) and on Weston's south face (into the Petrie Court)
  * may project up to 1.5 m (coordinator, 2026-10-11), but for the porch of Weston's door, which stands 2.25 m out to its pilasters' faces and
  * 2.85 m to its cornice's front as the April 1888 drawing and the court's photographs show it (work unit 17, docs/research/interior.md, Weston's 1888
@@ -17,9 +17,9 @@
  * round them, as Heckscher's figs. 26, 28 and 35 and the court's photographs show them (work unit 21; weston-ends.ts): pieces lying wholly within an
  * end block's stretch, for trim from the arched bay's outer edge, where the block's mitred cornice starts, and for brick from the block's own inner
  * end, to the court's end (from constants.ts, as the porch's stretch is), and under the coping's top, may reach 1.35 m in brick and 2.0 m in trim.
- * Red with the blocks projecting 1.5 m. The east block runs on 4.06 m past the blocks' east line, to the court's east end (work unit 22): east of that
+ * Red with the blocks projecting 1.5 m. The east block runs on 1.85 m past the blocks' east line, to the court's east end (work units 22 and 23): east of that
  * line only a piece of that stretch may stand, and only wholly in front of the front's face (X −49.7), where Hunt's podium and south wall stand
- * behind it from 1898 and 1899. Red with the coping carried back 0.25 m over those 4.06 m (and 1 m, as it is over the wall behind the rest of the block).
+ * behind it from 1898 and 1899. Red with the coping carried back 0.25 m over those 1.85 m (and 1 m, as it is over the wall behind the rest of the block).
  * Both end blocks run 19.75 m and mirror each other about the door, piece for piece, but for the east block's coping, which divides where the
  * blocks' east line crosses it: each of its two lengths is the west's coping mirrored and cut there, the second stopping at the front's face (red with
  * the east block ending on that line, as it did before work unit 22, with a 1 m gap between the two lengths, and with the second's overhang lost).
@@ -52,7 +52,7 @@ const ARRAYS: readonly (readonly [string, readonly StepDef[]])[] = [
   ['koch-plaza-2014', europeanPaintingsGlazing2023Steps],
 ];
 const ALL: readonly StepDef[] = ARRAYS.flatMap(([, steps]) => steps);
-const BLOCKS = { x0: -49.7, x1: 49.4, z0: -138.3, z1: -69.0 } as const;
+const BLOCKS = { x0: -49.7, x1: 49.4, z0: -138.3, z1: EAST_Z } as const;
 const SLACK = 0.3;
 const TRIM = 1.5;
 /** The stretch of Weston's south face where its porch stands, and how far trim there may reach into the Petrie Court (see the header). */

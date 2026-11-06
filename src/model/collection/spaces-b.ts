@@ -134,10 +134,11 @@ export const balconyCollectionStep = collectionStep(balconySpace);
 
 // --- European Paintings, galleries 600 to 602 (core/plan-data.ts GALLERY_RUNS, core/constants.ts) --------------------------------------------------
 // Tiepolo's Triumph of Marius, 5.59 m tall in a room 5.63 m high, floor to ceiling on the wall gallery 600 shares with 601 between its two doors
-// (X −3.1..3.1); his Battle of Vercellae and Capture of Carthage on the ends of the partitions at X −8.75 and 8.8 that close 600's middle, facing in;
+// (X −3.1..3.1); his Battle of Vercellae and Capture of Carthage on the partitions at X −8.75 and 8.8 that close 600's middle, facing in, centred
+// on them: the map runs them from 601's wall to Z −68.85, short of the core's east wall (core/plan-data.ts, work unit 23);
 // Giotto on 601's side of the same wall, Filippo Lippi and Memling on 602's west wall (Z −83.35).
 const HALF = PARTITION / 2;
-const ROOM_600_Z = (-75.05 + HALF + -70.0) / 2;
+const ROOM_600_Z = (-75.05 + HALF + -68.85) / 2;
 const PAINTINGS: readonly Placement[] = [
   { id: 437788, x: 0, z: -75.05 + HALF, floor: SECOND_FLOOR_Y, facing: FACE.east, ceiling: GALLERY_CEILING_Y },
   { id: 437794, x: -8.75 + HALF, z: ROOM_600_Z, floor: SECOND_FLOOR_Y, facing: FACE.north, ceiling: GALLERY_CEILING_Y },

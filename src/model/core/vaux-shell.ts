@@ -47,7 +47,7 @@ export { SIDE_BAY, SIDE_LINES } from './vaux-sides.js';
 
 const [AX0, , AX1] = INTERIOR.a;
 
-/** Side walls (X ±14.5, vaux-sides.ts) and the east wall (Z −69.0, vaux-east.ts), all from the footings. */
+/** Side walls (X ±14.5, vaux-sides.ts) and the east wall (Z −66.79, vaux-east.ts), all from the footings. */
 export function vauxWalls(kit: Kit): void {
   vauxSideWalls(kit);
   vauxEastWall(kit);
