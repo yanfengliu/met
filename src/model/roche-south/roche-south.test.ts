@@ -12,7 +12,8 @@
  * narrow ones arched and the three wide ones square-headed, and a window over each arched door; and a grid of lines at most 0.1 m apart through each door and window, 5 cm
  * in from its outline (a round head's arc too), from 0.5 m out in the court to 0.5 m behind the wall, meets no piece of any step of the sequence
  * (src/build/sequence.ts), so nothing stands in them. Red with the wall cut with its six openings of before work unit 24 (the wall itself in all eight
- * doors and five windows), and with a partition 0.2 m thick standing 0.1 m behind the wall across the second door (a grid of 9 lines to a side missed it).
+ * doors and five windows), and with a post 0.2 m square standing 0.1 m behind the wall in the second door, as the end of a partition square to the wall would
+ * (a grid of 9 lines to a side missed it).
  * Bound: lines 0.1 m apart miss a piece thinner than that between them, and nothing past 0.5 m behind the wall or before it in the court is looked at.
  */
 import { Box3, Vector3 } from 'three';

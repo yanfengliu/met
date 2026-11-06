@@ -12,7 +12,8 @@
  * drop over a step), never stalls (a wall, a face over a step, a slope over 40°) and ends on the route's floor; R1 keeps level behind the doors, R2
  * crosses its landing and walks the second floor on their levels, R3 and R4 cross the McKim, Mead & White seams on the main floor, R5 crosses the
  * doorway's passage and the core's east wall on the second floor's level into gallery 600, R6 crosses the passage on the main floor's level, R7
- * the corridor and the court wall's door on it, R8 both doorways on it, and R9 both corridors on it.
+ * the corridor on it and inside the court wall stays between the jambs of its door on Weston's door's axis, less the body's radius (red with R7 turned
+ * through the third door: work unit 24, review 0, F1), R8 both doorways on it, and R9 both corridors on it.
  * Bound: steering turns the walker directly, never by real keys (tests/e2e/routes.spec.ts checks fixed places on the routes in the page); a stall is
  * less than 5 cm of progress in 1 s; heights are the feet's, not the eye's, which eases out of stair snaps; samples are per frame, so a dip that starts
  * and ends within one frame's two physics steps is not seen.
@@ -35,7 +36,7 @@ import { eastCorridor } from '../core/vaux-east.js';
 import { MORGAN, PARTY_WALL, SOUTH_LINK } from '../mmw/dims.js';
 import { ENGELHARD_PASSAGE, PETRIE_PASSAGE } from '../mmw/party-walls.js';
 import { ROMAN_COURT } from '../mmw/wings.js';
-import { COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
+import { COURT_ENDS_Z, COURT_WALL, COURT_X0 } from '../roche-south/kravis.js';
 import { COURT, DENDUR_FLOOR_Y, PLATFORM, SACKLER_BLOCK } from '../roche-north/plan.js';
 import { CROSS_HALL_BACK_Z, EXT_NORTH_X, EXT_SOUTH_X, MAIN, SCREEN_Z, SECOND, STAIR_MID_BACK_Z, STAIR_MID_FRONT_Z, STAIR_TOP_Z, WALL_BACK_Z } from './dims.js';
 import { GALLERY_600_MID_Z, HUNT_SLAB_TOP_Y, reversed, ROUTE_R1, ROUTE_R2, ROUTE_R3, ROUTE_R4, ROUTE_R5, ROUTE_R6, ROUTE_R7, ROUTE_R8, ROUTE_R9, COURT_DOOR, WESTON_APPROACH } from './routes.js';
@@ -212,10 +213,13 @@ describe('the walk routes, walked by the walk mode’s walker', () => {
       const corridor = samples.filter((s) => s.z > SOUTH_LINK.z0 - 1 && s.z < SOUTH_LINK.z0 + PARTY_WALL + 1 && s.x > PETRIE_PASSAGE.a && s.x < PETRIE_PASSAGE.b);
       expect(corridor.length, `${route.id}: samples in the corridor`).toBeGreaterThan(5);
       expect(heightsOff(corridor, MAIN), `${route.id}: feet off the main floor in the corridor`).toEqual([]);
-      // Through the court's limestone wall, a metre either side of it, between the jambs of its door on Weston's door's axis.
-      const opening = samples.filter((s) => s.x > COURT_X0 - COURT_WALL - 1 && s.x < COURT_X0 + 1 && s.z > COURT_DOOR.z0 && s.z < COURT_DOOR.z1);
-      expect(opening.length, `${route.id}: samples in the court wall's door`).toBeGreaterThan(5);
-      expect(heightsOff(opening, MAIN), `${route.id}: feet off the main floor in the door`).toEqual([]);
+      // Inside the court's limestone wall, along the court, the walker's every sample between the jambs of its door on Weston's door's axis, its body clear of both.
+      const [courtWest, courtEast] = COURT_ENDS_Z;
+      const inWall = samples.filter((s) => s.x > COURT_X0 - COURT_WALL && s.x < COURT_X0 && s.z > courtWest && s.z < courtEast);
+      expect(inWall.length, `${route.id}: samples inside the court wall`).toBeGreaterThan(5);
+      const astray = inWall.filter((s) => s.z < COURT_DOOR.z0 + BODY.radius || s.z > COURT_DOOR.z1 - BODY.radius);
+      expect(astray.map(where), `${route.id}: samples inside the wall but not within its door's jambs less the body's radius`).toEqual([]);
+      expect(heightsOff(inWall, MAIN), `${route.id}: feet off the main floor in the door`).toEqual([]);
       const [x, z] = route === ROUTE_R7 ? WESTON_APPROACH : (ROUTE_R7.points[0] ?? [0, 0]);
       expect(Math.hypot(end.x - x, end.z - z), `${route.id}: ends within 0.5 m of its last point at ${where(end)}`).toBeLessThan(0.5);
     }

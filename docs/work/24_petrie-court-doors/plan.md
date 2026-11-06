@@ -3,7 +3,7 @@
 Status: active
 Owner: claude/optimistic-mayer-d1fe0b
 Created: 2026-11-05
-Updated: 2026-11-05
+Updated: 2026-11-06
 
 ## Problem and outcome
 
@@ -15,7 +15,7 @@ Outcome: the court's south wall has the map's eight doors at their places and wi
 
 In: the court's south wall, its doors and windows (`src/model/roche-south/kravis.ts`); the two artworks that hang on or stand before that wall (`src/model/collection/spaces-b.ts`), one of them now where the map has a door; route R7's way into the court (`src/model/hunt/routes.ts`, `routes.test.ts`); the core test's check that the court is symmetric about Weston's door (`src/model/core/core.test.ts`); the records.
 
-Out, recorded and not changed (the coordinator: "If anything else along this front contradicts the decoded map, record it and don't change it"): west of Z −126.34 the map draws no wall on the court's south side, the café opening onto the court, and #35 shows columns there, where the model's wall runs on to the court's west end; and #33 shows the court's east wall with an inscription and a balcony with windows, where the model's (the McKim, Mead & White south link's park wall) is plain.
+Out, recorded and not changed (the coordinator: "If anything else along this front contradicts the decoded map, record it and don't change it"): west of Z −126.34 the map draws no wall on the court's south side, the café opening onto the court, and #35 shows columns there, where the model's wall runs on to the court's west end; and, against the photographs rather than the map (which draws no heights), the court's east wall has three windows behind a balustraded balcony over the court's name (#33, #46), where the model's (the McKim, Mead & White south link's park wall) is plain.
 
 ## Approach
 
@@ -36,9 +36,10 @@ Out, recorded and not changed (the coordinator: "If anything else along this fro
 
 ## Implementation steps
 
-- [ ] The doors and windows, the artworks, R7, the tests.
-- [ ] The records.
-- [ ] Gates, the load runs and the shots; renders read at native size.
+- [x] The doors and windows, the artworks, R7, the tests.
+- [x] The records.
+- [x] Gates, the load runs and the shots; renders read at native size.
+- [x] Review 0 (`reviews/0_implementation.md`): Codex approved, Claude approved with four minor findings and a nit, all repaired.
 - [ ] Review, repairs, landing, the gallery, the devlog and the hand-over note.
 
 ## Outcome

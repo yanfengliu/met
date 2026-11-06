@@ -116,8 +116,8 @@ function parkFace(kit: Kit): void {
 export const COURT_ENDS_Z: readonly [number, number] = [Z_IN, Z_EAST];
 
 /**
- * D: the floor map's eight doors from gallery 549 into the court, on X −61.44 (research/cache/lm_features.json, Floor 1; interior.md, Other skylit
- * volumes; work unit 24), world Z spans, west to east. The first seven stand in pairs about Weston's door, each pair's middles' mean within 1 cm of its
+ * D: the floor map's eight doors from gallery 549 into the court, on X −61.44 (research/cache/lm_features.json, Floor 1; interior.md, The court's south
+ * wall; work unit 24), world Z spans, west to east. The first seven stand in pairs about Weston's door, each pair's middles' mean within 1 cm of its
  * axis and the fourth door's middle 4.5 cm east of it; the eighth, at the court's east end, has no partner.
  */
 const COURT_DOOR_SPANS: readonly (readonly [number, number])[] = [

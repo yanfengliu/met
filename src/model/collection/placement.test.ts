@@ -99,7 +99,7 @@ const ZONES: readonly Zone[] = [
   { name: 'Engelhard Court passage', y: MAIN_FLOOR_Y, min: [ENGELHARD_PASSAGE.a, MORGAN.z0 - 6], max: [ENGELHARD_PASSAGE.b, MORGAN.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
   { name: 'Petrie Court passage', y: MAIN_FLOOR_Y, min: [PETRIE_PASSAGE.a, SOUTH_LINK.z0 - 6], max: [PETRIE_PASSAGE.b, SOUTH_LINK.z0 + PARTY_WALL + 6], margin: CLEARANCE + BODY.radius },
   // The Petrie Court's doors from gallery 549 (work unit 24), between their jambs, through the court's south wall and 1 m out each side of it.
-  ...COURT_DOORS.map((d, k): Zone => ({ name: `Petrie Court door ${String(k + 1)}`, y: MAIN_FLOOR_Y, min: [COURT_X0 - COURT_WALL - 1, d.z0], max: [COURT_X0 + 1, d.z1], margin: CLEARANCE })),
+  ...COURT_DOORS.map((d, k): Zone => ({ name: `Petrie Court door ${String(k + 1)}`, y: MAIN_FLOOR_Y, min: [COURT_X0 - COURT_WALL - 1, d.z0], max: [COURT_X0 + 1, d.z1], margin: CLEARANCE + BODY.radius })),
   // The Valladolid choir screen's open gate, between its jambs (core/choir-screen.ts), 6 m out each side, as Weston's.
   { name: 'choir screen gate', y: MAIN_FLOOR_Y, min: [-GATE_CLEAR, SCREEN_Z - 6], max: [GATE_CLEAR, SCREEN_Z + 6], margin: CLEARANCE + BODY.radius },
   // The 1880 west front's doorways beside the entrance, between their jambs, and the corridors in its east front's inner arches, 6 m out each side.
