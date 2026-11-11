@@ -60,8 +60,10 @@ The gate itself, work unit 30 (`docs/work/30_timing-gate/plan.md`): on 2026-11-1
 
 ### Limits the sweep found that bear on the items
 
-- The core area stands at 128 of its 130 meshes (`src/model/core/core.test.ts` prints it; the sweep's "130 of 130" came from work unit 21's record and was wrong by 2026-11-11), so anything added in the 1880 to 1894 core has two meshes to spend before it must reuse one or the owner raises the cap.
+- The core area stands at 128 of its 130 meshes (`src/model/core/core.test.ts` prints it; the sweep's "130 of 130" came from work unit 21's record and was wrong by 2026-11-11), so anything added in the 1880 to 1894 core has two meshes to spend before it must reuse one or the area's share is raised.
 - The model is at 744 of 900 meshes and 1.61M of 3M triangles.
+- Whose the caps are: the spec's Budgets hold the model's totals (900 meshes, 3,000,000 triangles) and the collection's share (110 and 600,000); the areas' caps are the coordinator's assignments of 2026-10-11, as each area's test says in its header (`src/model/core/core.test.ts`, `mmw/mmw.test.ts`, `roche-north/roche-north.test.ts`). An earlier line here gave them to the owner, wrongly. So an area's share may be re-assigned by the coordinator inside the spec's totals, with the reason written in the test's header; the spec's numbers are the owner's.
+- One such re-assignment, 2026-11-11: the MMW area's mesh cap goes from 160 to 170 with unit 29's landing B. The area's test counts the collection's steps in its three spaces (the Arms and Armor court, the Greek and Roman court, the Greek galleries), whose forms grow from 8 meshes to 19 inside the collection's own cap (65 of 110 by the worker's count), while the cap dated from when they had two to four forms each. The model stands at 771 of 900 by the same count.
 - Three of the eight step lights are used.
 - The walking frame budgets pass on a quiet machine and have failed on a loaded one (16.78 ms in work unit 25, 19.5 and 17.7 ms in work unit 23), so item 1's cost must be measured, not assumed.
 
