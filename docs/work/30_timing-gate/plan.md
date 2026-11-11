@@ -32,6 +32,32 @@ One switch, read by the tests and never by `src/`: off, a budget is measured and
 
 When `npm run budgets` is required: before landing a change that can alter what a frame, the build or a test costs (rendering, the walk, the model's pieces, the build engine, a new or slower test), through `tmp/gate.sh`, with nothing else heavy running. A landing that cannot (documents, the catalogue's text, a script the page never runs) says so in its record instead.
 
+### Inventory
+
+Every assertion that compares a duration with a budget, as the worker found them at `84be2b0` by reading every e2e spec and helper and searching `src/`, `scripts/` and `tests/` for `toBeLessThan`, `performance.now`, `Date.now`, `benchmark`, `frameMs`, `readyMs`, `bvhMs` and the numbers 16.7, 2000 and 4000. Nine assertions in source, every one moved behind the switch with its number unchanged:
+
+1. The build: from navigation start to `window.__shotReady` (`perf.readyMs`) under 4000 ms. `tests/e2e/layout.spec.ts:217`, in "the whole sequence builds within the 4 s budget, from navigation to ready".
+2. The collision: `walk.bvhMs` under 2000 ms. `tests/e2e/walk.spec.ts:316`, in "walking holds 60 frames a second with the look target on … the collision builds within 2 s".
+3. The walking frame, three assertions in `tests/e2e/helpers.ts` `expectWalkingBudget` (lines 241 to 243): the median work a walking frame (`walk.frameMs`) under 16.7 ms, the mean GPU-synced render (`benchmark(30)`) under 16.7 ms, and the median frame interval under 16.7 × 1.1 = 18.37 ms. Called nine times in four tests: four in the walk.spec test of item 2 (on the plaza, running up the front steps, from the great-hall and the second-floor spawns); four in `tests/e2e/routes.spec.ts`, walking and running, in "the walking frame budget in the Temple of Dendur hall at R3's end …" and "… in the Leon Levy and Shelby White Court at R4's end …", which skip under a CPU throttle; one in `tests/e2e/labels.spec.ts`, in "walking: the card shows while the eye looks at the Triumph of Marius …", at 1280×720 only.
+4. A door's swing: its slowest timed frame under 16.7 ms of work. `tests/e2e/doors.spec.ts:230` (`timeSwing`): four swings in "facing into the Great Hall, standing and walking through two door cycles, and in it facing out …" and four in "Weston's door, its leaves casting a shadow …".
+5. A GPU-synced render with a shadow pass, facing into the Great Hall through the open doorway, under 16.7 ms. `doors.spec.ts:374`, in the first test of item 4.
+6. The slowest walking frame through two door cycles under 16.7 ms. `doors.spec.ts:387`, in the same test.
+7. The unit-test headroom: a passed unit test that takes over a sixth (`HEADROOM`, 6) of its timeout fails the run, so over 10 s of Vitest's 60 s. `scripts/test-headroom.ts` (`headroomProblems` and the reporter `TestHeadroom`), wired in `vitest.config.ts` off GitHub's runner.
+
+Kept in `npm run verify`, since none compares a duration with a budget:
+
+- Counts, which no clock changes: at most 3,000,000 triangles and 900 meshes (`layout.spec.ts:218-219`, `src/build/sequence.test.ts`), the collection's 110 meshes and 600,000 triangles (`src/model/collection/placement.test.ts`), the doors' 20 meshes and draws (`src/model/doors.test.ts`).
+- That a budget was measured, and what over: `perf.readyMs` set and longer than `perf.buildMs` (`layout.spec.ts:213, 216`); more than 20 frames timed over a swing (`doors.spec.ts:229`); more than 120 walking frames through the cycles, the eye moving in over 95% of them and over 3 m walked (`doors.spec.ts:388-391`); the collision's steps and triangles (`walk.spec.ts:317-318`). The frame counts depend on the frame rate: a swing of 0.7 s (`SWING_SECONDS`) gives over 20 frames above about 29 frames a second, where headless Chrome runs here at about 166 (a median interval of 6 ms in the logs of 2026-10-30). If one fails under load, that is a finding to report, not a budget.
+- A passed unit test whose time or timeout Vitest does not give still fails the run (`scripts/test-headroom.ts`), since then no headroom is read at all: it depends on Vitest's reporter API, not on the clock.
+- Deadlines: test timeouts, `waitForFunction` timeouts, `open`'s 20 s, `doorIs`'s 4 s and the like bound a wait, so a broken page fails rather than hangs; most scale with `MET_CPU_THROTTLE`.
+- Times printed and never asserted (`src/model/reach.test.ts`'s fill, `routes.spec.ts`'s short walk), and simulated seconds under fixed time steps (`src/walk/walker.test.ts`).
+
+### The switch
+
+`MET_BUDGETS`, read by `budgetsAsserted` in `scripts/budgets.ts`, which `tests/e2e/helpers.ts` and `vitest.config.ts` call; nothing under `src/` reads it (`src/repo-conventions.test.ts` already fails on a `process.env` read there). `1` asserts every budget as before; unset or blank, each is measured and printed, one over its budget printed as not asserted; any other value throws, naming it, so a misspelt switch cannot pass for either. In the e2e specs each budget's assertion stands unchanged inside `budgetCheck(name, () => …)` (`tests/e2e/helpers.ts`), which with the switch off catches only an assertion's failure and prints it; every test that holds a budget carries the tag `@budget`, and a budget held in an untagged test fails in either mode, so `npm run budgets` cannot leave one out. The headroom reporter takes the switch: off, it prints the tests over a sixth of their timeout and leaves the exit status alone.
+
+`npm run budgets` runs `node scripts/budgets.ts`, which runs `npm test` and then `npm run test:e2e -- --grep @budget`, each with `MET_BUDGETS=1`, both whatever the first gives, and fails if either fails. It is a script rather than `MET_BUDGETS=1 …` in `package.json` because npm runs scripts in cmd.exe on Windows, where that form does not set a variable, and no new dependency is allowed. `npm run verify` sets nothing.
+
 ## Acceptance criteria
 
 - [ ] An inventory in this plan of every budget: its test, its number, and that the number is unchanged.
