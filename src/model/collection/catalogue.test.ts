@@ -113,6 +113,9 @@ describe('the catalogue', () => {
       if (e === undefined) continue;
       if (!KINDS.includes(e.kind) || !DISPLAYS.includes(e.display)) problems.push(`${String(e.id)}: kind ${e.kind}, display ${e.display}`);
       if ((e.kindFrom === 'pick') !== (pick.kind !== undefined) || (e.displayFrom === 'pick') !== (pick.display !== undefined)) problems.push(`${String(e.id)}: kind from ${e.kindFrom}, display from ${e.displayFrom}`);
+      // A pick's choice is the entry's value, not only its mark: an entry kept from before its pick changed would differ here (review 0, F3).
+      if (pick.kind !== undefined && e.kind !== pick.kind.value) problems.push(`${String(e.id)}: kind ${e.kind}, the pick says ${pick.kind.value}`);
+      if (pick.display !== undefined && e.display !== pick.display.value) problems.push(`${String(e.id)}: display ${e.display}, the pick says ${pick.display.value}`);
       if (e.displayFrom === 'rule') {
         const largest = Math.max(e.size.h, e.size.w, e.size.d);
         const expected: ArtDisplay = e.kind === 'frame' ? 'wall' : largest < 0.6 ? 'vitrine' : e.kind === 'slab' ? 'wall' : 'plinth';

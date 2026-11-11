@@ -7,6 +7,8 @@
  * - Orbit view (`clickForCard`): at the camera preset that shows the piece, a click on a pixel of it shows the card and moves no camera; Esc hides it.
  *   The pixel comes from the published camera and is checked apart from the page: nothing of the page covers it, and the first surface on its ray,
  *   cast through the finished model in the test process, lies on the piece.
+ * - The cut (`cutLeavingTheGate`): the temple clicked, the section cut dragged by its slider to between the gate's foot and the temple's keeps the
+ *   card, since the gate, one artwork with the temple and built by another step, is still drawn; dragged under the gate, the card goes.
  * The places, the aims and the click points are src/model/collection/fit-out-testing.ts's, which a unit test holds against the finished model. The
  * card's text is compared with the catalogue's record and, written out here, with what The Met's record said when it was fetched (2026-11-11), so a
  * card that showed another record, or a record that changed unseen, fails.
@@ -19,10 +21,11 @@ import type { Page } from '@playwright/test';
 import { Vector3 } from 'three';
 
 import { fitOutEntryOf } from '../../src/model/collection/fit-out.js';
-import { EYE, FIT_OUT_VIEWS } from '../../src/model/collection/fit-out-testing.js';
+import { DENDUR_FEET, EYE, FIT_OUT_VIEWS } from '../../src/model/collection/fit-out-testing.js';
 import type { FitOutView } from '../../src/model/collection/fit-out-testing.js';
 import { ART_CREDIT, cardContent } from '../../src/ui/art-card.js';
-import { cameraGap, facts, open, settle, settledCamera, watchErrors } from './helpers.js';
+import { cameraGap, facts, open, openMenu, press, settle, settledCamera, watchErrors } from './helpers.js';
+import type { Camera } from './helpers.js';
 import { drag, onCanvas, pixelOf, recordRequests, surfaceAt } from './labels-helpers.js';
 import { still, walking } from './route-walk.js';
 
@@ -125,10 +128,8 @@ export async function walkToCard(page: Page, landmark: Landmark): Promise<void> 
   errors.expectClean();
 }
 
-/** Orbit view: at the preset that shows `landmark`, a click on a pixel of it shows its card and moves no camera; Esc hides it. */
-export async function clickForCard(page: Page, landmark: Landmark): Promise<void> {
-  const errors = watchErrors(page);
-  const requests = recordRequests(page);
+/** Opens the page at the preset that shows `landmark` and clicks a pixel of it: its card's label shows. Returns the preset's id and its settled camera. */
+async function clickAtPreset(page: Page, landmark: Landmark): Promise<{ readonly preset: string; readonly start: Camera }> {
   const { orbit, click } = landmark.view;
   if (!('preset' in orbit)) throw new Error(`${landmark.name}: its view names no camera preset to click from.`);
   await open(page, `view=${orbit.preset}`);
@@ -143,14 +144,102 @@ export async function clickForCard(page: Page, landmark: Landmark): Promise<void
   await page.mouse.click(p.x, p.y);
   await settle(page);
   expect((await facts(page)).label, `${landmark.name}: after the click`).toEqual(labelOf(landmark));
+  return { preset: orbit.preset, start };
+}
+
+/** Orbit view: at the preset that shows `landmark`, a click on a pixel of it shows its card and moves no camera; Esc hides it. */
+export async function clickForCard(page: Page, landmark: Landmark): Promise<void> {
+  const errors = watchErrors(page);
+  const requests = recordRequests(page);
+  const { preset, start } = await clickAtPreset(page, landmark);
   await expectCard(page, landmark);
   const f = await facts(page);
   expect(cameraGap(await settledCamera(page), start), `${landmark.name}: metres the click moved the camera`).toBeLessThan(1e-4);
-  expect(f.view, `${landmark.name}: the preset still in view`).toBe(orbit.preset);
+  expect(f.view, `${landmark.name}: the preset still in view`).toBe(preset);
   await page.keyboard.press('Escape');
   await settle(page);
   expect((await facts(page)).label, `${landmark.name}: after Esc`).toBeNull();
   await expect(page.getByTestId('art-card')).toBeHidden();
   expect(requests.filter((url) => /metmuseum\.org/i.test(url)), `${landmark.name}: requests of the page to metmuseum.org`).toEqual([]);
+  errors.expectClean();
+}
+
+/** The cut slider with the view menu open: its box, its thumb's place for a height (8 px in from each end, as ./labels-view.spec.ts places it) and its row. */
+async function cutSlider(page: Page): Promise<{ readonly xOf: (metres: number) => number; readonly y: number; readonly left: number }> {
+  const slider = page.getByTestId('cut-slider');
+  await slider.scrollIntoViewIfNeeded();
+  const box = await slider.boundingBox();
+  if (box === null) throw new Error('The cut slider has no box.');
+  const max = Number(await slider.getAttribute('max'));
+  return { xOf: (metres) => box.x + 8 + (box.width - 16) * (metres / max), y: box.y + box.height / 2, left: box.x };
+}
+
+const cutNow = async (page: Page): Promise<{ enabled: boolean; height: number }> => (await facts(page)).cut;
+
+/**
+ * Drags the cut slider's thumb down by hand until the cut reads under `under` metres, and lets go there: quickly to a metre over it, then a pixel
+ * at a time, the cut read after each, as a person watches the read-out. The cut only comes down, and stops at the first height under `under`.
+ */
+async function dragCutUnder(page: Page, under: number): Promise<number> {
+  const { xOf, y } = await cutSlider(page);
+  const from = xOf((await cutNow(page)).height);
+  let x = Math.ceil(xOf(under + 1));
+  await page.mouse.move(from, y);
+  await page.mouse.down();
+  for (let k = 1; k <= 8; k += 1) await page.mouse.move(from + ((x - from) * k) / 8, y);
+  await settle(page);
+  let height = (await cutNow(page)).height;
+  for (let moves = 0; height >= under && moves < 120; moves += 1) {
+    x -= 1;
+    await page.mouse.move(x, y);
+    await settle(page);
+    height = (await cutNow(page)).height;
+  }
+  await page.mouse.up();
+  await settle(page);
+  return (await cutNow(page)).height;
+}
+
+/**
+ * Orbit view, the section cut by its real slider (work unit 29, review 0, F1): the Temple of Dendur clicked at its preset, the cut turned on and
+ * dragged down between the foot of the gate (5.26 m) and the foot of the temple (6.01 m). The camera then draws nothing of the temple and still the
+ * foot of its gate, one artwork with it, and the card stays; dragged on to the slider's end, under the gate, the card goes. No camera moves.
+ * Red (2026-11-11): with src/main.ts giving the label the pieces of the clicked piece's own step alone, as it did, the card is gone at the cut
+ * between the two feet.
+ */
+export async function cutLeavingTheGate(page: Page): Promise<void> {
+  const errors = watchErrors(page);
+  const landmark = LANDMARKS.find((candidate) => candidate.view.step === 'dendur-temple');
+  if (landmark === undefined) throw new Error('No landmark stands for the Temple of Dendur.');
+  const { start } = await clickAtPreset(page, landmark);
+  const label = async (): Promise<unknown> => (await facts(page)).label;
+  // The cut on at its default height, through the temple: the card stays.
+  await openMenu(page, 'view-menu');
+  await press(page, 'cut-toggle');
+  await settle(page);
+  const through = await cutNow(page);
+  expect(through.enabled && through.height > DENDUR_FEET.temple + 1, `the cut comes on at ${through.height.toFixed(1)} m, through the temple`).toBe(true);
+  expect(await label(), 'a cut through the temple').toEqual(labelOf(landmark));
+  // Dragged down to between the two feet, clear of each by 5 cm: the gate's foot alone is left of the artwork, and its card stays.
+  const between = await dragCutUnder(page, DENDUR_FEET.temple - 0.05);
+  expect(between > DENDUR_FEET.gate + 0.05 && between < DENDUR_FEET.temple - 0.05, `the cut dragged to ${between.toFixed(2)} m, between the gate's foot at ${DENDUR_FEET.gate.toFixed(2)} m and the temple's at ${DENDUR_FEET.temple.toFixed(2)} m`).toBe(true);
+  await expect(page.getByTestId('cut-value')).toHaveText(`${between.toFixed(1)} m`);
+  expect(await label(), `the cut at ${between.toFixed(1)} m, under the temple and over the gate's foot: the gate is still drawn`).toEqual(labelOf(landmark));
+  await expectCard(page, landmark);
+  // Dragged on to the slider's left end, under the gate: nothing of the artwork is drawn, and the card goes.
+  const { xOf, y, left } = await cutSlider(page);
+  const from = xOf(between);
+  await page.mouse.move(from, y);
+  await page.mouse.down();
+  for (let k = 1; k <= 8; k += 1) await page.mouse.move(from - (k * (from - left + 20)) / 8, y);
+  await page.mouse.up();
+  await settle(page);
+  const bottom = await cutNow(page);
+  expect(bottom.enabled && bottom.height < DENDUR_FEET.gate - 0.05, `the cut dragged to ${bottom.height.toFixed(2)} m, under the gate`).toBe(true);
+  expect(await label(), 'a cut under the gate').toBeNull();
+  await expect(page.getByTestId('art-card')).toBeHidden();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('view-menu')).toBeHidden();
+  expect(cameraGap(await settledCamera(page), start), 'metres the cut moved the camera').toBeLessThan(1e-4);
   errors.expectClean();
 }

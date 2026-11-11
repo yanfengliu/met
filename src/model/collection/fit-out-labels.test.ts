@@ -12,10 +12,13 @@
  *   before the gate and at a lamp of the court meets an untagged surface within an artwork's reach, and finds no artwork;
  * - the card the page then shows is the record's own (src/ui/art-card.ts `cardContent`, as src/main.ts builds its cards from the catalogue): each
  *   piece's title, maker, date, medium, gallery, size and link, written out here from The Met's records as fetched on 2026-11-11.
- * Every piece has a view of each of its parts, and each view names the part's step, so a part without a view fails here.
+ * Every piece has a view of each of its parts, and each view names the part's step, so a part without a view fails here. Each view's feet stand,
+ * to 3 cm, on the floor the finished model holds under them (the highest surface straight down under a footprint), and that floor lies within a
+ * step of the level ./fit-out.ts names for the part: the floor is read from the built pieces, not from the constants the views are written with.
  * Red (2026-11-11, each mutation made and undone): Diana's figure added untagged, as it was (the look up at her finds nothing, and the click on her
  * from the court's preset meets an untagged piece at 13.61 m); the court's lamps tagged as Diana, and the gate's rail and the forecourt's flagstones
- * as the temple (each is then met as an artwork within reach).
+ * as the temple (each is then met as an artwork within reach); the temple view's feet and its part's level both raised half a metre, which agree
+ * with each other (the built floor is then 0.52 m under the feet).
  * Bound: one eye and one camera per view, which are not shown to be ones the walker reaches (src/model/reach.test.ts walks to each part and looks at
  * it); the pixels of a real click and the card's element are the browser's (tests/e2e/labels.spec.ts). The picker holds the timeline's pieces alone,
  * without the door layer's stand-ins, as ./labels.test.ts's does: no door stands on these rays.
@@ -52,15 +55,35 @@ const eyeOf = (feet: Vec3): Vector3 => new Vector3(feet[0], feet[1] + EYE, feet[
 /** The step that built the piece a ray met. */
 const stepOf = (hit: PickHit | null): string | null => timeline.steps.find((s) => hit !== null && s.meshes.includes(hit.mesh))?.def.id ?? null;
 const told = (hit: PickHit | null): string => (hit === null ? 'nothing' : `${hit.tag === null ? 'an untagged piece' : `${hit.tag.kind} ${hit.tag.id}`} of step ${String(stepOf(hit))} at ${hit.distance.toFixed(2)} m`);
+/**
+ * The floor the finished model holds under `feet`: the highest surface met straight down from the eye's height, at the feet and 0.15 m around
+ * them, as a walker's footprint rests on it. One ray alone can fall into the joint between two paving slabs (it does under Diana's views, onto the
+ * concrete 5 cm below), and the forecourt's flagstones differ in height by a centimetre or two.
+ */
+function floorUnder(feet: Vec3): number {
+  let top = Number.NEGATIVE_INFINITY;
+  for (const dx of [-0.15, 0, 0.15]) {
+    for (const dz of [-0.15, 0, 0.15]) {
+      const eye = new Vector3(feet[0] + dx, feet[1] + EYE, feet[2] + dz);
+      const met = picker.hit(new Ray(eye, new Vector3(0, -1, 0)));
+      if (met !== null) top = Math.max(top, eye.y - met.distance);
+    }
+  }
+  return top;
+}
 
 describe('labelling every fit-out piece in the finished model', () => {
-  it('has a view of every built part of every fit-out piece', () => {
+  it('has a view of every built part of every fit-out piece, its feet on the floor the finished model holds there, at the level its part names', () => {
     const parts = FIT_OUT_PIECES.flatMap((piece) => piece.parts.map((part) => `${String(piece.id)} ${part.step}`)).sort();
     expect([...new Set(FIT_OUT_VIEWS.map((view) => `${String(view.id)} ${view.step}`))].sort()).toEqual(parts);
-    // Each view stands on its part's floor, within a step of the level fit-out.ts names for it.
+    // The floor is read from the built pieces, not from the constants the views are written with (review 0, F7): the view's feet stand on it to
+    // 3 cm, as the walker placed there does (tests/e2e/labels-landmarks.ts), and it lies within a step, 5 cm, of the level ./fit-out.ts names for
+    // the part, which the reach gate looks for standing places on (src/model/reach.test.ts).
     for (const view of FIT_OUT_VIEWS) {
-      const floor = FIT_OUT_PIECES.find((p) => p.id === view.id)?.parts.find((part) => part.step === view.step)?.floor ?? Number.NaN;
-      expect(Math.abs(view.feet[1] - floor), view.name).toBeLessThanOrEqual(0.05);
+      const level = FIT_OUT_PIECES.find((p) => p.id === view.id)?.parts.find((part) => part.step === view.step)?.floor ?? Number.NaN;
+      const built = floorUnder(view.feet);
+      expect(Math.abs(built - view.feet[1]), `${view.name}: its feet at ${view.feet[1].toFixed(3)} m, the built floor under them at ${built.toFixed(3)} m`).toBeLessThanOrEqual(0.03);
+      expect(Math.abs(built - level), `${view.name}: the built floor at ${built.toFixed(3)} m, its part's level at ${level.toFixed(3)} m`).toBeLessThanOrEqual(0.05);
     }
   });
 

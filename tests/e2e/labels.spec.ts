@@ -303,9 +303,11 @@ for (const viewport of VIEWPORTS) {
  * The landmarks' cards (docs/design/spec.md, Collection: Fit-out pieces): Saint-Gaudens's Diana and the Temple of Dendur are built by their halls' own
  * steps, not as placeholders, and show the same card. Walking, each is looked at from a fixed place before it; in the orbit view each is clicked at the
  * camera preset that shows it. The places, the pixels' checks and the card's text against The Met's records are ./labels-landmarks.ts's, whose import
- * stands here with the one block that uses it. Bound: 1280×720; the card's layout, its link and the locked pointer are the tests above.
+ * stands here with the one block that uses it. The temple and its gate are one artwork built by two steps: the temple clicked, its card stays under
+ * a cut, dragged by the slider, that leaves the gate alone drawn (work unit 29, review 0, F1).
+ * Bound: 1280×720; the card's layout, its link and the locked pointer are the tests above.
  */
-import { LANDMARKS, clickForCard, walkToCard } from './labels-landmarks.js';
+import { LANDMARKS, clickForCard, cutLeavingTheGate, walkToCard } from './labels-landmarks.js';
 
 test.describe('the landmarks’ cards at 1280x720', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
@@ -320,4 +322,8 @@ test.describe('the landmarks’ cards at 1280x720', () => {
       await clickForCard(page, landmark);
     });
   }
+
+  test('orbit view: the Temple of Dendur’s card stays under a cut, dragged by its slider, that leaves its gate alone drawn, and goes under the gate', async ({ page }) => {
+    await cutLeavingTheGate(page);
+  });
 });

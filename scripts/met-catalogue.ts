@@ -11,7 +11,7 @@
  * `--fit-out` the run asks only for those records, starts no browser, and writes each placeholder's entry again as the committed file has it, so adding
  * a fit-out piece changes no placeholder, whatever The Met has changed in the placeholders' records since they were fetched.
  * It writes all or nothing, and exits 0 written, 1 listing every problem with a record or pick, 2 on a block by the API (HTTP 403 or 429), the message
- * saying when to retry (docs/research/collection.md).
+ * saying when to retry and with which command, a fit-out run's keeping its flag (docs/research/collection.md).
  * Bound: the API's answer is taken as given; the script checks a record's shape and its gallery, not that the object is on view today.
  */
 import { createHash } from 'node:crypto';
@@ -100,15 +100,14 @@ function writeAtomically(text: string): void {
   renameSync(temporary, OUTPUT);
 }
 
-const FIT_OUT_FLAG = '--fit-out';
-
 async function main(args: readonly string[]): Promise<number> {
-  const unknown = args.filter((a) => a !== FIT_OUT_FLAG);
-  if (unknown.length > 0) {
-    console.error(`met-catalogue: unknown argument ${unknown.map((a) => `"${a}"`).join(', ')}; run it with no argument for every entry, or with ${FIT_OUT_FLAG} for the fit-out pieces' records alone.`);
+  // The run's kind and the command that starts it again (scripts/met-catalogue-run.ts `modeOf`), which a block's message names.
+  const mode = runner.modeOf(args);
+  if ('problem' in mode) {
+    console.error(mode.problem);
     return 1;
   }
-  const fitOutOnly = args.includes(FIT_OUT_FLAG);
+  const { fitOutOnly } = mode;
   const { SPACES } = await load<{ SPACES: readonly SpacePicks[] }>('../src/model/collection/picks.ts');
   const fetcher = new runner.Fetcher({
     fetch: (url, init) => fetch(url, init),
@@ -116,6 +115,7 @@ async function main(args: readonly string[]): Promise<number> {
     store: diskStore,
     gapMs: GAP_MS,
     userAgent: USER_AGENT,
+    rerun: mode.rerun,
   });
   let browser: Browser | null = null;
   try {
@@ -127,7 +127,7 @@ async function main(args: readonly string[]): Promise<number> {
       // The committed catalogue, whose placeholders are written again as they are; no image is sampled, so no browser starts.
       const committed = await load<{ CATALOGUE: readonly CatalogueEntry[]; CATALOGUE_SOURCE: CatalogueSource }>('../src/model/collection/catalogue.ts');
       const kept = { entries: committed.CATALOGUE, source: committed.CATALOGUE_SOURCE };
-      run = { ...common, sample: () => Promise.reject(new Error(`A run with ${FIT_OUT_FLAG} samples no image.`)), samplerVersion: kept.source.sampler, kept };
+      run = { ...common, sample: () => Promise.reject(new Error(`A run with ${runner.FIT_OUT_FLAG} samples no image.`)), samplerVersion: kept.source.sampler, kept };
     } else {
       browser = await chromium.launch({ channel: 'chrome', headless: true });
       const page = await browser.newPage();

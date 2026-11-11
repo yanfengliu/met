@@ -39,6 +39,13 @@ const TEMPLE_FRONT_Z = TEMPLE_Z + TEMPLE_LENGTH / 2;
 const TEMPLE_FOOT_Y = DAIS_Y + 0.15;
 /** The gate's front (east) face, toward the terrace. */
 const GATE_FRONT_Z = GATE_Z + GATE_DEPTH / 2;
+/**
+ * The foot of the lowest stone of each part of the Temple of Dendur that carries its tag, world metres: the gate stands on the terrace's flagstones,
+ * 0.15 m over the platform (roche-north/sackler.ts `gate`), the temple on its base course on the dais, 0.75 m higher. A section cut between the two
+ * draws the foot of the gate and nothing of the temple, though they are one artwork (./fit-out-card.test.ts holds both numbers against the
+ * finished model's pieces).
+ */
+export const DENDUR_FEET = { gate: PLATFORM_Y + 0.15, temple: TEMPLE_FOOT_Y } as const;
 /** Diana's pedestal (roche-north/engelhard.ts `sculpture`): its axis, the half-width of its shaft and the height of its top, where the figure stands. */
 const DIANA = { x: 71.0, z: BANK_DOOR_Z - 2.2, half: 0.5, top: F + 4.3, scale: 2.58 } as const;
 /** The loggia's front, the plane of its columns' faces toward the court (roche-north/engelhard.ts `loggia`), and its lintel's foot. */
