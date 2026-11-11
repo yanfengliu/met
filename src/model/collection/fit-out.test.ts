@@ -10,10 +10,12 @@
  * - the tags split no mesh and change no scene: with every artwork's tag taken off, the whole sequence makes the same meshes in the same order
  *   (geometry, material, instance count), the same pieces, triangles and lights, and the same scene byte for byte at every t sampled, the steps of the
  *   fit-out pieces in mid-arrival among them. So the core area, whose budget is 130 meshes (src/model/core/core.test.ts), keeps the count it had;
- * - `artworkKit` adds each piece as the plain kit would, tagged, keeps a tag the builder gives itself and refuses an object with no fit-out record.
+ * - `artworkKit` adds each piece as the plain kit would, tagged, keeps a tag the builder gives itself and refuses an object with no fit-out record;
+ *   and `entryOf` (place.ts), the placeholders' one way to a catalogue entry, refuses each fit-out record, so no collection step can place one.
  * Red (2026-11-11, each mutation made and undone): the court's lamps added through Diana's kit (her step's tagged pieces are then of glass and
  * verdigris too, and nothing of it is untagged); the gate's rail and the forecourt's flagstones added through the temple's kit (metalDark and
- * rn-oldPaving among the tagged); `artworkKit` dropping the order it is given (its own test); and, with the engine's batching stood in for by one
+ * rn-oldPaving among the tagged); `artworkKit` dropping the order it is given (its own test); `entryOf` handing a fit-out record on (its test, and
+ * the typecheck, since a FitOutEntry is no PlaceholderEntry); and, with the engine's batching stood in for by one
  * that keeps each artwork's pieces apart as a door's are, no line of src/build changed: the sequence makes 911 meshes where the build without the
  * tags makes 744, and src/model/core/core.test.ts fails at 159 meshes of its 130.
  * Bound: which pieces are the object's is the builder's choice, stated here by material; that a visitor reaches each part and that its card shows is
@@ -32,8 +34,8 @@ import { Timeline } from '../../build/timeline.js';
 import type { Kit, PieceTag, StepDef } from '../../build/types.js';
 import { CATALOGUE } from './catalogue.js';
 import { FIT_OUT, FIT_OUT_PIECES, artworkKit, fitOutEntryOf } from './fit-out.js';
-import { artworkTag } from './place.js';
-import { SPACES_A } from './spaces-a.js';
+import { artworkTag, entryOf, stepArtworks } from './place.js';
+import { SPACES_A, dendurSpace } from './spaces-a.js';
 import { SPACES_B } from './spaces-b.js';
 
 /** Each part's step: the materials of the pieces that are the object's, and of the step's other pieces, by name. */
@@ -207,5 +209,15 @@ describe('artworkKit', () => {
     // 544442, the Sphinx of Hatshepsut, is a placeholder of the Dendur hall: the collection's step builds it, no fit-out step may.
     expect(() => fitOutEntryOf(544442)).toThrow('Object 544442 is built as a fit-out piece, but src/model/collection/catalogue.ts holds it as a placeholder of temple-of-dendur');
     expect(fitOutEntryOf(FIT_OUT.templeOfDendur).title).toBe('The Temple of Dendur');
+  });
+});
+
+describe('a fit-out record among the placeholders', () => {
+  it('is refused by entryOf, the placeholders’ one way to an entry, so no collection step forms, places or measures it', () => {
+    for (const piece of FIT_OUT_PIECES) expect(() => entryOf(piece.id), String(piece.id)).toThrow(`Object ${String(piece.id)} is a fit-out piece of `);
+    expect(() => entryOf(FIT_OUT.templeOfDendur)).toThrow('Object 547802 is a fit-out piece of temple-of-dendur, which that space\'s own steps build: it has no placeholder to place (src/model/collection/fit-out.ts).');
+    // A collection step that named one would fail as it is built, by the same refusal; a placeholder's entry comes back as before.
+    expect(() => stepArtworks({ ...dendurSpace, placements: [{ id: FIT_OUT.templeOfDendur, x: 0, z: 0, floor: 0, facing: 0 }] })).toThrow('Object 547802 is a fit-out piece of temple-of-dendur');
+    expect([entryOf(544442).kind, entryOf(544442).display]).toEqual(['figure', 'plinth']);
   });
 });
