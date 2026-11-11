@@ -59,10 +59,14 @@ Checks made once, not gates: the standard shots before and after the tags, two c
 ## Acceptance criteria
 
 Landing A:
-- [ ] Each landmark's card shows from the walker's eye within the look target's reach and on an orbit click, by a unit test on the finished model for each, and in the browser for Diana and the Temple of Dendur.
-- [ ] The reach gate walks to each landmark and looks at it.
-- [ ] Mesh counts: the core stays at 130, every area within its budget, the model within 900.
-- [ ] `docs/research/collection.md` and the spec say which fit-out pieces carry a record and where its data came from.
+- [x] Each landmark's card shows from the walker's eye within the look target's reach and on an orbit click, by a unit test on the finished model for each, and in the browser for Diana and the Temple of Dendur.
+- [x] The reach gate walks to each landmark and looks at it.
+- [x] Mesh counts: the core stays where it stood (128 of its 130; the "130" this criterion first named was wrong), every area within its budget, the model within 900 (744).
+- [x] `docs/research/collection.md` and the spec say which fit-out pieces carry a record and where its data came from.
+
+Landing A2, what landing A left open (2026-11-11):
+- [ ] Review 1's findings repaired and gated: F10 (the six views stood by the walker's own placement, with a case beyond a floor's edge that fails), F11 (a blocked kept run that knows its placeholders are stale shows the difference and names a command that can succeed), F12 (two comments in `src/viewer/art-label.ts`, by leave of work unit 26's session), F13, F14 and F15. The worker's half-made repairs are the snapshot `90a3afc` on `worktree-agent-a419a2463f2a69209`.
+- [ ] The Temple of Dendur's card reads 10 BCE, as the owner decided on 2026-11-11: an override of the record's `objectDate` ("completed by 10 CE") that the catalogue marks as the pick's, with its reason (the record's begin and end dates are −10), and `docs/research/collection.md` and the spec saying so.
 
 Landing B:
 - [ ] A contact sheet of all the placeholders before and after, in an ignored folder, read by the worker and again by the coordinator against each object's image.
@@ -80,8 +84,10 @@ All three:
 
 ## Implementation steps
 
-- [ ] Worker: landing A, handed back with its branch and revision.
-- [ ] Coordinator: review, accept, land, gallery if a render changed, devlog.
+- [x] Worker: landing A, handed back at `9176e57`, and review 0's repairs at `41857a4`.
+- [x] Coordinator: reviews 0 and 1 (Codex and Claude), `npm run verify` on the merged tree at `d9323d8` (791 unit tests, 93 e2e), landed 2026-11-11; no render changed, so the gallery stays at version 21; devlog line added.
+- [ ] Worker: landing A2 (above), from the snapshot `90a3afc`. Blocked on 2026-11-11 by the account's usage limit (`docs/work/27_improvement-list/plan.md`, Blocked).
+- [ ] Coordinator: check A2's repairs, gate, land, devlog.
 - [ ] Worker: landing B on top of A.
 - [ ] Coordinator: read the contact sheet, review, accept, land, gallery, devlog.
 - [ ] Worker: landing C on top of B.
@@ -89,4 +95,4 @@ All three:
 
 ## Outcome
 
-Pending.
+Pending for the unit. Landing A is on origin's main (2026-11-11): the four landmarks' cards, reviewed in two rounds (`reviews/0_implementation.md`, `reviews/1_implementation.md`) and gated by the coordinator at `d9323d8`. Round 1's verdicts were Codex's reject on F10 and Claude's approve with findings; the coordinator landed with F10 to F15 open because none changes what the page does and the worker that was repairing them stopped at the account's usage limit. They and the temple's date are landing A2.

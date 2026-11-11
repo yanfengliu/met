@@ -35,15 +35,27 @@ Excluded: the stated non-goals (AGENTS.md): no imported meshes, scans or photo t
 
 Another session removes the build replay in the worktree `remove-build-replay` (work unit 26). Seen there on 2026-11-11, uncommitted on `2bfa83f`: changes to `src/ui/*`, `src/main.ts`, `src/viewer/facts.ts` and `src/viewer/query.ts`, and `src/build/player.ts`, `src/ui/timeline-bar.ts` and `src/ui/label.ts` deleted.
 
-Until unit 26 is on origin's main, this plan's work stays out of `src/ui/**`, `src/main.ts`, `src/build/**`, `src/viewer/facts.ts`, `src/viewer/query.ts`, the e2e specs for the replay, controls, menus and layout, and the replay parts of `docs/design/spec.md`, `README.md` and `AGENTS.md`. So no unit here adds a URL parameter or a `window.__met` fact before then. Items 2, 3 and 6 and the page part of item 10 wait for it.
+Until unit 26 is on origin's main, this plan's work stays out of `src/ui/**`, `src/main.ts`, `src/build/**`, `src/viewer/facts.ts`, `src/viewer/query.ts`, the e2e specs for the replay, controls, menus and layout, and the replay parts of `docs/design/spec.md`, `README.md` and `AGENTS.md`. So no unit here adds a URL parameter or a `window.__met` fact before then. Which items wait for which of its milestones is under "What follows for this plan" below.
 
-A message with this split and three questions (its other files, whether the build-step API and the `?shot=1` contract stay, when it lands) was queued to that session on 2026-11-11. No answer yet.
+Two exceptions, granted to unit 29 on 2026-11-11. Four lines of `src/ui/art-card.test.ts` change (the catalogue's count in the header and in the assertion, and the list of records that name no maker with the comment over it), because `src/main.ts` builds the cards from `CATALOGUE`, so the landmarks' records must join the catalogue. And one closure of `src/main.ts` changes, the one that gathers a clicked artwork's pieces, which review 0 of unit 29 found following one step alone; the other session gave leave for it and said its own edits to that file are elsewhere.
+
+That session answered on 2026-11-11. It lands in two milestones:
+- A, expected within about two hours of the answer: the page without the replay (`src/main.ts`, `src/ui/**`, `src/viewer/facts.ts`, `query.ts`, `camera-rig.ts`; in `viewer.ts` only the bottom inset and the `rig.resize` call), `StepDef` without `focus` and `weight` (33 model files, `collection/place.ts`, `spaces-a.ts`, `spaces-b.ts`), `scripts/capture.ts` without the chapter and mid-build shots and without `t=`, every e2e spec and `helpers.ts` stripped of replay checks, and the docs (the spec, AGENTS.md, the README, the local rule that the build process is the product, retired at the owner's request). It does not touch `src/ui/art-card.test.ts`, the render path, `environment.ts`, `sun.ts` or `index.html`.
+- B, a few hours after A: the timeline built once at rest (`src/build/timeline.ts`, `batch.ts`, `kit.ts`, `types.ts`; `motion.ts`, `stagger.ts` and `player.ts` deleted), `src/walk/walk-mode.ts`, `collision.ts`, `door-world.ts`, `src/viewer/doors.ts`, `art-label.ts`, `floor-view.ts`, `src/main.ts`, and by codemod every step's `motion:` and `stagger:` lines and the `order` argument of about 470 `kit.add` and `kit.addTagged` calls, with the tests that pass a `t`.
+
+What stays, by its word: the step arrays and `COMPOSITION`, `StepDef`'s id, chapter, title, detail, year and build, `kit.add`, `kit.addTagged` and `kit.light`, the tags, the `?shot=1` contract and `window.__met.stats`.
+
+What follows for this plan:
+- A model change that lands before B is carried by that session's codemods; one that lands after B re-runs them from `tmp/wu26-codemods/` in the main checkout. So unit 29's first landing should land before B.
+- When A lands, each worker merges origin's main and gates the merged tree before handing back.
+- The page items (2, 3, 6) and the model items that add steps and pieces (9, 11) start after B, since they live in the files B rewrites.
+- A landed on 2026-11-11 at `eacc0fb`. B is on hold since then: it rewrites `src/build/`, which the owner's permission settings block for that session, and that session has asked the owner whether to go on or stop at A. It asked that this plan's page and model work not be held for B meanwhile; it will say which way B goes. Until it does, nothing here starts in `src/build`, `src/walk/walk-mode.ts` or the steps' `kit.add` lines.
 
 Shared: `tmp/gate.sh` for verify, e2e, shots and sweeps; `tmp/land.sh` for the landing slot; one `MET_PORT` per worktree (5340 the coordinator, 5341 lighting, 5342 artworks).
 
 ### Limits the sweep found that bear on the items
 
-- The core area is at its mesh cap, 130 of 130 (`src/model/core/core.test.ts`), so anything added in the 1880 to 1894 core reuses a mesh or the cap is raised by the owner.
+- The core area stands at 128 of its 130 meshes (`src/model/core/core.test.ts` prints it; the sweep's "130 of 130" came from work unit 21's record and was wrong by 2026-11-11), so anything added in the 1880 to 1894 core has two meshes to spend before it must reuse one or the owner raises the cap.
 - The model is at 744 of 900 meshes and 1.61M of 3M triangles.
 - Three of the eight step lights are used.
 - The walking frame budgets pass on a quiet machine and have failed on a loaded one (16.78 ms in work unit 25, 19.5 and 17.7 ms in work unit 23), so item 1's cost must be measured, not assumed.
@@ -76,7 +88,17 @@ Decisions the owner made on 2026-11-11, each from a question with its options la
 - Item 5: paintings are sampled at 16×16, up from 8×8. They stay colour data, not a photo texture.
 - Item 8: the surroundings are environment, drawn like the sky and the workspace ground: outside the model, its budgets, the section cut and the floor views.
 - Item 10: one small render may be committed for the README and the link preview (a JPEG under 300 KiB, retaken by hand when the look changes). The invariant in AGENTS.md that keeps renders out of git gets this one exception when the item lands.
+- Item 5, later the same day: the Temple of Dendur's card is to read 10 BCE. The Met's record gives `objectDate` "completed by 10 CE" beside begin and end dates of −10, and the owner chose to correct the card ("Correct to 10 BCE"), as a recorded override of the record's text.
 - Item 11: all four groups of leftovers are to be done: the Medieval hall (work unit 16's four findings), the Petrie Court's walls, gallery 600 and the Vélez Blanco patio, and the smaller ones (the Hunt wing's open back, Weston's end blocks' windows, the 1880 fronts' stair tower and flicker, the Greek court's columns checked against their photograph).
+
+### Blocked on 2026-11-11: the account's usage limit
+
+Both workers stopped mid-task when the account reached its usage limit for the model they ran on (HTTP 429, "You've reached your Fable limit"). Nothing was lost: the coordinator committed each worker's tree as it stood, as a snapshot marked unverified, on the worker's own branch.
+
+- Unit 28, lighting: branch `worktree-agent-ae95d3eb21fe7823e`, snapshot `463fb0e` over `4f0e630`, worktree `.claude/worktrees/agent-ae95d3eb21fe7823e`. It had committed nothing before. The snapshot holds the ambient occlusion pass (`src/viewer/ao-pass.ts`, `ao-shaders.ts`), `lit-materials.ts`, `shadow-filter.ts`, `src/model/sun-leaks.test.ts` with repairs in `src/model/hunt/roof.ts` and `walls.ts`, `tests/e2e/light.spec.ts`, and its edits to the spec, AGENTS.md and unit 28's plan, which records its approach and findings. Its last words: typecheck and lint pass, about to run `light.spec`. No gate has run on the snapshot.
+- Unit 29, artworks: branch `worktree-agent-a419a2463f2a69209`, snapshot `90a3afc` over the gated `41857a4`, worktree `.claude/worktrees/agent-a419a2463f2a69209`. The snapshot holds part of review 1's repairs (F10, F11, F13, F14, F15), mid-edit. Nothing past `41857a4` may be merged until they are finished and gated.
+
+To go on, a worker is started again on each branch, by resuming the same agent once the limit lifts or by a new one that reads this plan, the unit's plan and the snapshot's diff. Which model to spend is the owner's call.
 
 ## Acceptance criteria
 
@@ -85,17 +107,17 @@ Decisions the owner made on 2026-11-11, each from a question with its options la
 
 ## Implementation steps
 
-- [ ] 1. Interior lighting: unit 28, worker "lighting" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5341.
-- [ ] 2. First impression: waits for unit 26.
-- [ ] 3. Wayfinding: waits for unit 26.
+- [ ] 1. Interior lighting: unit 28, worker "lighting" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5341. The worker is stopped with its work kept at the snapshot `463fb0e` (Blocked, above): built, by its last words type-checked and linted, not gated, not handed back.
+- [ ] 2. First impression: after unit 26's milestone B.
+- [ ] 3. Wayfinding: after unit 26's milestone B.
 - [ ] 4. Surface detail: after item 1.
-- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing B (more forms) and landing C (paintings at 16×16) follow.
-- [ ] 6. Touch and weaker devices: waits for unit 26. A run on a phone or a weaker GPU cannot be made from this machine.
+- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing A, the four landmarks' cards, is on origin's main (2026-11-11) after two review rounds and the coordinator's own gate run at `d9323d8`. Landing A2 is open: review 1's findings F10 to F15 and the temple's date to 10 BCE (unit 29's plan). Landing B (more forms) and landing C (paintings at 16×16) follow. The worker is stopped (Blocked, above).
+- [ ] 6. Touch and weaker devices: after unit 26's milestone B. A run on a phone or a weaker GPU cannot be made from this machine.
 - [x] 7. The build replay as a story: dropped, see Scope.
 - [ ] 8. Surroundings and sky: after item 1, as environment.
-- [ ] 9. Shell galleries: after item 4.
-- [ ] 10. Project presentation: the page part and AGENTS.md's exception wait for unit 26.
-- [ ] 11. Fidelity leftovers, all four groups: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh cap (130 of 130) bounds the Medieval hall and gallery 600.
+- [ ] 9. Shell galleries: after item 4 and unit 26's milestone B.
+- [ ] 10. Project presentation: after unit 26's milestone A, which rewrites the README and AGENTS.md; `index.html` is free now.
+- [ ] 11. Fidelity leftovers, all four groups, after unit 26's milestone B: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh budget (128 of 130 used) bounds the Medieval hall and gallery 600.
 
 ## Outcome
 
