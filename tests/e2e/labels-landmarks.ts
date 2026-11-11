@@ -131,7 +131,7 @@ export async function clickForCard(page: Page, landmark: Landmark): Promise<void
   const requests = recordRequests(page);
   const { orbit, click } = landmark.view;
   if (!('preset' in orbit)) throw new Error(`${landmark.name}: its view names no camera preset to click from.`);
-  await open(page, `autoplay=0&view=${orbit.preset}`);
+  await open(page, `view=${orbit.preset}`);
   const start = await settledCamera(page);
   expect((await facts(page)).label, `${landmark.name}: no card before the click`).toBeNull();
   // The pixel of the click point, checked apart from the page: on the canvas, and the first surface on its ray is the piece, at the point meant.
