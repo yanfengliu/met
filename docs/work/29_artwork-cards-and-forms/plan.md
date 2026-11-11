@@ -35,6 +35,24 @@ Limits:
 
 The worker records here how a fit-out piece gets a record without a placeholder being built for it, and which forms were added and how an object is given one.
 
+### Landing A: how a fit-out piece gets a record (worker, 2026-11-11)
+
+The page builds its cards from `CATALOGUE` alone (`src/main.ts`), and neither it nor the card could be edited in this landing, so a fit-out piece's record lives in the catalogue itself, as an entry of another kind.
+
+- Picks. A space of `src/model/collection/picks.ts` lists its fit-out pieces under `fitOut`, apart from its five to twelve placeholder picks, which alone are counted.
+- Catalogue. `CatalogueEntry` is now one of two types, told apart by `display`: a `PlaceholderEntry`, as before, or a `FitOutEntry` (`display: "fit-out"`), which holds the record's metadata, size and provenance and nothing of a placeholder. The type system then names every place that read a placeholder's field off a raw catalogue entry: only `catalogue.test.ts` did. Everything that builds, places or measures placeholders goes through `entryOf` (`place.ts`), which now returns a `PlaceholderEntry` and refuses a fit-out piece by name.
+- Script. `fitOutEntry` (`scripts/met-catalogue-rules.ts`) builds the record: no kind, no colour, no image fetched or sampled, and no dimension estimated by a kind (the pick gives what the record lacks, with its reason, and the card names it as estimated). `npm run met-catalogue -- --fit-out` rebuilds the fit-out records alone and writes the 94 placeholders' entries again exactly as the committed file has them. This was needed, not a convenience: the script's cache was gone from this machine, so a full run would have fetched all 94 records and 89 images again and derived every placeholder afresh from whatever The Met holds today, which this landing, labels only, must not do. The committed diff of `catalogue.ts` is the header, the provenance line's date and four added lines.
+- Tags. `artworkKit(kit, id)` (`src/model/collection/fit-out.ts`) wraps a step's kit so that everything added through it carries the artwork's tag; a builder hands it to the part of its step that is the object. Artwork tags split no mesh (`src/build/batch.ts` keeps only doors apart), so the steps build what they built.
+- The card. Unchanged: the page finds a tag's card in the catalogue, whichever kind of entry it is.
+
+The pieces: the Temple of Dendur with its gate (547802), Diana (11998), the loggia from Laurelton Hall (133) and the choir screen from Valladolid (201926). Left out, each with its reason in `docs/research/collection.md` (Fit-out pieces): the Branch Bank's facade (the API answers 404 for its object), the five mounted armours, the organ case, the Astor Court, the Great Hall, the Vélez Blanco patio and Sullivan's staircase.
+
+What the plan had wrong: the core area stands at 128 meshes of its 130, not at 130 (`src/model/core/core.test.ts` prints it; the same before and after). Were artworks batched apart as doors are, it would stand at 159 and that test would fail, but the choir screen's own step would still make its nine meshes: every piece of it is the one artwork.
+
+One exception to the scope, by the coordinator's leave (2026-11-11): four lines of `src/ui/art-card.test.ts`, which pinned the catalogue at 94 entries and the records with no maker at the Dendur hall's five. They now pin 98 and six, the temple's own among them; the 94 placeholders stay pinned on their own in `catalogue.test.ts`, `labels.test.ts` and `reach.test.ts`.
+
+Checks made once, not gates: the standard shots before and after the tags, two captures of each at `06b3124` and on the changed tree, compared pixel by pixel. Each of the 64 images has a capture from before the change that is byte for byte a capture from after it; between any two captures, of one tree or across the change, 8 to 14 images differ, on at most 28 pixels of an image by at most 1 of 255, the capture's own noise (docs/policies/local-rules.md). And the real page opened headless at each piece, walking and clicked, its card read against the record.
+
 ## Acceptance criteria
 
 Landing A:
