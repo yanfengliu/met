@@ -37,7 +37,9 @@ Another session removes the build replay in the worktree `remove-build-replay` (
 
 Until unit 26 is on origin's main, this plan's work stays out of `src/ui/**`, `src/main.ts`, `src/build/**`, `src/viewer/facts.ts`, `src/viewer/query.ts`, the e2e specs for the replay, controls, menus and layout, and the replay parts of `docs/design/spec.md`, `README.md` and `AGENTS.md`. So no unit here adds a URL parameter or a `window.__met` fact before then. Items 2, 3 and 6 and the page part of item 10 wait for it.
 
-A message with this split and three questions (its other files, whether the build-step API and the `?shot=1` contract stay, when it lands) was queued to that session on 2026-11-11. No answer yet.
+One exception, granted to unit 29 on 2026-11-11: three lines of `src/ui/art-card.test.ts` change (the catalogue's count and the list of records that name no maker), because `src/main.ts` builds the cards from `CATALOGUE` and is not to be touched, so the landmarks' records must join the catalogue. The other session was told.
+
+Messages queued to that session on 2026-11-11, none answered yet: the split with three questions (its other files, whether the build-step API and the `?shot=1` contract stay, when it lands); that main's registry holds lines 27 to 29 before its line 26; and the exception above.
 
 Shared: `tmp/gate.sh` for verify, e2e, shots and sweeps; `tmp/land.sh` for the landing slot; one `MET_PORT` per worktree (5340 the coordinator, 5341 lighting, 5342 artworks).
 
