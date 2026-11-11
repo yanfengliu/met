@@ -32,13 +32,29 @@ export interface Clock {
   sleep(ms: number): Promise<void>;
 }
 
-/** The API or its CDN refused this client (HTTP 403 or 429): the run stops, writes nothing and says when to retry, and with which command. */
+/**
+ * The API or its CDN refused this client (HTTP 403 or 429): the run stops, writes nothing and says when to retry, and with which command. The
+ * fetcher's block also carries its parts, what was refused and the time to retry as text, so the run can say them again with the command that can
+ * succeed (`blockedWith`); an error made of a message alone carries none.
+ */
 export class BlockedError extends Error {
   override readonly name = 'BlockedError';
+  readonly refused: string | undefined;
+  readonly retry: string | undefined;
+
+  constructor(message: string, refused?: string, retry?: string) {
+    super(message);
+    this.refused = refused;
+    this.retry = retry;
+  }
 }
 
-/** The script's argument for a run of the fit-out pieces' records alone. */
+/** A block's whole message: what was refused, then when to retry and with which command. */
+const blockedText = (refused: string, retry: string, command: string): string => `${refused} Retry after ${retry} with ${command}; the cache lets the rerun start where this one stopped.`;
+
+/** The script's argument for a run of the fit-out pieces' records alone, and the command of the whole run, which takes none. */
 export const FIT_OUT_FLAG = '--fit-out';
+const WHOLE_RUN = 'npm run met-catalogue';
 
 /** How the script was asked to run. */
 export interface Mode {
@@ -56,7 +72,7 @@ export function modeOf(args: readonly string[]): Mode | { readonly problem: stri
   const unknown = args.filter((a) => a !== FIT_OUT_FLAG);
   if (unknown.length > 0) return { problem: `met-catalogue: unknown argument ${unknown.map((a) => `"${a}"`).join(', ')}; run it with no argument for every entry, or with ${FIT_OUT_FLAG} for the fit-out pieces' records alone.` };
   const fitOutOnly = args.includes(FIT_OUT_FLAG);
-  return { fitOutOnly, rerun: fitOutOnly ? `npm run met-catalogue -- ${FIT_OUT_FLAG}` : 'npm run met-catalogue' };
+  return { fitOutOnly, rerun: fitOutOnly ? `${WHOLE_RUN} -- ${FIT_OUT_FLAG}` : WHOLE_RUN };
 }
 
 /** How long to wait before retrying after a block when the response says nothing: the survey of 2026-10-25 saw a 403 block clear within 8 minutes. */
@@ -160,10 +176,9 @@ export class Fetcher {
       }
       const at = new Date(this.options.clock.now());
       if (response.status === 403 || response.status === 429) {
-        const retry = retryAt(response.headers.get('retry-after'), at);
-        throw new BlockedError(
-          `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${isoOf(at)} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after ${isoOf(retry)} with ${this.options.rerun}; the cache lets the rerun start where this one stopped.`,
-        );
+        const retry = isoOf(retryAt(response.headers.get('retry-after'), at));
+        const refused = `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${isoOf(at)} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept.`;
+        throw new BlockedError(blockedText(refused, retry, this.options.rerun), refused, retry);
       }
       if (response.status !== 200) throw new Error(`GET ${url} answered HTTP ${String(response.status)} at ${at.toISOString()}; check the object ID in src/model/collection/picks.ts.`);
       const entry: Cached = { url, status: 200, fetched: at.toISOString(), contentType: response.headers.get('content-type') ?? '', body: new Uint8Array(await response.arrayBuffer()) };

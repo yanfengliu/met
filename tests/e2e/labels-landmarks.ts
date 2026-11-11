@@ -21,7 +21,7 @@ import type { Page } from '@playwright/test';
 import { Vector3 } from 'three';
 
 import { fitOutEntryOf } from '../../src/model/collection/fit-out.js';
-import { DENDUR_FEET, EYE, FIT_OUT_VIEWS } from '../../src/model/collection/fit-out-testing.js';
+import { DENDUR_FEET, EYE, FIT_OUT_VIEWS, spawnText } from '../../src/model/collection/fit-out-testing.js';
 import type { FitOutView } from '../../src/model/collection/fit-out-testing.js';
 import { ART_CREDIT, cardContent } from '../../src/ui/art-card.js';
 import { cameraGap, facts, open, openMenu, press, settle, settledCamera, watchErrors } from './helpers.js';
@@ -97,14 +97,18 @@ const labelOf = (landmark: Landmark): { id: string; title: string } => ({ id: St
 export async function walkToCard(page: Page, landmark: Landmark): Promise<void> {
   const errors = watchErrors(page);
   const requests = recordRequests(page);
-  const { feet, aim, id } = landmark.view;
-  const loaded = await open(page, `walk=1&spawn=${[...feet, ...aim].map((n) => n.toFixed(4)).join(',')}`);
+  const { feet, id } = landmark.view;
+  // The place as src/model/collection/fit-out-labels.test.ts sets the walker down at it: where the walker rests there is held on the finished model.
+  const loaded = await open(page, `walk=1&spawn=${spawnText(landmark.view)}`);
   expect(loaded.warnings, `${landmark.name}: the page's warnings`).toEqual([]);
   await walking(page);
   const at = await still(page);
-  // The walker stands where the view says, its eye over the floor the view names.
+  // The walker stands where the view says: at its feet in plan, its eye 1.6 m over them, or under that by no more than the view says its floor
+  // is sunk, as the walker set down there rests on the finished model. 2 mm is for the frames `still` compares.
   expect(Math.hypot(at.eye[0] - feet[0], at.eye[2] - feet[2]), `${landmark.name}: metres across from the place`).toBeLessThan(0.01);
-  expect(Math.abs(at.eye[1] - (feet[1] + EYE)), `${landmark.name}: metres off the eye's height over its floor`).toBeLessThan(0.03);
+  const over = at.eye[1] - (feet[1] + EYE);
+  const sunk = landmark.view.sunk ?? 0;
+  expect(over <= 0.002 && over >= -sunk - 0.002, `${landmark.name}: the eye stands ${over.toFixed(4)} m from its height over the view's feet, on a floor sunk by at most ${String(sunk)} m`).toBe(true);
   await page.waitForFunction((want) => window.__met?.label?.id === want, String(id), { polling: 'raf', timeout: 5000 });
   const f = await facts(page);
   expect(f.label).toEqual(labelOf(landmark));
