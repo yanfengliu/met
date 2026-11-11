@@ -174,6 +174,7 @@ type Vec3 = readonly [number, number, number];
 ### First load
 
 - **First load**: the page opens on the finished building, `t = N`, in the orbit view at the default preset (or as the query sets it), and nothing of its construction plays.
+- **Head**: `index.html` carries the page's name, a description that says the model is unofficial, and the Open Graph tags a shared link shows (the name, the description and the live address). Both pages take their icon from `public/icon.svg`, a hand-written drawing of the Fifth Avenue front, served from the page's own origin. The page's code reads none of it.
 
 ## Query contract
 

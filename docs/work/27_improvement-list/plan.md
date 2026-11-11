@@ -119,7 +119,7 @@ To go on, a worker is started again on each branch, by resuming the same agent o
 - [x] 7. The build replay as a story: dropped, see Scope.
 - [ ] 8. Surroundings and sky: after item 1, as environment.
 - [ ] 9. Shell galleries: after item 4 and unit 26's milestone B.
-- [ ] 10. Project presentation: after unit 26's milestone A, which rewrites the README and AGENTS.md; `index.html` is free now.
+- [ ] 10. Project presentation, in two parts, small enough to be recorded here. First, by the coordinator on 2026-11-11, on its branch and landing with unit 29's A2 on one gate run: the page's name ("The Met Fifth Avenue: a procedural 3D model", where it read "The Met — build"), a description that says the model is unofficial, the Open Graph tags without an image, and an icon (`public/icon.svg`, a hand-written drawing of the Fifth Avenue front, read at 16 to 180 px on light and dark; the first drawing's four blocks over the cornice read as a castle and were dropped). Checked: `npm run build` writes `dist/icon.svg` and both pages point at `./icon.svg`. Second, after item 1 so the picture shows the new light: the one committed render (a JPEG under 300 KiB) in the README and as the link preview's image, a sentence in the README that the project is not The Met's, and the exception in AGENTS.md's invariant.
 - [ ] 11. Fidelity leftovers, all four groups, after unit 26's milestone B: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh budget (128 of 130 used) bounds the Medieval hall and gallery 600.
 
 ## Outcome
