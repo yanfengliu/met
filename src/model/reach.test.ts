@@ -15,6 +15,8 @@
  *   the walker passes only on some other line can be missed; a place the fill reaches, the walker reaches, as the replay shows.
  * - Where: inside the building's outline (src/model/site/footprint.ts) and the strip of the front steps and plaza on the axis (|X| ≤ 23.47 m, from the
  *   facade to 0.5 m short of the curb), so the fill walks neither the park nor the avenue.
+ * - Artworks: the 94 placeholders, and each built part of each fit-out piece of the collection (src/model/collection/fit-out.ts: the gate and the
+ *   temple of Dendur, Diana, the loggia, the choir screen), whose pieces are those its step tags and whose floor is the one a visitor stands on.
  * - Met: an artwork when, from a place the fill reaches, the walker let go of the keys there comes to rest on the artwork's floor (feet within 0.6 m of its
  *   placement's level) with an eye (`Walker.eye()`, the eye the page draws from) whose look target, turned to one of the artwork's aims within the
  *   walker's ±85° of pitch, is that artwork: the walking eye's own query (src/walk/look.ts `lookTarget`, so within its 6 m reach and through untagged glass
@@ -69,6 +71,8 @@ import { reach, replay } from '../walk/reach.js';
 import type { Reach } from '../walk/reach.js';
 import { SPAWNS, spawnById, spawnYaw } from '../walk/spawns.js';
 import { BODY, MOTION, NO_INPUT, WALKER_STATE_SIZE, Walker } from '../walk/walker.js';
+import { collectStep } from '../build/kit.js';
+import { FIT_OUT_PIECES } from './collection/fit-out.js';
 import { entryOf, stepArtworks } from './collection/place.js';
 import { SPACES_A } from './collection/spaces-a.js';
 import { SPACES_B } from './collection/spaces-b.js';
@@ -215,10 +219,28 @@ function artworkTarget(name: string, id: string, floor: number, pieces: readonly
 }
 
 function artworkTargets(): Target[] {
-  return [...SPACES_A, ...SPACES_B].flatMap((def) => {
+  const placeholders = [...SPACES_A, ...SPACES_B].flatMap((def) => {
     const pieces = stepArtworks(def).pieces;
     return def.placements.map((placement, k): Target => artworkTarget(`${def.space}: ${String(placement.id)} (${entryOf(placement.id).title.slice(0, 40)})`, String(placement.id), placement.floor, pieces[k] ?? [], () => ({ query: hit, probe })));
   });
+  return [...placeholders, ...fitOutTargets()];
+}
+
+/** How a fit-out part's target is named, so a test can tell them from the placeholders'. */
+const FIT_OUT_GROUP = 'fit-out';
+/**
+ * Each built part of each fit-out piece of the collection (src/model/collection/fit-out.ts), as an artwork to walk to and look at: its pieces are
+ * those its step tags with its object ID, as the kit was given them, and its floor the one a visitor stands on before it.
+ */
+function fitOutTargets(): Target[] {
+  return FIT_OUT_PIECES.flatMap((piece) => piece.parts.map((part): Target => {
+    const step = SEQUENCE.find((s) => s.id === part.step);
+    if (step === undefined) throw new Error(`The sequence has no step "${part.step}", which src/model/collection/fit-out.ts names for ${part.name}.`);
+    const id = String(piece.id);
+    const pieces = collectStep(step).pieces.filter((p) => p.tag?.kind === 'artwork' && p.tag.id === id);
+    if (pieces.length === 0) throw new Error(`Step "${part.step}" tags no piece as artwork ${id} (${part.name}).`);
+    return artworkTarget(`${FIT_OUT_GROUP}: ${id} (${part.name})`, id, part.floor, pieces, () => ({ query: hit, probe }));
+  }));
 }
 
 /** Feet within 0.5 m in plan and LEVEL of `level`. */
@@ -362,6 +384,16 @@ describe('reachability from the Great Hall spawn, by the walk mode’s walker', 
 
   it('reaches every artwork near enough to look at it', () => {
     expect(misses('artwork')).toEqual([]);
+  });
+
+  it('counts the 94 placeholders and the fit-out pieces’ five parts among those artworks, and reaches each part: the gate and the temple of Dendur, Diana, the loggia, the choir screen', () => {
+    const artworks = targets.filter((t) => t.group === 'artwork');
+    const parts = artworks.filter((t) => t.name.startsWith(`${FIT_OUT_GROUP}: `));
+    expect(artworks.length - parts.length, 'placeholders').toBe(94);
+    const names = ['547802 (the gate of the Temple of Dendur)', '547802 (the Temple of Dendur)', '11998 (Diana on her pedestal)', '133 (the loggia from Laurelton Hall)', '201926 (the choir screen from Valladolid)'];
+    expect(parts.map((t) => t.name)).toEqual(names.map((name) => `${FIT_OUT_GROUP}: ${name}`));
+    // Each was met at a place of the fill, by a path walked again from the spawn, and seen again from there.
+    expect(parts.filter((t) => unmet.has(t) || !metBy.has(t)).map(describeMiss)).toEqual([]);
   });
 
   it('reaches the place of every interior camera preset', () => {

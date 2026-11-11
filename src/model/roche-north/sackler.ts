@@ -11,6 +11,7 @@ import { Matrix4, Quaternion, Vector3 } from 'three';
 
 import { stairFlight } from '../lib/index.js';
 import type { Kit, StepDef } from '../../build/types.js';
+import { FIT_OUT, artworkKit } from '../collection/fit-out.js';
 import { SACKLER_NORTH_FACE_X } from '../frame.js';
 import { palette } from '../palette.js';
 import { FINE_BLOCK, seeded } from './masonry.js';
@@ -173,7 +174,9 @@ function gate(kit: Kit): void {
   const hx = GATE_WIDTH / 2;
   flagstones(kit, GATE_SLABS.minX, TEMPLE_AXIS_X - hx, GATE_SLABS.minZ, GATE_SLABS.maxZ, y, 0.15, 51);
   flagstones(kit, TEMPLE_AXIS_X + hx, GATE_SLABS.maxX, GATE_SLABS.minZ, GATE_SLABS.maxZ, y, 0.15, 53);
-  addGate(kit, new Matrix4().makeTranslation(TEMPLE_AXIS_X, y, GATE_Z));
+  // The gate is the temple's, one object of the collection with it (The Met's 547802): its stones carry the artwork's tag, so a look or a click on
+  // them shows the temple's card; the paving beside it and the rail before it are the hall's and carry none.
+  addGate(artworkKit(kit, FIT_OUT.templeOfDendur), new Matrix4().makeTranslation(TEMPLE_AXIS_X, y, GATE_Z));
   // The low steel rail on the terrace before the gate's front: three posts and a top rail.
   const r = GATE_RAIL;
   const top = PLATFORM_Y + r.height;
@@ -188,8 +191,10 @@ function temple(kit: Kit): void {
   flagstones(kit, DAIS.minX + DAIS_STEPS.width, DAIS.maxX - DAIS_STEPS.width, DAIS_STEPS.minZ, DAIS.maxZ, DAIS_Y + 0.04, 0.12, 63);
   boxAt(kit, areaMaterials.oldPaving, [TEMPLE_BASE.minX, DAIS_Y - 0.05, TEMPLE_BASE.minZ], [TEMPLE_BASE.maxX, y, TEMPLE_BASE.maxZ]);
   const frame = new Matrix4().makeTranslation(TEMPLE_AXIS_X, y, (TEMPLE_BASE.minZ + TEMPLE_BASE.maxZ) / 2);
-  addTempleWalls(kit, frame);
-  addTempleCrown(kit, frame);
+  // The temple's own stones carry the artwork's tag (The Met's 547802), as the gate's do; the flagstones and the base course under it carry none.
+  const stones = artworkKit(kit, FIT_OUT.templeOfDendur);
+  addTempleWalls(stones, frame);
+  addTempleCrown(stones, frame);
 }
 
 function backWall(kit: Kit): void {

@@ -8,6 +8,7 @@ import { CylinderGeometry, Matrix4, Quaternion, Vector3 } from 'three';
 
 import { curtainWall, hedge, hippedSkylight, lampPost, stairFlight } from '../lib/index.js';
 import type { Kit } from '../../build/types.js';
+import { FIT_OUT, artworkKit } from '../collection/fit-out.js';
 import { MAIN_FLOOR_Y } from '../frame.js';
 import { palette } from '../palette.js';
 import { AW_SLOT } from './american.js';
@@ -128,8 +129,10 @@ function colonnades(kit: Kit): void {
   if (stair.cheeks !== undefined) kit.add(stair.cheeks, areaMaterials.clearGlass, at);
 }
 
-function loggia(kit: Kit): void {
+function loggia(plain: Kit): void {
   // Tiffany's loggia from Laurelton Hall (about 1905; 21 × 23 ft, Met API object 133): limestone, four columns with Favrile-glass capitals, facing the court.
+  // It is one object of the collection, so every piece of it carries the artwork's tag and a look or a click on it shows its card.
+  const kit = artworkKit(plain, FIT_OUT.laureltonLoggia);
   const x0 = COURT.southX + 0.05;
   const front = COURT.minX - 0.25;
   const z = COURT_AXIS_Z;
@@ -160,11 +163,13 @@ function sculpture(kit: Kit): void {
   // P5: about 11 m in front of the camera at the court's south end and 2 m west of the centre line, with the facade 33 m away.
   const dx = 71.0;
   const dz = COURT_AXIS_Z - 2.2;
-  boxAt(kit, areaMaterials.whiteMarble, [dx - 0.75, F, dz - 0.75], [dx + 0.75, F + 0.5, dz + 0.75]);
-  boxAt(kit, areaMaterials.whiteMarble, [dx - 0.5, F + 0.5, dz - 0.5], [dx + 0.5, F + 4.1, dz + 0.5]);
-  boxAt(kit, areaMaterials.whiteMarble, [dx - 0.62, F + 4.1, dz - 0.62], [dx + 0.62, F + 4.3, dz + 0.62]);
+  // The figure and the pedestal that shows her carry the artwork's tag (The Met's 11998), as a placeholder and its plinth do; the lamps carry none.
+  const diana = artworkKit(kit, FIT_OUT.diana);
+  boxAt(diana, areaMaterials.whiteMarble, [dx - 0.75, F, dz - 0.75], [dx + 0.75, F + 0.5, dz + 0.75]);
+  boxAt(diana, areaMaterials.whiteMarble, [dx - 0.5, F + 0.5, dz - 0.5], [dx + 0.5, F + 4.1, dz + 0.5]);
+  boxAt(diana, areaMaterials.whiteMarble, [dx - 0.62, F + 4.1, dz - 0.62], [dx + 0.62, F + 4.3, dz + 0.62]);
   // She draws her bow toward the park (world −Z): her local −X turned onto world −Z.
-  kit.add(DIANA, areaMaterials.gilt, new Matrix4().makeTranslation(dx, F + 4.3, dz).multiply(new Matrix4().makeRotationY(Math.PI / 2)).multiply(new Matrix4().makeScale(2.58, 2.58, 2.58)));
+  diana.add(DIANA, areaMaterials.gilt, new Matrix4().makeTranslation(dx, F + 4.3, dz).multiply(new Matrix4().makeRotationY(Math.PI / 2)).multiply(new Matrix4().makeScale(2.58, 2.58, 2.58)));
   const lamp = lampPost({ height: 5.4, arms: 2 });
   for (const [x, z] of [
     [81.6, BEDS.southMaxZ - 0.7],
