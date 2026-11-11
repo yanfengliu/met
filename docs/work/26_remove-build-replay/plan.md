@@ -1,6 +1,6 @@
 # Remove the build replay and its animation
 
-Status: in progress
+Status: active
 Owner: claude/worktree-remove-build-replay
 Created: 2026-11-11
 Updated: 2026-11-11

@@ -1,5 +1,5 @@
 /**
- * The artwork's card content from the catalogue (src/ui/art-card.ts `cardContent`; docs/design/spec.md, Collection: Labels): every one of the 94
+ * The artwork's card content from the catalogue (src/ui/art-card.ts `cardContent`; docs/design/spec.md, Collection: Labels): every one of the 98
  * entries gives a card with its title, its maker or, for a record naming neither artist nor culture, none (the stated fallback: the date alone), its
  * date, its medium, its gallery number and its object page on metmuseum.org under its own object ID, each record's text as plain text on one line (no
  * markup, line break or doubled space, as three titles carry them from the API); the size reads height by width by depth in
@@ -17,7 +17,7 @@ const AXES = [['h', 'height'], ['w', 'width'], ['d', 'depth']] as const;
 
 describe('the artwork’s card', () => {
   it('has every field it shows for every catalogue entry, or its stated fallback', () => {
-    expect(CATALOGUE.length).toBe(94);
+    expect(CATALOGUE.length).toBe(98);
     const problems: string[] = [];
     for (const entry of CATALOGUE) {
       const card = cardContent(entry);
@@ -36,8 +36,8 @@ describe('the artwork’s card', () => {
       if (card.url !== `https://www.metmuseum.org/art/collection/search/${String(entry.id)}`) problems.push(`${at}: link ${card.url}`);
     }
     expect(problems).toEqual([]);
-    // The fallback is real: the Dendur hall's five Egyptian records name neither an artist nor a culture.
-    expect(CATALOGUE.filter((e) => cardContent(e).maker === null).map((e) => e.id).sort()).toEqual([544442, 551889, 551890, 551893, 551894]);
+    // The fallback is real: the Dendur hall's six Egyptian records, the temple's own among them, name neither an artist nor a culture.
+    expect(CATALOGUE.filter((e) => cardContent(e).maker === null).map((e) => e.id).sort()).toEqual([544442, 547802, 551889, 551890, 551893, 551894]);
   });
 
   it('shows a record’s markup and line breaks as plain text, keeping the words, and leaves a lone angle bracket alone', () => {

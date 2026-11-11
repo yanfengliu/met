@@ -230,3 +230,7 @@ Mouse-look and Esc (work unit 14, 2026-10-29): each mutation made on the work an
 ### `scripts/window-station.test.ts`
 
 - The browser server hearing its input's end only once the browser is up, review 0's F2 (work unit 20, review 1, F7, on the change's own tree before its commit): `tests/e2e/browser-server.ts`'s three input listeners moved below `chromium.launchServer`. "ends at once when its input ends while the browser starts" went red ("expected +0 to be 1": the server closed the browser it had finished starting, where it must exit before the browser is up), and green with the listeners restored.
+
+### `src/model/reach.test.ts`, the fit-out pieces of the collection
+
+- A fit-out part with a floor no visitor stands on (work unit 29, 2026-11-11, on the change's own tree, made and undone): the Temple of Dendur's part in `src/model/collection/fit-out.ts` given a floor 3 m under its dais. "reaches every artwork near enough to look at it" and the test that counts the five parts went red, each naming "fit-out: 547802 (the Temple of Dendur) at (133.47, -85.02) on Y 2.86: nearest place 0.31 m away at (133.24, 6.01, -84.81)", the fill running to its end in 39 s. The other gates of the fit-out pieces keep their red proofs in their headers: `src/model/collection/fit-out.test.ts`, `fit-out-labels.test.ts`, `scripts/met-catalogue-fit-out.test.ts` and `tests/e2e/labels-landmarks.ts`.

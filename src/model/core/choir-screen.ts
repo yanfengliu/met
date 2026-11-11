@@ -9,6 +9,7 @@ import { Matrix4 } from 'three';
 import type { Material } from 'three';
 
 import type { Kit } from '../../build/types.js';
+import { FIT_OUT, artworkKit } from '../collection/fit-out.js';
 import { palette } from '../palette.js';
 import { voussoirRing } from './arches.js';
 import { L1, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_Z } from './constants.js';
@@ -136,7 +137,10 @@ function ringAt(x: number, y: number, turn: number, sx: number, sy: number): Mat
   return new Matrix4().makeTranslation(x, L1 + y, SCREEN_Z - 0.05).multiply(new Matrix4().makeRotationZ(turn)).multiply(new Matrix4().makeScale(sx, sy, 1));
 }
 
-export function choirScreen(kit: Kit): void {
+export function choirScreen(plain: Kit): void {
+  // The screen is one object of the collection (The Met's 201926): every piece of it, its limestone base included, carries the artwork's tag, so a
+  // look or a click on it shows its card. An artwork's tag splits no mesh, so the step keeps the nine meshes it had untagged, and the core its count.
+  const kit = artworkKit(plain, FIT_OUT.choirScreen);
   const iron = core.screenIron;
   const gilt = core.gilt;
   const z0 = SCREEN_Z;
