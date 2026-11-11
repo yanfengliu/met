@@ -1,6 +1,6 @@
 # Light the interiors: ambient occlusion, clean sun patches, no light leak
 
-Status: planned
+Status: active
 Owner: claude/worktree-improvement-list (coordinator)
 Created: 2026-11-11
 Updated: 2026-11-11

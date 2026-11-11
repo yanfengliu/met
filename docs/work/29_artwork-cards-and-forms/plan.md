@@ -1,6 +1,6 @@
 # Cards for the landmark pieces and more forms for the artworks
 
-Status: planned
+Status: active
 Owner: claude/worktree-improvement-list (coordinator)
 Created: 2026-11-11
 Updated: 2026-11-11
