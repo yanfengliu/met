@@ -98,7 +98,7 @@ Both workers stopped mid-task when the account reached its usage limit for the m
 - Unit 28, lighting: branch `worktree-agent-ae95d3eb21fe7823e`, snapshot `463fb0e` over `4f0e630`, worktree `.claude/worktrees/agent-ae95d3eb21fe7823e`. It had committed nothing before. The snapshot holds the ambient occlusion pass (`src/viewer/ao-pass.ts`, `ao-shaders.ts`), `lit-materials.ts`, `shadow-filter.ts`, `src/model/sun-leaks.test.ts` with repairs in `src/model/hunt/roof.ts` and `walls.ts`, `tests/e2e/light.spec.ts`, and its edits to the spec, AGENTS.md and unit 28's plan, which records its approach and findings. Its last words: typecheck and lint pass, about to run `light.spec`. No gate has run on the snapshot.
 - Unit 29, artworks: branch `worktree-agent-a419a2463f2a69209`, snapshot `90a3afc` over the gated `41857a4`, worktree `.claude/worktrees/agent-a419a2463f2a69209`. The snapshot holds part of review 1's repairs (F10, F11, F13, F14, F15), mid-edit. Nothing past `41857a4` may be merged until they are finished and gated.
 
-To go on, a worker is started again on each branch, by resuming the same agent once the limit lifts or by a new one that reads this plan, the unit's plan and the snapshot's diff. Which model to spend is the owner's call.
+To go on, a worker is started again on each branch, by resuming the same agent once the limit lifts or by a new one that reads this plan, the unit's plan and the snapshot's diff. The owner chose on 2026-11-11 to wait for the limit and resume the same workers ("Wait, then resume"), not to restart them on another model. Both were sent their resume instructions the same day, each told to carry on from its snapshot, merge origin's main at `0f79be9` and commit at every stopping point.
 
 ## Acceptance criteria
 
