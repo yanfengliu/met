@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 
 import type * as RulesModule from './met-catalogue-rules.js';
 import type { Bins } from './met-catalogue-rules.js';
-import type { CatalogueEntry, CatalogueSource, FitOutEntry, PlaceholderEntry, SpacePicks } from '../src/model/collection/types.js';
+import type { CatalogueEntry, CatalogueSource, FitOutEntry, Pick, PlaceholderEntry, SpacePicks } from '../src/model/collection/types.js';
 
 /** One response as the cache keeps it. */
 export interface Cached {
@@ -32,9 +32,31 @@ export interface Clock {
   sleep(ms: number): Promise<void>;
 }
 
-/** The API or its CDN refused this client (HTTP 403 or 429): the run stops, writes nothing and says when to retry. */
+/** The API or its CDN refused this client (HTTP 403 or 429): the run stops, writes nothing and says when to retry, and with which command. */
 export class BlockedError extends Error {
   override readonly name = 'BlockedError';
+}
+
+/** The script's argument for a run of the fit-out pieces' records alone. */
+export const FIT_OUT_FLAG = '--fit-out';
+
+/** How the script was asked to run. */
+export interface Mode {
+  /** The fit-out records alone, the placeholders kept as committed (`Run.kept`); else every entry. */
+  readonly fitOutOnly: boolean;
+  /**
+   * The command that starts this same run again, which a block's message tells the user to retry with (`FetcherOptions.rerun`). A fit-out run's
+   * keeps its flag: retried without it, the run would rebuild every placeholder, which the flag exists to avoid (work unit 29, review 0, F2).
+   */
+  readonly rerun: string;
+}
+
+/** The mode the script's arguments ask for, or what is wrong with them. */
+export function modeOf(args: readonly string[]): Mode | { readonly problem: string } {
+  const unknown = args.filter((a) => a !== FIT_OUT_FLAG);
+  if (unknown.length > 0) return { problem: `met-catalogue: unknown argument ${unknown.map((a) => `"${a}"`).join(', ')}; run it with no argument for every entry, or with ${FIT_OUT_FLAG} for the fit-out pieces' records alone.` };
+  const fitOutOnly = args.includes(FIT_OUT_FLAG);
+  return { fitOutOnly, rerun: fitOutOnly ? `npm run met-catalogue -- ${FIT_OUT_FLAG}` : 'npm run met-catalogue' };
 }
 
 /** How long to wait before retrying after a block when the response says nothing: the survey of 2026-10-25 saw a 403 block clear within 8 minutes. */
@@ -99,12 +121,14 @@ export interface FetcherOptions {
   /** Least time between two requests to the network, ms. */
   readonly gapMs: number;
   readonly userAgent: string;
+  /** The command that starts this run again (`Mode.rerun`), which a block's message names. */
+  readonly rerun: string;
 }
 
 /**
  * Gets a URL through the cache: a cached 200 makes no request; otherwise it waits until `gapMs` after the last request, fetches, and caches a 200.
- * A 403 or 429 throws BlockedError, with the time to retry (`retryAt`: the response's Retry-After, else BLOCK_WAIT_MS); another status throws an error naming
- * it; a network failure is retried twice, each retry also waiting its turn.
+ * A 403 or 429 throws BlockedError, with the time to retry (`retryAt`: the response's Retry-After, else BLOCK_WAIT_MS) and the run's own command to
+ * retry with; another status throws an error naming it; a network failure is retried twice, each retry also waiting its turn.
  */
 export class Fetcher {
   requests = 0;
@@ -138,7 +162,7 @@ export class Fetcher {
       if (response.status === 403 || response.status === 429) {
         const retry = retryAt(response.headers.get('retry-after'), at);
         throw new BlockedError(
-          `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${isoOf(at)} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after ${isoOf(retry)} with npm run met-catalogue; the cache lets the rerun start where this one stopped.`,
+          `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${isoOf(at)} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after ${isoOf(retry)} with ${this.options.rerun}; the cache lets the rerun start where this one stopped.`,
         );
       }
       if (response.status !== 200) throw new Error(`GET ${url} answered HTTP ${String(response.status)} at ${at.toISOString()}; check the object ID in src/model/collection/picks.ts.`);
@@ -209,17 +233,50 @@ export interface Run {
 
 const keyOf = (space: string, id: number): string => `${space}:${String(id)}`;
 
-/** The committed catalogue's placeholder entries, for a run that keeps them, and what is wrong if they are not the picks' own, in the picks' order. */
+/** A clause when what a kept entry `holds` of `what` is not what its pick chooses: set, changed or dropped in the pick since the entry was built. */
+function differs(what: string, holds: string | number, fromPick: boolean, chosen: string | number | undefined): string[] {
+  if (chosen === undefined) return fromPick ? [`its ${what} ${JSON.stringify(holds)} is a pick's, and its pick sets none now`] : [];
+  return fromPick && holds === chosen ? [] : [`its ${what} is ${JSON.stringify(holds)}${fromPick ? ", an earlier pick's" : ''}, and its pick now sets ${JSON.stringify(chosen)}`];
+}
+
+/**
+ * How a kept placeholder's entry differs from what its pick's own choices give, which need no record to tell: its kind, its display and each
+ * dimension against the pick's overrides, set, changed or dropped, and its gallery against the space's galleries and the pick's override
+ * (rules.catalogueEntry and rules.checkGallery apply the same). None when a whole run would take the same choices from the pick.
+ */
+function staleBy(entry: PlaceholderEntry, pick: Pick, space: SpacePicks): string[] {
+  return [
+    ...differs('kind', entry.kind, entry.kindFrom === 'pick', pick.kind?.value),
+    ...differs('display', entry.display, entry.displayFrom === 'pick', pick.display?.value),
+    ...(['h', 'w', 'd'] as const).flatMap((axis) => differs(`size.${axis}`, entry.size[axis], entry.sizeFrom[axis] === 'pick', pick.size?.[axis])),
+    ...(space.galleries.includes(entry.gallery) || pick.gallery?.value === entry.gallery ? [] : [`its gallery ${JSON.stringify(entry.gallery)} is neither one of its space's (${space.galleries.join(', ')}) nor its pick's override`]),
+  ];
+}
+
+/**
+ * The committed catalogue's placeholder entries, for a run that keeps them, and what is wrong if a whole run would not write them from today's
+ * picks: they are not the picks' own in the picks' order, or one of them is not what its pick's overrides give (work unit 29, review 0, F3).
+ */
 function keptPlaceholders(run: Run, problems: string[]): PlaceholderEntry[] {
   const kept = (run.kept?.entries ?? []).filter((e): e is PlaceholderEntry => e.display !== 'fit-out');
-  const want = run.spaces.flatMap((s) => s.picks.map((p) => keyOf(s.id, p.id)));
+  const picked = run.spaces.flatMap((space) => space.picks.map((pick) => ({ space, pick })));
+  const want = picked.map(({ space, pick }) => keyOf(space.id, pick.id));
   const have = kept.map((e) => keyOf(e.space, e.id));
+  const rebuild = 'a run with --fit-out keeps them as they are, so rebuild the whole catalogue: npm run met-catalogue.';
   if (want.join(' ') !== have.join(' ')) {
     const missing = want.filter((k) => !have.includes(k));
     const extra = have.filter((k) => !want.includes(k));
     const what = missing.length + extra.length === 0 ? 'in another order' : [missing.length > 0 ? `without ${missing.join(', ')}` : '', extra.length > 0 ? `with ${extra.join(', ')}, picked no longer` : ''].filter((s) => s !== '').join(' and ');
-    problems.push(`the catalogue's placeholders are not the picks' (${what}); a run with --fit-out keeps them as they are, so rebuild the whole catalogue: npm run met-catalogue.`);
+    problems.push(`the catalogue's placeholders are not the picks' (${what}); ${rebuild}`);
+    return kept;
   }
+  // Entry for pick, one to one: each kept entry against its own pick's choices.
+  const stale = kept.flatMap((entry, i) => {
+    const of = picked[i];
+    const clauses = of === undefined ? [] : staleBy(entry, of.pick, of.space);
+    return clauses.length === 0 ? [] : [`${keyOf(entry.space, entry.id)}: ${clauses.join('; ')}`];
+  });
+  if (stale.length > 0) problems.push(`the catalogue's placeholders are not what their picks give (${stale.join('. ')}); ${rebuild}`);
   return kept;
 }
 

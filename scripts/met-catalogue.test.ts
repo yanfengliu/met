@@ -221,7 +221,7 @@ describe('fetcher', () => {
     const clock = fakeClock();
     const times: number[] = [];
     const store = memoryStore();
-    const fetcher = new Fetcher({ fetch: (url) => ((times.push(clock.now()), Promise.resolve(new Response(url, { status: 200 })))), clock, store, gapMs: 1000, userAgent: 'test' });
+    const fetcher = new Fetcher({ fetch: (url) => ((times.push(clock.now()), Promise.resolve(new Response(url, { status: 200 })))), clock, store, gapMs: 1000, userAgent: 'test', rerun: 'npm run again' });
     for (const url of ['a', 'b', 'c', 'a']) await fetcher.get(url);
     expect(times.map((t) => t - (times[0] ?? 0))).toEqual([0, 1000, 2000]);
     expect([fetcher.requests, fetcher.hits, store.map.size]).toEqual([3, 1, 3]);
@@ -232,13 +232,14 @@ describe('fetcher', () => {
     const clock = fakeClock();
     const store = memoryStore();
     const answers = [new Response('x', { status: 200 }), new Response('blocked', { status: 403 }), new Response('slow', { status: 429, headers: { 'Retry-After': '120' } })];
-    const fetcher = new Fetcher({ fetch: () => Promise.resolve(answers.shift() ?? new Response('', { status: 500 })), clock, store, gapMs: 1000, userAgent: 'test' });
+    const fetcher = new Fetcher({ fetch: () => Promise.resolve(answers.shift() ?? new Response('', { status: 500 })), clock, store, gapMs: 1000, userAgent: 'test', rerun: 'npm run again' });
     await fetcher.get('https://example.test/ok');
     const blocked = await fetcher.get('https://example.test/two').catch((e: unknown) => e);
     expect(blocked).toBeInstanceOf(BlockedError);
     const at = new Date(clock.now()).toISOString();
     expect((blocked as Error).message).toContain(`HTTP 403 at ${at} (https://example.test/two): blocked by its CDN, Imperva`);
-    expect((blocked as Error).message).toContain(`Retry after ${new Date(clock.now() + BLOCK_WAIT_MS).toISOString()}`);
+    // The time to retry, and the command the fetcher was given for its run (`rerun`), which for a fit-out run keeps its flag (./met-catalogue-fit-out.test.ts).
+    expect((blocked as Error).message).toContain(`Retry after ${new Date(clock.now() + BLOCK_WAIT_MS).toISOString()} with npm run again; the cache lets the rerun start where this one stopped.`);
     const slow = await fetcher.get('https://example.test/three').catch((e: unknown) => e);
     expect((slow as Error).message).toContain(`HTTP 429 at ${new Date(clock.now()).toISOString()} (https://example.test/three): too many requests`);
     expect((slow as Error).message).toContain(`Retry after ${new Date(clock.now() + 120_000).toISOString()}`);
@@ -259,7 +260,7 @@ describe('fetcher', () => {
     // Through the fetcher: a 429 that gives a date an hour on.
     const clock = fakeClock();
     const hour = new Date(clock.now() + 3_600_000);
-    const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('slow', { status: 429, headers: { 'Retry-After': hour.toUTCString() } })), clock, store: memoryStore(), gapMs: 0, userAgent: 'test' });
+    const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('slow', { status: 429, headers: { 'Retry-After': hour.toUTCString() } })), clock, store: memoryStore(), gapMs: 0, userAgent: 'test', rerun: 'npm run again' });
     const slow = await fetcher.get('https://example.test/date').catch((e: unknown) => e);
     expect((slow as Error).message).toContain(`Retry after ${hour.toISOString()}`);
   });
@@ -278,7 +279,7 @@ describe('fetcher', () => {
   });
 
   it('names any other status', async () => {
-    const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('', { status: 404 })), clock: fakeClock(), store: memoryStore(), gapMs: 0, userAgent: 'test' });
+    const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('', { status: 404 })), clock: fakeClock(), store: memoryStore(), gapMs: 0, userAgent: 'test', rerun: 'npm run again' });
     await expect(fetcher.get('https://example.test/gone')).rejects.toThrow(/answered HTTP 404/);
   });
 });
@@ -315,7 +316,7 @@ describe('the run', () => {
     const headers = [null, '', '120', '9'.repeat(309), '9'.repeat(20), 'soon', 'Tuesday, 25-Oct-50 13:00:00 GMT', 'Sat, 31 Feb 2026 13:00:00 GMT'];
     for (const status of [403, 429]) {
       for (const header of headers) {
-        const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('no', { status, headers: header === null ? {} : { 'Retry-After': header } })), clock: fakeClock(), store: memoryStore(), gapMs: 0, userAgent: 'test' });
+        const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('no', { status, headers: header === null ? {} : { 'Retry-After': header } })), clock: fakeClock(), store: memoryStore(), gapMs: 0, userAgent: 'test', rerun: 'npm run again' });
         const { run, writes } = recorder((url) => fetcher.get(url));
         const result = await runCatalogue(run).catch((e: unknown) => e);
         expect([result instanceof BlockedError, fetcher.requests, writes.length], `HTTP ${String(status)}, Retry-After ${String(header).slice(0, 40)}`).toEqual([true, 1, 0]);

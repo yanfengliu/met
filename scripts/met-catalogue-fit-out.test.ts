@@ -4,11 +4,17 @@
  * screen from Valladolid 201926 and the loggia from Laurelton Hall 133) against values worked out by hand from each record; the run with recorders
  * in place of the network, the browser and the disk: a fit-out piece's record built after the placeholders with no image fetched or sampled, and the
  * run that keeps the committed catalogue (`--fit-out`), which writes every placeholder's line again byte for byte and asks the network for the
- * fit-out records alone; and the committed catalogue itself, which is in the form the script writes.
+ * fit-out records alone, keeps no placeholder that today's picks would not give (another object or order, or a kind, a display, a dimension or a
+ * gallery its pick now chooses otherwise: review 0, F3), and, blocked, says to retry with the fit-out command through the real fetcher, built for
+ * the mode the script's arguments give (review 0, F2); and the committed catalogue itself, which is in the form the script writes.
  * Red (2026-11-11, each mutation made and undone): with a fit-out piece sized as a block is, its missing axes estimated by the kind's ratios (the
- * choir screen without its pick's depth is accepted); with the run fetching a fit-out record's image (the request is seen); and with a kept run that
- * rebuilds its placeholders (81 requests where one is due).
- * Bound: no network and no browser; scripts/met-catalogue.test.ts holds the placeholders' rules, the fetcher and the all-or-nothing write.
+ * choir screen without its pick's depth is accepted); with the run fetching a fit-out record's image (the request is seen); with a kept run that
+ * rebuilds its placeholders (81 requests where one is due); with the fetcher naming the whole run whatever its run's kind, as it did, and with the
+ * fit-out mode given the whole run's command (the blocked fit-out run's message is not the one written out here); and with the kept run not
+ * comparing its entries with their picks' choices (a kind set since is kept and written).
+ * Bound: no network and no browser; scripts/met-catalogue.test.ts holds the placeholders' rules, the fetcher and the all-or-nothing write. The
+ * script's own `main` is not run here: that it hands its mode's `rerun` to its fetcher is one typed line, read, not tested. A kept run compares
+ * what the picks alone decide; a rule changed since the entries were built (a kind by name, an estimate) only a whole run derives again.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,11 +22,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { CATALOGUE, CATALOGUE_SOURCE } from '../src/model/collection/catalogue.js';
-import type { CatalogueEntry, CatalogueSource, Pick, SpacePicks } from '../src/model/collection/types.js';
+import type { CatalogueEntry, CatalogueSource, Pick, PlaceholderEntry, SpacePicks } from '../src/model/collection/types.js';
 import * as rules from './met-catalogue-rules.js';
 import type { Bins, MetRecord } from './met-catalogue-rules.js';
-import { BlockedError, formatCatalogue, pickProblems, runCatalogue } from './met-catalogue-run.js';
-import type { Cached, Run } from './met-catalogue-run.js';
+import { BlockedError, Fetcher, formatCatalogue, modeOf, pickProblems, runCatalogue } from './met-catalogue-run.js';
+import type { Cached, Mode, Run } from './met-catalogue-run.js';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'met-api');
 const body = (id: number): string => readFileSync(join(FIXTURES, `object-${String(id)}.json`), 'utf8');
@@ -132,9 +138,9 @@ describe('the run with fit-out pieces', () => {
   const entryLines = (text: string | undefined): string[] => (text ?? '').split('\n').filter((l) => l.startsWith('  {'));
   const parsed = (text: string | undefined): CatalogueEntry[] => entryLines(text).map((l) => JSON.parse(l.trim().replace(/,$/, '')) as CatalogueEntry);
   const sourceOf = (text: string | undefined): CatalogueSource => JSON.parse(/CATALOGUE_SOURCE: CatalogueSource = (.*);/.exec(text ?? '')?.[1] ?? 'null') as CatalogueSource;
-  /** The catalogue as a full run wrote it before any fit-out piece was picked, every placeholder sampled from its picture. */
-  const committed = async (): Promise<{ readonly text: string; readonly kept: NonNullable<Run['kept']> }> => {
-    const before = recorder(picks, (url) => (url === PICTURE ? picture(url) : answer(url, { primaryImageSmall: PICTURE })));
+  /** The catalogue as a full run wrote it from `spaces` before any fit-out piece was picked, every placeholder sampled from its picture. */
+  const committed = async (spaces: readonly SpacePicks[] = picks): Promise<{ readonly text: string; readonly kept: NonNullable<Run['kept']> }> => {
+    const before = recorder(spaces, (url) => (url === PICTURE ? picture(url) : answer(url, { primaryImageSmall: PICTURE })));
     expect(await runCatalogue(before.run)).toBe(0);
     expect(before.sampled.length).toBe(40);
     const text = before.writes[0] ?? '';
@@ -195,6 +201,44 @@ describe('the run with fit-out pieces', () => {
     }
   });
 
+  it('keeps no placeholder its pick would no longer give: a kind, a display or a dimension set, changed or dropped in the pick since, or a gallery no longer the space’s or the pick’s', async () => {
+    /** `spaces` with `first` in place of space s1's first pick (object 1247000), and `over` over the space's own fields. */
+    const s1 = (spaces: readonly SpacePicks[], first: Pick, over: Partial<SpacePicks> = {}): SpacePicks[] => spaces.map((s, k) => (k === 1 ? { ...s, picks: [first, ...s.picks.slice(1)], ...over } : s));
+    const id = 1_247_000;
+    const reason = 'chosen in the test';
+    const chosen: Pick = { id, kind: { value: 'slab', reason }, display: { value: 'floor', reason }, size: { d: 0.9, reason } };
+    // Two committed catalogues: one whose picks chose nothing, and one whose pick of 1247000 chose its kind, its display and its depth.
+    const plain = await committed();
+    const overridden = await committed(s1(picks, chosen));
+    const held = plain.kept.entries.find((e): e is PlaceholderEntry => e.id === id && e.display !== 'fit-out');
+    expect([held?.kind, held?.display, held?.sizeFrom.d, held?.gallery], 'the plain entry: a figure on a plinth by the rules, its depth estimated').toEqual(['figure', 'plinth', 'estimate', '162']);
+    const cases: (readonly [string, NonNullable<Run['kept']>, SpacePicks[], string])[] = [
+      ['a kind set since', plain.kept, s1(withFitOut, { id, kind: { value: 'slab', reason } }), '(s1:1247000: its kind is "figure", and its pick now sets "slab")'],
+      ['a display set since', plain.kept, s1(withFitOut, { id, display: { value: 'floor', reason } }), '(s1:1247000: its display is "plinth", and its pick now sets "floor")'],
+      ['a depth given since', plain.kept, s1(withFitOut, { id, size: { d: 0.9, reason } }), `(s1:1247000: its size.d is ${String(held?.size.d)}, and its pick now sets 0.9)`],
+      ['a kind changed since', overridden.kept, s1(withFitOut, { ...chosen, kind: { value: 'bust', reason } }), '(s1:1247000: its kind is "slab", an earlier pick\'s, and its pick now sets "bust")'],
+      ['a depth changed since', overridden.kept, s1(withFitOut, { ...chosen, size: { d: 1.1, reason } }), '(s1:1247000: its size.d is 0.9, an earlier pick\'s, and its pick now sets 1.1)'],
+      ['every choice dropped since', overridden.kept, withFitOut, '(s1:1247000: its kind "slab" is a pick\'s, and its pick sets none now; its display "floor" is a pick\'s, and its pick sets none now; its size.d 0.9 is a pick\'s, and its pick sets none now)'],
+      ['the space’s gallery changed since', plain.kept, s1(withFitOut, { id }, { galleries: ['999'] }), '(s1:1247000: its gallery "162" is neither one of its space\'s (999) nor its pick\'s override. s1:1254697: its gallery "162" is'],
+    ];
+    for (const [what, kept, spaces, message] of cases) {
+      const { run, writes, lines, asked } = recorder(spaces, (url) => answer(url));
+      expect(await runCatalogue({ ...run, kept }), what).toBe(1);
+      expect(writes, what).toEqual([]);
+      expect(lines.join('\n'), what).toContain(`the catalogue's placeholders are not what their picks give ${message}`);
+      expect(lines.join('\n'), what).toContain('a run with --fit-out keeps them as they are, so rebuild the whole catalogue: npm run met-catalogue.');
+      // It still asks for the fit-out records, so the problem is listed with any other, and for no placeholder's.
+      expect(asked, what).toEqual([`${rules.API_OBJECTS}9000001`]);
+    }
+    // The choices the catalogue was built with are no difference: the kept run writes, every placeholder's line as it was.
+    const same = recorder(s1(withFitOut, chosen), (url) => answer(url));
+    expect(await runCatalogue({ ...same.run, kept: overridden.kept })).toBe(0);
+    expect(entryLines(same.writes[0]).slice(0, 40)).toEqual(entryLines(overridden.text));
+    // Nor is a gallery its pick overrides to, in a space that shows another, as a whole run accepts it (rules.checkGallery).
+    const elsewhere = withFitOut.map((s, k) => (k === 1 ? { ...s, galleries: ['999'], picks: s.picks.map((p) => ({ ...p, gallery: { value: '162', reason } })) } : s));
+    expect(await runCatalogue({ ...recorder(elsewhere, (url) => answer(url)).run, kept: plain.kept })).toBe(0);
+  });
+
   it('writes nothing when blocked on a fit-out record, and lists an object picked as a placeholder and as a fit-out piece', async () => {
     const { kept } = await committed();
     const blocked = recorder(withFitOut, () => Promise.reject(new BlockedError('blocked')));
@@ -203,6 +247,51 @@ describe('the run with fit-out pieces', () => {
     const twice = picks.map((s, k) => (k === 0 ? { ...s, fitOut: [{ id: 247000, size: { w: 1, d: 1, reason: 'test' } }] } : s));
     expect(pickProblems(twice)).toEqual(['object 247000 is picked in s0 and s0; pick it once.']);
     expect(pickProblems(withFitOut)).toEqual([]);
+  });
+
+  /**
+   * The script's mode for `args` and a fetcher as the script builds it for that mode (scripts/met-catalogue.ts `main`: the mode's own `rerun`), with
+   * a clock that stands at 15:00 UTC, an empty cache and a network that refuses every request with `status`.
+   */
+  const refused = (args: readonly string[], status: number): { readonly mode: Mode; readonly fetcher: Fetcher } => {
+    const mode = modeOf(args);
+    if ('problem' in mode) throw new Error(mode.problem);
+    let now = Date.parse('2026-11-11T15:00:00Z');
+    const clock = { now: () => now, sleep: (ms: number) => ((now += ms), Promise.resolve()) };
+    const fetcher = new Fetcher({ fetch: () => Promise.resolve(new Response('no', { status })), clock, store: { get: () => null, put: () => undefined }, gapMs: 1000, userAgent: 'test', rerun: mode.rerun });
+    return { mode, fetcher };
+  };
+
+  it('blocked, says to retry the run that was blocked: a fit-out run with its flag, never the whole run, which would rebuild every placeholder', async () => {
+    const { kept } = await committed();
+    // The fit-out run, as `npm run met-catalogue -- --fit-out` starts it, refused on its first request: the fit-out piece's record.
+    const fitOut = refused(['--fit-out'], 403);
+    expect(fitOut.mode.fitOutOnly).toBe(true);
+    const blocked = recorder(withFitOut, (url) => fitOut.fetcher.get(url));
+    const error = await runCatalogue({ ...blocked.run, kept }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(BlockedError);
+    const message = (error as Error).message;
+    expect(message).toBe(
+      `The Met's servers refused request 1 of this run with HTTP 403 at 2026-11-11T15:00:00.000Z (${rules.API_OBJECTS}9000001): blocked by its CDN, Imperva. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after 2026-11-11T15:10:00.000Z with npm run met-catalogue -- --fit-out; the cache lets the rerun start where this one stopped.`,
+    );
+    expect(message, 'the command is named once, with its flag').not.toMatch(/npm run met-catalogue(?! -- --fit-out)/);
+    expect([blocked.asked, blocked.writes, fitOut.fetcher.requests]).toEqual([[`${rules.API_OBJECTS}9000001`], [], 1]);
+    // The whole run, as `npm run met-catalogue` starts it, refused on its first placeholder's record, names itself.
+    const whole = refused([], 429);
+    expect(whole.mode.fitOutOnly).toBe(false);
+    const all = recorder(withFitOut, (url) => whole.fetcher.get(url));
+    const stopped = await runCatalogue(all.run).catch((e: unknown) => e);
+    expect(stopped).toBeInstanceOf(BlockedError);
+    expect((stopped as Error).message).toContain(`(${rules.API_OBJECTS}247000): too many requests.`);
+    expect((stopped as Error).message).toContain('Retry after 2026-11-11T15:10:00.000Z with npm run met-catalogue; the cache lets the rerun start where this one stopped.');
+    expect((stopped as Error).message).not.toContain('--fit-out');
+    expect(all.writes).toEqual([]);
+  });
+
+  it('reads the script’s arguments: none for every entry, --fit-out for the fit-out records alone, anything else refused by name', () => {
+    expect(modeOf([])).toEqual({ fitOutOnly: false, rerun: 'npm run met-catalogue' });
+    expect(modeOf(['--fit-out'])).toEqual({ fitOutOnly: true, rerun: 'npm run met-catalogue -- --fit-out' });
+    expect(modeOf(['--fitout', '--fit-out'])).toEqual({ problem: 'met-catalogue: unknown argument "--fitout"; run it with no argument for every entry, or with --fit-out for the fit-out pieces\' records alone.' });
   });
 });
 
