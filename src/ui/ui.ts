@@ -1,27 +1,20 @@
 /**
- * The page chrome: timeline bar, Build menu, View menu, floor picker, the walk mode's crosshair and status line, and keyboard shortcuts, wired to app
- * actions. Plain DOM; `sync` is cheap to call every frame. The timeline shows only while the build replay is open (docs/design/spec.md, Page: Build replay).
- * The artwork's card (src/ui/art-card.ts) shows the label of the artwork looked at or clicked.
+ * The page chrome: the View menu, the walk strip with the Walk toggle, the floor picker, the walk mode's crosshair and status line, and keyboard
+ * shortcuts, wired to app actions. Plain DOM; `sync` is cheap to call every frame. The artwork's card (src/ui/art-card.ts) shows the label of the
+ * artwork looked at or clicked.
  */
-import type { Chapter } from '../build/types.js';
 import { ArtCard } from './art-card.js';
 import type { ArtCardContent } from './art-card.js';
 import { FloorPicker } from './floor-picker.js';
 import type { FloorEntry } from './floor-picker.js';
 import { bindKeys } from './keyboard.js';
-import { chapterAt } from './label.js';
-import type { LabelStep } from './label.js';
-import { BuildMenu, ViewMenu, closeOnOutside } from './menus.js';
-import type { ChapterEntry, PresetEntry, SpawnEntry, ViewActions, ViewState } from './menus.js';
+import { ViewMenu, closeOnOutside } from './menus.js';
+import type { PresetEntry, SpawnEntry, ViewActions, ViewState } from './menus.js';
 import { el, setAttr, setText } from './dom.js';
 import { installStyles } from './styles.js';
-import { TimelineBar } from './timeline-bar.js';
-import type { BarActions, BarState } from './timeline-bar.js';
+import { WalkStrip } from './walk-strip.js';
 
 export interface UiInfo {
-  readonly steps: readonly LabelStep[];
-  readonly chapters: readonly Chapter[];
-  readonly ranges: readonly ChapterEntry[];
   readonly presets: readonly PresetEntry[];
   readonly spawns: readonly SpawnEntry[];
   /** Top of the section-cut slider, in metres. */
@@ -30,11 +23,9 @@ export interface UiInfo {
   readonly floors: readonly FloorEntry[];
 }
 
-export interface UiActions extends BarActions, ViewActions {
-  /** Opens the build replay at the start of a chapter: its first step's index. */
-  goToChapter(first: number): void;
-  /** The Build menu's Build replay item: opens the build replay, or closes it. */
-  toggleReplay(): void;
+export interface UiActions extends ViewActions {
+  /** The Walk toggle, F and Esc while walking: into walk mode, or back to the orbit view. */
+  toggleWalk(): void;
   jump(): void;
   /** E while walking: opens or closes the door the walking eye looks at (docs/design/spec.md, Doors). */
   act(): void;
@@ -47,7 +38,9 @@ export interface UiActions extends BarActions, ViewActions {
 /** What the walk status line says: nothing in the orbit view, then preparing, walking with the pointer free, or with it locked to the view. */
 export type WalkStatus = 'off' | 'preparing' | 'free' | 'locked';
 
-export type UiState = BarState & ViewState & {
+export type UiState = ViewState & {
+  /** Walk mode is on (or being prepared). */
+  readonly walking: boolean;
   readonly walkStatus: WalkStatus;
   /** While walking, whether the status line shows how to look, move and leave (src/walk/walk-mode.ts, `HINT_SECONDS`). */
   readonly walkHint: boolean;
@@ -63,8 +56,6 @@ export type UiState = BarState & ViewState & {
 
 export interface Ui {
   sync(state: UiState): void;
-  /** The timeline bar, whose height the camera keeps clear of in the orbit view while it is whole. */
-  readonly bar: HTMLElement;
   /** The physical keys held now (src/ui/keyboard.ts). */
   readonly held: ReadonlySet<string>;
 }
@@ -82,26 +73,22 @@ const WALK_STATUS: Readonly<Record<WalkStatus, string>> = {
  */
 export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, initial: UiState, walking: () => boolean): Ui {
   installStyles();
-  const bar = new TimelineBar(
-    { steps: info.steps, chapters: info.chapters, boundaries: info.ranges.filter((r) => r.count > 0).map((r) => ({ first: r.first, title: r.title })) },
-    actions,
-  );
-  const chapters = new BuildMenu(info.ranges, (first) => { actions.goToChapter(first); }, () => { actions.toggleReplay(); });
+  const strip = new WalkStrip(() => { actions.toggleWalk(); });
   const view = new ViewMenu(info.presets, info.spawns, info.cutMax, initial, actions);
   const floors = new FloorPicker(info.floors, (id) => { actions.chooseFloor(id); });
   const menus = document.createElement('div');
   menus.className = 'met-menus';
-  menus.append(chapters.disclosure.element, view.disclosure.element);
+  menus.append(view.disclosure.element);
   const ui = document.createElement('div');
   ui.className = 'met-ui';
   ui.dataset['testid'] = 'ui';
   const status = el('div', { className: 'met-walk-status', testid: 'walk-status', attrs: { role: 'status', 'aria-live': 'polite' } });
   status.hidden = true;
-  // The crosshair marks the eye's ray: the canvas's centre, where walk mode's projection is centred (src/main.ts sets no inset while walking).
+  // The crosshair marks the eye's ray: the canvas's centre, where walk mode's projection is centred.
   const crosshair = el('div', { className: 'met-crosshair', testid: 'crosshair', attrs: { 'aria-hidden': 'true' } });
   crosshair.hidden = true;
-  ui.append(crosshair, menus, status, floors.element, bar.element);
-  // The artwork's card comes after the floor picker and the bar, whose state its place follows (src/ui/styles.ts).
+  ui.append(crosshair, menus, status, floors.element, strip.element);
+  // The artwork's card comes after the floor picker and the strip, whose places its own follows (src/ui/styles.ts).
   const card = new ArtCard();
   ui.append(card.element);
   // The door prompt, centred under the crosshair in the band M3b's label card keeps out of (docs/design/spec.md, Doors: Use).
@@ -109,19 +96,14 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   prompt.hidden = true;
   crosshair.after(prompt);
   root.appendChild(ui);
-  closeOnOutside([chapters.disclosure, view.disclosure]);
-  // Closed by the keyboard, the close button hides with the bar: focus goes to the Build menu's button, which reopens the replay, as after its items.
-  bar.close.addEventListener('click', (event) => {
-    if (event.detail === 0) chapters.disclosure.trigger.focus();
-  });
+  closeOnOutside([view.disclosure]);
   const held = bindKeys(actions, walking);
 
-  // Panels never reach under the bar, whole or a strip, and while the replay is open the floor picker centres in the view above it: both follow the bar's
-  // height (src/ui/styles.ts).
+  // Panels never reach under the strip: they follow its height (src/ui/styles.ts).
   const fit = (): void => {
-    document.documentElement.style.setProperty('--met-bar-h', `${String(Math.ceil(bar.element.getBoundingClientRect().height))}px`);
+    document.documentElement.style.setProperty('--met-strip-h', `${String(Math.ceil(strip.element.getBoundingClientRect().height))}px`);
   };
-  new ResizeObserver(fit).observe(bar.element);
+  new ResizeObserver(fit).observe(strip.element);
   fit();
   // The artwork's card stands clear of the floor picker in the orbit view: it follows the picker's width.
   const fitPicker = (): void => {
@@ -133,14 +115,12 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
   /** The walk status the last sync showed, so a menu closes when the pointer locks and not after. */
   let shownStatus = initial.walkStatus;
   const sync = (state: UiState): void => {
-    bar.sync(state);
-    chapters.sync(chapterAt(state.t, info.ranges, info.steps.length), state.replay);
-    if (ui.hasAttribute('data-replay') !== state.replay) ui.toggleAttribute('data-replay', state.replay);
+    strip.sync(state.walking);
     view.sync(state);
     floors.sync(state);
     // A menu open when the pointer locks closes: the locked pointer cannot reach it, and the browser keeps the Esc that would (review 0, F6). One
     // the keyboard opens while it is locked stays (review 1, F12).
-    if (state.walkStatus === 'locked' && shownStatus !== 'locked') for (const d of [chapters.disclosure, view.disclosure]) if (d.open) d.setOpen(false);
+    if (state.walkStatus === 'locked' && shownStatus !== 'locked' && view.disclosure.open) view.disclosure.setOpen(false);
     shownStatus = state.walkStatus;
     // The status line says "Preparing walk mode…", then shows how to look, move and leave only while the hint lasts.
     const shown = state.walkStatus === 'preparing' || (state.walkHint && state.walkStatus !== 'off');
@@ -156,5 +136,5 @@ export function createUi(root: HTMLElement, info: UiInfo, actions: UiActions, in
     if (prompt.hidden !== (words === '')) prompt.hidden = words === '';
   };
   sync(initial);
-  return { sync, bar: bar.element, held };
+  return { sync, held };
 }

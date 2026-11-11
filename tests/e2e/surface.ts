@@ -3,7 +3,8 @@
  * timeline built and evaluated at t = N in the test's own process, then every drawn piece's triangles tested one by one at its final matrix, both faces
  * counting (as the page's pick counts them), plus the workspace ground 0.5 m under the lower of grade and the model's lowest point (docs/design/spec.md,
  * Camera framing). Nothing here uses src/viewer/pick.ts, a BVH, the orbit target or the page's state.
- * Bound: it holds for a page at t = N with no section cut and no floor view, where every mesh is drawn, which is the state the zoom gate opens.
+ * Bound: it holds for the page, which shows the finished building, with no section cut and no floor view, where every mesh is drawn, which is the
+ * state the zoom gate opens.
  */
 import { Matrix4, Ray, Sphere, Vector3 } from 'three';
 import type { InstancedMesh } from 'three';

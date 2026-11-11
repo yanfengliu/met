@@ -50,7 +50,7 @@ test.describe('mixed mouse and touch on the orbit view', () => {
 
   test('a finger joining a mouse drag, and a mouse joining a finger’s drag that lifts first, throw nothing and turn the view as the pointer that holds it alone', async ({ page }) => {
     const errors = watchErrors(page);
-    await open(page, `autoplay=0&view=${PRESET}`);
+    await open(page, `view=${PRESET}`);
     const cdp = await page.context().newCDPSession(page);
     const start = await settledCamera(page);
     // A finger lands during a mouse drag, moves and lifts; the mouse drags on.

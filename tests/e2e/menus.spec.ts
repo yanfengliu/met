@@ -1,7 +1,6 @@
 /**
- * Build menu and view menu through real input (docs/design/spec.md, Page): the Build replay item first, unchecked, then the chapters in order (empty ones
- * disabled), each chapter with steps chosen in turn, the first choice opening the build replay at its start; every preset chosen in turn and settling on
- * its camera, the follow camera (a drag turns it off) and the section cut (toggle and slider).
+ * The View menu through real input (docs/design/spec.md, Page: View menu): every preset chosen in turn, marking itself and settling on its camera; the
+ * presets moving the camera and the canvas; and the section cut (its toggle and its slider, dragged by mouse) changing the canvas and giving it back.
  * Facts come from `window.__met` and preset cameras from src/viewer/presets.ts; nothing names a step or chapter.
  * Bound: canvas checks compare coarse luminance grids, proving the drawing changed, not that the new view is right; a preset's camera is compared by
  * position, target and fov (look) or by target, direction and the model's corners in frame (fit), read from `window.__met.camera`.
@@ -9,56 +8,15 @@
 import { expect, test } from '@playwright/test';
 
 import { DEFAULT_FOV, PRESETS } from '../../src/viewer/presets.js';
-import { centreOf, changedCells, cornerCells, cornerReach, currentT, distance, facts, labelStep, lumaGrid, open, openMenu, press, settle, settledCamera, waitForT, watchErrors } from './helpers.js';
+import { centreOf, changedCells, cornerCells, cornerReach, distance, facts, lumaGrid, open, openMenu, press, settle, settledCamera, watchErrors } from './helpers.js';
 
-test.describe('menus', () => {
+test.describe('the View menu', () => {
   let errors: { expectClean: () => void };
   test.beforeEach(({ page }) => {
     errors = watchErrors(page);
   });
   test.afterEach(() => {
     errors.expectClean();
-  });
-
-  test('the Build menu holds the Build replay item, then every chapter in order, disables empty ones, and opens the replay at the start of the chosen one', async ({ page }) => {
-    const f = await open(page);
-    await expect(page.getByTestId('chapter-menu-button')).toHaveAccessibleName('Build');
-    await openMenu(page, 'chapter-menu');
-    const replay = page.getByTestId('chapter-menu').getByRole('menuitemcheckbox');
-    await expect(replay, 'one checkbox item: Build replay').toHaveCount(1);
-    await expect(replay).toHaveAttribute('data-testid', 'replay-toggle');
-    await expect(replay).toHaveAccessibleName('Build replay');
-    await expect(replay, 'closed at load').toHaveAttribute('aria-checked', 'false');
-    expect(await page.getByTestId('chapter-menu').locator('button').first().getAttribute('data-testid'), 'the first item').toBe('replay-toggle');
-    const items = page.getByTestId('chapter-menu').getByRole('menuitem');
-    await expect(items).toHaveCount(f.chapters.length);
-    for (const [i, chapter] of f.chapters.entries()) {
-      const item = items.nth(i);
-      await expect(item).toHaveAttribute('data-testid', `chapter-${chapter.id}`);
-      await expect(item).toContainText(chapter.title);
-      if (chapter.count === 0) await expect(item).toBeDisabled();
-      else await expect(item).toBeEnabled();
-    }
-    const withSteps = f.chapters.filter((c) => c.count > 0);
-    expect(withSteps.length).toBeGreaterThan(1);
-    await page.keyboard.press('Escape');
-    // The page opens at the end, with no timeline; choosing a chapter opens the build replay there.
-    await waitForT(page, f.n);
-    await expect(page.getByTestId('scrubber')).toBeHidden();
-    // Every chapter with steps, last first, so each choice moves the build.
-    for (const target of [...withSteps].reverse()) {
-      await openMenu(page, 'chapter-menu');
-      await press(page, `chapter-${target.id}`);
-      await waitForT(page, target.first);
-      expect(await page.evaluate(() => window.__met?.replay), `the replay after choosing ${target.id}`).toBe(true);
-      await expect(page.getByTestId('chapter-menu')).toBeHidden();
-      await expect(page.getByTestId('scrubber')).toHaveValue(String(target.first));
-      expect(await labelStep(page), `the label after choosing ${target.id}`).toBe(target.first);
-      await openMenu(page, 'chapter-menu');
-      await expect(page.getByTestId(`chapter-${target.id}`)).toHaveAttribute('aria-current', 'true');
-      await expect(page.getByTestId('replay-toggle'), 'the Build replay item checked').toHaveAttribute('aria-checked', 'true');
-      await page.keyboard.press('Escape');
-    }
   });
 
   test('every preset, chosen through the view menu, marks itself and settles on its camera', async ({ page }) => {
@@ -98,7 +56,6 @@ test.describe('menus', () => {
 
   test('view presets move the camera and mark the chosen one', async ({ page }) => {
     const f = await open(page);
-    await waitForT(page, f.n);
     await openMenu(page, 'view-menu');
     for (const preset of f.presets) await expect(page.getByTestId(`preset-${preset.id}`)).toBeVisible();
     const before = await lumaGrid(page);
@@ -116,32 +73,8 @@ test.describe('menus', () => {
     }
   });
 
-  test('the follow camera is on during autoplay, a drag turns it off and the toggle turns it back on', async ({ page }) => {
-    await open(page, 'autoplay=1');
-    expect(await page.evaluate(() => window.__met?.follow)).toBe(true);
-    await openMenu(page, 'view-menu');
-    await expect(page.getByTestId('follow-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await page.keyboard.press('Escape');
-    const canvas = await page.getByTestId('canvas').boundingBox();
-    if (canvas === null) throw new Error('The canvas has no box.');
-    const x = canvas.x + canvas.width / 2;
-    const y = canvas.y + canvas.height / 3;
-    await page.mouse.move(x, y);
-    await page.mouse.down();
-    for (let k = 1; k <= 8; k += 1) await page.mouse.move(x + k * 15, y + k * 4);
-    await page.mouse.up();
-    await page.waitForFunction(() => window.__met?.follow === false);
-    expect(await page.evaluate(() => window.__met?.view)).toBeNull();
-    await openMenu(page, 'view-menu');
-    await expect(page.getByTestId('follow-toggle')).toHaveAttribute('aria-pressed', 'false');
-    await press(page, 'follow-toggle');
-    await expect(page.getByTestId('follow-toggle')).toHaveAttribute('aria-pressed', 'true');
-    expect(await page.evaluate(() => window.__met?.follow)).toBe(true);
-  });
-
   test('the section cut toggles, its slider sets the height, and the canvas shows it', async ({ page }) => {
-    const f = await open(page);
-    await waitForT(page, f.n);
+    await open(page);
     await openMenu(page, 'view-menu');
     await press(page, 'preset-front');
     await page.keyboard.press('Escape');
@@ -178,6 +111,5 @@ test.describe('menus', () => {
     await expect(page.getByTestId('cut-value')).toHaveText('off');
     await page.keyboard.press('Escape');
     expect(changedCells(uncut, await lumaGrid(page, 32, 18)), 'with the cut off the canvas is as before').toEqual([]);
-    expect(await currentT(page)).toBe(f.n);
   });
 });

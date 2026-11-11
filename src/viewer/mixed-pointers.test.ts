@@ -140,7 +140,7 @@ function play(steps: readonly Step[], click: boolean): Outcome {
   const page = new Page();
   const canvas = page.canvas as unknown as HTMLElement;
   const rig = new CameraRig(canvas, 0);
-  rig.resize(1280, 720, 0);
+  rig.resize(1280, 720);
   rig.setPose({ position: new Vector3(0, 10, 30), target: new Vector3(0, 5, 0), fov: 45 });
   rig.controls.enableDamping = false;
   let moves = 0;

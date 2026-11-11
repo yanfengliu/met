@@ -76,7 +76,6 @@ export const pavingStep: StepDef = {
   detail: 'Grey granite replaces the 1970 plaza from the facades to the curb along the whole thousand-foot front, 80th to 84th Street.',
   motion: { kind: 'rise', distance: 0.3 },
   stagger: 'radial',
-  weight: 1.2,
   build(kit) {
     for (const cell of CELLS) {
       if (cell.zone !== 'walkWest' || cell.cut !== null) continue;

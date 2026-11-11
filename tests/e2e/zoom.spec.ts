@@ -16,8 +16,8 @@
  * - under a footing on the floor, looking up, a right-drag that pans the camera under the floor and a wheel notch sent at once leave the view where
  *   it looked, and the camera on the floor. Chrome hands the page the notch a frame after the drag's move (its input router waits for each mouse
  *   event's answer), so the page lifts the camera between them; the two in one frame are src/viewer/camera-floor.test.ts, through the same handlers.
- * Bound: one pointer position (the middle of the view the projection covers: the whole canvas, as the page opens with the build replay closed), wheel
- * steps of 100 pixels, and the page at t = N with no cut and no floor view, which is the state ./surface.ts rebuilds.
+ * Bound: one pointer position (the middle of the canvas, which the projection covers whole), wheel steps of 100 pixels, and the finished building with
+ * no cut and no floor view, which is the state ./surface.ts rebuilds.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -64,15 +64,14 @@ async function lowerOntoFloor(page: Page, x: number, y: number): Promise<Camera>
 }
 
 /**
- * The middle of the part of the canvas the projection covers, where the view axis meets the screen: its height is the canvas width over the published
- * aspect, from the canvas's top (src/viewer/camera-rig.ts `resize`), the whole canvas while the build replay is closed and the part above the bar while
- * it is open.
+ * The middle of the canvas, where the view axis meets the screen: the projection covers the whole canvas, its aspect the canvas's width over its height
+ * (src/viewer/camera-rig.ts `resize`).
  */
 async function viewCentre(page: Page): Promise<{ x: number; y: number }> {
   const canvas = await page.getByTestId('canvas').boundingBox();
   if (canvas === null) throw new Error('The canvas has no box.');
-  const visible = canvas.width / (await camera(page)).aspect;
-  return { x: canvas.x + canvas.width / 2, y: canvas.y + visible / 2 };
+  expect((await camera(page)).aspect, 'the camera frames the whole canvas').toBeCloseTo(canvas.width / canvas.height, 3);
+  return { x: canvas.x + canvas.width / 2, y: canvas.y + canvas.height / 2 };
 }
 
 /** One wheel notch (deltaY ±100) at the pointer, and the camera once the frame after it has run. */
@@ -86,15 +85,13 @@ const radius = (c: Camera): number => distance(c.position, c.target);
 
 /**
  * The unit ray under the pointer at (x, y) from camera `c`, as the page casts it (src/viewer/zoom.ts `pointerRay`): the camera's projection covers the
- * canvas above the bar (src/viewer/camera-rig.ts `resize`, whose visible height is the canvas width over the published aspect), +Y up.
+ * whole canvas (src/viewer/camera-rig.ts `resize`), +Y up.
  */
 async function pointerRay(page: Page, c: Camera, x: number, y: number): Promise<Triple> {
   const box = await page.getByTestId('canvas').boundingBox();
   if (box === null) throw new Error('The canvas has no box.');
+  expect(c.aspect, 'the camera frames the whole canvas').toBeCloseTo(box.width / box.height, 3);
   const projection = new PerspectiveCamera(c.fov, c.aspect, c.near, c.far);
-  const visible = box.width / c.aspect;
-  if (visible < box.height - 0.5) projection.setViewOffset(box.width, visible, 0, 0, box.width, box.height);
-  projection.updateProjectionMatrix();
   projection.position.set(...c.position);
   projection.lookAt(new Vector3(...c.target));
   projection.updateMatrixWorld();

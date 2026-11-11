@@ -72,7 +72,6 @@ export const fitoutSteps: readonly StepDef[] = [
     detail: 'Flowers fill the four pedimented niches of the centre piers, bronze lanterns hang in the end bays under the balcony, and warm light fills the hall.',
     motion: { kind: 'pop' },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-great-hall-balcony-south' },
     build(kit) {
       const vase = urn({ height: 1.0, flowers: false, detail: 'low' });
       for (const [z, out] of [
@@ -111,7 +110,6 @@ export const greatHallDesk1970Steps: readonly StepDef[] = [
     detail: "Kevin Roche's 1970 renovation put a round information desk on the axis of the nave, a tall flower arrangement rising from the urn at its centre.",
     motion: { kind: 'pop' },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-great-hall-balcony-south' },
     build(kit) {
       // P1 shows the desk on the camera's line down the middle of the nave.
       const z = NAVE_MID_Z;

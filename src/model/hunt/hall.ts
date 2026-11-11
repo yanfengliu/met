@@ -210,7 +210,6 @@ export const hallSteps: readonly StepDef[] = [
     detail: 'The main floor of the Great Hall, 61 by 29 m: a field of marble chips poured in sections, framed by strips of yellow marble along the walls and the pier lines.',
     motion: { kind: 'slide', from: [0, 0, 12] },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-great-hall-balcony-south' },
     build: floor,
   },
   {
@@ -221,7 +220,6 @@ export const hallSteps: readonly StepDef[] = [
     detail: 'Eight massive limestone piers rise on the long walls to the imposts of the arches; the centre four hold pedimented niches, and walls with doors close the side bays.',
     motion: { kind: 'grow' },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-great-hall-balcony-south' },
     build: piers,
   },
   {
@@ -232,7 +230,6 @@ export const hallSteps: readonly StepDef[] = [
     detail: 'The balcony floor runs round all four sides at the second floor, carried in the central openings and the end bays by colonnades of four fluted Ionic columns, behind parapets pierced with roundels.',
     motion: { kind: 'rise' },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-great-hall-floor-north' },
     build: balcony,
   },
 ];

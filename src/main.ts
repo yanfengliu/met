@@ -1,15 +1,12 @@
 /**
- * Boot (docs/design/spec.md, Modules): query, sequence, timeline, viewer, player, walk mode, UI, frame loop and the read-only `window.__met`.
- * Frames render on demand: when t, the camera, the cut or the size changed, and for the first 5 frames, after which `window.__shotReady` is set.
+ * Boot (docs/design/spec.md, Modules): query, sequence, the finished model, viewer, walk mode, UI, frame loop and the read-only `window.__met`.
+ * Frames render on demand: when the camera, the cut, the doors or the size changed, and for the first 5 frames, after which `window.__shotReady` is set.
  */
 import { Ray, Vector3 } from 'three';
 
-import { Player } from './build/player.js';
-import type { Speed } from './build/player.js';
 import { chapterRanges, selectSteps } from './build/select.js';
 import { SEQUENCE } from './build/sequence.js';
 import { Timeline } from './build/timeline.js';
-import type { BuiltStep } from './build/timeline.js';
 import { CATALOGUE } from './model/collection/catalogue.js';
 import { DOORS } from './model/doors.js';
 import { doorLeavesOf } from './model/lib/window.js';
@@ -35,20 +32,14 @@ import { orbitKeyMove, orbitKeys } from './viewer/orbit-keys.js';
 import { ModelPicker } from './viewer/pick.js';
 import { DEFAULT_FOV, DEFAULT_PRESET, PRESETS, presetById, resolvePreset } from './viewer/presets.js';
 import type { CameraPose } from './viewer/presets.js';
-import { readQuery, shouldAutoplay, startPosition } from './viewer/query.js';
+import { readQuery } from './viewer/query.js';
 import { capsMesh } from './viewer/section-cut.js';
 import { Viewer } from './viewer/viewer.js';
 import { pointerRay } from './viewer/zoom.js';
 
 const READY_FRAMES = 5;
-/** Longest wall-time step one frame may advance the player, so a stalled tab does not jump the build. */
+/** Longest wall-time step one frame may advance the walker or a door's swing, so a stalled tab does not jump them. */
 const MAX_FRAME_SECONDS = 0.1;
-
-/** The step the follow camera frames: the one playing, or about to play in the direction of travel. */
-function stepInMotion(steps: readonly BuiltStep[], t: number, direction: 1 | -1): BuiltStep | undefined {
-  const index = direction === 1 ? Math.floor(t) : Math.ceil(t) - 1;
-  return steps[Math.min(Math.max(index, 0), steps.length - 1)];
-}
 
 const vec = (v: Vector3): [number, number, number] => [v.x, v.y, v.z];
 
@@ -61,16 +52,15 @@ function boot(): void {
     steps = SEQUENCE;
   }
 
-  // The timeline build alone: modules have already loaded, with whatever geometry they build on import. The 4 s budget gate times readyMs,
+  // The model's build alone: modules have already loaded, with whatever geometry they build on import. The 4 s budget gate times readyMs,
   // which runs from navigation start and so includes that (tests/e2e/layout.spec.ts).
   performance.mark('met:build-start');
   const timeline = new Timeline(steps);
   performance.mark('met:build-end');
   const buildMs = performance.measure('met:build', 'met:build-start', 'met:build-end').duration;
-
-  const start = startPosition(query, steps.map((s) => s.id));
-  warnings.push(...start.warnings);
-  timeline.evaluate(start.t);
+  // The page shows the finished building, every step complete (docs/design/spec.md, Product).
+  const finished = timeline.n;
+  timeline.evaluate(finished);
 
   installStyles();
   const app = document.createElement('div');
@@ -127,7 +117,7 @@ function boot(): void {
     const preset = presetById(id);
     return preset === undefined ? null : resolvePreset(preset, timeline.bounds, rig.camera.aspect);
   };
-  // A view= that names no preset is ignored, as if absent: the default preset, and the follow camera as without a view.
+  // A view= that names no preset is ignored, as if absent: the default preset.
   const namedView = query.view !== null && presetById(query.view) !== undefined ? query.view : null;
   if (query.view !== null && namedView === null) {
     warnings.push(`Query parameter view="${query.view}" names no preset; use one of ${PRESETS.map((p) => p.id).join(', ')}. It is ignored.`);
@@ -135,8 +125,7 @@ function boot(): void {
   const floorAtLoad = startFloor(query.floor, query.walk);
   if (floorAtLoad.warning !== null) warnings.push(floorAtLoad.warning);
   let view: string | null = query.cam !== null ? null : (namedView ?? DEFAULT_PRESET);
-  let follow = !query.shot && namedView === null && query.cam === null && floorAtLoad.floor === null;
-  /** Whether the camera stands where the preset in view puts it, so a resize fits that preset again; false once the follow camera or the user moves it. */
+  /** Whether the camera stands where the preset in view puts it, so a resize fits that preset again; false once the user moves it. */
   let atPreset = view !== null;
 
   const top = timeline.bounds.isEmpty() ? 20 : timeline.bounds.max.y;
@@ -148,30 +137,16 @@ function boot(): void {
   /** Whether the camera stands where the floor view framed it, so a resize frames the floor again; false once the user moves it. */
   let atFloor = false;
 
-  const player = new Player(steps.map((s) => s.weight ?? 1), start.t);
-  if (shouldAutoplay(query)) player.playForward();
-  /** The build replay is open: the timeline shows. Closed, the page shows the finished building, paused (docs/design/spec.md, Page: Build replay). */
-  let replay = start.replay;
   if (query.spawn !== null && !query.walk) warnings.push(`Query parameter spawn="${query.spawn}" takes effect only with walk=1. It is ignored.`);
 
-  let changed = true;
   let needsRender = true;
-  /** While walking, whether the timeline bar is unfolded; each entry into walk mode starts with it folded. */
-  let barOpen = false;
   const ranges = chapterRanges(steps);
   const walkStatus = (): WalkStatus => (!walk.active ? 'off' : walk.preparing ? 'preparing' : walk.pointerLocked ? 'locked' : 'free');
   const state = (): UiState => ({
-    t: player.t,
-    mode: player.mode,
-    direction: player.direction,
-    speed: player.speed,
     preset: view,
-    follow,
     cutEnabled: viewer.cut.enabled,
     cutHeight: viewer.cut.height,
     walking: walk.active,
-    barOpen,
-    replay,
     walkStatus: walkStatus(),
     walkHint: walk.hint,
     walkTarget: walk.lastTarget?.kind ?? null,
@@ -187,38 +162,18 @@ function boot(): void {
   viewer.renderer.domElement.addEventListener('pointerdown', (event) => {
     if (walk.active && walk.pointerLocked && event.pointerType === 'mouse' && event.button === 0) useDoor();
   });
-  /** Opens the build replay at the `t` in view; walking, its bar shows whole, as the visitor asked for it. */
-  const openReplay = (): void => {
-    if (replay) return;
-    replay = true;
-    if (walk.active) barOpen = true;
-  };
-  /** Closes the build replay: the timeline hides and the page shows the finished building again, paused, so a part-built model shows only in the replay. */
-  const closeReplay = (): void => {
-    if (!replay) return;
-    replay = false;
-    player.toEnd();
-    changed = true;
-  };
-  /** A timeline action, by the bar, a key or a chapter: it opens the build replay first, so a key on the default page acts there and shows the timeline. */
-  const act = (action: () => void) => (): void => {
-    openReplay();
-    action();
-    changed = true;
-  };
   /** The cut or the landscape changed: shadows are drawn again on the next frame. */
   const cutChanged = (): void => {
     viewer.markShadowsDirty();
     needsRender = true;
   };
-  /** Frames the floor in view from above, from the side the camera looks from now; like a preset, it turns the follow camera off. */
+  /** Frames the floor in view from above, from the side the camera looks from now. */
   const frameFloor = (): void => {
     const floor = floors.floor;
     if (floor === null) return;
     rig.setPose(floorPose(floor, rig.pose(), rig.camera.aspect));
     view = null;
     atPreset = false;
-    follow = false;
     atFloor = true;
     needsRender = true;
   };
@@ -235,40 +190,24 @@ function boot(): void {
     const next = floorStep(floors.id, direction);
     if (next !== floors.id) chooseFloor(next);
   };
-  /** Into walk mode (at `spawn`, a spawn's id or a place, or as walk-mode.ts decides): the floor view ends as with All, and the follow camera and the preset in view go off, as for a move by the user. */
+  /** Into walk mode (at `spawn`, a spawn's id or a place, or as walk-mode.ts decides): the floor view ends as with All, and the preset in view goes off, as for a move by the user. */
   const enterWalk = (spawn: string | Spawn | null): void => {
     if (floors.show(null)) cutChanged();
     atFloor = false;
-    follow = false;
     view = null;
     atPreset = false;
-    barOpen = false;
     walk.enter(spawn);
     needsRender = true;
   };
   const ui = createUi(
     app,
     {
-      steps,
-      chapters: ranges.map((r) => r.chapter),
-      ranges: ranges.map((r) => ({ id: r.chapter.id, title: r.chapter.title, years: r.chapter.years, summary: r.chapter.summary, first: r.first, count: r.count })),
       presets: PRESETS,
       spawns: SPAWNS.map((spawn) => ({ id: spawn.id, label: spawn.label })),
       cutMax,
       floors: [{ id: ALL_FLOORS, label: 'All', name: 'All floors' }, ...[...FLOORS].reverse().map((f) => ({ id: f.id, label: f.label, name: f.name }))],
     },
     {
-      toStart: act(() => { player.toStart(); }),
-      stepBack: act(() => { player.stepBack(); }),
-      togglePlayBackward: act(() => { player.togglePlayBackward(); }),
-      togglePlay: act(() => { player.togglePlay(); }),
-      stepForward: act(() => { player.stepForward(); }),
-      toEnd: act(() => { player.toEnd(); }),
-      setSpeed: (speed: Speed) => { player.setSpeed(speed); changed = true; },
-      scrub: (t: number) => { player.scrub(t); changed = true; },
-      goToChapter: (first: number) => { act(() => { player.scrub(first); })(); },
-      toggleReplay: () => { if (replay) closeReplay(); else openReplay(); },
-      closeReplay,
       applyPreset: (id: string) => {
         const pose = presetPose(id);
         if (pose === null) return;
@@ -281,16 +220,6 @@ function boot(): void {
         view = id;
         atPreset = true;
         atFloor = false;
-        follow = false;
-        needsRender = true;
-      },
-      setFollow: (on: boolean) => {
-        follow = on;
-        if (on) {
-          view = null;
-          atPreset = false;
-          atFloor = false;
-        }
         needsRender = true;
       },
       // The cut set by hand (the slider or the toggle) ends a floor view and stands as the user's own.
@@ -310,19 +239,11 @@ function boot(): void {
       walkFrom: (spawn: string) => { enterWalk(spawn); },
       jump: () => { walk.jump(); },
       act: () => { useDoor(); },
-      toggleBar: () => { barOpen = !barOpen; },
     },
     state(),
-    // The keys route by the mode now, not the mode the last frame drew: F and then Space in one frame jump rather than play.
+    // The keys route by the mode now, not the mode the last frame drew: F and then Space in one frame jump rather than leave Space to the page.
     () => walk.active,
   );
-  // The view: the canvas above the whole bar (the replay open, orbit view), else the whole canvas, so unfolding the bar while walking never moves it.
-  const fitInset = (): void => {
-    viewer.setInsetBottom(query.noui || walk.active || !replay ? 0 : Math.round(ui.bar.getBoundingClientRect().height));
-    needsRender = true;
-  };
-  fitInset();
-  let insetFor = replay ? 'bar' : 'closed';
   if (query.cam !== null) {
     const [px, py, pz, tx, ty, tz] = query.cam;
     rig.setPose({ position: new Vector3(px, py, pz), target: new Vector3(tx, ty, tz), fov: DEFAULT_FOV });
@@ -336,7 +257,7 @@ function boot(): void {
     if (query.cam === null && namedView === null) frameFloor();
   }
   // The doors stand at their state before the walker is placed, at once: so with shot=1 from the first frame (Doors). Marked for the order's check.
-  doors.sync(player.t, 0, true);
+  doors.sync(finished, 0, true);
   performance.mark('met:doors-set');
   if (query.walk) {
     // A spawn's id, or a place of the query's own (src/walk/spawns.ts `startOf`).
@@ -344,11 +265,10 @@ function boot(): void {
     if (start.warning !== null) warnings.push(start.warning);
     enterWalk(start.spawn);
     // Capture mode shows the walker's view from its first frame.
-    if (query.shot) walk.prepareNow(player.t);
+    if (query.shot) walk.prepareNow(finished);
     if (query.shot) performance.mark('met:walk-placed');
   }
   rig.onUserMove = () => {
-    follow = false;
     view = null;
     atPreset = false;
     atFloor = false;
@@ -364,11 +284,10 @@ function boot(): void {
   };
   const resized = new ResizeObserver(() => {
     viewer.resize();
-    fitInset();
     refit();
+    needsRender = true;
   });
   resized.observe(viewport);
-  resized.observe(ui.bar);
 
   let frames = 0;
   /** The camera position the last drawn frame was rendered from, and its doors as the meshes drew them (`perf.lastDrawn`). */
@@ -376,29 +295,21 @@ function boot(): void {
   let drawnDoors: readonly DoorDrawn[] = [];
   let readyMs: number | null = null;
   let last = performance.now();
-  /** The pose the follow camera headed for in the last frame, or null when it is not under way. */
-  let followGoal: CameraPose | null = null;
   const frame = (now: number): void => {
     const work = performance.now();
     const seconds = Math.min(MAX_FRAME_SECONDS, Math.max(0, (now - last) / 1000));
     last = now;
-    if (!query.shot && player.tick(seconds)) changed = true;
-    if (changed) {
-      changed = false;
-      if (timeline.evaluate(player.t)) viewer.markShadowsDirty();
-      needsRender = true;
-    }
-    // The doors follow the timeline and swing (Doors): each swap and every frame of a swing draws again, and redraws the shadows when what moved casts one.
-    // While walking they swing in the walker's physics steps instead, against the walker (Doors: Walking).
-    const doorChange = doors.sync(player.t, query.shot || walk.active ? 0 : seconds, query.shot);
+    // The doors swing (Doors): every frame of a swing draws again, and redraws the shadows when what moved casts one. While walking they swing in the
+    // walker's physics steps instead, against the walker (Doors: Walking).
+    const doorChange = doors.sync(finished, query.shot || walk.active ? 0 : seconds, query.shot);
     if (doorChange !== 'none') {
       if (doorChange === 'shadows') viewer.markShadowsDirty();
       needsRender = true;
     }
     if (walk.active) {
-      if (walk.frame(query.shot ? 0 : seconds, player.t, ui.held)) needsRender = true;
+      if (walk.frame(query.shot ? 0 : seconds, finished, ui.held)) needsRender = true;
     } else {
-      // The orbit view's movement keys move the camera and its target together, like a pan, and turn the follow camera off like a drag.
+      // The orbit view's movement keys move the camera and its target together, like a pan.
       const up = new Vector3(0, 1, 0).applyQuaternion(rig.camera.quaternion);
       const move = orbitKeyMove(rig.camera.position, rig.controls.target, up, orbitKeys(ui.held), seconds);
       if (move.lengthSq() > 0 && rig.translate(move)) rig.onUserMove?.();
@@ -408,26 +319,10 @@ function boot(): void {
       if (swung === 'shadows') viewer.markShadowsDirty();
       needsRender = true;
     }
-    followGoal = null;
-    if (follow && player.moving && !walk.active) {
-      const step = stepInMotion(timeline.steps, player.t, player.direction);
-      followGoal = step === undefined ? null : rig.followGoal(step.def.focus, step.bounds, timeline.bounds);
-      if (followGoal !== null && rig.approach(followGoal, seconds)) {
-        needsRender = true;
-        atPreset = false;
-      }
-    }
     if (rig.update()) needsRender = true;
     artLabel.frame(walk.active, drawnView);
     shownArt = artLabel.id === null ? null : (cards.get(artLabel.id) ?? null);
     ui.sync(state());
-    // Into or out of walk mode ('walk'), or the replay opened ('bar') or closed: the inset follows, measured after the bar has changed; the view refits.
-    const inset = walk.active ? 'walk' : replay ? 'bar' : 'closed';
-    if (inset !== insetFor) {
-      insetFor = inset;
-      fitInset();
-      refit();
-    }
     if (needsRender || frames < READY_FRAMES) {
       viewer.render();
       frames += 1;
@@ -447,11 +342,10 @@ function boot(): void {
   for (const warning of warnings) console.warn(warning);
   const b = timeline.bounds;
   publishFacts({
-    n: timeline.n,
-    // Detached, deeply frozen snapshots: a step's focus is the step definition's own object, which the follow camera reads.
+    // Detached, deeply frozen snapshots, so no write to them reaches the page.
     steps: snapshot(steps.map((s, i) => {
       const sb = timeline.steps[i]?.bounds ?? b;
-      return { id: s.id, title: s.title, chapter: s.chapter, year: s.year ?? null, detail: s.detail ?? null, weight: s.weight ?? 1, focus: s.focus ?? null, bounds: { min: vec(sb.min), max: vec(sb.max) } };
+      return { id: s.id, title: s.title, chapter: s.chapter, year: s.year ?? null, detail: s.detail ?? null, bounds: { min: vec(sb.min), max: vec(sb.max) } };
     })),
     chapters: snapshot(ranges.map((r) => ({ id: r.chapter.id, title: r.chapter.title, years: r.chapter.years, summary: r.chapter.summary, first: r.first, count: r.count }))),
     presets: snapshot(PRESETS.map((p) => ({ id: p.id, label: p.label, group: p.group }))),
@@ -460,16 +354,6 @@ function boot(): void {
     stats: snapshot(timeline.stats()),
     warnings: snapshot([...warnings]),
     gpu: viewer.gpu(),
-    get t() { return player.t; },
-    get mode() { return player.mode; },
-    get direction() { return player.direction; },
-    get speed() { return player.speed; },
-    get follow() { return follow; },
-    get replay() { return replay; },
-    get followGoal() {
-      const g = followGoal;
-      return g === null ? null : snapshot({ position: vec(g.position), target: vec(g.target), fov: g.fov });
-    },
     get cut() { return snapshot({ enabled: viewer.cut.enabled, height: viewer.cut.height }); },
     get floor() { return snapshot({ id: floors.id, hidden: floors.hidden, ownCut: floors.ownCut }); },
     get view() { return view; },

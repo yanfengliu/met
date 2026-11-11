@@ -3,7 +3,7 @@
  * view, from its catalogue entry (src/model/collection/catalogue.ts): its title; its maker (the artist or the culture, as the record gives it) and its
  * date; its medium; its gallery and its size, the values the record does not measure named as estimated; its page on metmuseum.org, as a plain link that
  * opens a new tab and is never prefetched; and the CC0 credit for The Met's collection data. While the pointer is locked to the walking view it says how
- * to reach the link. Which artwork shows is src/viewer/art-label.ts's; the timeline's step label is src/ui/label.ts, a different thing.
+ * to reach the link. Which artwork shows is src/viewer/art-label.ts's.
  */
 import type { CatalogueEntry, SizeSource } from '../model/collection/types.js';
 import { el, setAttr, setText } from './dom.js';

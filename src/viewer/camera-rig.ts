@@ -1,18 +1,18 @@
 /**
- * Camera and OrbitControls, tuned for both a 1 km aerial view and a 3 m interior close-up, plus the follow camera's smoothing, the keyboard moves of
- * the orbit view (`translate`), the zoom toward the pointer (src/viewer/zoom.ts; the controls' own zoom is off) and the first-person pose of walk mode.
+ * Camera and OrbitControls, tuned for both a 1 km aerial view and a 3 m interior close-up, plus the keyboard moves of the orbit view (`translate`),
+ * the zoom toward the pointer (src/viewer/zoom.ts; the controls' own zoom is off) and the first-person pose of walk mode.
  * The controls and the zoom hear pointers through one arbiter (src/viewer/pointer-arbiter.ts), so one kind of pointer holds the camera at a time.
  * Depth precision: the near plane follows the distance to the orbit target (1%, from 3 cm to 20 m) and never exceeds half the camera's height above the
  * workspace ground, so a 24-bit depth buffer resolves about 1 cm at 1 km from an aerial view and well under 1 mm across a hall seen from inside.
  * The far plane is fixed beyond the haze, which hides the edge of the workspace ground.
  */
-import { Box3, MathUtils, PerspectiveCamera, Ray, REVISION, Vector3 } from 'three';
+import { MathUtils, PerspectiveCamera, Ray, REVISION } from 'three';
+import type { Vector3 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import type { CameraFocus } from '../build/types.js';
 import { PointerArbiter } from './pointer-arbiter.js';
 import type { Hear, PointerListener } from './pointer-arbiter.js';
-import { DEFAULT_FOV, fitBox, presetById, resolvePreset } from './presets.js';
+import { DEFAULT_FOV } from './presets.js';
 import type { CameraPose } from './presets.js';
 import { bindZoomInput, pointerRay, zoomStep } from './zoom.js';
 
@@ -24,14 +24,6 @@ const NEAR_PER_DISTANCE = 0.01;
 export const CAMERA_FLOOR = 0.4;
 /** In walk mode the orbit target stays this far ahead of the eye, so leaving walk mode orbits about what the walker looked at. */
 const WALK_TARGET_DISTANCE = 5;
-/** The follow camera frames at least a sphere of this radius, so a small step does not zoom in on one stone. */
-export const FOLLOW_MIN_RADIUS = 14;
-/** The follow camera stands this many times as far as the tightest fit of its box. */
-const FOLLOW_MARGIN = 1.15;
-/** Seconds for the follow camera to cover about 63% of the way to its goal. */
-const FOLLOW_TAU = 0.9;
-const FOLLOW_ELEVATION_MIN = 14 * MathUtils.DEG2RAD;
-const FOLLOW_ELEVATION_MAX = 62 * MathUtils.DEG2RAD;
 /**
  * The pointer listeners of three's OrbitControls (r186): `connect` adds `_onPointerDown` (presses) and `_onPointerUp` (cancels) to its element, and its
  * first press adds `_onPointerMove` and `_onPointerUp` (releases) to the document, each read from the instance as it is added.
@@ -71,7 +63,7 @@ export class CameraRig {
   /** In walk mode the controls are off and the walk mode poses the camera (`setWalkView`). */
   private walk = false;
   private interacting = false;
-  /** Above 0 while the rig itself runs the controls' update, whose `change` events are the rig's own moves (the follow camera, damping, a pose), not the user's. */
+  /** Above 0 while the rig itself runs the controls' update, whose `change` events are the rig's own moves (damping, a pose), not the user's. */
   private own = 0;
 
   constructor(
@@ -156,15 +148,9 @@ export class CameraRig {
     }
   }
 
-  /**
-   * Sizes the projection to a canvas of `width` by `height` pixels whose bottom `insetBottom` pixels are covered by page chrome:
-   * the field of view and the centre of projection belong to the visible part, so presets and the follow camera frame the model where it can be seen.
-   */
-  resize(width: number, height: number, insetBottom = 0): void {
-    const visible = Math.max(1, height - Math.min(Math.max(insetBottom, 0), height * 0.6));
-    this.camera.aspect = width / visible;
-    if (visible < height) this.camera.setViewOffset(width, visible, 0, 0, width, height);
-    else this.camera.clearViewOffset();
+  /** Sizes the projection to a canvas of `width` by `height` pixels. */
+  resize(width: number, height: number): void {
+    this.camera.aspect = width / Math.max(1, height);
     this.camera.updateProjectionMatrix();
   }
 
@@ -195,20 +181,6 @@ export class CameraRig {
 
   pose(): CameraPose {
     return { position: this.camera.position.clone(), target: this.controls.target.clone(), fov: this.camera.fov };
-  }
-
-  /** Moves part of the way toward `goal`, for `seconds` of wall time. Returns whether the camera moved. */
-  approach(goal: CameraPose, seconds: number): boolean {
-    const k = 1 - Math.exp(-seconds / FOLLOW_TAU);
-    const before = this.camera.position.distanceTo(goal.position) + this.controls.target.distanceTo(goal.target) + Math.abs(this.camera.fov - goal.fov);
-    if (before < 1e-3) return false;
-    this.camera.position.lerp(goal.position, k);
-    this.controls.target.lerp(goal.target, k);
-    if (this.camera.fov !== goal.fov) {
-      this.camera.fov += (goal.fov - this.camera.fov) * k;
-      this.camera.updateProjectionMatrix();
-    }
-    return true;
   }
 
   /**
@@ -313,30 +285,4 @@ export class CameraRig {
       this.camera.updateProjectionMatrix();
     }
   }
-
-  /** Where the follow camera aims for `focus`, given the step's piece bounds and the whole model's bounds; see `followGoal`. */
-  followGoal(focus: CameraFocus | undefined, stepBounds: Box3, modelBounds: Box3): CameraPose {
-    return followGoal({ position: this.camera.position, target: this.controls.target }, this.camera.aspect, focus, stepBounds, modelBounds);
-  }
-}
-
-/**
- * Where the follow camera aims for `focus`, seen from the camera `from` at `aspect`: a `view` exactly; a `preset` as the preset resolves; a `box` or,
- * by default, the step's piece bounds, grown evenly until its half-diagonal is at least FOLLOW_MIN_RADIUS (14 m) and framed with a 1.15 margin from
- * the current horizontal direction, its elevation kept within 14..62 degrees.
- */
-export function followGoal(from: { readonly position: Vector3; readonly target: Vector3 }, aspect: number, focus: CameraFocus | undefined, stepBounds: Box3, modelBounds: Box3): CameraPose {
-  if (focus?.kind === 'view') return { position: new Vector3(...focus.position), target: new Vector3(...focus.target), fov: DEFAULT_FOV };
-  if (focus?.kind === 'preset') {
-    const preset = presetById(focus.id);
-    if (preset !== undefined) return resolvePreset(preset, modelBounds, aspect);
-  }
-  const box = focus?.kind === 'box' ? new Box3(new Vector3(...focus.min), new Vector3(...focus.max)) : stepBounds.clone();
-  // At least FOLLOW_MIN_RADIUS across, so a small step does not zoom in on one stone.
-  box.expandByVector(new Vector3(1, 1, 1).multiplyScalar(Math.max(0, FOLLOW_MIN_RADIUS - box.getSize(new Vector3()).length() / 2) / Math.sqrt(3)));
-  const offset = from.position.clone().sub(from.target);
-  const horizontal = Math.hypot(offset.x, offset.z) > 1e-6 ? Math.atan2(offset.z, offset.x) : Math.PI / 4;
-  const elevation = MathUtils.clamp(Math.atan2(offset.y, Math.hypot(offset.x, offset.z)), FOLLOW_ELEVATION_MIN, FOLLOW_ELEVATION_MAX);
-  const direction = new Vector3(Math.cos(elevation) * Math.cos(horizontal), Math.sin(elevation), Math.cos(elevation) * Math.sin(horizontal));
-  return fitBox(box, direction, DEFAULT_FOV, aspect, FOLLOW_MARGIN);
 }

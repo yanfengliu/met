@@ -120,7 +120,7 @@ const OPERATIONS: readonly Operation[] = [
 function checkHistory(steps: readonly StepDef[], seed: number, operations: number, checkpoints: number): void {
   const rand = random(seed);
   const timeline = new Timeline(steps);
-  const player = new Player(steps.map((s) => s.weight ?? 1));
+  const player = new Player(steps.map((_, i) => 0.5 + (i % 4) * 0.5));
   const checkAt = new Set(Array.from({ length: checkpoints }, () => Math.floor(rand() * operations)));
   for (let i = 0; i < operations; i += 1) {
     OPERATIONS[Math.floor(rand() * OPERATIONS.length)]?.(player, rand);
@@ -209,7 +209,7 @@ describe('timeline rest positions', () => {
     const rand = random(seed);
     const recorded = recording(steps);
     const timeline = new Timeline(recorded.steps);
-    const player = new Player(steps.map((s) => s.weight ?? 1));
+    const player = new Player(steps.map((_, i) => 0.5 + (i % 4) * 0.5));
     for (let i = 0; i < 60; i += 1) {
       OPERATIONS[Math.floor(rand() * OPERATIONS.length)]?.(player, rand);
       for (let k = 1 + Math.floor(rand() * 4); k > 0; k -= 1) {

@@ -117,7 +117,6 @@ export const podiumSteps: readonly StepDef[] = [
     detail: "Excavation began in 1897: concrete footings under every wall line of Hunt's wing, pads under the Great Hall's piers and the column pedestals, and the ground-floor slab.",
     motion: { kind: 'rise', distance: 4 },
     stagger: 'z',
-    weight: 1.2,
     build(kit) {
       WALL_LINES.forEach((line, i) => {
         const [min, max] = footing(line, GROUND - SLAB, FOOTING_Y);

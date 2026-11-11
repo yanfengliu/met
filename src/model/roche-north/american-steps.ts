@@ -49,7 +49,6 @@ export const americanSteps: readonly StepDef[] = [
     detail: 'Stone paving, a terrace before the bank facade with a flight between two raised planting beds, and a small pool in the southern half.',
     motion: { kind: 'pop' },
     stagger: 'radial',
-    weight: 1.2,
     build: engelhardFloor,
   },
   {
@@ -70,7 +69,6 @@ export const americanSteps: readonly StepDef[] = [
     detail: "Louis Comfort Tiffany's loggia (about 1905) from his Long Island house: limestone columns with capitals of Favrile glass, at the court's south end.",
     motion: { kind: 'rise', distance: 1.5 },
     stagger: 'y',
-    weight: 0.8,
     build: engelhardLoggia,
   },
   {
@@ -81,8 +79,6 @@ export const americanSteps: readonly StepDef[] = [
     detail: "Saint-Gaudens' gilded Diana high on her pedestal, and cast-iron lamp standards before the bank facade and along the colonnades.",
     motion: { kind: 'pop' },
     stagger: 'order',
-    weight: 0.8,
-    focus: { kind: 'preset', id: 'int-engelhard-north' },
     build: engelhardSculpture,
   },
   engelhardCollectionStep,
@@ -104,7 +100,6 @@ export const americanSteps: readonly StepDef[] = [
     detail: 'Seven glazed ridges on white tubular trusses, 70 ft over the court floor, with glass lean-tos down to the park wall and over the east walk.',
     motion: { kind: 'drop', distance: 6 },
     stagger: 'x',
-    weight: 1.2,
     build: engelhardGlassRoof,
   },
   {
@@ -115,7 +110,6 @@ export const americanSteps: readonly StepDef[] = [
     detail: 'A wall of reflecting glass closes the court toward Central Park; the wing opened on 11 June 1980. A glazed slot joins it to the Sackler Wing.',
     motion: { kind: 'slide', from: [0, 0, -12] },
     stagger: 'x',
-    focus: { kind: 'preset', id: 'ref-park-northwest' },
     build: engelhardCurtain,
   },
 ];

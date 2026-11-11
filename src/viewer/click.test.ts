@@ -214,7 +214,7 @@ interface Outcome {
 function play(events: readonly Step[], click: boolean): Outcome {
   const page = new Page();
   const r = new CameraRig(page.canvas as unknown as HTMLElement, 0);
-  r.resize(1280, 720, 0);
+  r.resize(1280, 720);
   r.setPose({ position: new Vector3(0, 10, 30), target: new Vector3(0, 5, 0), fov: 45 });
   r.controls.enableDamping = false;
   let moves = 0;

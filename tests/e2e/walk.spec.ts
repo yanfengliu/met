@@ -1,19 +1,24 @@
 /**
  * Walk mode and the orbit view's movement keys through real input (docs/design/spec.md, Keyboard and Walk mode): the orbit keys move the camera and
- * its target together and leave the timeline keys alone; the Walk toggle, the F key, a view-menu spawn and `?walk=1&spawn=` enter walk mode, the
+ * its target together, and the preset in view goes off; the Walk toggle, the F key, a view-menu spawn and `?walk=1&spawn=` enter walk mode, the
  * first three locking the pointer, and F and Esc leave it; on the real model, holding W walks from the plaza up the front steps; entered at load,
  * the pointer free, a drag turns the view the way the pointer moves, LOOK_PER_PIXEL a pixel, and only a press that travels under CLICK_SLOP (5 px)
  * asks for pointer lock (a probe counts the requests; ./mouse-look.spec.ts drives the locked look); F returns to the orbit view where the walker stood;
- * F followed by Space or ArrowLeft within one frame (sent back to back through CDP, a probe's frame count confirming they shared a frame) gives the
- * second key the new mode's meaning, both ways.
- * Facts come from `window.__met.walk` and `window.__met.camera`; spawn positions from src/walk/spawns.ts; levels from src/model/frame.ts.
- * At t = N the collision builds within 2 s, and frames keep the median work and the mean GPU-synced render under 16.7 ms and the median frame
- * interval under 18.37 ms (16.7 ms plus 10%, ./helpers.ts `expectWalkingBudget`) with the look target on: walking on the plaza, running up the front
- * steps, walking from the Great Hall and second-floor spawns, and, unthrottled, walking and then running at the ends of R3 and R4 in the Temple of
- * Dendur hall and the Leon Levy and Shelby White Court (./routes.spec.ts).
+ * a key right after F within one frame (sent back to back through CDP, a probe's frame count confirming they shared a frame) takes the new mode's
+ * meaning, both ways: entering, Space (a jump) and ArrowLeft (a walk) are walk mode's, which keeps them from the browser, where the orbit view would
+ * leave them to it; leaving, Page Down is the orbit view's, which goes down a floor, where walk mode would leave it alone.
+ * Facts come from `window.__met.walk`, `window.__met.camera` and `window.__met.floor`; spawn positions from src/walk/spawns.ts; levels from
+ * src/model/frame.ts.
+ * On the finished building the collision builds within 2 s, and frames keep the median work and the mean GPU-synced render under 16.7 ms and the
+ * median frame interval under 18.37 ms (16.7 ms plus 10%, ./helpers.ts `expectWalkingBudget`) with the look target on: walking on the plaza, running
+ * up the front steps, walking from the Great Hall and second-floor spawns, and, unthrottled, walking and then running at the ends of R3 and R4 in the
+ * Temple of Dendur hall and the Leon Levy and Shelby White Court (./routes.spec.ts).
  * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2), W held until the eye has climbed 2 m and the eye read once the
  * walker stands still, so a loaded machine changes how long it takes, not where it ends, within a timeout of 60 s times the CPU throttle; frame times are this machine's (an RTX 4090 in headless Chrome);
- * "the same frame" is checked by a probe's requestAnimationFrame count at each keydown, and a run whose keys never shared a frame fails, not passes.
+ * "the same frame" is checked by a probe's requestAnimationFrame count at each keydown, and a run whose keys never shared a frame fails, not passes;
+ * which mode took Space or ArrowLeft is read from the page's answer to the key, whether it kept the key from the browser (`defaultPrevented`, as a
+ * probe's listener that runs after the page's own sees it), since walk mode's jump waits for the walk to be ready and the orbit view has no meaning for
+ * either key any more; each of the three first shows the probe the answer the wrong mode gives (the key alone in the mode before F), so it can fail.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -22,7 +27,7 @@ import type { Vec3 } from '../../src/build/types.js';
 import { LANDING_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEPS_BOTTOM_Z } from '../../src/model/frame.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
-import { camera, currentT, distance, expectWalkingBudget, facts, open, openMenu, openReplay, press, settle, throttle, throttleRate, waitForT, walkingBudget, watchErrors } from './helpers.js';
+import { camera, distance, expectWalkingBudget, facts, open, openMenu, press, settle, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
 import type { Camera, Facts } from './helpers.js';
 
 const EYE = 1.6;
@@ -69,27 +74,40 @@ const KEYS: Readonly<Record<string, { key: string; keyCode: number; text?: strin
   KeyF: { key: 'f', keyCode: 70, text: 'f' },
   Space: { key: ' ', keyCode: 32, text: ' ' },
   ArrowLeft: { key: 'ArrowLeft', keyCode: 37 },
+  PageDown: { key: 'PageDown', keyCode: 34 },
 };
+
+/** For each keydown the probe saw, in order: the frame it arrived in, and whether the page kept it from the browser. */
+interface Downs {
+  readonly frames: readonly number[];
+  readonly prevented: readonly boolean[];
+}
 
 /**
  * Presses and releases each key of `codes` in order, as real input sent back to back, and returns the frame each keydown arrived in, counted by a
- * probe's own requestAnimationFrame loop installed beside the page's (it reads nothing of the page and writes none of its state). Keys that share a
- * frame number arrived with no frame of the page between them.
+ * probe's own requestAnimationFrame loop installed beside the page's, and whether the page kept each from the browser (`defaultPrevented`, read by a
+ * listener on the window added after the page's own, so it runs after them). The probe reads nothing of the page's state and writes none. Keys that
+ * share a frame number arrived with no frame of the page between them.
  */
-async function pressInOneGo(page: Page, codes: readonly string[]): Promise<number[]> {
+async function pressInOneGo(page: Page, codes: readonly string[]): Promise<Downs> {
   await page.evaluate(() => {
-    const w = window as unknown as { keyProbe?: { frame: number; downs: [string, number][] } };
+    const w = window as unknown as { keyProbe?: { frame: number; downs: [string, number][]; prevented: boolean[] } };
     if (w.keyProbe !== undefined) return;
-    const probe = { frame: 0, downs: [] as [string, number][] };
+    const probe = { frame: 0, downs: [] as [string, number][], prevented: [] as boolean[] };
     const tick = (): void => {
       probe.frame += 1;
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
     window.addEventListener('keydown', (event) => { probe.downs.push([event.code, probe.frame]); }, true);
+    window.addEventListener('keydown', (event) => { probe.prevented.push(event.defaultPrevented); });
     w.keyProbe = probe;
   });
-  await page.evaluate(() => { (window as unknown as { keyProbe: { downs: unknown[] } }).keyProbe.downs.length = 0; });
+  await page.evaluate(() => {
+    const probe = (window as unknown as { keyProbe: { downs: unknown[]; prevented: unknown[] } }).keyProbe;
+    probe.downs.length = 0;
+    probe.prevented.length = 0;
+  });
   const cdp = await page.context().newCDPSession(page);
   const sends = codes.flatMap((code) => {
     const k = KEYS[code];
@@ -101,9 +119,10 @@ async function pressInOneGo(page: Page, codes: readonly string[]): Promise<numbe
   await Promise.all(sends.map((params) => cdp.send('Input.dispatchKeyEvent', params as never)));
   await cdp.detach();
   await settle(page);
-  const downs = await page.evaluate(() => (window as unknown as { keyProbe: { downs: [string, number][] } }).keyProbe.downs);
+  const { downs, prevented } = await page.evaluate(() => (window as unknown as { keyProbe: { downs: [string, number][]; prevented: boolean[] } }).keyProbe);
   expect(downs.map(([code]) => code), 'the keydowns the page received').toEqual([...codes]);
-  return downs.map(([, frame]) => frame);
+  expect(prevented.length, 'keydowns that reached the listener after the page’s own').toBe(codes.length);
+  return { frames: downs.map(([, frame]) => frame), prevented };
 }
 
 /** The camera's view direction laid flat, and the level direction to its right. */
@@ -123,9 +142,9 @@ test.describe('orbit view keys', () => {
     errors.expectClean();
   });
 
-  test('W S A D move the camera and its target together over the ground, Q and E down and up, and the follow camera goes off', async ({ page }) => {
+  test('W S A D move the camera and its target together over the ground, Q and E down and up, and the preset in view goes off', async ({ page }) => {
     const f = await open(page, '');
-    expect(f.follow, 'the follow camera at load').toBe(true);
+    expect(f.view, 'the preset in view at load').toBe('aerial-ne');
     const moves: [string, (delta: Vec3, axes: { forward: Vec3; right: Vec3 }) => number][] = [
       ['KeyW', (d, a) => dot(d, a.forward)],
       ['KeyS', (d, a) => -dot(d, a.forward)],
@@ -143,31 +162,7 @@ test.describe('orbit view keys', () => {
       expect(distance(sub(after.target, before.target), delta), `${key}: the target moved with the camera`).toBeLessThan(1e-3);
       if (key !== 'KeyE' && key !== 'KeyQ') expect(Math.abs(delta[1]), `${key}: height kept`).toBeLessThan(1e-3);
     }
-    const after = await facts(page);
-    expect([after.follow, after.view]).toEqual([false, null]);
-  });
-
-  test('the arrows, Space, Home and End keep their timeline meaning in the orbit view', async ({ page }) => {
-    // A view= keeps the follow camera off, so the camera stays put while the timeline moves; the build replay, opened by the Build menu, shows the speeds.
-    const f = await open(page, 'view=aerial-ne');
-    await openReplay(page);
-    await press(page, 'speed-4');
-    await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
-    const cam = await camera(page);
-    await page.keyboard.press('ArrowLeft');
-    await waitForT(page, f.n - 1);
-    await page.keyboard.press('ArrowRight');
-    await waitForT(page, f.n);
-    await page.keyboard.press('Home');
-    await waitForT(page, 0);
-    await page.keyboard.press('End');
-    await waitForT(page, f.n);
-    await page.keyboard.press('Space');
-    await page.waitForFunction(() => window.__met?.mode === 'playing');
-    await page.keyboard.press('Space');
-    await page.waitForFunction(() => window.__met?.mode === 'paused');
-    expect(distance((await camera(page)).position, cam.position), 'the camera did not move').toBeLessThan(1e-3);
-    expect((await facts(page)).walk.mode).toBe('orbit');
+    expect((await facts(page)).view, 'the preset in view after the keys').toBeNull();
   });
 });
 
@@ -202,7 +197,6 @@ test.describe('walk mode', () => {
     expect(first.target, 'the look target: nothing tagged in reach on the plaza').toBeNull();
     await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('walk-status')).toBeVisible();
-    expect((await facts(page)).follow, 'the follow camera is off while walking').toBe(false);
     // F leaves, with the orbit camera where the walker's eye was.
     await page.keyboard.press('KeyF');
     await orbiting(page);
@@ -316,12 +310,11 @@ test.describe('walk mode', () => {
 
   test('walking holds 60 frames a second with the look target on, on the plaza, in the Great Hall and at the top of the Grand Staircase; the collision builds within 2 s', async ({ page }) => {
     const f = await open(page, '');
-    expect(f.t).toBe(f.n);
     await page.keyboard.press('KeyF');
     const ready = await walking(page);
-    console.log(`collision at t = N: ${String(ready.bvhMs)} ms for ${String(ready.collision?.triangles)} triangles`);
-    expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision at t = N').toBeLessThan(2000);
-    expect(ready.collision?.steps, 'every step is in the collision at t = N').toBe(f.n);
+    console.log(`collision of the finished building: ${String(ready.bvhMs)} ms for ${String(ready.collision?.triangles)} triangles`);
+    expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision of the finished building').toBeLessThan(2000);
+    expect(ready.collision?.steps, 'every step is in the collision').toBe(f.steps.length);
     expect(ready.collision?.triangles ?? 0).toBeGreaterThan(1_000_000);
     // Walking and running from the plaza, then from the view menu's spawns in the populated interiors (the hall's desk, columns and domes; the stair's
     // colonnades and vault): each frame walks, finds the look target and renders.
@@ -337,7 +330,6 @@ test.describe('walk mode', () => {
       expectWalkingBudget(await walkingBudget(page), `from the ${id} spawn`);
       expect((await facts(page)).walk.target, `${id}: no door or artwork in reach of the spawn's view`).toBeNull();
     }
-    expect(await currentT(page)).toBe(f.n);
   });
 });
 
@@ -345,13 +337,13 @@ test.describe('walk mode', () => {
  * Opens the page with `query`, readies it with `prepare` and presses `codes` back to back, reopening until every keydown arrived in one frame (at
  * most 5 tries), so the keys after the first meet the mode the first one set before any frame has drawn it.
  */
-async function pressedInOneFrame(page: Page, query: string, prepare: () => Promise<void>, codes: readonly string[]): Promise<Facts> {
+async function pressedInOneFrame(page: Page, query: string, prepare: () => Promise<void>, codes: readonly string[]): Promise<{ readonly facts: Facts; readonly prevented: readonly boolean[] }> {
   const seen: string[] = [];
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     const f = await open(page, query);
     await prepare();
-    const frames = await pressInOneGo(page, codes);
-    if (frames.every((frame) => frame === frames[0])) return f;
+    const { frames, prevented } = await pressInOneGo(page, codes);
+    if (frames.every((frame) => frame === frames[0])) return { facts: f, prevented };
     seen.push(frames.join('/'));
   }
   throw new Error(`The keys ${codes.join(', ')} never arrived within one frame in 5 tries (frames ${seen.join(', ')}), so nothing was tested.`);
@@ -370,31 +362,42 @@ test.describe('keys right after a key that changes the mode', () => {
     await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
   };
 
-  test('F and then Space in one frame: walk mode takes Space, so the finished build stays paused at t = N', async ({ page }) => {
-    const f = await pressedInOneFrame(page, '', focusView(page), ['KeyF', 'Space']);
+  /** Focuses the view, then presses `code` alone in the orbit view, which leaves it to the browser: the probe sees the answer the wrong mode would give. */
+  const orbitLeaves = (page: Page, code: string) => async (): Promise<void> => {
+    await focusView(page)();
+    expect((await pressInOneGo(page, [code])).prevented, `${code} alone in the orbit view, left to the browser`).toEqual([false]);
+  };
+
+  test('F and then Space in one frame: walk mode takes Space, a jump, and keeps it from the browser, where the orbit view leaves it', async ({ page }) => {
+    const { prevented } = await pressedInOneFrame(page, '', orbitLeaves(page, 'Space'), ['KeyF', 'Space']);
     await walking(page);
-    await settle(page);
-    const after = await facts(page);
-    expect([after.walk.mode, after.mode, after.t], 'walk mode, the player and t after F and Space').toEqual(['walk', 'paused', f.n]);
+    expect(prevented, 'F and then Space kept from the browser: walk mode had Space').toEqual([true, true]);
+    expect((await facts(page)).walk.mode, 'walking after F and Space').toBe('walk');
   });
 
-  test('F and then ArrowLeft in one frame: the arrow walks instead of stepping the build back', async ({ page }) => {
-    const f = await pressedInOneFrame(page, '', focusView(page), ['KeyF', 'ArrowLeft']);
+  test('F and then ArrowLeft in one frame: walk mode takes the arrow, a walk, and keeps it from the browser, where the orbit view leaves it', async ({ page }) => {
+    const { prevented } = await pressedInOneFrame(page, '', orbitLeaves(page, 'ArrowLeft'), ['KeyF', 'ArrowLeft']);
     await walking(page);
-    await settle(page);
-    const after = await facts(page);
-    expect([after.walk.mode, after.mode, after.t], 'walk mode, the player and t after F and ArrowLeft').toEqual(['walk', 'paused', f.n]);
+    expect(prevented, 'F and then ArrowLeft kept from the browser: walk mode had the arrow').toEqual([true, true]);
+    expect((await facts(page)).walk.mode, 'walking after F and ArrowLeft').toBe('walk');
   });
 
-  test('F and then Space in one frame while walking: the orbit view takes Space, which plays the build', async ({ page }) => {
+  test('F and then Page Down in one frame while walking: the orbit view takes Page Down, which goes down a floor, where walk mode ignores it', async ({ page }) => {
     const ready = async (): Promise<void> => {
       await focusView(page)();
       await page.keyboard.press('KeyF');
       await walking(page);
+      // Walking, Page Down alone is left to the browser and the floor stays All: the answer the wrong mode would give.
+      expect((await pressInOneGo(page, ['PageDown'])).prevented, 'Page Down alone while walking, left to the browser').toEqual([false]);
+      expect((await facts(page)).floor.id, 'the floor after Page Down alone while walking').toBe('all');
     };
-    await pressedInOneFrame(page, '', ready, ['KeyF', 'Space']);
+    const { facts: f, prevented } = await pressedInOneFrame(page, '', ready, ['KeyF', 'PageDown']);
     await orbiting(page);
-    await page.waitForFunction(() => window.__met?.mode === 'playing', undefined, { timeout: 5000 });
+    // Page Down from All goes to the top floor (src/viewer/floors.ts `floorStep`).
+    const top = f.floors.at(-1);
+    if (top === undefined) throw new Error('No floor in window.__met.floors.');
+    await page.waitForFunction((id) => window.__met?.floor.id === id, top.id, { timeout: 5000 });
+    expect(prevented, 'F and then Page Down kept from the browser: the orbit view had Page Down').toEqual([true, true]);
     expect((await facts(page)).walk.mode).toBe('orbit');
   });
 });

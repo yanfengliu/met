@@ -204,7 +204,6 @@ export const wallSteps: readonly StepDef[] = [
     detail: "Indiana limestone walls rise on the steel frame: the pavilion's thick front with its three arched openings and niches, its banded end piers, and the lower flanking wings.",
     motion: { kind: 'grow' },
     stagger: 'order',
-    weight: 1.4,
     build(kit) {
       pavilionFront(kit);
       endPiers(kit);

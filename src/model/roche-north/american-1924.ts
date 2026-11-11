@@ -129,7 +129,6 @@ export const americanWing1924: readonly StepDef[] = [
     detail: "Grosvenor Atterbury's wing for American decorative arts rises north of the museum's rear wings, on a footing and a main-floor slab.",
     motion: { kind: 'rise' },
     stagger: 'x',
-    weight: 0.7,
     build: foundations,
   },
   {
@@ -150,7 +149,6 @@ export const americanWing1924: readonly StepDef[] = [
     detail: 'Upper floors and the rooms of colonial and Federal America, three storeys of them, on the lines of the present galleries.',
     motion: { kind: 'pop' },
     stagger: 'y',
-    weight: 0.8,
     build: rooms,
   },
   {
@@ -163,8 +161,6 @@ export const americanWing1924: readonly StepDef[] = [
     // Storey by storey (addBankFacade's orders 0, 1, 2), so each window's metal and glass and the door's leaf arrive together; under 'y' each merged
     // piece keyed on its own centre and the glass came a rank after its frames.
     stagger: 'order',
-    weight: 1.4,
-    focus: { kind: 'preset', id: 'int-engelhard-north' },
     build: addBankFacade,
   },
   {
@@ -175,7 +171,6 @@ export const americanWing1924: readonly StepDef[] = [
     detail: 'A flat roof behind a parapet closes the wing, which opened on 10 November 1924.',
     motion: { kind: 'drop' },
     stagger: 'none',
-    weight: 0.6,
     build: roof,
   },
 ];

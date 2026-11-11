@@ -155,11 +155,10 @@ function roof(kit: Kit): void {
   kit.add(UNIT_BOX, palette.limestone, boxAt([-151.6 + OUTER_WALL, TOWER_Y - 0.5, -104.7 + OUTER_WALL], [-141.2, TOWER_Y, -97.2]), 21);
 }
 
-const FOCUS_WING = { kind: 'box', min: [-152, -4, -161], max: [-88, 25, -97] } as const;
 
 export const wallaceSteps: readonly StepDef[] = [
-  { id: 'wallace-structure', chapter: CHAPTER, year: YEAR, title: 'Wallace Wing floors', detail: 'Footings and floor plates for four floors in the south-west corner: ground, main, a mezzanine behind the park face, and second.', motion: { kind: 'rise' }, stagger: 'order', focus: FOCUS_WING, build: structure },
-  { id: 'wallace-facades', chapter: CHAPTER, year: YEAR, title: 'Limestone faces on the park', detail: 'The Wallace Wing closed in 2025 and is being replaced by the Tang Wing; it is shown as it stood from 1987, with a tall stone block at its south-east corner.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: facades },
-  { id: 'wallace-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries for modern art', detail: 'Gallery walls on the main and second floors (map galleries 900 to 925), and the tall mezzanine gallery behind the glass to the park.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: galleries },
-  { id: 'wallace-roof', chapter: CHAPTER, year: YEAR, title: 'Roofs and the Patrons Lounge', detail: 'A roof over the second floor with openings for skylights, and on it the lounge whose roof carries the roof garden.', motion: { kind: 'drop' }, stagger: 'order', focus: FOCUS_WING, build: roof },
+  { id: 'wallace-structure', chapter: CHAPTER, year: YEAR, title: 'Wallace Wing floors', detail: 'Footings and floor plates for four floors in the south-west corner: ground, main, a mezzanine behind the park face, and second.', motion: { kind: 'rise' }, stagger: 'order', build: structure },
+  { id: 'wallace-facades', chapter: CHAPTER, year: YEAR, title: 'Limestone faces on the park', detail: 'The Wallace Wing closed in 2025 and is being replaced by the Tang Wing; it is shown as it stood from 1987, with a tall stone block at its south-east corner.', motion: { kind: 'grow' }, stagger: 'order', build: facades },
+  { id: 'wallace-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries for modern art', detail: 'Gallery walls on the main and second floors (map galleries 900 to 925), and the tall mezzanine gallery behind the glass to the park.', motion: { kind: 'grow' }, stagger: 'order', build: galleries },
+  { id: 'wallace-roof', chapter: CHAPTER, year: YEAR, title: 'Roofs and the Patrons Lounge', detail: 'A roof over the second floor with openings for skylights, and on it the lounge whose roof carries the roof garden.', motion: { kind: 'drop' }, stagger: 'order', build: roof },
 ];

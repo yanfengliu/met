@@ -194,7 +194,6 @@ export const parkTreesStep: StepDef = {
   detail: 'Trees fill the wood south of the museum, ring the lawns and line East Drive, kept clear of the facades.',
   motion: { kind: 'grow' },
   stagger: 'radial',
-  weight: 1.2,
   build(kit) {
     PARK_TREES.forEach((t, k) => {
       const variant = VARIANTS[t.variant] ?? VARIANTS[0];

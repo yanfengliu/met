@@ -104,6 +104,10 @@
     {
       "id": 25,
       "theme": "petrie-cafe-front"
+    },
+    {
+      "id": 26,
+      "theme": "remove-build-replay"
     }
   ]
 }

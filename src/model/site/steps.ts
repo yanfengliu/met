@@ -81,7 +81,6 @@ export const landingStep: StepDef = {
   title: 'Build the landing before the doors',
   detail: 'A granite terrace 25 m wide and 3.6 m above the avenue spreads before the three doorways of the Great Hall.',
   motion: { kind: 'rise', distance: 1.5 },
-  focus: { kind: 'preset', id: 'ref-front-axis' },
   build(kit) {
     const depth = STEPS_TOP_Z - STEPS_BACK_Z;
     kit.add(UNIT_BLOCK, palette.granite, blockMatrix(0, BLOCK_BOTTOM, STEPS_BACK_Z + depth / 2, 2 * LANDING_HALF_WIDTH, LANDING_Y - TREAD - BLOCK_BOTTOM, depth));
@@ -97,8 +96,6 @@ export const flightStep: StepDef = {
   detail: 'Twenty-two granite steps in three flights, with two landings, fall to the avenue at the front and at both ends: a three-way slope 47 m wide.',
   motion: { kind: 'rise', distance: 0.5 },
   stagger: 'order',
-  weight: 1.4,
-  focus: { kind: 'preset', id: 'ref-front-axis' },
   build(kit) {
     for (const row of stepRows()) {
       const h = row.y - TREAD - BLOCK_BOTTOM;
@@ -143,7 +140,6 @@ export const railingsStep: StepDef = {
   detail: 'Dark metal handrails run down the middle of the flight in pairs and down each stepped end.',
   motion: { kind: 'grow' },
   stagger: 'order',
-  focus: { kind: 'preset', id: 'ref-front-axis' },
   build(kit) {
     const rows = stepRows();
     const foot = rows[rows.length - 1];

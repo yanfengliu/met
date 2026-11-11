@@ -2,7 +2,7 @@
  * The capture script's guards: `--solo` must name a chapter id, and every folder it empties must lie strictly inside `.shots/`; checked as pure
  * functions and through the real run (`run`, `capture`) with the file system's writes, git, Vite and the browser replaced by recorders, so a bad
  * `--solo` is shown to fail before any delete, a delete outside `.shots/` is refused at the call site, and every page of a solo run, the benchmark
- * page included, carries the solo query at that selection's N.
+ * page included, carries the solo query.
  * Bound: the fake browser serves fixed facts and draws nothing; that the real pages honour the query is the page's own contract (tests/e2e).
  */
 import { join, resolve } from 'node:path';
@@ -18,7 +18,6 @@ const OUT = join(ROOT, '.shots');
 const fake = vi.hoisted(() => {
   const record = { removed: [] as string[], made: [] as string[], written: [] as string[], visited: [] as string[], shots: [] as string[], benchmarkedAt: [] as string[], current: '' };
   const facts = {
-    n: 34,
     chapters: [{ id: 'site', first: 0, count: 10 }, { id: 'hunt-1902', first: 10, count: 24 }],
     presets: [{ id: 'aerial-ne', group: 'exterior' }, { id: 'top', group: 'exterior' }],
     bounds: { min: [-10, 0, -10], max: [10, 20, 10] },
@@ -79,7 +78,7 @@ vi.mock('@playwright/test', () => ({ chromium: { launch: () => Promise.resolve(f
 
 describe('insideShots', () => {
   it('accepts the folders capture writes', () => {
-    for (const name of ['shots', 'shots-hunt-1902', 'sweep-7-t6.5', 'sweep-123-t-1']) expect(insideShots(join(OUT, name))).toBe(join(OUT, name));
+    for (const name of ['shots', 'shots-hunt-1902', 'sweep-7', 'sweep-123']) expect(insideShots(join(OUT, name))).toBe(join(OUT, name));
   });
 
   it.each([
@@ -118,7 +117,7 @@ describe('the capture run', () => {
     vi.restoreAllMocks();
   });
 
-  it.each([['shots'], ['sweep', '--t', '3']])('%s rejects a --solo that names no chapter before it deletes or captures anything', async (...command) => {
+  it.each([['shots'], ['sweep', '--count', '3']])('%s rejects a --solo that names no chapter before it deletes or captures anything', async (...command) => {
     await expect(run([...command, '--solo', '../../..'])).rejects.toThrow('--solo "../../.." names no chapter; use one of site, hunt-1902.');
     expect([fake.record.removed, fake.record.made, fake.record.shots]).toEqual([[], [], []]);
   });
@@ -129,7 +128,6 @@ describe('the capture run', () => {
     expect(fake.record.shots.length).toBeGreaterThan(5);
     expect(fake.record.visited.filter((url) => !url.includes('solo=hunt-1902')), 'pages without the solo query').toEqual([]);
     expect(fake.record.benchmarkedAt, 'pages the frame benchmark ran on').toHaveLength(3);
-    for (const url of fake.record.benchmarkedAt) expect(new URL(url).searchParams.get('t'), url).toBe(String(fake.facts.n));
     for (const url of fake.record.benchmarkedAt) expect(new URL(url).searchParams.get('solo'), url).toBe('hunt-1902');
     // Each floor of the page's floor picker, framed on its own and from the aerial-ne and top presets.
     const floorViews = fake.record.visited.filter((url) => new URL(url).searchParams.get('floor') === 'main').map((url) => new URL(url).searchParams.get('view'));

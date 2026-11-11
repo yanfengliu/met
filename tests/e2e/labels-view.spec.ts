@@ -1,9 +1,8 @@
 /**
  * The orbit view's card against the view's own controls, through real input at gallery 600's preset (`int-european-paintings-600`) on the finished
  * building (docs/design/spec.md, Collection: Labels; review 6 of work unit 2, F25 to F27):
- * - F25: a 2 px click on the Triumph of Marius shows its card and moves nothing, at the preset (which stays in view) and with the follow camera on
- *   (which stays on): the camera is where it was, to 0.1 mm; the build replay is opened by the Build menu first, as the follow-camera toggle shows only
- *   while it is open (docs/design/spec.md, Page: Build replay);
+ * - F25: a 2 px click on the Triumph of Marius shows its card and moves nothing, at the preset, which stays in view: the camera is where it was, to
+ *   0.1 mm;
  * - F26: a camera preset chosen from the view menu hides the card, Esc never pressed;
  * - F27: the cut slider, dragged by hand under the painting, hides its card (a cut through it does not), and so does the main floor's view, whose cut
  *   lies under the second floor's painting;
@@ -19,7 +18,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import { SECOND_FLOOR_Y } from '../../src/model/frame.js';
-import { cameraGap, choosePreset, distance, facts, open, openMenu, openReplay, press, settle, settledCamera, watchErrors } from './helpers.js';
+import { cameraGap, choosePreset, distance, facts, open, openMenu, press, settle, settledCamera, watchErrors } from './helpers.js';
 import type { Camera } from './helpers.js';
 import { PRESET, TRIUMPH, triumph, triumphPixel } from './labels-helpers.js';
 
@@ -53,37 +52,22 @@ const label = async (page: Page): Promise<string | null> => (await facts(page)).
 test.describe('the orbit view’s card and the view’s controls', () => {
   test.setTimeout(120_000);
 
-  test('F25: a 2 px click on the painting shows its card and moves nothing, at the preset and with the follow camera on', async ({ page }) => {
+  test('F25: a 2 px click on the painting shows its card and moves nothing, at the preset, which stays in view', async ({ page }) => {
     const errors = watchErrors(page);
-    await open(page, `autoplay=0&view=${PRESET}`);
-    await openReplay(page);
+    await open(page, `view=${PRESET}`);
     const start = await settledCamera(page);
     const p = await triumphPixel(page, start);
     await nudge(page, p.x, p.y, 2);
     expect(await label(page), 'a 2 px press at the preset').toBe(String(TRIUMPH));
+    await expect(page.getByTestId('art-card')).toBeVisible();
     expect(cameraGap(await settledCamera(page), start), 'metres the 2 px click moved the camera').toBeLessThan(1e-4);
     expect((await facts(page)).view, 'the preset still in view').toBe(PRESET);
-    // The follow camera on, by its toggle in the view menu; Esc closes the menu before any card shows again.
-    await page.keyboard.press('Escape');
-    await openMenu(page, 'view-menu');
-    await press(page, 'follow-toggle');
-    await expect(page.getByTestId('follow-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await page.keyboard.press('Escape');
-    await expect(page.getByTestId('view-menu')).toBeHidden();
-    const followed = await settledCamera(page);
-    expect((await facts(page)).follow, 'the follow camera on').toBe(true);
-    expect(await label(page), 'no card before the click').toBeNull();
-    await nudge(page, p.x, p.y, 2);
-    expect(await label(page), 'a 2 px press with the follow camera on').toBe(String(TRIUMPH));
-    await expect(page.getByTestId('art-card')).toBeVisible();
-    expect((await facts(page)).follow, 'the follow camera still on').toBe(true);
-    expect(cameraGap(await settledCamera(page), followed), 'metres the 2 px click moved the camera').toBeLessThan(1e-4);
     errors.expectClean();
   });
 
   test('F26: a camera preset chosen from the view menu hides the clicked card, Esc never pressed', async ({ page }) => {
     const errors = watchErrors(page);
-    await open(page, `autoplay=0&view=${PRESET}`);
+    await open(page, `view=${PRESET}`);
     const p = await triumphPixel(page, await settledCamera(page));
     await page.mouse.click(p.x, p.y);
     await settle(page);
@@ -98,7 +82,7 @@ test.describe('the orbit view’s card and the view’s controls', () => {
 
   test('F27: the cut slider dragged under the painting, and the main floor’s view, hide its card; a cut through it does not', async ({ page }) => {
     const errors = watchErrors(page);
-    await open(page, `autoplay=0&view=${PRESET}`);
+    await open(page, `view=${PRESET}`);
     const start = await settledCamera(page);
     const p = await triumphPixel(page, start);
     const painting = triumph().box;
@@ -142,7 +126,7 @@ test.describe('a real pinch on a touch screen', () => {
 
   test('F29: a pinch whose first finger moved under the slop before the second landed zooms from where the fingers are, 40/39, not 44/39', async ({ page }) => {
     const errors = watchErrors(page);
-    await open(page, 'autoplay=0&view=aerial-ne');
+    await open(page, 'view=aerial-ne');
     const before = await settledCamera(page);
     const cdp = await page.context().newCDPSession(page);
     /** Every finger down, as CDP takes them: one event per finger that changed since the last. */

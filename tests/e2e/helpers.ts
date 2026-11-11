@@ -24,8 +24,8 @@ export function watchErrors(page: Page): { expectClean: () => void } {
   };
 }
 
-/** Opens the page with `query` (by default the page's own default: the finished building, paused, the build replay closed) and waits for the capture contract's ready flag, at most 20 s times the CPU throttle. */
-export async function open(page: Page, query = 'autoplay=0'): Promise<Facts> {
+/** Opens the page with `query` (by default none: the finished building in the orbit view at the default preset) and waits for the capture contract's ready flag, at most 20 s times the CPU throttle. */
+export async function open(page: Page, query = ''): Promise<Facts> {
   await page.goto(`/?${query}`);
   const ms = 20_000 * throttleRate();
   await page.waitForFunction(() => window.__shotReady === true, undefined, { timeout: ms }).catch(() => {
@@ -84,15 +84,6 @@ export async function facts(page: Page): Promise<Facts> {
   return (await page.evaluate(() => JSON.parse(JSON.stringify(window.__met)) as unknown)) as Facts;
 }
 
-export async function currentT(page: Page): Promise<number> {
-  return page.evaluate(() => window.__met?.t ?? Number.NaN);
-}
-
-/** Waits until `window.__met.t` equals `value` exactly (the player lands on integers exactly). */
-export async function waitForT(page: Page, value: number, timeout = 20_000): Promise<void> {
-  await page.waitForFunction((v) => window.__met?.t === v, value, { timeout });
-}
-
 /** Waits for two animation frames, so the frame after the last input has been drawn. */
 export async function settle(page: Page): Promise<void> {
   await page.evaluate(() => new Promise<void>((resolve) => { requestAnimationFrame(() => { requestAnimationFrame(() => { resolve(); }); }); }));
@@ -142,32 +133,10 @@ export async function press(page: Page, testid: string): Promise<void> {
   await page.getByTestId(testid).click();
 }
 
-/** Opens a menu by its button if it is closed. */
-export async function openMenu(page: Page, menu: 'chapter-menu' | 'view-menu'): Promise<void> {
+/** Opens the View menu, the page's one menu, by its button if it is closed. */
+export async function openMenu(page: Page, menu: 'view-menu'): Promise<void> {
   if (await page.getByTestId(menu).isHidden()) await press(page, `${menu}-button`);
   await expect(page.getByTestId(menu)).toBeVisible();
-}
-
-/**
- * Opens the build replay, closed as the page opens, by the Build menu's Build replay item, as a person does (docs/design/spec.md, Page: Build replay),
- * and waits for the frame that shows the whole bar: its Play button in view (walking, opening the replay unfolds the bar).
- */
-export async function openReplay(page: Page): Promise<void> {
-  await openMenu(page, 'chapter-menu');
-  const item = page.getByTestId('replay-toggle');
-  await expect(item, 'the Build replay item before it is chosen').toHaveAttribute('aria-checked', 'false');
-  await item.click();
-  await expect(item, 'the Build replay item once chosen').toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByTestId('btn-play')).toBeVisible();
-  await settle(page);
-}
-
-/** The label's step number k from `Step k / N`. */
-export async function labelStep(page: Page): Promise<number> {
-  const text = (await page.getByTestId('step-label').textContent()) ?? '';
-  const match = /^Step (\d+) \/ (\d+)/.exec(text);
-  if (match === null) throw new Error(`The step label "${text}" does not start with "Step k / N".`);
-  return Number(match[1]);
 }
 
 export type Camera = Facts['camera'];

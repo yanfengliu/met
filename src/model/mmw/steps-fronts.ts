@@ -88,7 +88,6 @@ function campaignSteps(c: Campaign): StepDef[] {
       detail: w.walls,
       motion: { kind: 'grow' },
       stagger: 'order',
-      weight: 1.5,
       build: (kit) => {
         buildFrontWalls(kit, c.front);
         buildPartyWalls(kit, c.party, 100);
