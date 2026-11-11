@@ -1,9 +1,6 @@
 /**
- * The Build menu and the View menu (docs/design/spec.md, Page). Each is a disclosure button with a panel; Escape or a click outside closes it.
- * Build menu: the Build replay item, which opens and closes the build replay, and the chapters in order; choosing one opens the replay at the start of
- * its first step.
- * View menu: exterior and interior presets, the follow-camera toggle (while the build replay is open: it belongs to playback), the walk spawns (each
- * enters walk mode there) and the section cut (a toggle and a height slider).
+ * The View menu (docs/design/spec.md, Page: View menu), a disclosure button with a panel; Escape or a click outside closes it: exterior and interior
+ * presets, the walk spawns (each enters walk mode there) and the section cut (a toggle and a height slider).
  */
 import { button, el, setAttr, setText } from './dom.js';
 
@@ -37,88 +34,6 @@ class Disclosure {
   }
 }
 
-export interface ChapterEntry {
-  readonly id: string;
-  readonly title: string;
-  readonly years: string;
-  readonly summary: string;
-  /** 0-based index of the chapter's first step. */
-  readonly first: number;
-  /** Steps in the chapter; a chapter with none is shown disabled. */
-  readonly count: number;
-}
-
-/** The menu is named Build by the owner's choice (2026-10-29); its test ids keep the chapter menu's. */
-export class BuildMenu {
-  readonly disclosure: Disclosure;
-  private readonly replay: HTMLButtonElement;
-  private readonly replayState: HTMLElement;
-  private readonly items: HTMLButtonElement[];
-
-  constructor(chapters: readonly ChapterEntry[], choose: (first: number) => void, toggleReplay: () => void) {
-    this.disclosure = new Disclosure('Build', 'chapter-menu', 'Build', 'menu');
-    // The Build replay item: a checkbox item, checked while the replay is open, its state also as a word for the eye and its summary as text.
-    this.replayState = el('span', { className: 'met-years', text: 'Off', attrs: { 'aria-hidden': 'true' } });
-    this.replay = el('button', {
-      className: 'met-item met-chapter',
-      testid: 'replay-toggle',
-      attrs: { type: 'button', role: 'menuitemcheckbox', 'aria-checked': 'false', 'aria-label': 'Build replay', 'aria-describedby': 'met-replay-summary' },
-    }, [
-      el('span', { text: 'Build replay' }),
-      this.replayState,
-      el('span', { className: 'met-summary', text: 'The timeline: play, step and scrub the build from the empty site.', attrs: { id: 'met-replay-summary' } }),
-    ]);
-    this.activate(this.replay, toggleReplay);
-    this.items = chapters.map((chapter) => {
-      const empty = chapter.count === 0;
-      // The summary is text in the item, not only a tooltip, so touch screens show it too; it describes the item for screen readers.
-      const summaryId = `met-chapter-summary-${chapter.id}`;
-      const item = el('button', {
-        className: 'met-item met-chapter',
-        testid: `chapter-${chapter.id}`,
-        attrs: {
-          type: 'button',
-          role: 'menuitem',
-          'aria-label': `${chapter.title}, ${chapter.years}${empty ? ', no steps yet' : ''}`,
-          'aria-describedby': summaryId,
-        },
-      }, [
-        el('span', { text: chapter.title }),
-        el('span', { className: 'met-years', text: empty ? `${chapter.years} · no steps yet` : chapter.years }),
-        el('span', { className: 'met-summary', testid: `chapter-summary-${chapter.id}`, text: chapter.summary, attrs: { id: summaryId } }),
-      ]);
-      item.disabled = empty;
-      this.activate(item, () => { choose(chapter.first); });
-      return item;
-    });
-    // A menu holds menu items and groups only, so the chapters' visible heading is hidden from assistive technology, which hears the group's label.
-    const group = el('div', { attrs: { role: 'group', 'aria-label': 'Chapters' } }, [
-      el('div', { className: 'met-heading', text: 'Chapters', attrs: { 'aria-hidden': 'true' } }),
-      ...this.items,
-    ]);
-    this.disclosure.panel.append(this.replay, el('div', { className: 'met-separator', attrs: { role: 'separator' } }), group);
-  }
-
-  /** Marks the chapter at `index` as current and the Build replay item as checked while `replay` is open. */
-  sync(index: number, replay: boolean): void {
-    this.items.forEach((item, i) => {
-      setAttr(item, 'aria-current', String(i === index));
-    });
-    setAttr(this.replay, 'aria-checked', String(replay));
-    setText(this.replayState, replay ? 'On' : 'Off');
-  }
-
-  /** Runs `action` on a click and closes the menu, leaving focus on the page after a pointer click and on the menu's button after the keyboard's. */
-  private activate(item: HTMLButtonElement, action: () => void): void {
-    item.addEventListener('click', (event) => {
-      action();
-      this.disclosure.setOpen(false);
-      if (event.detail > 0) item.blur();
-      else this.disclosure.trigger.focus();
-    });
-  }
-}
-
 export interface PresetEntry {
   readonly id: string;
   readonly label: string;
@@ -127,7 +42,6 @@ export interface PresetEntry {
 
 export interface ViewActions {
   applyPreset(id: string): void;
-  setFollow(on: boolean): void;
   setCut(enabled: boolean, height: number): void;
   walkFrom(spawn: string): void;
 }
@@ -139,19 +53,13 @@ export interface SpawnEntry {
 
 export interface ViewState {
   readonly preset: string | null;
-  readonly follow: boolean;
   readonly cutEnabled: boolean;
   readonly cutHeight: number;
-  /** The build replay is open, so the follow-camera toggle shows. */
-  readonly replay: boolean;
 }
 
 export class ViewMenu {
   readonly disclosure: Disclosure;
   private readonly presets = new Map<string, HTMLButtonElement>();
-  private readonly follow: HTMLButtonElement;
-  /** The Camera section, which holds the follow-camera toggle: shown while the build replay is open. */
-  private readonly camera: HTMLElement;
   private readonly cutToggle: HTMLButtonElement;
   private readonly cutSlider: HTMLInputElement;
   private readonly cutValue: HTMLOutputElement;
@@ -172,9 +80,6 @@ export class ViewMenu {
         panel.appendChild(item);
       }
     }
-    this.follow = button('Follow the build', 'follow-toggle', () => { actions.setFollow(!this.state.follow); }, { text: 'Follow the build', className: 'met-item' });
-    this.camera = el('div', {}, [el('h2', { text: 'Camera' }), this.follow]);
-    panel.appendChild(this.camera);
     panel.appendChild(el('h2', { text: 'Walk' }));
     for (const spawn of spawns) {
       const label = `Walk from ${spawn.label}`;
@@ -200,8 +105,6 @@ export class ViewMenu {
   sync(state: ViewState): void {
     this.state = state;
     for (const [id, item] of this.presets) setAttr(item, 'aria-pressed', String(id === state.preset));
-    setAttr(this.follow, 'aria-pressed', String(state.follow));
-    if (this.camera.hidden !== !state.replay) this.camera.hidden = !state.replay;
     setAttr(this.cutToggle, 'aria-pressed', String(state.cutEnabled));
     if (document.activeElement !== this.cutSlider && Math.abs(Number(this.cutSlider.value) - state.cutHeight) > 1e-9) this.cutSlider.value = state.cutHeight.toFixed(1);
     setText(this.cutValue, state.cutEnabled ? `${state.cutHeight.toFixed(1)} m` : 'off');

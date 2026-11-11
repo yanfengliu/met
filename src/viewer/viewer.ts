@@ -41,7 +41,6 @@ export class Viewer {
   readonly env: Environment;
   private readonly capPass: CapPass;
   private shadowsDirty = true;
-  private insetBottom = 0;
 
   constructor(
     private readonly container: HTMLElement,
@@ -57,7 +56,7 @@ export class Viewer {
     r.shadowMap.type = PCFShadowMap;
     r.shadowMap.autoUpdate = false;
     r.localClippingEnabled = true;
-    r.domElement.setAttribute('aria-label', 'The build of the model; drag to orbit, wheel or pinch to zoom, right-drag to pan');
+    r.domElement.setAttribute('aria-label', 'The model of the building; drag to orbit, wheel or pinch to zoom, right-drag to pan');
     r.domElement.setAttribute('role', 'img');
     r.domElement.dataset['testid'] = 'canvas';
     container.appendChild(r.domElement);
@@ -74,14 +73,7 @@ export class Viewer {
     const width = Math.max(1, this.container.clientWidth);
     const height = Math.max(1, this.container.clientHeight);
     this.renderer.setSize(width, height);
-    this.rig.resize(width, height, this.insetBottom);
-  }
-
-  /** Pixels at the bottom of the canvas covered by the timeline bar; the camera frames the part above them. */
-  setInsetBottom(pixels: number): void {
-    if (pixels === this.insetBottom) return;
-    this.insetBottom = pixels;
-    this.resize();
+    this.rig.resize(width, height);
   }
 
   /** The shadow map is re-rendered on the next frame; call after the model moved or the cut changed. */

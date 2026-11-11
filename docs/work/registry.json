@@ -106,6 +106,10 @@
       "theme": "petrie-cafe-front"
     },
     {
+      "id": 26,
+      "theme": "remove-build-replay"
+    },
+    {
       "id": 27,
       "theme": "improvement-list"
     },

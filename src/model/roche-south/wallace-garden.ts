@@ -163,7 +163,6 @@ export const roofGardenSteps: readonly StepDef[] = [
     detail: 'The Iris and B. Gerald Cantor Roof Garden on the Wallace Wing: a teak terrace over the park with hedges in planters and a pergola. Closed in 2025.',
     motion: { kind: 'grow' },
     stagger: 'order',
-    focus: { kind: 'view', position: [-150, 42, -140], target: [-112, 22, -115] },
     build: garden,
   },
   {
@@ -174,7 +173,6 @@ export const roofGardenSteps: readonly StepDef[] = [
     detail: 'A glass wall for the tall gallery behind the park face and a glazed roof rising from it, with skylights over the second-floor galleries.',
     motion: { kind: 'slide', from: [0, 0, -6] },
     stagger: 'order',
-    focus: { kind: 'view', position: [-175, 30, -205], target: [-115, 10, -150] },
     build: wallaceGlass,
   },
 ];

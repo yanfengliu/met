@@ -126,7 +126,6 @@ export const roofSteps: readonly StepDef[] = [
     detail: "A low hipped roof closes over the Great Hall's domes round a long glazed skylight; the wings and the galleries behind get flat roofs with skylights, and the building opens in December 1902.",
     motion: { kind: 'drop', distance: 8 },
     stagger: 'order',
-    weight: 1.2,
     build(kit) {
       // Flat roofs first: the wings (inside their parapets) and the galleries behind the hall round the stair hall: plaster ceilings under a lead skin.
       const flat = (x0: number, z0: number, x1: number, z1: number, top: number): void => {

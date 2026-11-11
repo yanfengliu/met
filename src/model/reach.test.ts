@@ -372,11 +372,10 @@ describe('reachability from the Great Hall spawn, by the walk mode’s walker', 
     expect(fill.count, `places reached in ${(ms / 1000).toFixed(1)} s, paths walked again in ${(replayMs / 1000).toFixed(1)} s`).toBeGreaterThan(10_000);
   });
 
-  it('stands in every space that holds artworks, where the preset its collection step frames stands', () => {
+  it('stands in every space that holds artworks, where the interior preset its collection step names stands', () => {
     const missed = [...SPACES_A, ...SPACES_B].flatMap((def) => {
-      const id = def.focus.kind === 'preset' ? def.focus.id : '';
-      const t = targets.find((p) => p.group === 'preset' && p.name === id);
-      if (t === undefined) return [`${def.space}: its step frames no interior preset (focus ${def.focus.kind} ${id})`];
+      const t = targets.find((p) => p.group === 'preset' && p.name === def.preset);
+      if (t === undefined) return [`${def.space}: its step names no interior preset (preset "${def.preset}")`];
       return unmet.has(t) ? [`${def.space}: ${describeMiss(t)}`] : [];
     });
     expect(missed).toEqual([]);

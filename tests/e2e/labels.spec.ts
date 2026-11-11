@@ -3,28 +3,25 @@
  * - Walking: from the view menu's "Walk from the top of the Grand Staircase", turned by drags to face the cross hall and walked with W through its
  *   doorway until Tiepolo's Triumph of Marius, on gallery 600's far wall, is the look target within 6 m: the card shows its title, maker, date,
  *   medium, gallery, size, the CC0 credit and a plain link to its page (a new tab, `noopener noreferrer`, no prefetch hint), at the bottom left above
- *   the Walk toggle's strip (full width at 390×844), clear of every control, of the crosshair and of the door prompt's band under it; above the whole
- *   bar when the Build menu opens the build replay, clear of every control and the crosshair (on a narrow screen it may reach into the band then, the
- *   spec's one exception: Collection, Labels, Place); above the folded strip when its Timeline button folds it, and above the Walk toggle's strip
- *   again, clear of the band, when the replay closes. A drag that looks down at the floor hides it and one that looks back up shows it again. At
- *   every frame drawn, the card shows exactly when the crosshair's one look target is an artwork (review 6, F28); ./routes.spec.ts's short walk, from
- *   the entrance's door to the painting and by the view menu back to the door, shows it never shows beside the door prompt (review 7, F30). At
+ *   the walk strip (full width at 390×844), clear of every control, of the crosshair and of the door prompt's band under it. A drag that looks down
+ *   at the floor hides it and one that looks back up shows it again. At every frame drawn, the card shows exactly when the crosshair's one look target
+ *   is an artwork (review 6, F28); ./routes.spec.ts's short walk, from the entrance's door to the painting and by the view menu back to the door, shows
+ *   it never shows beside the door prompt (review 7, F30). At
  *   1280×720 a walking frame with the card showing keeps the 60 frames a second budget (the median work a frame and the mean GPU-synced render under
  *   16.7 ms, the median frame interval under 18.37 ms: ./helpers.ts `expectWalkingBudget`), and the link, clicked, opens the object's page in a new
  *   tab, its request stopped in the test's browser so nothing leaves the machine.
  * - Orbit view, at gallery 600's preset (`int-european-paintings-600`): a drag that starts on the painting shows no card; a click on it shows the
  *   card, moving neither the camera nor the preset in view, as does a press that travels 4 px, under CLICK_SLOP (5 px), both pixels checked by a cast
- *   through the finished model in the test process; a click on a wall hides it; Esc hides it; the card sits above the Walk toggle's strip, and above
- *   the whole bar while the build replay is open, clear of the floor picker and every control. A clicked card goes when walk mode begins and does not
- *   come back when it ends.
+ *   through the finished model in the test process; a click on a wall hides it; Esc hides it; the card sits above the walk strip, right of the floor
+ *   picker, clear of every control. A clicked card goes when walk mode begins and does not come back when it ends.
  * - The pointer locked (work unit 14): placed 4 m before the painting, a click of the view locks the pointer, and the card says "Press Esc, then click
  *   the link.", laid out above the strip as walking shows it, clear of every control and the door prompt's band (review 0, F7); Esc, held so that it
  *   repeats, leaves walk mode and keeps the card in the orbit view (F4), laid out with its controls, the hint gone, and its link, clicked, opens the
  *   object's page; Esc again hides it.
  * The painting's place comes from the collection's placements (src/model/collection/spaces-b.ts), the pixel a click goes to from the published camera,
- * and both are checked apart from the page (./labels-helpers.ts). ./labels-view.spec.ts drives the card through the follow camera, presets and the cut.
+ * and both are checked apart from the page (./labels-helpers.ts). ./labels-view.spec.ts drives the card through a small click, presets and the cut.
  * Bound: the walking test's browser gives no pointer lock (./helpers.ts `noPointerLock`), as one without it does, so its pointer stays free to reach
- * the bar and the link while walking, where a locked one reaches no control; the locked card's lock is the browser's own, which the headless system
+ * the link while walking, where a locked one reaches no control; the locked card's lock is the browser's own, which the headless system
  * Chrome grants to a click; the page's own requests are recorded for the whole test and none may go to metmuseum.org; frame times are this machine's;
  * the frame-by-frame check reads the page's DOM from a requestAnimationFrame loop beside the page's own, which runs after it in each frame and writes
  * nothing.
@@ -35,7 +32,7 @@ import type { Page } from '@playwright/test';
 import { entryOf } from '../../src/model/collection/place.js';
 import { SECOND_FLOOR_Y } from '../../src/model/frame.js';
 import { LOCKED_HINT } from '../../src/ui/art-card.js';
-import { cameraGap, choosePreset, expectWalkingBudget, facts, noPointerLock, open, openMenu, openReplay, press, settle, settledCamera, walkingBudget, watchErrors } from './helpers.js';
+import { cameraGap, choosePreset, expectWalkingBudget, facts, noPointerLock, open, openMenu, press, settle, settledCamera, walkingBudget, watchErrors } from './helpers.js';
 import { BAND, ORBIT_CONTROLS, PRESET, TRIUMPH, VIEWPORTS, WALK_CONTROLS, artworkBounds, boxes, drag, expectLaidOut, expectTriumphCard, onCanvas, overlaps, recordRequests, surfaceAt, triumphFront, triumphPixel } from './labels-helpers.js';
 import type { Box } from './labels-helpers.js';
 import { face, still, walking } from './route-walk.js';
@@ -94,35 +91,16 @@ for (const viewport of VIEWPORTS) {
       await expectTriumphCard(page);
       await expect(page.getByTestId('crosshair')).toHaveAttribute('data-target', 'artwork');
 
-      // Its place on the quiet walking screen, the replay closed: above the Walk toggle's strip, at the left or across the narrow screen, clear of the
-      // crosshair and the band under it.
+      // Its place on the walking screen: above the walk strip, at the left or across the narrow screen, clear of every control, the crosshair and the
+      // band under it.
       const band: Box = { id: 'band', x: viewport.width / 2 - BAND.halfWidth, y: viewport.height / 2 - BAND.above, w: 2 * BAND.halfWidth, h: BAND.above + BAND.below, clipped: false };
-      const quiet = async (what: string): Promise<void> => {
-        const folded = expectLaidOut(await boxes(page, WALK_CONTROLS), viewport, what);
-        const strip = (await boxes(page, ['timeline-bar']))[0];
-        if (strip === undefined) throw new Error(`${what}: no strip.`);
-        expect(folded.y + folded.h, `${what}: the card ends above the strip`).toBeLessThanOrEqual(strip.y + 0.5);
-        if (viewport.width > 640) expect(folded.x, `${what}: at the bottom left`).toBeCloseTo(12, 0);
-        else expect([folded.x, folded.w], `${what}: full width, 8 px in from each side`).toEqual([8, viewport.width - 16]);
-        expect(overlaps(folded, band), `${what}: the card stays out of the door prompt’s band under the crosshair`).toBe(false);
-      };
-      await quiet('walking, the replay closed');
-      // The replay opened by the Build menu shows the whole bar: the card stands above it, still clear of the crosshair. Folded by the Timeline button,
-      // the card comes back down above the folded strip; the replay closed by the Build menu's item, above the Walk toggle's strip again.
-      await openReplay(page);
-      const whole = expectLaidOut(await boxes(page, [...WALK_CONTROLS, ...ORBIT_CONTROLS.slice(0, 14)]), viewport, 'walking, the replay open');
-      const bar = (await boxes(page, ['timeline-bar']))[0];
-      if (bar === undefined) throw new Error('No timeline bar.');
-      expect(whole.y + whole.h, 'the card ends above the whole bar').toBeLessThanOrEqual(bar.y + 0.5);
-      await press(page, 'bar-toggle');
-      await expect(page.getByTestId('bar-toggle')).toHaveAttribute('aria-expanded', 'false');
-      await settle(page);
-      await quiet('walking, the replay folded');
-      await openMenu(page, 'chapter-menu');
-      await press(page, 'replay-toggle');
-      await expect(page.getByTestId('bar-toggle')).toBeHidden();
-      await settle(page);
-      await quiet('walking, the replay closed again');
+      const card = expectLaidOut(await boxes(page, WALK_CONTROLS), viewport, 'walking');
+      const strip = (await boxes(page, ['walk-strip']))[0];
+      if (strip === undefined) throw new Error('No walk strip.');
+      expect(card.y + card.h, 'walking: the card ends above the walk strip').toBeLessThanOrEqual(strip.y + 0.5);
+      if (viewport.width > 640) expect(card.x, 'walking: at the bottom left').toBeCloseTo(12, 0);
+      else expect([card.x, card.w], 'walking: full width, 8 px in from each side').toEqual([8, viewport.width - 16]);
+      expect(overlaps(card, band), 'walking: the card stays out of the door prompt’s band under the crosshair').toBe(false);
 
       // Looking down at the floor hides the card; looking back up shows it again.
       const box = await page.getByTestId('canvas').boundingBox();
@@ -168,7 +146,7 @@ for (const viewport of VIEWPORTS) {
     test('orbit view: a click on the Triumph of Marius shows its card, a drag does not, and a click on a wall or Esc hides it', async ({ page }) => {
       const errors = watchErrors(page);
       const requests = recordRequests(page);
-      await open(page, `autoplay=0&view=${PRESET}`);
+      await open(page, `view=${PRESET}`);
       const start = await settledCamera(page);
       const p = await triumphPixel(page, start);
 
@@ -192,22 +170,14 @@ for (const viewport of VIEWPORTS) {
       await expectTriumphCard(page);
       const after = await settledCamera(page);
       expect(cameraGap(after, back), 'a click moves no camera').toBeLessThan(1e-4);
-      const f = await facts(page);
-      expect([f.view, f.follow], 'the preset in view and the follow camera, as they were').toEqual([PRESET, false]);
-      // Its place, the replay closed and then open by the Build menu: above the Walk toggle's strip or the whole bar, right of the floor picker.
-      for (const replay of [false, true]) {
-        if (replay) await openReplay(page);
-        expect((await facts(page)).label?.id, `the card with the replay ${replay ? 'open' : 'closed'}`).toBe(String(TRIUMPH));
-        const card = expectLaidOut(await boxes(page, ORBIT_CONTROLS), viewport, `orbit view, the replay ${replay ? 'open' : 'closed'}`);
-        const bar = (await boxes(page, ['timeline-bar']))[0];
-        const picker = (await boxes(page, ['floor-picker']))[0];
-        if (bar === undefined || picker === undefined) throw new Error('No timeline bar or floor picker.');
-        expect(card.y + card.h, `the card ends above the bar, the replay ${replay ? 'open' : 'closed'}`).toBeLessThanOrEqual(bar.y + 0.5);
-        expect(card.x, 'the card stands right of the floor picker').toBeGreaterThanOrEqual(picker.x + picker.w - 0.5);
-      }
-      await press(page, 'replay-close');
-      await expect(page.getByTestId('btn-play')).toBeHidden();
-      expect(cameraGap(await settledCamera(page), after), 'the preset where it stood once the replay closed').toBeLessThan(1e-3);
+      expect((await facts(page)).view, 'the preset in view, as it was').toBe(PRESET);
+      // Its place: above the walk strip, right of the floor picker, clear of every control.
+      const card = expectLaidOut(await boxes(page, ORBIT_CONTROLS), viewport, 'orbit view');
+      const strip = (await boxes(page, ['walk-strip']))[0];
+      const picker = (await boxes(page, ['floor-picker']))[0];
+      if (strip === undefined || picker === undefined) throw new Error('No walk strip or floor picker.');
+      expect(card.y + card.h, 'the card ends above the walk strip').toBeLessThanOrEqual(strip.y + 0.5);
+      expect(card.x, 'the card stands right of the floor picker').toBeGreaterThanOrEqual(picker.x + picker.w - 0.5);
 
       // A click on a wall, the first surface under its pixel lying outside every artwork's bounds, hides the card.
       const bounds = [...artworkBounds().values()].map((b) => b.clone().expandByScalar(0.05));
@@ -245,7 +215,7 @@ for (const viewport of VIEWPORTS) {
 
     test('a clicked card goes when walk mode begins and does not come back when it ends', async ({ page }) => {
       const errors = watchErrors(page);
-      await open(page, `autoplay=0&view=${PRESET}`);
+      await open(page, `view=${PRESET}`);
       const p = await triumphPixel(page, await settledCamera(page));
       await page.mouse.click(p.x, p.y);
       await settle(page);
@@ -287,8 +257,8 @@ for (const viewport of VIEWPORTS) {
       // With the hint, the card keeps its walking place: above the strip, at the bottom left or across the narrow screen, clear of the band (F7).
       await settle(page);
       const card = expectLaidOut(await boxes(page, WALK_CONTROLS), viewport, 'walking, the pointer locked');
-      const strip = (await boxes(page, ['timeline-bar']))[0];
-      if (strip === undefined) throw new Error('No strip.');
+      const strip = (await boxes(page, ['walk-strip']))[0];
+      if (strip === undefined) throw new Error('No walk strip.');
       expect(card.y + card.h, 'the locked card ends above the strip').toBeLessThanOrEqual(strip.y + 0.5);
       if (viewport.width > 640) expect(card.x, 'the locked card at the bottom left').toBeCloseTo(12, 0);
       else expect([card.x, card.w], 'the locked card full width, 8 px in from each side').toEqual([8, viewport.width - 16]);

@@ -21,7 +21,7 @@ export function el<K extends keyof HTMLElementTagNameMap>(tag: K, options: Eleme
   return element;
 }
 
-/** A button with an accessible name. A pointer click leaves focus on the page, so Space keeps meaning play/pause; keyboard activation keeps focus. */
+/** A button with an accessible name. A pointer click leaves focus on the page, so Space keeps meaning jump while walking; keyboard activation keeps focus. */
 export function button(label: string, testid: string, onActivate: () => void, options: { readonly icon?: string; readonly text?: string; readonly className?: string } = {}): HTMLButtonElement {
   const element = el('button', {
     className: options.className ?? (options.icon !== undefined ? 'met-button met-icon' : 'met-button'),

@@ -10,8 +10,7 @@ const CSS = /* css */ `
   --met-dim: #b9b4aa;
   --met-accent: #e0b25c;
   --met-accent-ink: #1b1508;
-  --met-thumb: 16px;
-  --met-bar-h: 150px;
+  --met-strip-h: 54px;
   color-scheme: dark;
 }
 .met-app { position: fixed; inset: 0; overflow: hidden; font: 14px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--met-text); }
@@ -36,54 +35,29 @@ const CSS = /* css */ `
 .met-menu > .met-button { background: var(--met-panel); backdrop-filter: blur(8px); }
 .met-panel {
   position: absolute; top: 48px; right: 0; width: min(330px, calc(100vw - 24px));
-  max-height: calc(100vh - var(--met-bar-h) - 84px); overflow-y: auto; box-sizing: border-box;
+  max-height: calc(100vh - var(--met-strip-h) - 84px); overflow-y: auto; box-sizing: border-box;
   padding: 8px; border-radius: 10px; border: 1px solid var(--met-line);
   background: var(--met-panel-solid); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 .met-panel[hidden] { display: none; }
 .met-panel h2, .met-panel .met-heading { margin: 10px 8px 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--met-dim); }
 .met-panel > h2:first-child { margin-top: 4px; }
-.met-separator { height: 1px; margin: 6px 8px; background: var(--met-line); }
 .met-item {
   display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 12px; text-align: left;
   padding: 9px 10px; border: 0; border-radius: 7px; background: transparent; cursor: pointer;
 }
 .met-item:hover, .met-item:focus-visible { background: rgba(255, 255, 255, 0.1); outline: none; }
 .met-item:disabled { color: var(--met-dim); opacity: 0.6; cursor: default; background: transparent; }
-.met-item[aria-current="true"], .met-item[aria-pressed="true"], .met-item[aria-checked="true"] { color: var(--met-accent); }
-.met-item .met-years { color: var(--met-dim); font-size: 12px; white-space: nowrap; }
-/* Chapter items: title and years on the first line, the summary as a wrapped line of text under them. */
-.met-chapter { flex-wrap: wrap; row-gap: 3px; }
-.met-chapter .met-summary { display: block; flex: 1 0 100%; color: var(--met-dim); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+.met-item[aria-pressed="true"] { color: var(--met-accent); }
 .met-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; flex-wrap: wrap; }
 .met-row input[type="range"] { flex: 1 1 140px; min-width: 120px; accent-color: var(--met-accent); }
 .met-row output { min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--met-dim); }
 
-.met-bar {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; box-sizing: border-box;
-  padding: 10px 16px 12px; background: var(--met-panel); backdrop-filter: blur(10px); border-top: 1px solid var(--met-line);
+/* The walk strip at the bottom right, holding the Walk toggle (src/ui/walk-strip.ts). */
+.met-strip {
+  position: absolute; right: 12px; bottom: 12px; z-index: 2; box-sizing: border-box; display: flex; gap: 8px; padding: 6px;
+  background: var(--met-panel); backdrop-filter: blur(10px); border: 1px solid var(--met-line); border-radius: 10px;
 }
-.met-label-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
-.met-label { flex: 1 1 auto; min-width: 0; }
-.met-title { font-weight: 600; overflow-wrap: anywhere; }
-.met-detail { color: var(--met-dim); font-size: 13px; margin-top: 2px; min-height: 1.35em; overflow-wrap: anywhere; }
-.met-scrub { position: relative; height: 28px; margin: 4px 0 8px; }
-.met-marks { position: absolute; left: calc(var(--met-thumb) / 2); right: calc(var(--met-thumb) / 2); top: 3px; bottom: 3px; pointer-events: none; }
-.met-mark { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--met-accent); opacity: 0.85; border-radius: 1px; }
-.met-scrubber {
-  -webkit-appearance: none; appearance: none; position: absolute; inset: 0; width: 100%; height: 28px; margin: 0;
-  background: transparent; cursor: pointer;
-}
-.met-scrubber::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.22); }
-.met-scrubber::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.22); }
-.met-scrubber::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none; width: var(--met-thumb); height: var(--met-thumb); margin-top: -5px;
-  border-radius: 50%; background: var(--met-text); border: 2px solid var(--met-accent); box-sizing: border-box;
-}
-.met-scrubber::-moz-range-thumb { width: var(--met-thumb); height: var(--met-thumb); border-radius: 50%; background: var(--met-text); border: 2px solid var(--met-accent); box-sizing: border-box; }
-.met-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
-.met-group { display: flex; gap: 6px; flex-wrap: nowrap; }
-.met-modes { gap: 16px; align-items: center; }
 .met-walk { padding: 0 12px 0 8px; }
 .met-walk-status {
   position: absolute; top: 12px; left: 12px; z-index: 3; box-sizing: border-box; max-width: min(460px, calc(100vw - 210px));
@@ -91,14 +65,6 @@ const CSS = /* css */ `
   font-size: 13px; line-height: 1.35; color: var(--met-text); pointer-events: none;
 }
 .met-walk-status[hidden] { display: none; }
-/*
- * A strip at the bottom right unless whole: while walking with the build replay open it holds the Timeline button, which unfolds the bar, and the Walk
- * toggle; with the replay closed, the Walk toggle alone (src/ui/timeline-bar.ts, barShape).
- */
-.met-bar-toggle[hidden] { display: none; }
-.met-bar.met-bar-folded { left: auto; right: 12px; bottom: 12px; padding: 6px; border: 1px solid var(--met-line); border-radius: 10px; }
-.met-bar-folded .met-label-row, .met-bar-folded .met-scrub, .met-bar-folded .met-transport, .met-bar-folded .met-speed { display: none; }
-.met-bar-folded .met-modes { gap: 8px; }
 /* The crosshair marks the eye's ray at the centre of the walking view; gold while a door or an artwork is within reach of it. */
 .met-crosshair { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; z-index: 1; pointer-events: none; }
 .met-crosshair[hidden] { display: none; }
@@ -115,19 +81,14 @@ const CSS = /* css */ `
   font-size: 13px; font-weight: 600; line-height: 1.35; white-space: nowrap; color: var(--met-text); pointer-events: none;
 }
 .met-door-prompt[hidden] { display: none; }
-/*
- * The floor picker: a column at the left, centred in the view the camera frames, the part above the whole bar while the build replay is open and the
- * whole canvas while it is closed; open menu panels (z-index 3) cover it on a narrow screen.
- */
+/* The floor picker: a column at the left, centred on the canvas; open menu panels (z-index 3) cover it on a narrow screen. */
 .met-floors {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 2;
   display: flex; flex-direction: column; gap: 4px; padding: 4px; border-radius: 10px;
   background: var(--met-panel); backdrop-filter: blur(8px); border: 1px solid var(--met-line);
 }
 .met-floors[hidden] { display: none; }
-.met-ui[data-replay] .met-floors { top: calc((100% - var(--met-bar-h)) / 2); }
 .met-floor { min-width: 66px; height: 34px; padding: 0 8px; }
-.met-speed .met-button { min-width: 44px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 
 .met-error {
   position: absolute; left: 16px; right: 16px; top: 16px; z-index: 5; margin: 0; padding: 14px 16px; border-radius: 10px;
@@ -135,34 +96,26 @@ const CSS = /* css */ `
 }
 
 @media (max-width: 640px) {
-  .met-bar { padding: 8px 12px 10px; }
-  .met-title { font-size: 13px; }
-  .met-detail { font-size: 12px; }
-  .met-controls { justify-content: flex-start; }
-  .met-group { gap: 5px; }
   .met-icon { width: 40px; }
-  .met-speed .met-button { min-width: 40px; padding: 0 4px; }
-  .met-modes { gap: 10px; }
   .met-walk-status { font-size: 12px; padding: 6px 9px; }
-  .met-bar.met-bar-folded { right: 8px; bottom: 8px; padding: 5px; }
+  .met-strip { right: 8px; bottom: 8px; padding: 5px; }
   .met-floors { left: 8px; gap: 3px; padding: 3px; }
   .met-floor { min-width: 58px; height: 32px; padding: 0 6px; font-size: 13px; }
 }
 
 /*
- * The artwork's card (src/ui/art-card.ts): at the bottom left above the timeline bar, whole or a strip (the strip stands 12 px off the bottom), and
- * in the orbit view clear of the floor picker (--met-floors-w, src/ui/ui.ts). Walking, where it could reach the middle of the view, it keeps under the
- * crosshair (16 px) and, folded, under the door prompt's place too: the band from the crosshair down to 80 px under the centre.
+ * The artwork's card (src/ui/art-card.ts): at the bottom left above the walk strip (which stands 12 px off the bottom), and in the orbit view clear of
+ * the floor picker (--met-floors-w, src/ui/ui.ts). Walking, where it could reach the middle of the view, it keeps under the crosshair (16 px) and under
+ * the door prompt's place: the band from the crosshair down to 80 px under the centre.
  */
 .met-art-card {
-  position: absolute; left: 12px; bottom: calc(var(--met-bar-h) + 12px); z-index: 2; box-sizing: border-box;
-  width: min(360px, calc(100vw - 24px)); max-height: calc(100% - var(--met-bar-h) - 76px); overflow-y: auto;
+  position: absolute; left: 12px; bottom: calc(var(--met-strip-h) + 24px); z-index: 2; box-sizing: border-box;
+  width: min(360px, calc(100vw - 24px)); max-height: calc(100% - var(--met-strip-h) - 76px); overflow-y: auto;
   padding: 10px 12px; border-radius: 10px; border: 1px solid var(--met-line);
   background: var(--met-panel); backdrop-filter: blur(8px); font-size: 13px; line-height: 1.35;
 }
 .met-art-card[hidden] { display: none; }
 .met-floors:not([hidden]) ~ .met-art-card { left: calc(var(--met-floors-w) + 24px); width: min(360px, calc(100vw - var(--met-floors-w) - 36px)); }
-.met-bar-folded ~ .met-art-card { bottom: calc(var(--met-bar-h) + 24px); }
 .met-art-title { margin: 0 0 3px; font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
 .met-art-line { margin: 0; overflow-wrap: anywhere; }
 .met-art-dim { color: var(--met-dim); }
@@ -172,15 +125,12 @@ const CSS = /* css */ `
 .met-art-credit { color: var(--met-dim); }
 .met-art-hint { margin: 6px 0 0; font-size: 12px; }
 @media (max-width: 1000px) {
-  .met-crosshair:not([hidden]) ~ .met-art-card { max-height: calc(50% - 16px - var(--met-bar-h) - 12px); }
-  .met-crosshair:not([hidden]) ~ .met-bar-folded ~ .met-art-card { max-height: calc(50% - 88px - var(--met-bar-h) - 24px); }
+  .met-crosshair:not([hidden]) ~ .met-art-card { max-height: calc(50% - 88px - var(--met-strip-h) - 24px); }
 }
 @media (max-width: 640px) {
-  .met-art-card { left: 8px; width: calc(100vw - 16px); bottom: calc(var(--met-bar-h) + 8px); padding: 8px 10px; font-size: 12px; }
+  .met-art-card { left: 8px; width: calc(100vw - 16px); bottom: calc(var(--met-strip-h) + 16px); padding: 8px 10px; font-size: 12px; }
   .met-floors:not([hidden]) ~ .met-art-card { left: calc(var(--met-floors-w) + 16px); width: calc(100vw - var(--met-floors-w) - 24px); }
-  .met-bar-folded ~ .met-art-card { bottom: calc(var(--met-bar-h) + 16px); }
-  .met-crosshair:not([hidden]) ~ .met-art-card { max-height: calc(50% - 16px - var(--met-bar-h) - 8px); }
-  .met-crosshair:not([hidden]) ~ .met-bar-folded ~ .met-art-card { max-height: calc(50% - 88px - var(--met-bar-h) - 16px); }
+  .met-crosshair:not([hidden]) ~ .met-art-card { max-height: calc(50% - 88px - var(--met-strip-h) - 16px); }
   .met-art-title { font-size: 14px; }
 }
 `;

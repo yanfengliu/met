@@ -257,15 +257,14 @@ function glassWall(kit: Kit): void {
   }
 }
 
-const FOCUS_WING = { kind: 'box', min: [-152, -4, -98], max: [-88, 23, -38] } as const;
 
 export const rockefellerSteps: readonly StepDef[] = [
-  { id: 'rockefeller-foundations', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing foundations', detail: 'Footings and the ground-floor plate of the wing at the south end, built for the arts of Africa, Oceania and the Americas.', motion: { kind: 'rise' }, stagger: 'order', focus: FOCUS_WING, build: foundations },
-  { id: 'rockefeller-walls', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing limestone walls', detail: 'A stone base along the south face for the glass wall, and limestone walls to the west and north, the west one inside the later Wallace Wing.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: walls },
-  { id: 'rockefeller-floors', chapter: CHAPTER, year: YEAR, title: 'Main and second floors', detail: 'The main floor runs out to the glass; the second floor stops 5.5 m short of it, so the hall behind the glass is two storeys high.', motion: { kind: 'rise' }, stagger: 'order', focus: FOCUS_WING, build: floors },
-  { id: 'rockefeller-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries on two floors', detail: 'Gallery walls of the Oceania hall and the African and American galleries, and above them the nineteenth-century European paintings.', motion: { kind: 'grow' }, stagger: 'order', focus: FOCUS_WING, build: galleries },
-  { id: 'rockefeller-roof', chapter: CHAPTER, year: YEAR, title: 'Roof deck over the paintings galleries', detail: 'The roof over the second floor, open in ten long bays for skylights, and the stone fascia along the top of the south face.', motion: { kind: 'drop' }, stagger: 'order', focus: FOCUS_WING, build: roof },
-  { id: 'rockefeller-skylights', chapter: CHAPTER, year: YEAR, title: 'Ridge skylights over the galleries', detail: 'Glass ridges running north–south over the second-floor galleries of nineteenth-century European paintings, with laylights under them.', motion: { kind: 'drop' }, stagger: 'z', focus: FOCUS_WING, build: skylights },
+  { id: 'rockefeller-foundations', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing foundations', detail: 'Footings and the ground-floor plate of the wing at the south end, built for the arts of Africa, Oceania and the Americas.', motion: { kind: 'rise' }, stagger: 'order', build: foundations },
+  { id: 'rockefeller-walls', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing limestone walls', detail: 'A stone base along the south face for the glass wall, and limestone walls to the west and north, the west one inside the later Wallace Wing.', motion: { kind: 'grow' }, stagger: 'order', build: walls },
+  { id: 'rockefeller-floors', chapter: CHAPTER, year: YEAR, title: 'Main and second floors', detail: 'The main floor runs out to the glass; the second floor stops 5.5 m short of it, so the hall behind the glass is two storeys high.', motion: { kind: 'rise' }, stagger: 'order', build: floors },
+  { id: 'rockefeller-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries on two floors', detail: 'Gallery walls of the Oceania hall and the African and American galleries, and above them the nineteenth-century European paintings.', motion: { kind: 'grow' }, stagger: 'order', build: galleries },
+  { id: 'rockefeller-roof', chapter: CHAPTER, year: YEAR, title: 'Roof deck over the paintings galleries', detail: 'The roof over the second floor, open in ten long bays for skylights, and the stone fascia along the top of the south face.', motion: { kind: 'drop' }, stagger: 'order', build: roof },
+  { id: 'rockefeller-skylights', chapter: CHAPTER, year: YEAR, title: 'Ridge skylights over the galleries', detail: 'Glass ridges running north–south over the second-floor galleries of nineteenth-century European paintings, with laylights under them.', motion: { kind: 'drop' }, stagger: 'z', build: skylights },
   {
     id: 'rockefeller-glass-wall',
     chapter: CHAPTER,
@@ -274,8 +273,6 @@ export const rockefellerSteps: readonly StepDef[] = [
     detail: 'A wall of glass 61 m long and 18 m high on the slope, leaning back at 70°. Rebuilt 2021–25 to the same look: triple glazed, fritted, opaque top row.',
     motion: { kind: 'slide', from: [-8, 0, 0] },
     stagger: 'z',
-    weight: 1.5,
-    focus: { kind: 'preset', id: 'ref-park-south' },
     build: glassWall,
   },
 ];

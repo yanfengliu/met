@@ -45,7 +45,7 @@ const mouse = (x: number, y: number, button: number): Record<string, unknown> =>
 function onTheFloor(over = 0): { rig: CameraRig; element: StandIn; view: () => Vector3 } {
   const element = new StandIn();
   const rig = new CameraRig(element as unknown as HTMLElement, 0);
-  rig.resize(1280, 720, 0);
+  rig.resize(1280, 720);
   const up = new Vector3(0, Math.SQRT1_2, -Math.SQRT1_2);
   const position = new Vector3(0, CAMERA_FLOOR + over, 0);
   rig.setPose({ position, target: position.clone().addScaledVector(up, 100), fov: 40 });

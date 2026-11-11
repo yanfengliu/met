@@ -5,13 +5,10 @@
  */
 import type { StepDef } from '../../build/types.js';
 import { choirScreen } from './choir-screen.js';
-import { L1 } from './constants.js';
 import { skylightAndLaylightGlass } from './galleries.js';
 import { hallArcades, hallClerestoryVault, hallFloor, hallPiers } from './medieval-hall.js';
 
 const HALL = 'mckim-mead-white-1926';
-/** A view down the hall from its west end, the screen in the middle (P8's viewpoint, see the handoff for the preset). */
-const HALL_VIEW = { kind: 'view', position: [0, L1 + 1.6, -112.9], target: [0, L1 + 11.8, -92.9] } as const;
 
 export const medievalHallSteps: readonly StepDef[] = [
   {
@@ -22,7 +19,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     detail: "Otto R. Eggers's hall fills Vaux's central hall; first a floor of white marble and dark slate, laid from the centre.",
     motion: { kind: 'drop', distance: 2 },
     stagger: 'radial',
-    focus: HALL_VIEW,
     build: hallFloor,
   },
   {
@@ -33,7 +29,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     detail: 'Fourteen compound piers, the end ones against the end walls; the shafts toward the nave rise on to carry the vault.',
     motion: { kind: 'grow' },
     stagger: 'z',
-    focus: HALL_VIEW,
     build: hallPiers,
   },
   {
@@ -44,7 +39,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     detail: 'Pointed arches between the piers open the nave to its aisles, under the picture galleries of the second floor.',
     motion: { kind: 'grow' },
     stagger: 'z',
-    focus: HALL_VIEW,
     build: hallArcades,
   },
   {
@@ -55,8 +49,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     detail: 'Nave walls with round-headed clerestory windows, a white groin vault on transverse ribs, plaster end walls with balconies; the hall opens in January 1939.',
     motion: { kind: 'drop' },
     stagger: 'z',
-    weight: 1.2,
-    focus: HALL_VIEW,
     build: hallClerestoryVault,
   },
   {
@@ -67,8 +59,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     detail: 'The 1763 wrought-iron screen from Valladolid Cathedral, 15.85 m high and 12.80 m wide, gilded and painted, across the nave between its middle piers.',
     motion: { kind: 'drop', distance: 4 },
     stagger: 'y',
-    weight: 1.2,
-    focus: HALL_VIEW,
     build: choirScreen,
   },
 ];
@@ -82,7 +72,6 @@ export const europeanPaintingsGlazing2023Steps: readonly StepDef[] = [
     detail: 'New laminated glass in every gallery skylight and laylight over the old core, about 30,000 sq ft, replaced from 2018 and finished in 2023.',
     motion: { kind: 'slide', from: [0, 3, 0] },
     stagger: 'z',
-    weight: 1.2,
     build: (kit) => {
       for (const block of ['a', 'b', 'c'] as const) skylightAndLaylightGlass(kit, block);
     },

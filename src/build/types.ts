@@ -34,19 +34,6 @@ export type Motion =
 export type Stagger = 'order' | 'x' | '-x' | 'z' | '-z' | 'y' | 'radial' | 'none';
 
 /**
- * What the follow camera frames while a step plays. Default `{ kind: 'pieces' }`.
- * - `pieces`: the world bounds of this step's pieces, seen from the current viewing direction.
- * - `box`: this world box, seen from the current viewing direction.
- * - `view`: this exact camera position and orbit target.
- * - `preset`: a view preset from `src/viewer/presets.ts`, by id.
- */
-export type CameraFocus =
-  | { readonly kind: 'pieces' }
-  | { readonly kind: 'box'; readonly min: Vec3; readonly max: Vec3 }
-  | { readonly kind: 'view'; readonly position: Vec3; readonly target: Vec3 }
-  | { readonly kind: 'preset'; readonly id: string };
-
-/**
  * What a tagged piece is part of, for the page to find it by (docs/design/spec.md, Build-step API: Piece tags): a door or an artwork, and its id,
  * stable and unique within its kind (a door's own id; an artwork's Met object ID).
  */
@@ -77,20 +64,16 @@ export interface StepDef {
   readonly id: string;
   /** From `src/build/chapters.ts`. */
   readonly chapter: ChapterId;
-  /** At most 48 characters, shown in the timeline. */
+  /** What the step builds, at most 48 characters. */
   readonly title: string;
-  /** At most 200 characters, shown under the title. */
+  /** More on what it builds, at most 200 characters. */
   readonly detail?: string;
-  /** Overrides the chapter's years in the label, e.g. '1975'. */
+  /** When it was built, inside its chapter's years, e.g. '1975'. */
   readonly year?: string;
   /** How this step's pieces arrive. */
   readonly motion: Motion;
   /** The order pieces arrive in within the step; default 'order'. */
   readonly stagger?: Stagger;
-  /** Playback duration multiplier; default 1; must be a finite number above 0. */
-  readonly weight?: number;
-  /** What the follow camera frames during this step; default `{ kind: 'pieces' }`. */
-  readonly focus?: CameraFocus;
   /** Adds this step's pieces. Called once, when the timeline is built. */
   build(kit: Kit): void;
 }
@@ -99,10 +82,10 @@ export interface StepDef {
 export interface Chapter {
   /** Unique, stable, kebab-case. */
   readonly id: string;
-  /** Shown in the label and the Build menu. */
+  /** The era's name. */
   readonly title: string;
-  /** Shown in the label unless a step sets `year`, e.g. '1874–1880'. */
+  /** The years it spans, e.g. '1874–1880'; a step's `year` lies inside them. */
   readonly years: string;
-  /** One sentence on what the chapter builds, shown with it in the Build menu. */
+  /** One sentence on what the chapter builds. */
   readonly summary: string;
 }
