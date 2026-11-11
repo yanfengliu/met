@@ -6,12 +6,14 @@
  * run that keeps the committed catalogue (`--fit-out`), which writes every placeholder's line again byte for byte and asks the network for the
  * fit-out records alone, keeps no placeholder that today's picks would not give (another object or order, or a kind, a display, a dimension or a
  * gallery its pick now chooses otherwise: review 0, F3), and, blocked, says to retry with the fit-out command through the real fetcher, built for
- * the mode the script's arguments give (review 0, F2); and the committed catalogue itself, which is in the form the script writes.
+ * the mode the script's arguments give (review 0, F2), or, where it had already found its kept placeholders stale, shows that difference and names
+ * the whole run, the one that can succeed (review 1, F11); and the committed catalogue itself, which is in the form the script writes.
  * Red (2026-11-11, each mutation made and undone): with a fit-out piece sized as a block is, its missing axes estimated by the kind's ratios (the
  * choir screen without its pick's depth is accepted); with the run fetching a fit-out record's image (the request is seen); with a kept run that
  * rebuilds its placeholders (81 requests where one is due); with the fetcher naming the whole run whatever its run's kind, as it did, and with the
- * fit-out mode given the whole run's command (the blocked fit-out run's message is not the one written out here); and with the kept run not
- * comparing its entries with their picks' choices (a kind set since is kept and written).
+ * fit-out mode given the whole run's command (the blocked fit-out run's message is not the one written out here); with the kept run not
+ * comparing its entries with their picks' choices (a kind set since is kept and written); and with a block thrown on as the fetcher threw it,
+ * whatever the run had found (the stale kept run's block then names the fit-out command and shows no difference).
  * Bound: no network and no browser; scripts/met-catalogue.test.ts holds the placeholders' rules, the fetcher and the all-or-nothing write. The
  * script's own `main` is not run here: that it hands its mode's `rerun` to its fetcher is one typed line, read, not tested. A kept run compares
  * what the picks alone decide; a rule changed since the entries were built (a kind by name, an estimate) only a whole run derives again.
@@ -286,6 +288,29 @@ describe('the run with fit-out pieces', () => {
     expect((stopped as Error).message).toContain('Retry after 2026-11-11T15:10:00.000Z with npm run met-catalogue; the cache lets the rerun start where this one stopped.');
     expect((stopped as Error).message).not.toContain('--fit-out');
     expect(all.writes).toEqual([]);
+  });
+
+  it('blocked after finding its kept placeholders stale, shows the difference and names the whole run, which can succeed; another problem is shown with the run’s own command', async () => {
+    const { kept } = await committed();
+    // The kept catalogue differs from its picks (object 1247000's pick now sets a kind) and the fit-out record's request is refused: the fit-out run,
+    // retried, could only refuse (review 1, F11).
+    const differing = withFitOut.map((s, k): SpacePicks => (k === 1 ? { ...s, picks: [{ id: 1_247_000, kind: { value: 'slab', reason: 'chosen in the test' } }, ...s.picks.slice(1)] } : s));
+    const first = refused(['--fit-out'], 403);
+    const stale = recorder(differing, (url) => first.fetcher.get(url));
+    const error = await runCatalogue({ ...stale.run, kept }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(BlockedError);
+    expect((error as Error).message).toBe(
+      `The Met's servers refused request 1 of this run with HTTP 403 at 2026-11-11T15:00:00.000Z (${rules.API_OBJECTS}9000001): blocked by its CDN, Imperva. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after 2026-11-11T15:10:00.000Z with npm run met-catalogue, the whole run, and not with --fit-out again: before the block the run had found that the placeholders that flag keeps are not what the picks give, so a run with it can only refuse. The cache keeps what this run fetched. What the run had found, 1 problem(s):\n- the catalogue's placeholders are not what their picks give (s1:1247000: its kind is "figure", and its pick now sets "slab"); a run with --fit-out keeps them as they are, so rebuild the whole catalogue: npm run met-catalogue.`,
+    );
+    expect((error as Error).message, 'the fit-out run is not named as the one to retry').not.toContain('with npm run met-catalogue -- --fit-out');
+    expect([stale.asked, stale.writes, first.fetcher.requests]).toEqual([[`${rules.API_OBJECTS}9000001`], [], 1]);
+    // Another problem found before the block, an object picked as a fit-out piece of two spaces, is shown as well, with the run's own command: once
+    // the picks are mended the same run can succeed.
+    const twice = withFitOut.map((s, k): SpacePicks => (k === 1 ? { ...s, fitOut: [{ id: 9_000_001, size: { w: 1, d: 0.6, reason: 'as built in the test' } }] } : s));
+    const second = refused(['--fit-out'], 403);
+    const again = await runCatalogue({ ...recorder(twice, (url) => second.fetcher.get(url)).run, kept }).catch((e: unknown) => e);
+    expect(again).toBeInstanceOf(BlockedError);
+    expect((again as Error).message).toContain('Retry after 2026-11-11T15:10:00.000Z with npm run met-catalogue -- --fit-out; the cache lets the rerun start where this one stopped. Before the block the run had found what the rerun will stop on until it is dealt with, 1 problem(s):\n- object 9000001 is picked in s0 and s1; pick it once.');
   });
 
   it('reads the script’s arguments: none for every entry, --fit-out for the fit-out records alone, anything else refused by name', () => {

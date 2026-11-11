@@ -271,8 +271,15 @@ function staleBy(entry: PlaceholderEntry, pick: Pick, space: SpacePicks): string
 /**
  * The committed catalogue's placeholder entries, for a run that keeps them, and what is wrong if a whole run would not write them from today's
  * picks: they are not the picks' own in the picks' order, or one of them is not what its pick's overrides give (work unit 29, review 0, F3).
+ * `stale` says it found such a difference, which only a whole run mends.
  */
-function keptPlaceholders(run: Run, problems: string[]): PlaceholderEntry[] {
+function keptPlaceholders(run: Run, problems: string[]): { readonly kept: PlaceholderEntry[]; readonly stale: boolean } {
+  const found = problems.length;
+  const kept = keptEntries(run, problems);
+  return { kept, stale: problems.length > found };
+}
+
+function keptEntries(run: Run, problems: string[]): PlaceholderEntry[] {
   const kept = (run.kept?.entries ?? []).filter((e): e is PlaceholderEntry => e.display !== 'fit-out');
   const picked = run.spaces.flatMap((space) => space.picks.map((pick) => ({ space, pick })));
   const want = picked.map(({ space, pick }) => keyOf(space.id, pick.id));
@@ -296,21 +303,36 @@ function keptPlaceholders(run: Run, problems: string[]): PlaceholderEntry[] {
 }
 
 /**
+ * A block met when the run had already found `problems` (work unit 29, review 1, F11): the block with those problems listed, since a rerun stops on
+ * them too, and with the command that can succeed. A run with --fit-out whose kept placeholders are not what the picks give (`stale`) can only
+ * refuse again, so its block names the whole run in place of its own command. With no problem found, the block as the fetcher threw it.
+ */
+function blockedWith(block: BlockedError, problems: readonly string[], stale: boolean): BlockedError {
+  if (problems.length === 0) return block;
+  const { refused, retry } = block;
+  const list = `${String(problems.length)} problem(s):\n${problems.map((p) => `- ${p}`).join('\n')}`;
+  if (!stale || refused === undefined || retry === undefined) return new BlockedError(`${block.message} Before the block the run had found what the rerun will stop on until it is dealt with, ${list}`, refused, retry);
+  const whole = `${refused} Retry after ${retry} with ${WHOLE_RUN}, the whole run, and not with ${FIT_OUT_FLAG} again: before the block the run had found that the placeholders that flag keeps are not what the picks give, so a run with it can only refuse. The cache keeps what this run fetched.`;
+  return new BlockedError(`${whole} What the run had found, ${list}`, refused, retry);
+}
+
+/**
  * Fetches and builds every entry, the placeholders' and then the fit-out pieces', writes the file once and returns 0; with any problem (a pick, a
  * malformed record, a gallery mismatch, a missing height) it lists them all, writes nothing and returns 1. A block (BlockedError) is thrown at once,
- * before any write. With `run.kept` it builds the fit-out records alone and writes the kept placeholders' entries again as they are.
+ * before any write, with the problems found before it and the command that can succeed (`blockedWith`). With `run.kept` it builds the fit-out
+ * records alone and writes the kept placeholders' entries again as they are.
  */
 export async function runCatalogue(run: Run): Promise<number> {
   const { rules } = run;
   const problems = pickProblems(run.spaces);
-  const placeholders: PlaceholderEntry[] = run.kept === undefined ? [] : keptPlaceholders(run, problems);
+  const { kept: placeholders, stale }: { readonly kept: PlaceholderEntry[]; readonly stale: boolean } = run.kept === undefined ? { kept: [], stale: false } : keptPlaceholders(run, problems);
   const fitOut: FitOutEntry[] = [];
   /** Runs one pick's fetch and build; a block stops the run, any other failure is listed with the rest. */
   const attempt = async (build: () => Promise<void>): Promise<void> => {
     try {
       await build();
     } catch (error) {
-      if (error instanceof BlockedError) throw error;
+      if (error instanceof BlockedError) throw blockedWith(error, problems, stale);
       problems.push(error instanceof Error ? error.message : String(error));
     }
   };
