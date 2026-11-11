@@ -108,6 +108,18 @@
     {
       "id": 26,
       "theme": "remove-build-replay"
+    },
+    {
+      "id": 27,
+      "theme": "improvement-list"
+    },
+    {
+      "id": 28,
+      "theme": "interior-lighting"
+    },
+    {
+      "id": 29,
+      "theme": "artwork-cards-and-forms"
     }
   ]
 }

@@ -1,0 +1,102 @@
+# Work through the improvement list of 2026-11-11
+
+Status: active
+Owner: claude/worktree-improvement-list (coordinator)
+Created: 2026-11-11
+Updated: 2026-11-11
+
+## Problem and outcome
+
+On 2026-11-11 the owner asked for the most worthwhile improvements to the project, from the sides of aesthetics, user experience, visual quality and completeness, and then said: "Keep track of this list and work on all of them." and "Coordinate with the other session that is removing the animation of the building process. Do not step on each other."
+
+This plan is that list and its one status record. The outcome: every item below is on origin's main, dropped with its reason, or waiting on a decision named here.
+
+The list came from main's 64 standard shots at `75abdd3` read at native size, the live page at `2bfa83f` (both menus, a mid-step frame at t = 31.55 and 42.5, clicks on four objects), the viewer's lighting and material code, and a sweep of work units 0 to 25 for what their records leave open.
+
+## Scope
+
+The items, in the order of their worth as judged on 2026-11-11. Each one's status is under Implementation steps.
+
+1. **Interior lighting.** Once a roof closes, a room is lit by a flat fill alone: no ambient occlusion, one sun with one 4096 shadow map over the whole site, three point lights. Sun patches under skylight grids are grainy, and a sliver of light runs down the Grand Staircase's side wall in two standard shots. Unit 28.
+2. **First impression.** The page opens on a distant aerial view with no name and no sentence saying what it is; on a 390 px phone the model fills about a fifth of the screen's height.
+3. **Wayfinding.** The View menu is 27 lines of text, nine of them "Photo: ..." cameras that exist for checking against photographs; walking starts from three places; no room is named on the floor plans or while walking; there is no map. The Astor Court and the roof garden are built but have no preset and no walking start.
+4. **Surface detail.** Every material is one flat colour; at walking distance Weston's door is a brown rectangle.
+5. **Artworks.** The landmarks (Diana, the Temple of Dendur, the choir screen) have no card, because they are fit-out and not catalogue pieces; all standing sculptures share one turned form; paintings are 8×8 colour grids. Unit 29.
+6. **Touch and weaker devices.** Walking reads the keyboard alone, so a phone can look but not move (also open since work unit 2's "For the owner"); every frame time on record is from the RTX 4090; the page is a dark blank until it is ready.
+7. **The build replay as a story.** Dropped on 2026-11-11: work unit 26 removes the build replay and its animation.
+8. **Surroundings and sky.** The world ends at the site's edge (415 × 320 m); nothing stands across Fifth Avenue; the roof garden has no skyline; the sun is fixed at azimuth 140°, elevation 46°.
+9. **Shell galleries.** Outside the dozen fitted spaces the floors are bare plates with partitions (the Egyptian, Asian, Islamic, Rockefeller, Wallace and American Wing period-room galleries). The non-goal stands: no gallery-by-gallery interior. The item is one generic kit applied by rule.
+10. **Project presentation.** The README has no picture; the page has no description, preview image or icon.
+11. **Fidelity leftovers the records hold.** See "Leftovers" below.
+
+Excluded: the stated non-goals (AGENTS.md): no imported meshes, scans or photo textures, no runtime network assets, no gallery-by-gallery interior.
+
+### The line with work unit 26
+
+Another session removes the build replay in the worktree `remove-build-replay` (work unit 26). Seen there on 2026-11-11, uncommitted on `2bfa83f`: changes to `src/ui/*`, `src/main.ts`, `src/viewer/facts.ts` and `src/viewer/query.ts`, and `src/build/player.ts`, `src/ui/timeline-bar.ts` and `src/ui/label.ts` deleted.
+
+Until unit 26 is on origin's main, this plan's work stays out of `src/ui/**`, `src/main.ts`, `src/build/**`, `src/viewer/facts.ts`, `src/viewer/query.ts`, the e2e specs for the replay, controls, menus and layout, and the replay parts of `docs/design/spec.md`, `README.md` and `AGENTS.md`. So no unit here adds a URL parameter or a `window.__met` fact before then. Items 2, 3 and 6 and the page part of item 10 wait for it.
+
+A message with this split and three questions (its other files, whether the build-step API and the `?shot=1` contract stay, when it lands) was queued to that session on 2026-11-11. No answer yet.
+
+Shared: `tmp/gate.sh` for verify, e2e, shots and sweeps; `tmp/land.sh` for the landing slot; one `MET_PORT` per worktree (5340 the coordinator, 5341 lighting, 5342 artworks).
+
+### Limits the sweep found that bear on the items
+
+- The core area is at its mesh cap, 130 of 130 (`src/model/core/core.test.ts`), so anything added in the 1880 to 1894 core reuses a mesh or the cap is raised by the owner.
+- The model is at 744 of 900 meshes and 1.61M of 3M triangles.
+- Three of the eight step lights are used.
+- The walking frame budgets pass on a quiet machine and have failed on a loaded one (16.78 ms in work unit 25, 19.5 and 17.7 ms in work unit 23), so item 1's cost must be measured, not assumed.
+
+### Leftovers (item 11)
+
+Put to the owner and not answered:
+- Work unit 16, F-owner-1 to 4: the choir screen stands at `SCREEN_Z` −99.4 where the floor map and both photographs put it at about −106.12; the preset `int-medieval-hall-east` cannot reproduce photograph P8; the hall's end doorways are 4.4 m wide where the map draws 2.28 m; the end windows' splayed plaster surround is not built.
+- Work unit 23, review 0, F5: the cross hall is 0.8 m shallower than the map's room.
+- Work unit 20, F1: while an e2e run lasts, any local process can find the browser server's endpoint.
+- Work unit 14's limit: with the pointer locked, no on-screen control answers the mouse.
+
+Recorded and not changed:
+- The Petrie Court's east wall is plain where photographs #33 and #46 show three windows behind a balcony, and its south wall has no door frames, cornice between storeys, pilaster capitals or colonnade entablature (work units 24 and 25).
+- Weston's end blocks: heights are estimates, the ground storey's small windows are not modelled (work unit 21).
+- The Hunt wing's back is open between the core's east wall (18.0 m) and its roofs (20.1 m) (work unit 23, review 1, F13).
+- The 1880 fronts: the stair tower and the north arcade's wider windows are not modelled; the impost band and string course lie in one plane with the pilaster strips and can flicker (work unit 15).
+- Gallery 600: the doorway's mouldings, the blind arches and the blue walls are not modelled, and the room is lower than the real one.
+- The Vélez Blanco patio is a void.
+- The Greek and Roman court's columns are fluted where the research reads photograph P6's as smooth (an inference; to be checked against the photograph).
+- The Astor Court's photographs (#31, #32) are not viewed.
+
+## Approach
+
+The coordinator plans, briefs, accepts and lands. Each item is built by a worker in its own worktree, lands on its own, and gets an independent review where it is substantial (`../fleet/docs/skills/multi-cli-review.md`). A unit that gets a review has its own work folder; a small one is recorded here.
+
+Order: lighting first, since it sets the tones that surface detail is then tuned on. Artworks run beside it, since their files are apart. Surface detail and surroundings follow lighting (they share the look, and `src/viewer/environment.ts`). The page items follow unit 26.
+
+Decisions the owner made on 2026-11-11, each from a question with its options laid out:
+- Item 5: paintings are sampled at 16×16, up from 8×8. They stay colour data, not a photo texture.
+- Item 8: the surroundings are environment, drawn like the sky and the workspace ground: outside the model, its budgets, the section cut and the floor views.
+- Item 10: one small render may be committed for the README and the link preview (a JPEG under 300 KiB, retaken by hand when the look changes). The invariant in AGENTS.md that keeps renders out of git gets this one exception when the item lands.
+- Item 11: all four groups of leftovers are to be done: the Medieval hall (work unit 16's four findings), the Petrie Court's walls, gallery 600 and the Vélez Blanco patio, and the smaller ones (the Hunt wing's open back, Weston's end blocks' windows, the 1880 fronts' stair tower and flicker, the Greek court's columns checked against their photograph).
+
+## Acceptance criteria
+
+- [ ] Each item that lands: its criteria met as its own plan or this one states them, `npm run verify` green on the merged tree, its renders read at native size, the gallery republished where a render changed, a devlog line.
+- [ ] Every item is on origin's main, dropped with its reason, or blocked on a decision named above.
+
+## Implementation steps
+
+- [ ] 1. Interior lighting: unit 28, worker "lighting" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5341.
+- [ ] 2. First impression: waits for unit 26.
+- [ ] 3. Wayfinding: waits for unit 26.
+- [ ] 4. Surface detail: after item 1.
+- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing B (more forms) and landing C (paintings at 16×16) follow.
+- [ ] 6. Touch and weaker devices: waits for unit 26. A run on a phone or a weaker GPU cannot be made from this machine.
+- [x] 7. The build replay as a story: dropped, see Scope.
+- [ ] 8. Surroundings and sky: after item 1, as environment.
+- [ ] 9. Shell galleries: after item 4.
+- [ ] 10. Project presentation: the page part and AGENTS.md's exception wait for unit 26.
+- [ ] 11. Fidelity leftovers, all four groups: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh cap (130 of 130) bounds the Medieval hall and gallery 600.
+
+## Outcome
+
+Pending.
