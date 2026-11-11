@@ -165,13 +165,13 @@ export function addBankFacade(kit: Kit): void {
   const frame = BANK_FRAME;
   const [lowMetal = [], lowGlass = []] = lowWindows();
   const [highMetal = [], highGlass = []] = highWindows();
-  kit.add(merge('rn-bank-ground', groundStone), areaMaterials.bankMarble, frame.clone(), 0);
-  kit.add(merge('rn-bank-low-metal', () => lowMetal), areaMaterials.whiteSteel, frame.clone(), 0);
-  kit.add(merge('rn-bank-low-glass', () => lowGlass), palette.glassDark, frame.clone(), 0);
+  kit.add(merge('rn-bank-ground', groundStone), areaMaterials.bankMarble, frame.clone());
+  kit.add(merge('rn-bank-low-metal', () => lowMetal), areaMaterials.whiteSteel, frame.clone());
+  kit.add(merge('rn-bank-low-glass', () => lowGlass), palette.glassDark, frame.clone());
   // The bank's door is locked (src/model/doors.ts): its leaves stay shut, and solid.
-  kit.addTagged(DOOR_UNIT().leaf, palette.wood, frame.clone().multiply(at(0, DOOR.sill, -0.35)), doorTag('bank'), 0);
-  kit.add(merge('rn-bank-upper', upperStone), areaMaterials.bankMarble, frame.clone(), 1);
-  kit.add(merge('rn-bank-high-metal', () => highMetal), areaMaterials.whiteSteel, frame.clone(), 1);
-  kit.add(merge('rn-bank-high-glass', () => highGlass), palette.glassDark, frame.clone(), 1);
-  kit.add(merge('rn-bank-crown', crownStone), areaMaterials.bankMarble, frame.clone(), 2);
+  kit.addTagged(DOOR_UNIT().leaf, palette.wood, frame.clone().multiply(at(0, DOOR.sill, -0.35)), doorTag('bank'));
+  kit.add(merge('rn-bank-upper', upperStone), areaMaterials.bankMarble, frame.clone());
+  kit.add(merge('rn-bank-high-metal', () => highMetal), areaMaterials.whiteSteel, frame.clone());
+  kit.add(merge('rn-bank-high-glass', () => highGlass), palette.glassDark, frame.clone());
+  kit.add(merge('rn-bank-crown', crownStone), areaMaterials.bankMarble, frame.clone());
 }

@@ -80,7 +80,7 @@ describe('sequence integrity', () => {
   });
 
   it('the export check reports an exported array the sequence leaves out', () => {
-    const stray: StepDef = { id: 'stray', chapter: SITE_CHAPTER, title: 'stray', motion: { kind: 'pop' }, build: () => undefined };
+    const stray: StepDef = { id: 'stray', chapter: SITE_CHAPTER, title: 'stray', build: () => undefined };
     expect(uncomposed({ site: { strays: [stray], other: 3 } }, SEQUENCE)).toEqual(['src/model/site/index.ts exports strays, whose 1 step(s) COMPOSITION does not compose (first: stray)']);
   });
 
@@ -90,21 +90,9 @@ describe('sequence integrity', () => {
   });
 
   it('the composition check reports a step composed into the wrong chapter', () => {
-    const stray: StepDef = { id: 'stray', chapter: SITE_CHAPTER, title: 'stray', motion: { kind: 'pop' }, build: () => undefined };
+    const stray: StepDef = { id: 'stray', chapter: SITE_CHAPTER, title: 'stray', build: () => undefined };
     const other = CHAPTERS.find((c) => c.id !== SITE_CHAPTER)?.id ?? 'other';
     expect(compositionMismatches({ [SITE_CHAPTER]: [[stray]], [other]: [[], [stray]] })).toEqual([`step "stray" names chapter "${SITE_CHAPTER}" but is composed into "${other}"`]);
-  });
-
-  it('gives every step a valid motion', () => {
-    const problems: string[] = [];
-    for (const step of SEQUENCE) {
-      const motion = step.motion;
-      if ((motion.kind === 'rise' || motion.kind === 'drop') && motion.distance !== undefined && !(Number.isFinite(motion.distance) && motion.distance > 0)) {
-        problems.push(`${step.id}: ${motion.kind} distance ${String(motion.distance)} is not a finite number above 0`);
-      }
-      if (motion.kind === 'slide' && !finite(motion.from)) problems.push(`${step.id}: slide.from is not finite`);
-    }
-    expect(problems).toEqual([]);
   });
 
   it('builds solo selections that keep only that chapter and the site', () => {

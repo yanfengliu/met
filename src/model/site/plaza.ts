@@ -74,8 +74,6 @@ export const pavingStep: StepDef = {
   year: '2014',
   title: 'Lay the plaza’s granite paving',
   detail: 'Grey granite replaces the 1970 plaza from the facades to the curb along the whole thousand-foot front, 80th to 84th Street.',
-  motion: { kind: 'rise', distance: 0.3 },
-  stagger: 'radial',
   build(kit) {
     for (const cell of CELLS) {
       if (cell.zone !== 'walkWest' || cell.cut !== null) continue;
@@ -101,13 +99,12 @@ export const fountainsStep: StepDef = {
   year: '2014',
   title: 'Set the two granite fountains',
   detail: 'Two squares of dark granite, 13.8 m across, flank the steps; each holds a round basin over a shallow stone dome, ringed by 48 nozzles.',
-  motion: { kind: 'rise', distance: 1 },
   build(kit) {
     const f = fountainParts();
-    FOUNTAINS.forEach((b, k) => {
+    FOUNTAINS.forEach((b) => {
       const m = frameOf(b);
-      kit.add(f.stone, siteMaterials.darkGranite, m, k);
-      kit.add(f.nozzles, siteMaterials.darkGranite, m, k);
+      kit.add(f.stone, siteMaterials.darkGranite, m);
+      kit.add(f.nozzles, siteMaterials.darkGranite, m);
     });
   },
 };
@@ -118,13 +115,12 @@ export const fountainWaterStep: StepDef = {
   year: '2014',
   title: 'Turn on the fountains',
   detail: 'Water fills each basin in a thin sheet over the dome while 48 jets arc in from the rim; heated, they run all year.',
-  motion: { kind: 'grow' },
   build(kit) {
     const f = fountainParts();
-    FOUNTAINS.forEach((b, k) => {
+    FOUNTAINS.forEach((b) => {
       const m = frameOf(b);
-      kit.add(f.water, siteMaterials.water, m, k);
-      kit.add(f.jets, siteMaterials.jet, m, k);
+      kit.add(f.water, siteMaterials.water, m);
+      kit.add(f.jets, siteMaterials.jet, m);
     });
   },
 };
@@ -135,14 +131,14 @@ const BORDER = 0.6;
 const BORDER_HEIGHT = 0.12;
 
 /** A raised rectangle of `fill` over b inside a granite border `width` wide, its top `height` above the paving, tilted with it. */
-function bed(kit: Kit, b: Box2, fill: Material, width: number, height: number, order: number): void {
+function bed(kit: Kit, b: Box2, fill: Material, width: number, height: number): void {
   const frame = frameOf(b);
   const depth = height + 0.5;
   const sx = b.x1 - b.x0;
   const sz = b.z1 - b.z0;
   const y0 = height - depth;
   const put = (material: Material, m: Matrix4): void => {
-    kit.add(UNIT_BLOCK, material, frame.clone().multiply(m), order);
+    kit.add(UNIT_BLOCK, material, frame.clone().multiply(m));
   };
   put(siteMaterials.granite, blockMatrix(0, y0, -sz / 2 + width / 2, sx, depth, width));
   put(siteMaterials.granite, blockMatrix(0, y0, sz / 2 - width / 2, sx, depth, width));
@@ -178,18 +174,16 @@ export const grovesStep: StepDef = {
   year: '2014',
   title: 'Edge the groves and planting beds',
   detail: 'Four gravel groves with granite edges beside the fountains, and planted beds along the Hunt extensions and the links.',
-  motion: { kind: 'rise', distance: 0.6 },
-  stagger: 'x',
   build(kit) {
-    GROVES.forEach((b, k) => {
-      bed(kit, b, siteMaterials.gravel, BORDER, BORDER_HEIGHT, k);
+    GROVES.forEach((b) => {
+      bed(kit, b, siteMaterials.gravel, BORDER, BORDER_HEIGHT);
     });
-    FACADE_BEDS.forEach((b, k) => {
-      bed(kit, b, palette.grass, 0.3, 0.4, 10 + k);
+    FACADE_BEDS.forEach((b) => {
+      bed(kit, b, palette.grass, 0.3, 0.4);
       const cz = (b.z0 + b.z1) / 2;
       for (let x = b.x0 + 1.6; x < b.x1 - 1.4; x += 2.6) {
         if (Math.abs(Math.abs(x + 1.2) - MAGNOLIA_X) < 2.4) continue;
-        kit.add(SHRUB, siteMaterials.foliage, onPlaza(x + 1.2, cz, 0.35), 10 + k);
+        kit.add(SHRUB, siteMaterials.foliage, onPlaza(x + 1.2, cz, 0.35));
       }
     });
   },
@@ -218,8 +212,6 @@ export const furnitureStep: StepDef = {
   year: '2014',
   title: 'Bring in benches, parasols, tables and lights',
   detail: 'Red angular parasols shade granite benches before both end pavilions; 30 tables and 120 chairs fill the groves; slim poles light the plaza.',
-  motion: { kind: 'drop', distance: 1.2 },
-  stagger: 'x',
   build(kit) {
     for (const s of [-1, 1]) {
       for (const px of PARASOL_X) {
@@ -275,10 +267,10 @@ const MAGNOLIA_CROWN = clumps([
 ]);
 const MAGNOLIA_Z = 1.2;
 
-function planted(kit: Kit, shape: Tree, crown: Material, x: number, y: number, z: number, scale: number, yaw: number, order: number): void {
+function planted(kit: Kit, shape: Tree, crown: Material, x: number, y: number, z: number, scale: number, yaw: number): void {
   const m = new Matrix4().makeRotationY(yaw).scale(new Vector3(scale, scale, scale)).setPosition(x, y, z);
-  kit.add(shape.trunk, siteMaterials.bark, m, order);
-  kit.add(shape.foliage, crown, m, order);
+  kit.add(shape.trunk, siteMaterials.bark, m);
+  kit.add(shape.foliage, crown, m);
 }
 
 export const groveTreesStep: StepDef = {
@@ -287,24 +279,22 @@ export const groveTreesStep: StepDef = {
   year: '2014',
   title: 'Plant the groves',
   detail: 'Fifty-two London planes, thirteen to a grove on a grid turned 45° to the avenue, and a magnolia at each end of the steps.',
-  motion: { kind: 'grow' },
-  stagger: 'x',
   build(kit) {
     const random = seeded(106);
-    let order = 0;
+    // Each tree in turn takes the next of the grove shapes.
+    let tree = 0;
     for (const b of GROVES) {
       for (const [x, z] of groveTrees(b)) {
-        const shape = GROVE_TREES[order % GROVE_TREES.length] ?? GROVE_TREES[0];
-        if (shape !== undefined) planted(kit, shape, siteMaterials.foliage, x, plazaY(x, z) + BORDER_HEIGHT - 0.05, z, 0.9 + 0.2 * random(), random() * Math.PI * 2, order);
-        order += 1;
+        const shape = GROVE_TREES[tree % GROVE_TREES.length] ?? GROVE_TREES[0];
+        if (shape !== undefined) planted(kit, shape, siteMaterials.foliage, x, plazaY(x, z) + BORDER_HEIGHT - 0.05, z, 0.9 + 0.2 * random(), random() * Math.PI * 2);
+        tree += 1;
       }
     }
     for (const s of [-1, 1]) {
       const x = s * MAGNOLIA_X;
       const y = plazaY(x, MAGNOLIA_Z) + 0.35;
-      kit.add(UNIT_BLOCK, siteMaterials.bark, blockMatrix(x, y, MAGNOLIA_Z, 0.3, 1.6, 0.3), order);
-      kit.add(MAGNOLIA_CROWN, siteMaterials.foliageDark, new Matrix4().makeRotationY(s > 0 ? 0.4 : 2.1).scale(new Vector3(4.6, 9, 4.6)).setPosition(x, y + 0.9, MAGNOLIA_Z), order);
-      order += 1;
+      kit.add(UNIT_BLOCK, siteMaterials.bark, blockMatrix(x, y, MAGNOLIA_Z, 0.3, 1.6, 0.3));
+      kit.add(MAGNOLIA_CROWN, siteMaterials.foliageDark, new Matrix4().makeRotationY(s > 0 ? 0.4 : 2.1).scale(new Vector3(4.6, 9, 4.6)).setPosition(x, y + 0.9, MAGNOLIA_Z));
     }
   },
 };
@@ -330,14 +320,12 @@ export const alleesStep: StepDef = {
   year: '2014',
   title: 'Plant the linden allées',
   detail: 'Four rows of 13 lindens before the end pavilions, pruned into aerial hedges in line with the facade windows.',
-  motion: { kind: 'grow' },
-  stagger: 'x',
   build(kit) {
-    alleeTrees().forEach(([x, z], k) => {
+    alleeTrees().forEach(([x, z]) => {
       const y = plazaY(x, z);
-      kit.add(UNIT_BLOCK, siteMaterials.darkGranite, blockMatrix(x, y - 0.02, z, 1.6, 0.03, 1.6), k);
-      kit.add(UNIT_BLOCK, siteMaterials.bark, blockMatrix(x, y, z, 0.28, LINDEN_STEM + 0.4, 0.28), k);
-      kit.add(LINDEN_CROWN, siteMaterials.foliage, blockMatrix(x, y + LINDEN_STEM, z, 1, 1, 1), k);
+      kit.add(UNIT_BLOCK, siteMaterials.darkGranite, blockMatrix(x, y - 0.02, z, 1.6, 0.03, 1.6));
+      kit.add(UNIT_BLOCK, siteMaterials.bark, blockMatrix(x, y, z, 0.28, LINDEN_STEM + 0.4, 0.28));
+      kit.add(LINDEN_CROWN, siteMaterials.foliage, blockMatrix(x, y + LINDEN_STEM, z, 1, 1, 1));
     });
   },
 };

@@ -74,14 +74,14 @@ function skinOpenings(): Opening[] {
 /** The pavilion's front: skin (outer order, niches, rustication to the imposts) and body (inner order), both from the landing to the cornice top. */
 function pavilionFront(kit: Kit): void {
   const skin = wall({ width: 2 * SKIN_HALF, height: WALL_H, thickness: ARCH_SKIN, openings: skinOpenings(), rustication: { ...RUSTICATION, stop: ARCH_SPRING_Y - LANDING - 0.3 } });
-  kit.add(skin, palette.limestone, at(0, LANDING, WALL_Z), 1);
+  kit.add(skin, palette.limestone, at(0, LANDING, WALL_Z));
   const body = wall({
     width: 2 * PAVILION_HALF - 0.04,
     height: WALL_H,
     thickness: -WALL_BACK_Z - ARCH_SKIN,
     openings: BAY_X.map((x) => ({ shape: 'arch', x, y: 0, width: ARCH_INNER_SPAN, height: ARCH_SPRING_Y + ARCH_INNER_SPAN / 2 - LANDING })),
   });
-  kit.add(body, palette.limestone, at(0, LANDING, WALL_Z - ARCH_SKIN), 0);
+  kit.add(body, palette.limestone, at(0, LANDING, WALL_Z - ARCH_SKIN));
 }
 
 /** Rusticated end piers at the pavilion's corners: a front-banded and a side-banded block, each 1 cm inside the other's banded face. */
@@ -92,8 +92,8 @@ function endPiers(kit: Kit): void {
   const side = wall({ width: depth - 0.01, height, thickness: END_PIER_WIDTH - 0.01, rustication: RUSTICATION });
   for (const sign of [-1, 1]) {
     const cx = sign * (PAVILION_HALF - END_PIER_WIDTH / 2) - sign * 0.005;
-    kit.add(front, palette.limestone, at(cx, LANDING, END_PIER_FRONT_Z), 2);
-    kit.add(side, palette.limestone, at(sign * PAVILION_HALF, LANDING, (END_PIER_FRONT_Z + EXT_FACE_Z) / 2 - 0.005, (sign * Math.PI) / 2), 2);
+    kit.add(front, palette.limestone, at(cx, LANDING, END_PIER_FRONT_Z));
+    kit.add(side, palette.limestone, at(sign * PAVILION_HALF, LANDING, (END_PIER_FRONT_Z + EXT_FACE_Z) / 2 - 0.005, (sign * Math.PI) / 2));
   }
 }
 
@@ -103,7 +103,7 @@ export const EXT_WINDOW = { width: 2.3, sill: 5.4, height: 5.0, offset: 5.15, gr
 export const EXT_PANEL = { width: 2.6, sill: 13.9, height: 2.2, centreWidth: 3.6, centreSill: 13.4, centreHeight: 3.6 } as const;
 
 /** One extension front, X from x0 to x1: rusticated base with ground-floor windows, two tall windows, three recessed panels, up to the parapet. */
-function extensionFront(kit: Kit, x0: number, x1: number, order: number): void {
+function extensionFront(kit: Kit, x0: number, x1: number): void {
   const width = x1 - x0;
   const cx = (x0 + x1) / 2;
   const openings: Opening[] = [];
@@ -117,7 +117,7 @@ function extensionFront(kit: Kit, x0: number, x1: number, order: number): void {
   const depth = -FOUNDATION_TOP;
   const shifted = openings.map((o) => ({ ...o, y: (o.y ?? 0) + depth }));
   const front = wall({ width, height: EXT_PARAPET_Y + depth, thickness: EXT_WALL_T, openings: shifted, rustication: { ...RUSTICATION, start: depth + RUSTICATION.course, stop: depth + EXT_BASE_TOP_Y - 0.35 } });
-  kit.add(front, palette.limestone, at(cx, FOUNDATION_TOP, EXT_FACE_Z), order);
+  kit.add(front, palette.limestone, at(cx, FOUNDATION_TOP, EXT_FACE_Z));
 }
 
 /** The Great Hall's end walls (doors at both floors) and west wall (the stair's arched opening, doors), up to the eaves above the wings' roofs. */
@@ -143,11 +143,11 @@ function hallWalls(kit: Kit, floor: number, wingTop: number): void {
       endDoors(mid - 11.95, SECOND - floor, 1.8, 3.6),
     ],
   });
-  kit.add(end, palette.limestone, at(-HALL_X, floor, mid, Math.PI / 2), 5);
-  kit.add(end, palette.limestone, at(HALL_X, floor, mid, -Math.PI / 2), 5);
+  kit.add(end, palette.limestone, at(-HALL_X, floor, mid, Math.PI / 2));
+  kit.add(end, palette.limestone, at(HALL_X, floor, mid, -Math.PI / 2));
   // Over the wings' parapets the pavilion's sides close back from the front wall to the hall's end walls.
-  box(kit, palette.limestone, [-HALL_END_WALL_X, wingTop, WALL_BACK_Z], [-PAVILION_HALF, HALL_EAVES_Y, EXT_FACE_Z - 0.02], 5);
-  box(kit, palette.limestone, [PAVILION_HALF, wingTop, WALL_BACK_Z], [HALL_END_WALL_X, HALL_EAVES_Y, EXT_FACE_Z - 0.02], 5);
+  box(kit, palette.limestone, [-HALL_END_WALL_X, wingTop, WALL_BACK_Z], [-PAVILION_HALF, HALL_EAVES_Y, EXT_FACE_Z - 0.02]);
+  box(kit, palette.limestone, [PAVILION_HALF, wingTop, WALL_BACK_Z], [HALL_END_WALL_X, HALL_EAVES_Y, EXT_FACE_Z - 0.02]);
   // West wall: the Grand Staircase's opening to the eaves and doors to the galleries behind on both floors; over the opening the stair hall's
   // end wall rises above the eaves with the arch of its barrel vault.
   const west = wall({
@@ -162,16 +162,16 @@ function hallWalls(kit: Kit, floor: number, wingTop: number): void {
       { x: 16, y: SECOND - floor, width: 2.0, height: 3.8 },
     ],
   });
-  kit.add(west, palette.limestone, at(0, floor, HALL_WEST_Z), 6);
+  kit.add(west, palette.limestone, at(0, floor, HALL_WEST_Z));
   const gable = wall({
     width: 2 * STAIR_HALF + 2.9,
     height: STAIR_GABLE_TOP_Y - STAIR_VAULT_SPRING_Y,
     thickness: HALL_WEST_Z - HALL_WEST_WALL_Z,
     openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * STAIR_HALF, height: STAIR_HALF + 0.02 }],
   });
-  kit.add(gable, palette.limestone, at(0, STAIR_VAULT_SPRING_Y, HALL_WEST_Z), 6);
+  kit.add(gable, palette.limestone, at(0, STAIR_VAULT_SPRING_Y, HALL_WEST_Z));
   // The front wall's body rises behind the attic to the eaves, where the hall's roof sits.
-  box(kit, palette.limestone, [-PAVILION_HALF + 0.02, CORNICE_TOP_Y, WALL_BACK_Z], [PAVILION_HALF - 0.02, HALL_EAVES_Y, ATTIC_BACK_Z], 7);
+  box(kit, palette.limestone, [-PAVILION_HALF + 0.02, CORNICE_TOP_Y, WALL_BACK_Z], [PAVILION_HALF - 0.02, HALL_EAVES_Y, ATTIC_BACK_Z]);
 }
 
 const SEAM_WALL_T = 1.2;
@@ -180,7 +180,7 @@ const SEAM_WALL_T = 1.2;
  * A side wall on a McKim, Mead & White seam, from the core's east face (BACK_Z) to the extension's front, `floor` to `top`, with its main-floor passage (dims.ts SEAM_PASSAGE_*)
  * from the main floor to the underside of the second floor. `x` is its face toward the hall; `side` is +1 for the north wall (its body to +X), −1 for the south.
  */
-function seamWall(kit: Kit, x: number, side: 1 | -1, passage: { readonly z0: number; readonly z1: number }, floor: number, top: number, order: number): void {
+function seamWall(kit: Kit, x: number, side: 1 | -1, passage: { readonly z0: number; readonly z1: number }, floor: number, top: number): void {
   const z0 = BACK_Z;
   const z1 = EXT_FACE_Z - 0.02;
   const mid = (z0 + z1) / 2;
@@ -192,7 +192,7 @@ function seamWall(kit: Kit, x: number, side: 1 | -1, passage: { readonly z0: num
     thickness: SEAM_WALL_T,
     openings: [{ x: (along(passage.z0) + along(passage.z1)) / 2, y: MAIN - floor, width: passage.z1 - passage.z0, height: SECOND - SLAB - MAIN }],
   });
-  kit.add(geometry, palette.limestone, at(x, floor, mid, (-side * Math.PI) / 2), order);
+  kit.add(geometry, palette.limestone, at(x, floor, mid, (-side * Math.PI) / 2));
 }
 
 export const wallSteps: readonly StepDef[] = [
@@ -202,18 +202,16 @@ export const wallSteps: readonly StepDef[] = [
     year: '1899',
     title: 'Raise the limestone walls',
     detail: "Indiana limestone walls rise on the steel frame: the pavilion's thick front with its three arched openings and niches, its banded end piers, and the lower flanking wings.",
-    motion: { kind: 'grow' },
-    stagger: 'order',
     build(kit) {
       pavilionFront(kit);
       endPiers(kit);
-      extensionFront(kit, EXT_SOUTH_X, -PAVILION_HALF, 3);
-      extensionFront(kit, PAVILION_HALF, EXT_NORTH_X, 3);
+      extensionFront(kit, EXT_SOUTH_X, -PAVILION_HALF);
+      extensionFront(kit, PAVILION_HALF, EXT_NORTH_X);
       const top = EXT_PARAPET_Y;
       const floor = MAIN - SLAB;
       // Side walls on the McKim, Mead & White seams, each with the main floor's passage into the wing beyond, and the extensions' inner walls against the hall.
-      seamWall(kit, EXT_SOUTH_X + SEAM_WALL_T, -1, SEAM_PASSAGE_SOUTH, floor, top, 4);
-      seamWall(kit, EXT_NORTH_X - SEAM_WALL_T, 1, SEAM_PASSAGE_NORTH, floor, top, 4);
+      seamWall(kit, EXT_SOUTH_X + SEAM_WALL_T, -1, SEAM_PASSAGE_SOUTH, floor, top);
+      seamWall(kit, EXT_NORTH_X - SEAM_WALL_T, 1, SEAM_PASSAGE_NORTH, floor, top);
       hallWalls(kit, floor, top);
     },
   },

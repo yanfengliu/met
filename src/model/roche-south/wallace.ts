@@ -58,12 +58,11 @@ const X_IN_NORTH = -88.15 - OUTER_WALL;
 const Z_IN_WEST = -160.1 + OUTER_WALL;
 
 function structure(kit: Kit): void {
-  SEGMENTS.forEach((seg, k) => {
-    kit.add(UNIT_BOX, mat.concrete, segmentWall(seg, FOOTING_Y, BASE_Y, 2.0, OUTER_WALL), k);
+  SEGMENTS.forEach((seg) => {
+    kit.add(UNIT_BOX, mat.concrete, segmentWall(seg, FOOTING_Y, BASE_Y, 2.0, OUTER_WALL));
   });
-  const n = SEGMENTS.length;
-  kit.add(prism(WALLACE_INNER, [], BASE_Y, GROUND_FLOOR_Y), palette.stoneFloor, at(0, 0, 0), n);
-  kit.add(prism(WALLACE_INNER, [], MAIN_FLOOR_Y - SLAB, MAIN_FLOOR_Y), palette.stoneFloor, at(0, 0, 0), n + 1);
+  kit.add(prism(WALLACE_INNER, [], BASE_Y, GROUND_FLOOR_Y), palette.stoneFloor, at(0, 0, 0));
+  kit.add(prism(WALLACE_INNER, [], MAIN_FLOOR_Y - SLAB, MAIN_FLOOR_Y), palette.stoneFloor, at(0, 0, 0));
   // The mezzanine (map floor 1M): a strip behind the park face with two arms running east.
   const mezzanine: P2[] = [
     [-139.94, Z_IN_WEST],
@@ -75,7 +74,7 @@ function structure(kit: Kit): void {
     [-128.89, -134.42],
     [-139.94, -134.41],
   ];
-  kit.add(prism(mezzanine, [], WALLACE_MEZZANINE_Y - 0.5, WALLACE_MEZZANINE_Y), palette.wood, at(0, 0, 0), n + 2);
+  kit.add(prism(mezzanine, [], WALLACE_MEZZANINE_Y - 0.5, WALLACE_MEZZANINE_Y), palette.wood, at(0, 0, 0));
   // The second floor, open over the tall gallery behind the park face.
   const vista: P2[] = [
     [WEST_GLASS_X0, Z_IN_WEST + 0.05],
@@ -83,7 +82,7 @@ function structure(kit: Kit): void {
     [WEST_GLASS_X1, -148.03],
     [WEST_GLASS_X0, -148.03],
   ];
-  kit.add(prism(WALLACE_INNER, [vista], WALLACE_SECOND_Y - SLAB, WALLACE_SECOND_Y), palette.wood, at(0, 0, 0), n + 3);
+  kit.add(prism(WALLACE_INNER, [vista], WALLACE_SECOND_Y - SLAB, WALLACE_SECOND_Y), palette.wood, at(0, 0, 0));
 }
 
 /** The park face: one wall with the opening for the tall gallery's glass, its front to the park (−Z). */
@@ -100,36 +99,36 @@ const SOUTH_WINDOWS = [-152, -146, -140, -134, -128, -122, -116, -110].map((z) =
 const SOUTH_FACE = wall({ width: 160.1 - 104.7, height: PARAPET_Y - BASE_Y, thickness: OUTER_WALL, openings: SOUTH_WINDOWS });
 
 function facades(kit: Kit): void {
-  SEGMENTS.forEach((seg, k) => {
+  SEGMENTS.forEach((seg) => {
     if (isWestFace(seg)) {
-      kit.add(WEST_FACE, palette.limestone, libraryWallOn(seg.b, seg.a, BASE_Y), k);
-      kit.add(UNIT_BOX, palette.limestone, segmentCoping(seg, WALLACE_FACADE_TOP_Y, WALLACE_FACADE_TOP_Y + 0.3, OUTER_WALL, 0.15), k);
+      kit.add(WEST_FACE, palette.limestone, libraryWallOn(seg.b, seg.a, BASE_Y));
+      kit.add(UNIT_BOX, palette.limestone, segmentCoping(seg, WALLACE_FACADE_TOP_Y, WALLACE_FACADE_TOP_Y + 0.3, OUTER_WALL, 0.15));
       return;
     }
     if (isSouthFace(seg)) {
       // The library wall runs a→b with its front to the left; this face runs north to south with the park to its west.
-      kit.add(SOUTH_FACE, palette.limestone, libraryWallOn(seg.b, seg.a, BASE_Y), k);
-      kit.add(UNIT_BOX, palette.limestone, segmentCoping(seg, PARAPET_Y, PARAPET_Y + 0.3, OUTER_WALL, 0.15), k);
+      kit.add(SOUTH_FACE, palette.limestone, libraryWallOn(seg.b, seg.a, BASE_Y));
+      kit.add(UNIT_BOX, palette.limestone, segmentCoping(seg, PARAPET_Y, PARAPET_Y + 0.3, OUTER_WALL, 0.15));
       return;
     }
     const top = isTower(seg) ? TOWER_Y : PARAPET_Y;
-    kit.add(UNIT_BOX, palette.limestone, segmentWall(seg, BASE_Y, top, OUTER_WALL, OUTER_WALL), k);
-    kit.add(UNIT_BOX, palette.limestone, segmentCoping(seg, top, top + 0.3, OUTER_WALL, isTower(seg) || seg.a[0] < -141 ? 0.15 : 0), k);
+    kit.add(UNIT_BOX, palette.limestone, segmentWall(seg, BASE_Y, top, OUTER_WALL, OUTER_WALL));
+    kit.add(UNIT_BOX, palette.limestone, segmentCoping(seg, top, top + 0.3, OUTER_WALL, isTower(seg) || seg.a[0] < -141 ? 0.15 : 0));
   });
   // The tower's two inner sides above the roofs: on the wing's own side of the line X −141.2 and of the Rockefeller wall.
-  kit.add(UNIT_BOX, palette.limestone, wallAlong([-141.2, -104.7], [-141.2, -97.2], WALLACE_ROOF_Y, TOWER_Y + 0.3, 0.8), SEGMENTS.length);
-  kit.add(UNIT_BOX, palette.limestone, wallAlong([-141.2, -97.2], [-151.6, -97.2], PARAPET_Y, TOWER_Y + 0.3, 0.8), SEGMENTS.length);
+  kit.add(UNIT_BOX, palette.limestone, wallAlong([-141.2, -104.7], [-141.2, -97.2], WALLACE_ROOF_Y, TOWER_Y + 0.3, 0.8));
+  kit.add(UNIT_BOX, palette.limestone, wallAlong([-141.2, -97.2], [-151.6, -97.2], PARAPET_Y, TOWER_Y + 0.3, 0.8));
 }
 
 function galleries(kit: Kit): void {
   const box: readonly [number, number, number, number] = [-140.0, Z_IN_WEST, X_IN_NORTH, -96.0];
-  clipEdges(sharedEdges(WALLACE_MAIN_ROOMS), box).forEach((edge, k) => {
+  clipEdges(sharedEdges(WALLACE_MAIN_ROOMS), box).forEach((edge) => {
     const underMezzanine = Math.max(edge.a[1], edge.b[1]) < -147.5;
     const y1 = underMezzanine ? WALLACE_MEZZANINE_Y - 0.5 : WALLACE_SECOND_Y - SLAB;
-    for (const m of partitionBoxes(edge, { y0: MAIN_FLOOR_Y, y1, openingHeight: 3.4 })) kit.add(UNIT_BOX, palette.plaster, m, k);
+    for (const m of partitionBoxes(edge, { y0: MAIN_FLOOR_Y, y1, openingHeight: 3.4 })) kit.add(UNIT_BOX, palette.plaster, m);
   });
-  clipEdges(sharedEdges(WALLACE_UPPER_ROOMS), box).forEach((edge, k) => {
-    for (const m of partitionBoxes(edge, { y0: WALLACE_SECOND_Y, y1: WALLACE_ROOF_Y - SLAB, openingHeight: 3.6 })) kit.add(UNIT_BOX, palette.plaster, m, 100 + k);
+  clipEdges(sharedEdges(WALLACE_UPPER_ROOMS), box).forEach((edge) => {
+    for (const m of partitionBoxes(edge, { y0: WALLACE_SECOND_Y, y1: WALLACE_ROOF_Y - SLAB, openingHeight: 3.6 })) kit.add(UNIT_BOX, palette.plaster, m);
   });
 }
 
@@ -144,21 +143,21 @@ function roof(kit: Kit): void {
     [x1 - 0.2, z1 - 0.2],
     [x0 + 0.2, z1 - 0.2],
   ]);
-  kit.add(prism(roofOutline, holes, WALLACE_ROOF_Y - SLAB, WALLACE_ROOF_Y), mat.roof, at(0, 0, 0), 0);
+  kit.add(prism(roofOutline, holes, WALLACE_ROOF_Y - SLAB, WALLACE_ROOF_Y), mat.roof, at(0, 0, 0));
   // The Patrons Lounge (map floor 4) on the roof, under the roof garden.
   const lounge = wallSegments(ccw(GARDEN), 0.6);
-  lounge.forEach((seg, k) => {
-    kit.add(UNIT_BOX, palette.limestone, segmentWall(seg, WALLACE_ROOF_Y, ROOF_GARDEN_Y + 1.1, 0.6, 0.6), 1 + k);
+  lounge.forEach((seg) => {
+    kit.add(UNIT_BOX, palette.limestone, segmentWall(seg, WALLACE_ROOF_Y, ROOF_GARDEN_Y + 1.1, 0.6, 0.6));
   });
-  kit.add(prism(GARDEN, [], ROOF_GARDEN_Y - SLAB, ROOF_GARDEN_Y - 0.06), mat.roof, at(0, 0, 0), 20);
+  kit.add(prism(GARDEN, [], ROOF_GARDEN_Y - SLAB, ROOF_GARDEN_Y - 0.06), mat.roof, at(0, 0, 0));
   // The tower's roof.
-  kit.add(UNIT_BOX, palette.limestone, boxAt([-151.6 + OUTER_WALL, TOWER_Y - 0.5, -104.7 + OUTER_WALL], [-141.2, TOWER_Y, -97.2]), 21);
+  kit.add(UNIT_BOX, palette.limestone, boxAt([-151.6 + OUTER_WALL, TOWER_Y - 0.5, -104.7 + OUTER_WALL], [-141.2, TOWER_Y, -97.2]));
 }
 
 
 export const wallaceSteps: readonly StepDef[] = [
-  { id: 'wallace-structure', chapter: CHAPTER, year: YEAR, title: 'Wallace Wing floors', detail: 'Footings and floor plates for four floors in the south-west corner: ground, main, a mezzanine behind the park face, and second.', motion: { kind: 'rise' }, stagger: 'order', build: structure },
-  { id: 'wallace-facades', chapter: CHAPTER, year: YEAR, title: 'Limestone faces on the park', detail: 'The Wallace Wing closed in 2025 and is being replaced by the Tang Wing; it is shown as it stood from 1987, with a tall stone block at its south-east corner.', motion: { kind: 'grow' }, stagger: 'order', build: facades },
-  { id: 'wallace-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries for modern art', detail: 'Gallery walls on the main and second floors (map galleries 900 to 925), and the tall mezzanine gallery behind the glass to the park.', motion: { kind: 'grow' }, stagger: 'order', build: galleries },
-  { id: 'wallace-roof', chapter: CHAPTER, year: YEAR, title: 'Roofs and the Patrons Lounge', detail: 'A roof over the second floor with openings for skylights, and on it the lounge whose roof carries the roof garden.', motion: { kind: 'drop' }, stagger: 'order', build: roof },
+  { id: 'wallace-structure', chapter: CHAPTER, year: YEAR, title: 'Wallace Wing floors', detail: 'Footings and floor plates for four floors in the south-west corner: ground, main, a mezzanine behind the park face, and second.', build: structure },
+  { id: 'wallace-facades', chapter: CHAPTER, year: YEAR, title: 'Limestone faces on the park', detail: 'The Wallace Wing closed in 2025 and is being replaced by the Tang Wing; it is shown as it stood from 1987, with a tall stone block at its south-east corner.', build: facades },
+  { id: 'wallace-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries for modern art', detail: 'Gallery walls on the main and second floors (map galleries 900 to 925), and the tall mezzanine gallery behind the glass to the park.', build: galleries },
+  { id: 'wallace-roof', chapter: CHAPTER, year: YEAR, title: 'Roofs and the Patrons Lounge', detail: 'A roof over the second floor with openings for skylights, and on it the lounge whose roof carries the roof garden.', build: roof },
 ];

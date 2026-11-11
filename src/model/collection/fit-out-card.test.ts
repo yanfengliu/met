@@ -1,6 +1,6 @@
 /**
  * A clicked artwork's card against what the camera still draws of it, in the finished model (docs/design/spec.md, Collection: Labels and Fit-out
- * pieces; work unit 29, review 0, F1): the whole sequence's Timeline at t = N with the page's picker and label over it, wired as src/main.ts wires
+ * pieces; work unit 29, review 0, F1): the whole sequence's Timeline with the page's picker and label over it, wired as src/main.ts wires
  * them (`new ArtLabel(artworkPiecesIn(timeline.steps))`, and one cut that the picker and the label's view both read), clicked along the rays of
  * ./fit-out-testing.ts's orbit views.
  * - The Temple of Dendur and its gate are one artwork (The Met's 547802) built by two steps. The gate stands on the terrace, its lowest stones
@@ -10,7 +10,7 @@
  * - The gate clicked: the card stays at 5.5 m, where the gate is drawn, and goes with the cut under the gate.
  * - Whichever part was clicked, the card stays while the camera draws the other part alone. From the gate's side no cut makes that state: a cut
  *   draws what lies under it and the gate stands lower than the temple, so the gate is never cut away while the temple shows. The test takes the
- *   clicked part's meshes away as the build or a layer would (by their `visible`), then the other part's, and puts both back.
+ *   clicked part's meshes away as a layer would (by their `visible`), then the other part's, and puts both back.
  * - The class: of all the artworks in the sequence, the only one whose pieces sit in more than one step is the one ./fit-out.ts declares with two
  *   parts; the others' pieces sit in one step, most in several meshes of it. For every artwork the page's pieces are all the instances that carry
  *   its tag, in every step and mesh, and only those.
@@ -53,7 +53,6 @@ const view: DrawnView = { cut, layers: new Layers() };
 
 beforeAll(() => {
   timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), Math.min(0, timeline.bounds.min.y) - 0.5, cut, view.layers, (mesh, i) => timeline.tagOf(mesh, i));
 }, 120_000);
 

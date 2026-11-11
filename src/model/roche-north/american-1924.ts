@@ -127,8 +127,6 @@ export const americanWing1924: readonly StepDef[] = [
     year: '1922',
     title: 'Foundations of the 1924 American Wing',
     detail: "Grosvenor Atterbury's wing for American decorative arts rises north of the museum's rear wings, on a footing and a main-floor slab.",
-    motion: { kind: 'rise' },
-    stagger: 'x',
     build: foundations,
   },
   {
@@ -137,8 +135,6 @@ export const americanWing1924: readonly StepDef[] = [
     year: '1923',
     title: 'Walls of the period-room wing',
     detail: 'Three storeys of plain buff walls, windowed on the park and north sides, to light the period rooms within.',
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: walls,
   },
   {
@@ -147,8 +143,6 @@ export const americanWing1924: readonly StepDef[] = [
     year: '1924',
     title: 'Floors and period rooms',
     detail: 'Upper floors and the rooms of colonial and Federal America, three storeys of them, on the lines of the present galleries.',
-    motion: { kind: 'pop' },
-    stagger: 'y',
     build: rooms,
   },
   {
@@ -157,10 +151,6 @@ export const americanWing1924: readonly StepDef[] = [
     year: '1924',
     title: 'The Branch Bank facade, re-erected',
     detail: 'The marble front of the Branch Bank of the United States (Martin E. Thompson, 1822–24) moves from Wall Street to be the south face of the new wing.',
-    motion: { kind: 'rise', distance: 2 },
-    // Storey by storey (addBankFacade's orders 0, 1, 2), so each window's metal and glass and the door's leaf arrive together; under 'y' each merged
-    // piece keyed on its own centre and the glass came a rank after its frames.
-    stagger: 'order',
     build: addBankFacade,
   },
   {
@@ -169,8 +159,6 @@ export const americanWing1924: readonly StepDef[] = [
     year: '1924',
     title: 'Roof of the 1924 American Wing',
     detail: 'A flat roof behind a parapet closes the wing, which opened on 10 November 1924.',
-    motion: { kind: 'drop' },
-    stagger: 'none',
     build: roof,
   },
 ];

@@ -111,10 +111,10 @@ function intradosAt(dx: number): number {
 const SOFFIT_SET = 0.01;
 const SOFFIT_LENGTH = -SCREEN_Z - ARCH_SKIN - 0.05 - SOFFIT_SET;
 
-function arch(kit: Kit, x: number, order: number): void {
-  kit.add(archivolt({ span: ARCH_OUTER_SPAN, band: ARCHIVOLT_BAND, projection: 0.22 }), palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z), order);
+function arch(kit: Kit, x: number): void {
+  kit.add(archivolt({ span: ARCH_OUTER_SPAN, band: ARCHIVOLT_BAND, projection: 0.22 }), palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z));
   const soffit = barrelVault({ span: ARCH_INNER_SPAN - 0.16, length: SOFFIT_LENGTH, thickness: 0.14, coffers: { across: 11, along: 1, depth: 0.1, rib: 0.16 } });
-  kit.add(soffit, palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z - ARCH_SKIN - SOFFIT_SET - SOFFIT_LENGTH / 2), order);
+  kit.add(soffit, palette.limestone, at(x, ARCH_SPRING_Y, WALL_Z - ARCH_SKIN - SOFFIT_SET - SOFFIT_LENGTH / 2));
   const impost = moulding({
     profile: 'cornice-plain',
     path: [
@@ -128,73 +128,73 @@ function arch(kit: Kit, x: number, order: number): void {
   });
   for (const s of [-1, 1]) {
     const cx = x + s * (ARCH_OUTER_SPAN / 2 + IMPOST_W / 2);
-    box(kit, palette.limestone, [cx - IMPOST_W / 2, ARCH_SPRING_Y - IMPOST_H, WALL_Z], [cx + IMPOST_W / 2, ARCH_SPRING_Y - 0.42, WALL_Z + 0.32], order);
-    kit.add(impost, palette.limestone, at(cx, ARCH_SPRING_Y - 0.42, WALL_Z), order);
+    box(kit, palette.limestone, [cx - IMPOST_W / 2, ARCH_SPRING_Y - IMPOST_H, WALL_Z], [cx + IMPOST_W / 2, ARCH_SPRING_Y - 0.42, WALL_Z + 0.32]);
+    kit.add(impost, palette.limestone, at(cx, ARCH_SPRING_Y - 0.42, WALL_Z));
   }
 }
 
 /** The stonework of one screen; `doors` leaves the openings down to the floor, otherwise a base under windows. */
-function screen(kit: Kit, x: number, doors: boolean, order: number): void {
+function screen(kit: Kit, x: number, doors: boolean): void {
   const z0 = SCREEN_Z - SCREEN_D / 2;
   const z1 = SCREEN_Z + SCREEN_D / 2;
   for (const s of [-1, 1]) {
     const xa = x + s * HALF;
     const xb = x + s * (HALF - SCREEN_PILASTER);
-    box(kit, palette.limestone, [Math.min(xa, xb), MAIN, z0], [Math.max(xa, xb), SCREEN_HEAD_Y, z1], order);
+    box(kit, palette.limestone, [Math.min(xa, xb), MAIN, z0], [Math.max(xa, xb), SCREEN_HEAD_Y, z1]);
   }
   const ionic = columnParts({ order: 'ionic', diameter: SCREEN_COLUMN_D, height: SCREEN_HEAD_Y - MAIN, detail: 'low' });
   for (const s of [-1, 1]) {
     const m = at(x + s * SCREEN_COLUMN_X, MAIN, SCREEN_Z);
-    if (ionic.base !== undefined) kit.add(ionic.base, palette.limestone, m, order);
-    kit.add(ionic.shaft, palette.limestone, m, order);
-    kit.add(ionic.capital, palette.limestone, m, order);
+    if (ionic.base !== undefined) kit.add(ionic.base, palette.limestone, m);
+    kit.add(ionic.shaft, palette.limestone, m);
+    kit.add(ionic.capital, palette.limestone, m);
   }
-  if (!doors) for (const [a, b] of OPENINGS) box(kit, palette.limestone, [x + a, MAIN, z0], [x + b, WINDOW_SILL_Y, z1], order);
+  if (!doors) for (const [a, b] of OPENINGS) box(kit, palette.limestone, [x + a, MAIN, z0], [x + b, WINDOW_SILL_Y, z1]);
   if (doors) {
     // Down to the doors' back face, behind the screen: the pilasters' backs, a pier behind each column, and a lintel over the doors' heads.
     const back = ENTRANCE_DOOR_Z - DOOR_DEPTH;
     for (const s of [-1, 1]) {
       const xa = x + s * HALF;
       const xb = x + s * (HALF - SCREEN_PILASTER);
-      box(kit, palette.limestone, [Math.min(xa, xb), MAIN, back], [Math.max(xa, xb), SCREEN_HEAD_Y, z0], order);
+      box(kit, palette.limestone, [Math.min(xa, xb), MAIN, back], [Math.max(xa, xb), SCREEN_HEAD_Y, z0]);
       const pa = x + s * (SCREEN_COLUMN_X - SCREEN_COLUMN_D / 2);
       const pb = x + s * (SCREEN_COLUMN_X + SCREEN_COLUMN_D / 2);
-      box(kit, palette.limestone, [Math.min(pa, pb), MAIN, back], [Math.max(pa, pb), SCREEN_HEAD_Y, SCREEN_Z - SCREEN_COLUMN_D / 2], order);
+      box(kit, palette.limestone, [Math.min(pa, pb), MAIN, back], [Math.max(pa, pb), SCREEN_HEAD_Y, SCREEN_Z - SCREEN_COLUMN_D / 2]);
     }
-    box(kit, palette.limestone, [x - HALF, SCREEN_HEAD_Y, back], [x + HALF, SCREEN_HEAD_Y + 0.5, z0 - 0.05], order);
+    box(kit, palette.limestone, [x - HALF, SCREEN_HEAD_Y, back], [x + HALF, SCREEN_HEAD_Y + 0.5, z0 - 0.05]);
   }
   // Door entablature (architrave, Greek-key frieze, cornice), the banner panel, the transom.
-  box(kit, palette.limestone, [x - HALF, SCREEN_HEAD_Y, z0 - 0.05], [x + HALF, SCREEN_HEAD_Y + 0.5, z1 + 0.05], order);
-  box(kit, palette.limestoneDark, [x - HALF, SCREEN_HEAD_Y + 0.5, z0], [x + HALF, SCREEN_ENTABLATURE_TOP_Y - 0.45, z1 + 0.02], order);
-  box(kit, palette.limestone, [x - HALF, SCREEN_ENTABLATURE_TOP_Y - 0.45, z0 - 0.05], [x + HALF, SCREEN_ENTABLATURE_TOP_Y, z1 + 0.22], order);
-  box(kit, palette.limestone, [x - HALF, SCREEN_ENTABLATURE_TOP_Y, z0 - 0.1], [x + HALF, TRANSOM_BOTTOM_Y, z1 - 0.12], order);
-  box(kit, palette.limestone, [x - HALF, TRANSOM_BOTTOM_Y, z0 - 0.05], [x + HALF, TRANSOM_TOP_Y, z1 + 0.15], order);
+  box(kit, palette.limestone, [x - HALF, SCREEN_HEAD_Y, z0 - 0.05], [x + HALF, SCREEN_HEAD_Y + 0.5, z1 + 0.05]);
+  box(kit, palette.limestoneDark, [x - HALF, SCREEN_HEAD_Y + 0.5, z0], [x + HALF, SCREEN_ENTABLATURE_TOP_Y - 0.45, z1 + 0.02]);
+  box(kit, palette.limestone, [x - HALF, SCREEN_ENTABLATURE_TOP_Y - 0.45, z0 - 0.05], [x + HALF, SCREEN_ENTABLATURE_TOP_Y, z1 + 0.22]);
+  box(kit, palette.limestone, [x - HALF, SCREEN_ENTABLATURE_TOP_Y, z0 - 0.1], [x + HALF, TRANSOM_BOTTOM_Y, z1 - 0.12]);
+  box(kit, palette.limestone, [x - HALF, TRANSOM_BOTTOM_Y, z0 - 0.05], [x + HALF, TRANSOM_TOP_Y, z1 + 0.15]);
   // Lunette mullion posts, up to the intrados.
   for (const s of [-1, 1]) {
     const top = ARCH_SPRING_Y + intradosAt(MULLION.inner);
     const xa = x + s * MULLION.inner;
     const xb = x + s * MULLION.outer;
-    box(kit, palette.limestone, [Math.min(xa, xb), TRANSOM_TOP_Y, z0 + 0.1], [Math.max(xa, xb), top, z1 - 0.1], order);
+    box(kit, palette.limestone, [Math.min(xa, xb), TRANSOM_TOP_Y, z0 + 0.1], [Math.max(xa, xb), top, z1 - 0.1]);
   }
 }
 
 /** Railings on the landing in front of the side arches, between the pedestals (S7: a lattice of crossed bars). */
-function railing(kit: Kit, x0: number, x1: number, order: number): void {
+function railing(kit: Kit, x0: number, x1: number): void {
   const z = 3.2;
   const h = 1.1;
   const y0 = LANDING;
-  box(kit, palette.metalDark, [x0, y0 + h - 0.06, z - 0.04], [x1, y0 + h, z + 0.04], order);
-  box(kit, palette.metalDark, [x0, y0 + 0.08, z - 0.03], [x1, y0 + 0.13, z + 0.03], order);
+  box(kit, palette.metalDark, [x0, y0 + h - 0.06, z - 0.04], [x1, y0 + h, z + 0.04]);
+  box(kit, palette.metalDark, [x0, y0 + 0.08, z - 0.03], [x1, y0 + 0.13, z + 0.03]);
   const bays = Math.max(1, Math.round((x1 - x0) / 1.6));
   const w = (x1 - x0) / bays;
-  for (let k = 0; k <= bays; k++) box(kit, palette.metalDark, [x0 + k * w - 0.04, y0, z - 0.04], [x0 + k * w + 0.04, y0 + h, z + 0.04], order);
+  for (let k = 0; k <= bays; k++) box(kit, palette.metalDark, [x0 + k * w - 0.04, y0, z - 0.04], [x0 + k * w + 0.04, y0 + h, z + 0.04]);
   const diagonal = Math.hypot(w, h - 0.2);
   const angle = Math.atan2(h - 0.2, w);
   for (let k = 0; k < bays; k++) {
     const cx = x0 + (k + 0.5) * w;
     for (const s of [-1, 1]) {
       const q = new THREE.Matrix4().compose(new THREE.Vector3(cx, y0 + 0.1 + (h - 0.2) / 2, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), s * angle), new THREE.Vector3(diagonal, 0.03, 0.03));
-      kit.add(UNIT_BOX, palette.metalDark, q, order);
+      kit.add(UNIT_BOX, palette.metalDark, q);
     }
   }
 }
@@ -206,18 +206,16 @@ export const archSteps: readonly StepDef[] = [
     year: '1900',
     title: 'Turn the three great arches',
     detail: 'Moulded archivolts and impost blocks frame the three arches; inside each, a screen of pilasters and two Ionic columns carries a Greek-key entablature, a panel and the lunette.',
-    motion: { kind: 'drop', distance: 6 },
-    stagger: 'order',
     build(kit) {
-      BAY_X.forEach((x, i) => {
-        arch(kit, x, i);
-        screen(kit, x, x === 0, i);
+      BAY_X.forEach((x) => {
+        arch(kit, x);
+        screen(kit, x, x === 0);
       });
       // Railings between the pedestals, in front of the side arches.
       for (const s of [-1, 1]) {
         const a = s * (PAIR_X[2] + PEDESTAL_BASE_W / 2 + 0.1);
         const b = s * (PAIR_X[3] - PEDESTAL_BASE_W / 2 - 0.1);
-        railing(kit, Math.min(a, b), Math.max(a, b), 3);
+        railing(kit, Math.min(a, b), Math.max(a, b));
       }
     },
   },
@@ -227,8 +225,6 @@ export const archSteps: readonly StepDef[] = [
     year: '1901',
     title: 'Glaze the doors, lunettes and windows',
     detail: 'Bronze-framed glass doors fill the central arch, windows the side arches; square-latticed grilles cover the three lunettes, and the wings get their pedimented windows.',
-    motion: { kind: 'slide', from: [0, 0, 2.5] },
-    stagger: 'x',
     build(kit) {
       const lunette = windowUnit({ width: ARCH_INNER_SPAN, height: ARCH_CROWN_Y - (TRANSOM_TOP_Y - 0.25), shape: 'arch', cols: 1, rows: 1, frame: 0.1, depth: 0.12 });
       const g = LUNETTE_GRILLE;

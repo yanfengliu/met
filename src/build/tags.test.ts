@@ -1,15 +1,15 @@
 /**
  * Piece tags (docs/design/spec.md, Build-step API: `Kit.addTagged`): the timeline keeps each tagged piece's tag with the instance it landed in
  * (`Timeline.tagOf`, `BuiltStep.tags`); a door's pieces get meshes of their own, one door per mesh, shared with no other door and no untagged piece,
- * while an artwork's pieces batch as untagged pieces do; tags change nothing the timeline shows at any t, whatever the history; a malformed tag is
- * refused: it fails with a message naming the step, the piece and the fix.
+ * while an artwork's pieces batch as untagged pieces do; tags change nothing the timeline's meshes hold; a malformed tag is refused: it fails with a
+ * message naming the step, the piece and the fix.
  * Bound: fixture steps of boxes; tags on the real sequence are checked by the milestones that add them (doors, artworks).
  */
 import { BoxGeometry, InstancedMesh, Matrix4, MeshStandardMaterial } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { CHAPTERS } from './chapters.js';
-import { firstDifference, random, snapshot } from './testing.js';
+import { firstDifference, snapshot } from './testing.js';
 import { Timeline } from './timeline.js';
 import type { Kit, PieceTag, StepDef } from './types.js';
 
@@ -31,13 +31,11 @@ const PIECES: readonly (readonly [number, MeshStandardMaterial, PieceTag | null]
 ];
 
 /** The fixture step; with `tagged` false every piece goes through `kit.add`. */
-function step(id: string, tagged: boolean, stagger: StepDef['stagger'] = 'x'): StepDef {
+function step(id: string, tagged: boolean): StepDef {
   return {
     id,
     chapter: CHAPTERS[0].id,
     title: id,
-    motion: { kind: 'rise' },
-    stagger,
     build(kit: Kit) {
       for (const [x, material, tag] of PIECES) {
         if (tagged && tag !== null) kit.addTagged(cube, material, at(x), tag);
@@ -49,17 +47,14 @@ function step(id: string, tagged: boolean, stagger: StepDef['stagger'] = 'x'): S
 
 /** Every instance of a timeline as [x of its final matrix, its tag]. */
 function instanceTags(timeline: Timeline): (readonly [number, PieceTag | null])[] {
-  timeline.evaluate(timeline.n);
   return timeline.steps.flatMap((s) => s.meshes.flatMap((mesh) => Array.from({ length: mesh.instanceMatrix.count }, (_, i) => [mesh.instanceMatrix.array[i * 16 + 12] ?? Number.NaN, timeline.tagOf(mesh, i)] as const)));
 }
 
 describe('piece tags', () => {
   it('keeps each tagged piece’s tag with the instance it landed in, and none for an untagged one', () => {
-    for (const stagger of ['x', '-x', 'order', 'none'] as const) {
-      const timeline = new Timeline([step('tags', true, stagger)]);
-      const found = instanceTags(timeline).sort((a, b) => a[0] - b[0]);
-      expect(found, `stagger ${stagger}`).toEqual(PIECES.map(([x, , tag]) => [x, tag]));
-    }
+    const timeline = new Timeline([step('tags', true)]);
+    const found = instanceTags(timeline).sort((a, b) => a[0] - b[0]);
+    expect(found).toEqual(PIECES.map(([x, , tag]) => [x, tag]));
   });
 
   it('gives each door meshes of its own, shared with no other door and no untagged piece; artworks batch with the untagged', () => {
@@ -78,34 +73,14 @@ describe('piece tags', () => {
     expect(timeline.steps[0]?.tags.map((t) => t?.length ?? 0)).toEqual(meshes.map((m) => (contents[meshes.indexOf(m)]?.some((t) => t !== null) ? m.instanceMatrix.count : 0)));
   });
 
-  it('changes nothing the timeline shows: artworks tagged or not give byte-identical scenes at every t', () => {
+  it('changes nothing the timeline holds: artworks tagged or not give byte-identical meshes', () => {
     const artworks = (tagged: boolean): StepDef => ({ ...step('art', false), build(kit: Kit) {
       for (const [x, material, tag] of PIECES) {
         if (tagged && tag?.kind === 'artwork') kit.addTagged(cube, material, at(x), tag);
         else kit.add(cube, material, at(x));
       }
     } });
-    const plain = new Timeline([artworks(false)]);
-    const tagged = new Timeline([artworks(true)]);
-    for (const t of [0, 0.2, 0.5, 0.9, 1]) {
-      plain.evaluate(t);
-      tagged.evaluate(t);
-      expect(firstDifference(snapshot(plain), snapshot(tagged)), `t ${String(t)}`).toBeNull();
-    }
-  });
-
-  it('holds the determinism contract with doors in their own meshes: any history gives the scene a fresh evaluation gives', () => {
-    const steps = [step('one', true), step('two', true, 'radial'), step('three', true, 'none')];
-    const rand = random(5);
-    const timeline = new Timeline(steps);
-    for (let k = 0; k < 40; k += 1) {
-      timeline.evaluate(rand() * 3);
-      const t = Math.round(rand() * 30) / 10;
-      timeline.evaluate(t);
-      const fresh = new Timeline(steps);
-      fresh.evaluate(t);
-      expect(firstDifference(snapshot(timeline), snapshot(fresh)), `t ${String(t)} after history ${String(k)}`).toBeNull();
-    }
+    expect(firstDifference(snapshot(new Timeline([artworks(false)])), snapshot(new Timeline([artworks(true)])))).toBeNull();
   });
 
   it('answers null for an untagged piece, a mesh it did not build and an instance past the mesh', () => {

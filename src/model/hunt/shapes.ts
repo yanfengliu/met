@@ -24,14 +24,14 @@ export function boxMatrix(min: Vec3, max: Vec3): THREE.Matrix4 {
 }
 
 /** Adds UNIT_BOX over [min, max]. */
-export function box(kit: Kit, material: THREE.Material, min: Vec3, max: Vec3, order?: number): void {
-  kit.add(UNIT_BOX, material, boxMatrix(min, max), order);
+export function box(kit: Kit, material: THREE.Material, min: Vec3, max: Vec3): void {
+  kit.add(UNIT_BOX, material, boxMatrix(min, max));
 }
 
 /** A box of `size` centred at `centre`, turned `angle` radians about +Y. */
-export function turnedBox(kit: Kit, material: THREE.Material, centre: Vec3, size: Vec3, angle: number, order?: number): void {
+export function turnedBox(kit: Kit, material: THREE.Material, centre: Vec3, size: Vec3, angle: number): void {
   const q = new THREE.Quaternion().setFromAxisAngle(Y_AXIS, angle);
-  kit.add(UNIT_BOX, material, new THREE.Matrix4().compose(new THREE.Vector3(...centre), q, new THREE.Vector3(...size)), order);
+  kit.add(UNIT_BOX, material, new THREE.Matrix4().compose(new THREE.Vector3(...centre), q, new THREE.Vector3(...size)));
 }
 
 /** Translation, then a turn of `angle` radians about +Y. */

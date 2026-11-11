@@ -292,7 +292,7 @@ export interface ColumnParts {
   readonly capital: THREE.BufferGeometry;
 }
 
-/** A column split into pedestal, base, shaft and capital, for build steps that raise them one after another. Same parameters as `column`. */
+/** A column split into pedestal, base, shaft and capital, for build steps that add them as separate pieces. Same parameters as `column`. */
 export function columnParts(params: ColumnParams = {}): ColumnParts {
   const spec = columnSpec('columnParts', params);
   return cached('columnParts', spec, () => {

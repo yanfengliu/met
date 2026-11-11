@@ -80,7 +80,6 @@ export const landingStep: StepDef = {
   year: '1970',
   title: 'Build the landing before the doors',
   detail: 'A granite terrace 25 m wide and 3.6 m above the avenue spreads before the three doorways of the Great Hall.',
-  motion: { kind: 'rise', distance: 1.5 },
   build(kit) {
     const depth = STEPS_TOP_Z - STEPS_BACK_Z;
     kit.add(UNIT_BLOCK, palette.granite, blockMatrix(0, BLOCK_BOTTOM, STEPS_BACK_Z + depth / 2, 2 * LANDING_HALF_WIDTH, LANDING_Y - TREAD - BLOCK_BOTTOM, depth));
@@ -94,20 +93,18 @@ export const flightStep: StepDef = {
   year: '1970',
   title: 'Lay the broad flight of steps',
   detail: 'Twenty-two granite steps in three flights, with two landings, fall to the avenue at the front and at both ends: a three-way slope 47 m wide.',
-  motion: { kind: 'rise', distance: 0.5 },
-  stagger: 'order',
   build(kit) {
     for (const row of stepRows()) {
       const h = row.y - TREAD - BLOCK_BOTTOM;
       const y = row.y - TREAD;
       // The front band, and the two ends running back to the podium; each a block with its tread on top, nosed over the riser below.
-      kit.add(UNIT_BLOCK, palette.granite, blockMatrix(0, BLOCK_BOTTOM, (row.zIn + row.z) / 2, 2 * row.x, h, row.z - row.zIn), row.k);
-      kit.add(UNIT_BLOCK, siteMaterials.stepTread, blockMatrix(0, y, (row.zIn + row.z + NOSING) / 2, 2 * (row.x + NOSING), TREAD, row.z - row.zIn + NOSING), row.k);
+      kit.add(UNIT_BLOCK, palette.granite, blockMatrix(0, BLOCK_BOTTOM, (row.zIn + row.z) / 2, 2 * row.x, h, row.z - row.zIn));
+      kit.add(UNIT_BLOCK, siteMaterials.stepTread, blockMatrix(0, y, (row.zIn + row.z + NOSING) / 2, 2 * (row.x + NOSING), TREAD, row.z - row.zIn + NOSING));
       for (const s of [-1, 1]) {
         const cx = (s * (row.xIn + row.x)) / 2;
         const cz = (STEPS_BACK_Z + row.zIn) / 2;
-        kit.add(UNIT_BLOCK, palette.granite, blockMatrix(cx, BLOCK_BOTTOM, cz, row.x - row.xIn, h, row.zIn - STEPS_BACK_Z), row.k);
-        kit.add(UNIT_BLOCK, siteMaterials.stepTread, blockMatrix(cx + (s * NOSING) / 2, y, cz, row.x - row.xIn + NOSING, TREAD, row.zIn - STEPS_BACK_Z), row.k);
+        kit.add(UNIT_BLOCK, palette.granite, blockMatrix(cx, BLOCK_BOTTOM, cz, row.x - row.xIn, h, row.zIn - STEPS_BACK_Z));
+        kit.add(UNIT_BLOCK, siteMaterials.stepTread, blockMatrix(cx + (s * NOSING) / 2, y, cz, row.x - row.xIn + NOSING, TREAD, row.zIn - STEPS_BACK_Z));
       }
     }
   },
@@ -117,17 +114,17 @@ export const flightStep: StepDef = {
  * A handrail along `points` (u, y): u is Z for the middle rails, X for the end rails; posts at the points and about every 2 m between.
  * Each post stands from 0.2 m under the nosing line, inside the step below it, up to the rail.
  */
-function rail(kit: Kit, points: readonly (readonly [number, number])[], at: (u: number, y: number) => readonly [number, number, number], order: number): void {
+function rail(kit: Kit, points: readonly (readonly [number, number])[], at: (u: number, y: number) => readonly [number, number, number]): void {
   for (let k = 1; k < points.length; k += 1) {
     const [u0, y0] = points[k - 1] ?? [0, 0];
     const [u1, y1] = points[k] ?? [0, 0];
-    kit.add(UNIT_BLOCK, palette.metalDark, beamMatrix(at(u0, y0 - RAIL / 2), at(u1, y1 - RAIL / 2), RAIL, RAIL), order);
+    kit.add(UNIT_BLOCK, palette.metalDark, beamMatrix(at(u0, y0 - RAIL / 2), at(u1, y1 - RAIL / 2), RAIL, RAIL));
     const n = Math.max(1, Math.round(Math.abs(u1 - u0) / 2));
     for (let s = k === 1 ? 0 : 1; s <= n; s += 1) {
       const u = u0 + ((u1 - u0) * s) / n;
       const y = y0 + ((y1 - y0) * s) / n;
       const base = at(u, y - RAIL_HEIGHT - 0.2);
-      kit.add(UNIT_BLOCK, palette.metalDark, blockMatrix(base[0], base[1], base[2], POST, RAIL_HEIGHT + 0.2, POST), order);
+      kit.add(UNIT_BLOCK, palette.metalDark, blockMatrix(base[0], base[1], base[2], POST, RAIL_HEIGHT + 0.2, POST));
     }
   }
 }
@@ -138,8 +135,6 @@ export const railingsStep: StepDef = {
   year: '1970',
   title: 'Fix the handrails',
   detail: 'Dark metal handrails run down the middle of the flight in pairs and down each stepped end.',
-  motion: { kind: 'grow' },
-  stagger: 'order',
   build(kit) {
     const rows = stepRows();
     const foot = rows[rows.length - 1];
@@ -156,7 +151,7 @@ export const railingsStep: StepDef = {
         const s2 = (b[1] - p[1]) / (b[0] - p[0]);
         return Math.abs(s1 - s2) > 1e-6;
       });
-    for (const s of [-1, 1]) rail(kit, simplify(front), (u, y) => [s * CENTRAL_RAIL_X, y, u], 0);
-    for (const s of [-1, 1]) rail(kit, simplify(end), (u, y) => [s * u, y, END_RAIL_Z], 1);
+    for (const s of [-1, 1]) rail(kit, simplify(front), (u, y) => [s * CENTRAL_RAIL_X, y, u]);
+    for (const s of [-1, 1]) rail(kit, simplify(end), (u, y) => [s * u, y, END_RAIL_Z]);
   },
 };

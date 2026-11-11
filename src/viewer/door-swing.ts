@@ -34,17 +34,12 @@ export interface DoorFacts {
   /** Degrees its leaves stand open: positive toward the door's back (−Z of its unit: into the building for an entrance), negative toward its front. */
   readonly angle: number;
   readonly locked: boolean;
-  /**
-   * Whether its step is complete, so the door can be used. While it is not, the timeline's closed leaf stands in its place, and `state` and `angle` are
-   * what the door shows again when the step completes.
-   */
-  readonly built: boolean;
 }
 
 /** One door as the meshes draw it (`DoorLayer.drawn`, `window.__met.perf.lastDrawn.doors`). */
 export interface DoorDrawn {
   readonly id: string;
-  /** Degrees its stand-ins draw its leaves open, read back from their instance matrices; null while the timeline's closed leaves are drawn instead. */
+  /** Degrees its stand-ins draw its leaves open, read back from their instance matrices; null for a locked door, whose closed leaves the timeline draws. */
   readonly angle: number | null;
 }
 

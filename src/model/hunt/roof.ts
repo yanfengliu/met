@@ -124,13 +124,11 @@ export const roofSteps: readonly StepDef[] = [
     year: '1902',
     title: 'Close the roofs and the hall skylights',
     detail: "A low hipped roof closes over the Great Hall's domes round a long glazed skylight; the wings and the galleries behind get flat roofs with skylights, and the building opens in December 1902.",
-    motion: { kind: 'drop', distance: 8 },
-    stagger: 'order',
     build(kit) {
       // Flat roofs first: the wings (inside their parapets) and the galleries behind the hall round the stair hall: plaster ceilings under a lead skin.
       const flat = (x0: number, z0: number, x1: number, z1: number, top: number): void => {
-        box(kit, palette.plaster, [x0, top - 0.4, z0], [x1, top - 0.05, z1], 0);
-        box(kit, palette.roofLead, [x0, top - 0.05, z0], [x1, top, z1], 0);
+        box(kit, palette.plaster, [x0, top - 0.4, z0], [x1, top - 0.05, z1]);
+        box(kit, palette.roofLead, [x0, top - 0.05, z0], [x1, top, z1]);
       };
       flat(EXT_SOUTH_X + 1.2, HALL_WEST_WALL_Z, -HALL_END_WALL_X, EXT_FACE_Z - EXT_WALL_T, WING_ROOF_Y);
       flat(HALL_END_WALL_X, HALL_WEST_WALL_Z, EXT_NORTH_X - 1.2, EXT_FACE_Z - EXT_WALL_T, WING_ROOF_Y);
@@ -141,24 +139,24 @@ export const roofSteps: readonly StepDef[] = [
       const length = HALL_WEST_WALL_Z - CROSS_HALL_FRONT_Z + 0.8;
       const stair = ridgeSkylight({ width: 2 * STAIR_HALL_OUTER_X + 0.4, length, pitch: 28, curbHeight: 0.3, bays: 8 });
       const at0 = at(0, STAIR_WALL_TOP_Y, HALL_WEST_WALL_Z - length / 2);
-      kit.add(stair.frame, palette.roofLead, at0, 1);
-      kit.add(leadGable(2 * STAIR_HALL_OUTER_X + 0.4, length, 28, 0.3), palette.roofLead, at0, 1);
+      kit.add(stair.frame, palette.roofLead, at0);
+      kit.add(leadGable(2 * STAIR_HALL_OUTER_X + 0.4, length, 28, 0.3), palette.roofLead, at0);
       // The wings' glazed hip skylights (R1).
       const wing = hippedSkylight({ width: 10, length: 24, pitch: 30, curbHeight: 0.5, bays: 8 });
       for (const s of [-1, 1]) {
         const m = at(s * 39, WING_ROOF_Y, -16, 0);
-        kit.add(wing.frame, palette.metalDark, m, 2);
-        kit.add(wing.glass, palette.glass, m, 2);
+        kit.add(wing.frame, palette.metalDark, m);
+        kit.add(wing.glass, palette.glass, m);
       }
       // The Great Hall: the hipped roof, its curb and the long skylight over the domes.
-      kit.add(hallRoof().top, palette.roofLead, new THREE.Matrix4(), 3);
-      kit.add(hallRoof().under, palette.plaster, new THREE.Matrix4(), 3);
+      kit.add(hallRoof().top, palette.roofLead, new THREE.Matrix4());
+      kit.add(hallRoof().under, palette.plaster, new THREE.Matrix4());
       // Pitched so its ridge meets GREAT_HALL_RIDGE_Y over a half-width of 7.2 m.
       const pitch = (Math.atan((GREAT_HALL_RIDGE_Y - CURB.y - CURB.height) / ((CURB.z1 - CURB.z0) / 2)) * 180) / Math.PI;
       const sky = hippedSkylight({ width: CURB.z1 - CURB.z0, length: 2 * CURB.x, pitch, curbHeight: CURB.height, bays: 12 });
       const m = at(0, CURB.y, (CURB.z0 + CURB.z1) / 2, Math.PI / 2);
-      kit.add(sky.frame, palette.metalDark, m, 4);
-      kit.add(sky.glass, palette.glass, m, 4);
+      kit.add(sky.frame, palette.metalDark, m);
+      kit.add(sky.glass, palette.glass, m);
     },
   },
 ];

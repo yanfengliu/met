@@ -165,7 +165,6 @@ export interface DoorFact {
   readonly state: string;
   readonly angle: number;
   readonly locked: boolean;
-  readonly built: boolean;
 }
 
 export async function doorFacts(page: Page, id: string): Promise<DoorFact | undefined> {

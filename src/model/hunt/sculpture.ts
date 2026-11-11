@@ -106,8 +106,6 @@ export const sculptureSteps: readonly StepDef[] = [
     year: '1902',
     title: "Carve Bitter's medallions, masks and caryatids",
     detail: "Karl Bitter's six portrait medallions of old masters fill the spandrels, a head of Athena crowns each keystone, and four caryatids stand on the wings for painting, sculpture, architecture and music.",
-    motion: { kind: 'pop' },
-    stagger: 'x',
     build(kit) {
       const offset = 4.96;
       const keyY = ARCH_SPRING_Y + ARCH_OUTER_SPAN / 2;

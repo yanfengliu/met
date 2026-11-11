@@ -1,6 +1,6 @@
 /**
  * The doors fitted to the finished model (docs/design/spec.md, Doors: Hinges; work unit 2, review 8, F31, and review 9, F34 and F35), headless, on the
- * real sequence at t = N, for every door of src/model/doors.ts by the pieces its tag marks.
+ * real sequence, for every door of src/model/doors.ts by the pieces its tag marks.
  * Leaves: each door that opens has its leaves turned together, as the door layer turns them: every 2.5° through the swing they allow, the closed and
  * fully open poses included, each by that angle about its own hinge (the piece's matrix times its turn, src/viewer/doors.ts `hingeTurn`), a pair's two
  * mirrored by their hinges' axes. At each pose no leaf part (a leaf's panels or metal, or its glass: `doorLeavesOf`) meets another piece of the finished
@@ -285,7 +285,6 @@ function report(found: ReadonlyMap<string, readonly number[]>): string[] {
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   for (const step of timeline.steps) {
     step.meshes.forEach((mesh, m) => {
       mesh.updateMatrixWorld(true);

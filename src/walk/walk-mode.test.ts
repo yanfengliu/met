@@ -55,13 +55,13 @@ describe('the look target hook', () => {
     const heard: (string | null)[] = [];
     walk.onLookTarget((target) => heard.push(target === null ? null : target.id));
     walk.enter('plaza');
-    walk.frame(1 / 60, 0, new Set());
-    walk.frame(1 / 60, 0, new Set());
+    walk.frame(1 / 60, new Set());
+    walk.frame(1 / 60, new Set());
     expect(walk.lastTarget?.id, 'the frame’s target').toBe('weston');
     meets = hitOf({ kind: 'artwork', id: '437788' }, 3);
     expect(walk.facts().target, 'read afresh').toEqual({ kind: 'artwork', id: '437788', distance: 3 });
     expect([walk.lastTarget?.id, heard], 'and nothing written: the frame’s target stands, nobody told').toEqual(['weston', ['weston']]);
-    walk.frame(1 / 60, 0, new Set());
+    walk.frame(1 / 60, new Set());
     expect([walk.lastTarget?.id, heard], 'the next frame finds it').toEqual(['437788', ['weston', '437788']]);
   });
 
@@ -71,7 +71,7 @@ describe('the look target hook', () => {
     const heard: (string | null)[] = [];
     const stop = walk.onLookTarget((target) => heard.push(target === null ? null : `${target.kind}:${target.id}`));
     const frame = (): void => {
-      walk.frame(1 / 60, 0, new Set());
+      walk.frame(1 / 60, new Set());
     };
     walk.enter('plaza');
     frame(); // the frame that shows "Preparing walk mode"
@@ -116,8 +116,8 @@ describe('entering at a place of the query’s own', () => {
     const place = placeOf('3,-5,4,6,-3.4,8');
     if (place === null) throw new Error('placeOf refused six numbers.');
     walk.enter(place);
-    walk.frame(1 / 60, 0, new Set());
-    walk.frame(1 / 60, 0, new Set());
+    walk.frame(1 / 60, new Set());
+    walk.frame(1 / 60, new Set());
     const facts = walk.facts();
     expect(facts.spawn).toBe(PLACE_ID);
     // Nothing is built here, so the feet stand on the workspace ground at Y −5, the eye 1.6 m over them, looking level at the target 5 m off.

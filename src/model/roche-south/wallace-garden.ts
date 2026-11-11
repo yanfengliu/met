@@ -55,9 +55,8 @@ const PLANTERS: readonly [P2, P2][] = [
 
 function garden(kit: Kit): void {
   const deck = inset(ccw(GARDEN), GARDEN.map(() => 0.6));
-  kit.add(prism(deck, [], ROOF_GARDEN_Y - 0.06, ROOF_GARDEN_Y), mat.deck, at(0, 0, 0), 0);
+  kit.add(prism(deck, [], ROOF_GARDEN_Y - 0.06, ROOF_GARDEN_Y), mat.deck, at(0, 0, 0));
   // Planters and their hedges, laid as 3 m lengths.
-  let order = 1;
   for (const [a, b] of PLANTERS) {
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const n = Math.max(1, Math.round(length / 3));
@@ -67,9 +66,8 @@ function garden(kit: Kit): void {
       const s = ((k + 0.5) * length) / n;
       const c: P2 = [a[0] + ux * s, a[1] + uz * s];
       const turn = new Matrix4().makeRotationY(Math.atan2(-uz, ux));
-      kit.add(UNIT_BOX, palette.granite, at(c[0], ROOF_GARDEN_Y, c[1]).multiply(turn).multiply(new Matrix4().makeScale(length / n - 0.05, 0.6, 1.0)), order);
-      kit.add(HEDGE, palette.foliage, at(c[0], ROOF_GARDEN_Y + 0.6, c[1]).multiply(turn), order);
-      order += 1;
+      kit.add(UNIT_BOX, palette.granite, at(c[0], ROOF_GARDEN_Y, c[1]).multiply(turn).multiply(new Matrix4().makeScale(length / n - 0.05, 0.6, 1.0)));
+      kit.add(HEDGE, palette.foliage, at(c[0], ROOF_GARDEN_Y + 0.6, c[1]).multiply(turn));
     }
   }
   // The pergola: white steel posts on a 3.7 m grid, beams along X, slats across.
@@ -78,23 +76,23 @@ function garden(kit: Kit): void {
   const bays = Math.round((px1 - px0) / 3.7);
   for (let i = 0; i <= bays; i++) {
     const x = px0 + ((px1 - px0) * i) / bays;
-    for (const z of [pz0, pz1]) kit.add(UNIT_BOX, mat.steel, boxAt([x - 0.12, ROOF_GARDEN_Y, z - 0.12], [x + 0.12, top, z + 0.12]), 40);
+    for (const z of [pz0, pz1]) kit.add(UNIT_BOX, mat.steel, boxAt([x - 0.12, ROOF_GARDEN_Y, z - 0.12], [x + 0.12, top, z + 0.12]));
   }
-  for (const z of [pz0, pz1]) kit.add(UNIT_BOX, mat.steel, boxAt([px0 - 0.3, top, z - 0.15], [px1 + 0.3, top + 0.4, z + 0.15]), 41);
+  for (const z of [pz0, pz1]) kit.add(UNIT_BOX, mat.steel, boxAt([px0 - 0.3, top, z - 0.15], [px1 + 0.3, top + 0.4, z + 0.15]));
   const slats = Math.round((px1 - px0) / 0.9);
   for (let i = 0; i <= slats; i++) {
     const x = px0 + ((px1 - px0) * i) / slats;
-    kit.add(UNIT_BOX, mat.steel, boxAt([x - 0.05, top + 0.4, pz0 - 0.4], [x + 0.05, top + 0.6, pz1 + 0.4]), 42);
+    kit.add(UNIT_BOX, mat.steel, boxAt([x - 0.05, top + 0.4, pz0 - 0.4], [x + 0.05, top + 0.6, pz1 + 0.4]));
   }
   // The stair and lift house on the garden's east side, and small trees in big pots.
-  for (const m of hollowBoxes([-121.2, ROOF_GARDEN_Y, -107.0], [-111.6, ROOF_GARDEN_Y + 4.0, -104.4], 0.5)) kit.add(UNIT_BOX, palette.limestone, m, 43);
+  for (const m of hollowBoxes([-121.2, ROOF_GARDEN_Y, -107.0], [-111.6, ROOF_GARDEN_Y + 4.0, -104.4], 0.5)) kit.add(UNIT_BOX, palette.limestone, m);
   for (const [x, z] of [
     [-116.0, -122.5],
     [-104.0, -122.5],
   ] as const) {
-    kit.add(UNIT_BOX, palette.granite, boxAt([x - 0.7, ROOF_GARDEN_Y, z - 0.7], [x + 0.7, ROOF_GARDEN_Y + 0.8, z + 0.7]), 44);
-    kit.add(POT_TREE.trunk, palette.bark, at(x, ROOF_GARDEN_Y + 0.8, z), 45);
-    kit.add(POT_TREE.foliage, palette.foliage, at(x, ROOF_GARDEN_Y + 0.8, z), 45);
+    kit.add(UNIT_BOX, palette.granite, boxAt([x - 0.7, ROOF_GARDEN_Y, z - 0.7], [x + 0.7, ROOF_GARDEN_Y + 0.8, z + 0.7]));
+    kit.add(POT_TREE.trunk, palette.bark, at(x, ROOF_GARDEN_Y + 0.8, z));
+    kit.add(POT_TREE.foliage, palette.foliage, at(x, ROOF_GARDEN_Y + 0.8, z));
   }
 }
 
@@ -104,19 +102,19 @@ type Vec = [number, number, number];
 const BAR = [0.08, 0.2] as const;
 
 /** A flat glazed panel a→b→c→d (in order) with `cols` × `rows` bays: its bars and its two panes. */
-function glazedPanel(kit: Kit, corners: readonly [Vec, Vec, Vec, Vec], cols: number, rows: number, normal: V3, order: number): void {
+function glazedPanel(kit: Kit, corners: readonly [Vec, Vec, Vec, Vec], cols: number, rows: number, normal: V3): void {
   const [a, b, c, d] = corners;
   const mix = (p: V3, q: V3, t: number): Vec => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t];
   for (let i = 0; i <= cols; i++) {
     const t = i / cols;
-    kit.add(UNIT_BOX, mat.steel, bar(mix(a, b, t), mix(d, c, t), BAR[0], BAR[1], normal), order);
+    kit.add(UNIT_BOX, mat.steel, bar(mix(a, b, t), mix(d, c, t), BAR[0], BAR[1], normal));
   }
   for (let j = 0; j <= rows; j++) {
     const t = j / rows;
-    kit.add(UNIT_BOX, mat.steel, bar(mix(a, d, t), mix(b, c, t), BAR[0], BAR[1], normal), order);
+    kit.add(UNIT_BOX, mat.steel, bar(mix(a, d, t), mix(b, c, t), BAR[0], BAR[1], normal));
   }
   const lift = (p: V3): Vec => [p[0] + normal[0] * 0.02, p[1] + normal[1] * 0.02, p[2] + normal[2] * 0.02];
-  for (const m of quadPanes(lift(a), lift(b), lift(c), lift(d))) kit.add(UNIT_TRIANGLE, mat.glass, m, order);
+  for (const m of quadPanes(lift(a), lift(b), lift(c), lift(d))) kit.add(UNIT_TRIANGLE, mat.glass, m);
 }
 
 const MONITOR = (width: number, length: number): ReturnType<typeof ridgeSkylight> => ridgeSkylight({ width, length, pitch: 28, curbHeight: 0.5, bays: Math.max(4, Math.round(length / 2)), bar: 0.07, barDepth: 0.12 });
@@ -127,7 +125,7 @@ function wallaceGlass(kit: Kit): void {
   const y0 = WALLACE_MEZZANINE_Y - 0.6;
   const y1 = WALLACE_FACADE_TOP_Y - 1.0;
   const cols = Math.round((WEST_GLASS_X1 - WEST_GLASS_X0) / 1.5);
-  glazedPanel(kit, [[WEST_GLASS_X0, y0, z], [WEST_GLASS_X1, y0, z], [WEST_GLASS_X1, y1, z], [WEST_GLASS_X0, y1, z]], cols, 3, [0, 0, -1], 0);
+  glazedPanel(kit, [[WEST_GLASS_X0, y0, z], [WEST_GLASS_X1, y0, z], [WEST_GLASS_X1, y1, z], [WEST_GLASS_X0, y1, z]], cols, 3, [0, 0, -1]);
   // The glazed roof strip rising from the park face to the main roof.
   const lo = WALLACE_FACADE_TOP_Y + 0.3;
   const corners: [Vec, Vec, Vec, Vec] = [
@@ -137,20 +135,20 @@ function wallaceGlass(kit: Kit): void {
     [WEST_STRIP_X0, WALLACE_ROOF_Y + 0.3, WEST_STRIP_Z1],
   ];
   const slope = Math.atan2(WALLACE_ROOF_Y - WALLACE_FACADE_TOP_Y, WEST_STRIP_Z1 - WEST_STRIP_Z0);
-  glazedPanel(kit, corners, Math.round((WEST_STRIP_X1 - WEST_STRIP_X0) / 1.5), 4, [0, Math.cos(slope), -Math.sin(slope)], 1);
+  glazedPanel(kit, corners, Math.round((WEST_STRIP_X1 - WEST_STRIP_X0) / 1.5), 4, [0, Math.cos(slope), -Math.sin(slope)]);
   // Gable panes closing the strip's two ends, over the side walls' parapets.
   for (const x of [WEST_STRIP_X0, WEST_STRIP_X1]) {
-    kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x, lo, WEST_STRIP_Z0], [x, WALLACE_ROOF_Y + 0.3, WEST_STRIP_Z1], [x, lo, WEST_STRIP_Z1]), 1);
+    kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x, lo, WEST_STRIP_Z0], [x, WALLACE_ROOF_Y + 0.3, WEST_STRIP_Z1], [x, lo, WEST_STRIP_Z1]));
   }
   // Monitors and the glazed strips by the lounge: ridge skylights over the roof openings.
-  ROOF_LIGHTS.forEach(([x0, z0, x1, z1], k) => {
+  ROOF_LIGHTS.forEach(([x0, z0, x1, z1]) => {
     const alongX = x1 - x0 > z1 - z0;
     const sky = MONITOR(alongX ? z1 - z0 : x1 - x0, alongX ? x1 - x0 : z1 - z0);
     const m = at((x0 + x1) / 2, WALLACE_ROOF_Y, (z0 + z1) / 2).multiply(new Matrix4().makeRotationY(alongX ? Math.PI / 2 : 0));
-    kit.add(sky.frame, mat.steel, m, 2 + k);
-    kit.add(sky.glass, mat.glass, m, 2 + k);
+    kit.add(sky.frame, mat.steel, m);
+    kit.add(sky.glass, mat.glass, m);
     // A diffusing laylight under each opening, flush with the roof's underside.
-    kit.add(UNIT_BOX, mat.laylight, boxAt([x0 + 0.2, WALLACE_ROOF_Y - 0.68, z0 + 0.2], [x1 - 0.2, WALLACE_ROOF_Y - 0.6, z1 - 0.2]), 2 + k);
+    kit.add(UNIT_BOX, mat.laylight, boxAt([x0 + 0.2, WALLACE_ROOF_Y - 0.68, z0 + 0.2], [x1 - 0.2, WALLACE_ROOF_Y - 0.6, z1 - 0.2]));
   });
 }
 
@@ -161,8 +159,6 @@ export const roofGardenSteps: readonly StepDef[] = [
     year: '1987',
     title: 'Cantor Roof Garden',
     detail: 'The Iris and B. Gerald Cantor Roof Garden on the Wallace Wing: a teak terrace over the park with hedges in planters and a pergola. Closed in 2025.',
-    motion: { kind: 'grow' },
-    stagger: 'order',
     build: garden,
   },
   {
@@ -171,8 +167,6 @@ export const roofGardenSteps: readonly StepDef[] = [
     year: '1987',
     title: 'Wallace Wing glass to the park',
     detail: 'A glass wall for the tall gallery behind the park face and a glazed roof rising from it, with skylights over the second-floor galleries.',
-    motion: { kind: 'slide', from: [0, 0, -6] },
-    stagger: 'order',
     build: wallaceGlass,
   },
 ];

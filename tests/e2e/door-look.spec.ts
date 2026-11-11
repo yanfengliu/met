@@ -107,7 +107,7 @@ test.describe('the door prompt between a pair’s leaves', () => {
     expect(away).toBeLessThan(1.9);
     await looksAt(page, LINK, 'Locked');
     await page.keyboard.press('KeyE');
-    expect(await doorFacts(page, LINK)).toEqual({ id: LINK, state: 'closed', angle: 0, locked: true, built: true });
+    expect(await doorFacts(page, LINK)).toEqual({ id: LINK, state: 'closed', angle: 0, locked: true });
     await looksAt(page, LINK, 'Locked');
     errors.expectClean();
   });

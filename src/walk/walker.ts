@@ -13,8 +13,8 @@
  * Off an edge higher than STEP the body falls under gravity and lands on the first surface below;
  * a jump starts at the speed that rises JUMP_HEIGHT. On the ground every push from the walls is level, and the velocity into a wall is removed,
  * so the body slides along it. Below everything lies the workspace ground, a plane at `floorY`, where a body stands when nothing is built under it.
- * After the world is built again, `settle` moves a body that new pieces bury or embed onto the lowest walkable surface over it where it stands clear,
- * and on out of a groove there onto its rims.
+ * When walk mode checks a walker's place, `settle` moves a body that the world's pieces bury or embed (the pieces from an index on, for embedding) onto
+ * the lowest walkable surface over it where it stands clear, and on out of a groove there onto its rims.
  *
  * Time. Physics runs in fixed steps of 1/120 s, the remainder carried to the next frame, so a run is the same at any frame rate; a snap up or down a
  * stair is eased out over about 0.1 s for the eye only, and the eye is the eased eye of the last two steps, interpolated between them.
@@ -133,7 +133,7 @@ export class Walker {
     this.yaw = yaw;
     this.pitch = MathUtils.clamp(pitch, -MOTION.maxPitch, MOTION.maxPitch);
     this.rest(false);
-    // Nothing built under the place (t = 0, for one), or only below the workspace ground: that ground, at once rather than after a fall to it.
+    // Nothing under the place (a spawn over empty ground, for one), or only below the workspace ground: that ground, at once rather than after a fall to it.
     const found = this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit);
     this.feet.y = found ? Math.max(this.hit.y, this.floorY) : this.floorY;
     this.onGround = this.feet.y <= this.floorY || this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
@@ -144,12 +144,13 @@ export class Walker {
   }
 
   /**
-   * Checks the walker against a world just built (docs/design/spec.md, Walk mode: When the build moves). It stays where it is unless it is buried,
+   * Checks the walker's place against the world (docs/design/spec.md, Walk mode: Settling). It stays where it is unless it is buried,
    * the model over it with nothing but the workspace ground under it, or embedded, the line from just over its feet to its head inside a piece
-   * numbered `from` or later (the pieces added since it was last checked), a sheet having no inside (src/model/lib/sheet.ts). Then it moves, at rest,
-   * to the lowest walkable surface over its feet where its body stands clear (`clearAt`), and on onto the rims of a groove there (`ontoRims`). One
-   * that stays moves only where such pieces cross the lines under its sides within STEP over its feet (./footing.ts `builtUnder`) and it then
-   * stands in a groove, as on a floor's slab when its tiles are laid round it on their joint. Returns 'lost' when no surface over it will do.
+   * numbered `from` or later (walk mode passes 0 at a new place and the world's instance count where the walker last stood), a sheet having no inside
+   * (src/model/lib/sheet.ts). Then it moves, at rest, to the lowest walkable surface over its feet where its body stands clear (`clearAt`), and on onto
+   * the rims of a groove there (`ontoRims`). One that stays moves only where such pieces cross the lines under its sides within STEP over its feet
+   * (./footing.ts `builtUnder`) and it then stands in a groove, as on a floor's slab with its tiles laid round it on their joint. Returns 'lost' when
+   * no surface over it will do.
    */
   settle(from: number): Settled {
     const { feet } = this;

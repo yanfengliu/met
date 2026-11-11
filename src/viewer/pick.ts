@@ -6,8 +6,8 @@
  *   with its mesh, instance, distance and tag. A surface the query does not accept stops the ray, unless the query passes through transparent pieces
  *   and it is an untagged one (glass, water): an artwork in a vitrine is found through the glass, never through a wall or a glass door the query
  *   rejects. The walking eye's look target (src/walk/look.ts) runs it every frame; a pointer ray from an orbit-view click runs it the same way.
- * Only drawn instances count (the first `count` of a visible mesh on a layer the camera draws), at their current matrices, so a piece still arriving
- * is met where it is shown and landscape a floor view hides (src/viewer/floor-view.ts) is passed through; with the section cut on, a hit above the
+ * Only drawn instances count (the first `count` of a visible mesh on a layer the camera draws), at their current matrices, so a stand-in is met where
+ * it is shown and landscape a floor view hides (src/viewer/floor-view.ts) is passed through; with the section cut on, a hit above the
  * cut on a material the cut clips is passed through, as the eye sees through the removed part.
  * Meshes the timeline did not build, viewer-side stand-ins such as a door's moving leaves, join with their own tags through `register` and leave
  * through `unregister`. They count as the timeline's do: drawn instances only, so an original hidden by the camera's layers drops out while its

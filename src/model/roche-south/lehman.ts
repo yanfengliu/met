@@ -101,27 +101,27 @@ function mitredWall(seg: Segment, y0: number, y1: number): ReturnType<typeof pri
 }
 
 function foundations(kit: Kit): void {
-  SEGMENTS.forEach((seg, k) => {
+  SEGMENTS.forEach((seg) => {
     // A footing under each outer wall, spread inward only: nothing of the wing crosses the block line.
-    if (seg.mitred) kit.add(mitredWall(seg, LEHMAN_FOOTING_BOTTOM_Y, LEHMAN_SLAB_BOTTOM_Y), mat.concrete, at(0, 0, 0), k);
-    else kit.add(UNIT_BOX, mat.concrete, wallAlong(seg.a, seg.b, LEHMAN_FOOTING_BOTTOM_Y, LEHMAN_SLAB_BOTTOM_Y, FOOTING_WIDTH, seg.extendStart * (FOOTING_WIDTH / OUTER_WALL), seg.extendEnd * (FOOTING_WIDTH / OUTER_WALL)), k);
+    if (seg.mitred) kit.add(mitredWall(seg, LEHMAN_FOOTING_BOTTOM_Y, LEHMAN_SLAB_BOTTOM_Y), mat.concrete, at(0, 0, 0));
+    else kit.add(UNIT_BOX, mat.concrete, wallAlong(seg.a, seg.b, LEHMAN_FOOTING_BOTTOM_Y, LEHMAN_SLAB_BOTTOM_Y, FOOTING_WIDTH, seg.extendStart * (FOOTING_WIDTH / OUTER_WALL), seg.extendEnd * (FOOTING_WIDTH / OUTER_WALL)));
   });
   // The ground-floor plate: the court and the exhibition galleries round it, up to the 1880 front.
-  kit.add(prism(LEHMAN_INNER, [], LEHMAN_SLAB_BOTTOM_Y, G), palette.stoneFloor, at(0, 0, 0), SEGMENTS.length);
+  kit.add(prism(LEHMAN_INNER, [], LEHMAN_SLAB_BOTTOM_Y, G), palette.stoneFloor, at(0, 0, 0));
 }
 
 function walls(kit: Kit): void {
-  SEGMENTS.forEach((seg, k) => {
+  SEGMENTS.forEach((seg) => {
     if (seg.mitred) {
-      kit.add(mitredWall(seg, LEHMAN_SLAB_BOTTOM_Y, LEHMAN_PARAPET_Y + 0.3), palette.limestone, at(0, 0, 0), k);
+      kit.add(mitredWall(seg, LEHMAN_SLAB_BOTTOM_Y, LEHMAN_PARAPET_Y + 0.3), palette.limestone, at(0, 0, 0));
       return;
     }
-    kit.add(UNIT_BOX, palette.limestone, wallAlong(seg.a, seg.b, LEHMAN_SLAB_BOTTOM_Y, LEHMAN_PARAPET_Y, OUTER_WALL, seg.extendStart, seg.extendEnd), k);
+    kit.add(UNIT_BOX, palette.limestone, wallAlong(seg.a, seg.b, LEHMAN_SLAB_BOTTOM_Y, LEHMAN_PARAPET_Y, OUTER_WALL, seg.extendStart, seg.extendEnd));
     // Coping: 0.3 m deep, 0.15 m proud of the face (a moulding may overstep the outline, docs/design/spec.md, World frame).
     const [nx, nz] = inwardNormal(seg.a, seg.b);
     const a: P2 = [seg.a[0] - nx * 0.15, seg.a[1] - nz * 0.15];
     const b: P2 = [seg.b[0] - nx * 0.15, seg.b[1] - nz * 0.15];
-    kit.add(UNIT_BOX, palette.limestone, wallAlong(a, b, LEHMAN_PARAPET_Y, LEHMAN_PARAPET_Y + 0.3, OUTER_WALL + 0.25, seg.extendStart + 0.15, seg.extendEnd + 0.15), k);
+    kit.add(UNIT_BOX, palette.limestone, wallAlong(a, b, LEHMAN_PARAPET_Y, LEHMAN_PARAPET_Y + 0.3, OUTER_WALL + 0.25, seg.extendStart + 0.15, seg.extendEnd + 0.15));
   });
 }
 
@@ -129,9 +129,9 @@ function walls(kit: Kit): void {
 const LANDING_GEOMETRY = prism(LANDING, [], M - MAIN_SLAB, M);
 
 function mainFloor(kit: Kit): void {
-  kit.add(prism(LEHMAN_INNER, [COURT_OCTAGON], M - MAIN_SLAB, M), palette.stoneFloor, at(0, 0, 0), 0);
-  kit.add(LANDING_GEOMETRY, palette.stoneFloor, at(COURT_X, 0, COURT_Z), 1);
-  kit.add(LANDING_GEOMETRY, palette.stoneFloor, at(COURT_X, 0, COURT_Z).multiply(rotY(Math.PI)), 1);
+  kit.add(prism(LEHMAN_INNER, [COURT_OCTAGON], M - MAIN_SLAB, M), palette.stoneFloor, at(0, 0, 0));
+  kit.add(LANDING_GEOMETRY, palette.stoneFloor, at(COURT_X, 0, COURT_Z));
+  kit.add(LANDING_GEOMETRY, palette.stoneFloor, at(COURT_X, 0, COURT_Z).multiply(rotY(Math.PI)));
 }
 
 function rotY(angle: number): Matrix4 {
@@ -143,23 +143,23 @@ const WATER = cylinder(1.32, G, G + 0.36, 32);
 const BOWL = cylinder(0.45, G, G + 0.95, 16);
 
 function courtFloor(kit: Kit): void {
-  kit.add(prism(COURT_OCTAGON, [], G, G + 0.04), palette.marbleFloor, at(0, 0, 0), 0);
+  kit.add(prism(COURT_OCTAGON, [], G, G + 0.04), palette.marbleFloor, at(0, 0, 0));
   // The round fountain at the centre (map water feature: radius 1.6 m).
-  kit.add(BASIN, palette.granite, at(COURT_X, 0.04, COURT_Z), 1);
-  kit.add(WATER, palette.water, at(COURT_X, 0.04, COURT_Z), 1);
-  kit.add(BOWL, palette.granite, at(COURT_X, 0.04, COURT_Z), 2);
+  kit.add(BASIN, palette.granite, at(COURT_X, 0.04, COURT_Z));
+  kit.add(WATER, palette.water, at(COURT_X, 0.04, COURT_Z));
+  kit.add(BOWL, palette.granite, at(COURT_X, 0.04, COURT_Z));
 }
 
 const FLIGHT = stairFlight({ width: FLIGHT_WIDTH, steps: FLIGHT_RISERS, riser: FLIGHT_RISER, tread: FLIGHT_TREAD, nosing: 0.02 });
 
 function courtStairs(kit: Kit): void {
-  FLIGHTS.forEach((f, k) => {
+  FLIGHTS.forEach((f) => {
     const dx = f.top[0] - f.foot[0];
     const dz = f.top[1] - f.foot[1];
     const length = Math.hypot(dx, dz);
     // The flight climbs toward its local −Z: turn local −Z onto foot→top.
     const angle = Math.atan2(-dx / length, -dz / length);
-    kit.add(FLIGHT.steps, palette.limestone, at(f.foot[0], G, f.foot[1]).multiply(rotY(angle)), k);
+    kit.add(FLIGHT.steps, palette.limestone, at(f.foot[0], G, f.foot[1]).multiply(rotY(angle)));
     // A limestone parapet and a bronze rail on the court side of the flight (the 2011 gallery photograph shows the rail).
     const [nx, nz] = [Math.sign(COURT_X - f.foot[0]) * Math.SQRT1_2, Math.sign(COURT_Z - f.foot[1]) * Math.SQRT1_2];
     const side = FLIGHT_WIDTH / 2 + 0.1;
@@ -171,9 +171,9 @@ function courtStairs(kit: Kit): void {
     ];
     // The parapet runs from 0.8 m under the nosing line to 1.0 m over it, measured upright; the rail sits on it.
     const [p0, p1] = line(0.1);
-    kit.add(UNIT_BOX, palette.limestone, bar(p0, p1, 0.2, 1.8 * cos), k);
+    kit.add(UNIT_BOX, palette.limestone, bar(p0, p1, 0.2, 1.8 * cos));
     const [r0, r1] = line(1.04);
-    kit.add(UNIT_BOX, palette.bronze, bar(r0, r1, 0.07, 0.07), k);
+    kit.add(UNIT_BOX, palette.bronze, bar(r0, r1, 0.07, 0.07));
   });
 }
 
@@ -228,12 +228,12 @@ function ringWalls(kit: Kit): void {
       // The east flat opens the court to the 1880 front: a wall under the landing and a lintel over the front's central arch, on the lead flat at the
       // skylight's head, so the arch's head shows through this opening as exterior-images.md #60 shows it, but for its lowest stones' outer halves,
       // which the long ring walls hide (exterior.md section 9).
-      kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, G, M - MAIN_SLAB, INNER_RING_THICKNESS), 0);
-      kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, STRIP_HEAD_Y + 0.06, LEHMAN_EAVE_Y, INNER_RING_THICKNESS), 0);
+      kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, G, M - MAIN_SLAB, INNER_RING_THICKNESS));
+      kit.add(UNIT_BOX, palette.limestone, wallAlong(b, a, STRIP_HEAD_Y + 0.06, LEHMAN_EAVE_Y, INNER_RING_THICKNESS));
       continue;
     }
     const geometry = long ? (a[1] + b[1] > 2 * COURT_Z ? INNER_LONG_EAST : INNER_LONG_WEST) : westFlat ? INNER_WEST_FLAT : INNER_SIDE_FLAT;
-    kit.add(geometry, palette.limestone, libraryWallOn(a, b, G), 0);
+    kit.add(geometry, palette.limestone, libraryWallOn(a, b, G));
   }
   // The outer ring, centred on the map's lines; its corners are mitred by lengthening each wall a little.
   const low = BAND_LOW;
@@ -256,7 +256,7 @@ function ringWalls(kit: Kit): void {
   for (const [a, b, geometry, shift] of pieces) {
     const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const moved = (q: P2): P2 => [q[0] + ((b[0] - a[0]) / l) * shift, q[1] + ((b[1] - a[1]) / l) * shift];
-    kit.add(geometry, palette.limestone, libraryWallOn(moved(a), moved(b), G, OUTER_RING_THICKNESS / 2), 1);
+    kit.add(geometry, palette.limestone, libraryWallOn(moved(a), moved(b), G, OUTER_RING_THICKNESS / 2));
   }
 }
 
@@ -286,34 +286,34 @@ export const ROOM_WALLS: readonly [P2, P2][] = (
 
 function galleries(kit: Kit): void {
   const height = LEHMAN_ROOF_Y - MAIN_SLAB - M;
-  ROOM_WALLS.forEach(([a, b], k) => {
+  ROOM_WALLS.forEach(([a, b]) => {
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const geometry = wall({ width: Number(length.toFixed(2)), height, thickness: ROOM_WALL.thickness, openings: [{ width: ROOM_WALL.door, height: 3.3 }] });
-    kit.add(geometry, palette.plaster, libraryWallOn(a, b, M, ROOM_WALL.thickness / 2), k);
+    kit.add(geometry, palette.plaster, libraryWallOn(a, b, M, ROOM_WALL.thickness / 2));
   });
 }
 
 // --- Roof -------------------------------------------------------------------------------------------------------------------------------
 
 function roof(kit: Kit): void {
-  kit.add(prism(ROOF_OUTLINE, [], LEHMAN_ROOF_Y - 0.6, LEHMAN_ROOF_Y), mat.roof, at(0, 0, 0), 0);
+  kit.add(prism(ROOF_OUTLINE, [], LEHMAN_ROOF_Y - 0.6, LEHMAN_ROOF_Y), mat.roof, at(0, 0, 0));
   // The lead flat at the skylight strip's head over the court's east tip, between the inner ring wall and the 1880 front.
-  kit.add(prism(STRIP_FLAT, [], STRIP_HEAD_Y, STRIP_HEAD_Y + 0.06), mat.roof, at(0, 0, 0), 0);
+  kit.add(prism(STRIP_FLAT, [], STRIP_HEAD_Y, STRIP_HEAD_Y + 0.06), mat.roof, at(0, 0, 0));
   // Gables under the two east ends of the gallery ring's sloped glass, standing on the flat roof.
   const north: [P2, P2] = [BAND_HIGH[0] ?? [0, 0], BAND_LOW[0] ?? [0, 0]];
   const south: [P2, P2] = [BAND_LOW[5] ?? [0, 0], BAND_HIGH[5] ?? [0, 0]];
-  kit.add(wedgeWall(north[0], north[1], LEHMAN_ROOF_Y - 0.6, BAND_HIGH_Y, LEHMAN_BAND_LOW_Y, 0.4), palette.limestone, at(0, 0, 0), 1);
-  kit.add(wedgeWall(south[0], south[1], LEHMAN_ROOF_Y - 0.6, LEHMAN_BAND_LOW_Y, BAND_HIGH_Y, 0.4), palette.limestone, at(0, 0, 0), 1);
+  kit.add(wedgeWall(north[0], north[1], LEHMAN_ROOF_Y - 0.6, BAND_HIGH_Y, LEHMAN_BAND_LOW_Y, 0.4), palette.limestone, at(0, 0, 0));
+  kit.add(wedgeWall(south[0], south[1], LEHMAN_ROOF_Y - 0.6, LEHMAN_BAND_LOW_Y, BAND_HIGH_Y, 0.4), palette.limestone, at(0, 0, 0));
 }
 
 
 export const lehmanStructureSteps: readonly StepDef[] = [
-  { id: 'lehman-foundations', chapter: CHAPTER, year: YEAR, title: 'Lehman Wing foundations', detail: 'Footings and the ground-floor plate on the axis, against the 1880 west front of Vaux and Mould, which forms the wing’s east wall.', motion: { kind: 'rise' }, stagger: 'order', build: foundations },
-  { id: 'lehman-walls', chapter: CHAPTER, year: YEAR, title: 'Limestone walls with the cut corners', detail: 'A square pavilion 58 m across whose two western corners are cut at 45°, leaving an 11 m face to the park.', motion: { kind: 'grow' }, stagger: 'order', build: walls },
-  { id: 'lehman-main-floor', chapter: CHAPTER, year: YEAR, title: 'Main floor round the open court', detail: 'The main-floor plate rings a court turned 45° to the old front and sunk to the ground floor.', motion: { kind: 'rise' }, stagger: 'order', build: mainFloor },
-  { id: 'lehman-court-floor', chapter: CHAPTER, year: YEAR, title: 'Ground-floor court and fountain', detail: 'The court floor, an octagon 23 m across its points, with a round fountain at its centre.', motion: { kind: 'rise' }, stagger: 'order', build: courtFloor },
-  { id: 'lehman-court-stairs', chapter: CHAPTER, year: YEAR, title: 'Four flights down into the court', detail: 'One flight on each long side of the court, from the main-floor landings at its east and west tips down to the court floor.', motion: { kind: 'rise' }, stagger: 'order', build: courtStairs },
-  { id: 'lehman-ring-walls', chapter: CHAPTER, year: YEAR, title: 'Two concentric ring walls', detail: 'Two walls with large openings separate the court from the galleries; through them the court looks east to the old brick front.', motion: { kind: 'grow' }, stagger: 'radial', build: ringWalls },
-  { id: 'lehman-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries and period rooms', detail: 'Walls of the rooms round the court that house the Robert Lehman Collection, among them rooms from the Lehman house.', motion: { kind: 'grow' }, stagger: 'order', build: galleries },
-  { id: 'lehman-roof', chapter: CHAPTER, year: YEAR, title: 'Flat roofs over the outer rooms', detail: 'Flat roofs over the period rooms and the link to the old building, left open over the court and its gallery ring.', motion: { kind: 'drop' }, stagger: 'order', build: roof },
+  { id: 'lehman-foundations', chapter: CHAPTER, year: YEAR, title: 'Lehman Wing foundations', detail: 'Footings and the ground-floor plate on the axis, against the 1880 west front of Vaux and Mould, which forms the wing’s east wall.', build: foundations },
+  { id: 'lehman-walls', chapter: CHAPTER, year: YEAR, title: 'Limestone walls with the cut corners', detail: 'A square pavilion 58 m across whose two western corners are cut at 45°, leaving an 11 m face to the park.', build: walls },
+  { id: 'lehman-main-floor', chapter: CHAPTER, year: YEAR, title: 'Main floor round the open court', detail: 'The main-floor plate rings a court turned 45° to the old front and sunk to the ground floor.', build: mainFloor },
+  { id: 'lehman-court-floor', chapter: CHAPTER, year: YEAR, title: 'Ground-floor court and fountain', detail: 'The court floor, an octagon 23 m across its points, with a round fountain at its centre.', build: courtFloor },
+  { id: 'lehman-court-stairs', chapter: CHAPTER, year: YEAR, title: 'Four flights down into the court', detail: 'One flight on each long side of the court, from the main-floor landings at its east and west tips down to the court floor.', build: courtStairs },
+  { id: 'lehman-ring-walls', chapter: CHAPTER, year: YEAR, title: 'Two concentric ring walls', detail: 'Two walls with large openings separate the court from the galleries; through them the court looks east to the old brick front.', build: ringWalls },
+  { id: 'lehman-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries and period rooms', detail: 'Walls of the rooms round the court that house the Robert Lehman Collection, among them rooms from the Lehman house.', build: galleries },
+  { id: 'lehman-roof', chapter: CHAPTER, year: YEAR, title: 'Flat roofs over the outer rooms', detail: 'Flat roofs over the period rooms and the link to the old building, left open over the court and its gallery ring.', build: roof },
 ];

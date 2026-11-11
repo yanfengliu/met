@@ -67,7 +67,7 @@ export function startOf(text: string | null): { readonly spawn: Spawn | null; re
   return { spawn: null, warning: `Query parameter spawn="${text}" names no walk spawn and no place; use one of ${ids}, or x,y,z,tx,ty,tz in metres: the feet, then a point looked at off the vertical through them. The walk starts at ${DEFAULT_SPAWN}.` };
 }
 
-/** The spawn whose feet lie nearest (x, y, z): where walk mode puts a walker that has nowhere to stand after a build. */
+/** The spawn whose feet lie nearest (x, y, z): where walk mode puts a walker that has nowhere to stand once its place is checked. */
 export function nearestSpawn(x: number, y: number, z: number): Spawn {
   const away = (s: Spawn): number => Math.hypot(s.feet[0] - x, s.feet[1] - y, s.feet[2] - z);
   return SPAWNS.reduce((best, s) => (away(s) < away(best) ? s : best));

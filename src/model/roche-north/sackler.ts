@@ -249,8 +249,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1975),
     title: 'Sackler Wing foundations and deck',
     detail: 'A concrete mat, retaining walls on the park side and a column grid carry the gallery deck over a service level and garage (Aldred 1978).',
-    motion: { kind: 'rise' },
-    stagger: 'x',
     build: foundations,
   },
   {
@@ -259,8 +257,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1976),
     title: 'Limestone end walls of the Sackler Wing',
     detail: 'A limestone tower closes the west end of the coming glass wall, its park faces on the building line.',
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: endWalls,
   },
   {
@@ -269,8 +265,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1977),
     title: 'Lay the gallery floor',
     detail: 'Stone paving for the walkways round the platform, along the glass and beside its long sides.',
-    motion: { kind: 'pop' },
-    stagger: 'radial',
     build: floor,
   },
   {
@@ -279,8 +273,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1977),
     title: 'Granite platform, the ancient quay',
     detail: 'A granite-faced platform a metre high stands for the quay on the Nile, with side flights, a paved terrace and a coping to sit on.',
-    motion: { kind: 'rise' },
-    stagger: '-z',
     build: platform,
   },
   {
@@ -289,8 +281,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1977),
     title: 'Fill the reflecting pool',
     detail: 'The pool wraps the terrace on three sides and fills the east end, suggesting the Nile before the temple.',
-    motion: { kind: 'grow' },
-    stagger: 'none',
     build: pool,
   },
   {
@@ -299,8 +289,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1978),
     title: 'Re-erect the gate of the Temple of Dendur',
     detail: 'The 8 m sandstone gate goes up course by course on its old paving, a winged sun disk on its cornice.',
-    motion: { kind: 'drop', distance: 1.5 },
-    stagger: 'y',
     build: gate,
   },
   {
@@ -309,8 +297,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1978),
     title: 'Re-erect the Temple of Dendur',
     detail: 'Eleven courses of Nubian sandstone, carved about 15 BC: the pronaos of two columns, then the vestibule and sanctuary, under cavetto cornices.',
-    motion: { kind: 'drop', distance: 1.2 },
-    stagger: 'y',
     build: temple,
   },
   {
@@ -319,8 +305,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1978),
     title: 'The sloping stone back wall',
     detail: 'A wall of pale ashlar leans back behind the temple like the cliffs at Dendur, rough blocks at its foot.',
-    motion: { kind: 'grow' },
-    stagger: 'y',
     build: backWall,
   },
   {
@@ -329,8 +313,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1978),
     title: 'The sloped glass wall facing the park',
     detail: 'Stippled glass on white steel fins leans in from the park: the "outdoor glass display case" Thomas Hoving promised.',
-    motion: { kind: 'slide', from: [14, 0, 0] },
-    stagger: 'z',
     build: addGlassWall,
   },
   {
@@ -339,8 +321,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1978),
     title: 'Hang the stippled glass ceiling',
     detail: 'A flat ceiling of stippled glass panels hangs 16 m over the walkways, diffusing the daylight with the wall.',
-    motion: { kind: 'drop', distance: 4 },
-    stagger: 'z',
     build: addCeiling,
   },
   {
@@ -349,8 +329,6 @@ export const sacklerSteps: readonly StepDef[] = [
     year: year(1978),
     title: 'The Sackler Wing glass roof',
     detail: 'Steel girders and ten glazed ridges close the wing; the end tower gets its roof. The wing opened on 27 September 1978.',
-    motion: { kind: 'drop' },
-    stagger: 'z',
     build(kit) {
       addRoof(kit);
       towerRoof(kit);

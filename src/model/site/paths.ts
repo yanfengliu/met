@@ -128,11 +128,9 @@ export const pathsStep: StepDef = {
   chapter: 'site',
   title: 'Lay East Drive and the park paths',
   detail: 'East Drive curves round the west side; asphalt paths cross the lawns, and the 86th Street transverse leaves the avenue at 84th Street.',
-  motion: { kind: 'rise', distance: 0.4 },
-  stagger: 'order',
   build(kit) {
-    kit.add(strip([EAST_DRIVE], EAST_DRIVE_WIDTH), palette.asphalt, IDENTITY, 0);
-    kit.add(strip([TRANSVERSE], TRANSVERSE_WIDTH), palette.asphalt, IDENTITY, 1);
-    kit.add(strip(FOOTPATHS, FOOTPATH_WIDTH), siteMaterials.pathAsphalt, IDENTITY, 2);
+    kit.add(strip([EAST_DRIVE], EAST_DRIVE_WIDTH), palette.asphalt, IDENTITY);
+    kit.add(strip([TRANSVERSE], TRANSVERSE_WIDTH), palette.asphalt, IDENTITY);
+    kit.add(strip(FOOTPATHS, FOOTPATH_WIDTH), siteMaterials.pathAsphalt, IDENTITY);
   },
 };

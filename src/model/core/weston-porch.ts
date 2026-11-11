@@ -100,8 +100,8 @@ function at(u: number, y: number, d: number, yaw = 0): Matrix4 {
 }
 
 /** A box between two corners (u, y, d) of the porch's frame, in either order. */
-function box(kit: Kit, material: Material, [u0, y0, d0]: V3, [u1, y1, d1]: V3, order: number): void {
-  addBox(kit, material, B_SOUTH_X - d1, L1 + y0, CENTRE_Z + u0, B_SOUTH_X - d0, L1 + y1, CENTRE_Z + u1, order);
+function box(kit: Kit, material: Material, [u0, y0, d0]: V3, [u1, y1, d1]: V3): void {
+  addBox(kit, material, B_SOUTH_X - d1, L1 + y0, CENTRE_Z + u0, B_SOUTH_X - d0, L1 + y1, CENTRE_Z + u1);
 }
 
 /** A disc `size` across and `depth` deep standing out of a face, along `toward` (the face's outward axis in the porch's frame) from (u, y, d). */
@@ -153,40 +153,39 @@ function masonry(): BufferGeometry {
 }
 
 /**
- * The porch's stonework, from its pedestals to the balcony's floor (see the header); its railing is `westonRailing`. Under the facade step's `order`
- * stagger the pedestals come first, then the pilasters, then the body rising to its entablature, the panels and roundels, and the balcony's block.
+ * The porch's stonework, from its pedestals to the balcony's floor (see the header); its railing is `westonRailing`.
  */
 export function westonPorch(kit: Kit): void {
   const stone = core.westonStone;
   const { body, pedestal: ped, pilaster: p, anta } = PORCH;
-  kit.add(masonry(), stone, FRAME, 3);
+  kit.add(masonry(), stone, FRAME);
   // Over the doorway's architrave, up to the capitals, a frieze panel with a row of paterae (#33's band of paterae).
   const panel = { y0: DOOR.height + DOOR.trim + 0.06, y1: body.height - 0.06, d: body.depth + 0.03 };
-  box(kit, stone, [-(DOOR.width / 2 + DOOR.trim), panel.y0, body.depth], [DOOR.width / 2 + DOOR.trim, panel.y1, panel.d], 4);
+  box(kit, stone, [-(DOOR.width / 2 + DOOR.trim), panel.y0, body.depth], [DOOR.width / 2 + DOOR.trim, panel.y1, panel.d]);
   const roundel = cylinder(20);
-  for (let k = -3; k <= 3; k++) kit.add(roundel, stone, disc(k * 0.5, (panel.y0 + panel.y1) / 2, panel.d, '+d', 0.16, 0.05), 4);
+  for (let k = -3; k <= 3; k++) kit.add(roundel, stone, disc(k * 0.5, (panel.y0 + panel.y1) / 2, panel.d, '+d', 0.16, 0.05));
   const die = ped.height - ped.cap;
   const front = splitPilaster(p.width, p.flutes, PORCH.fluted - ped.height, body.height - ped.height);
   const narrow = splitPilaster(anta.width, anta.flutes, PORCH.fluted - ped.height, body.height - ped.height);
   for (const s of [-1, 1]) {
     // Pedestals: a die and a cap across the front either side of the doorway, and along the side back to the wall.
-    box(kit, stone, [s * ped.inner, 0, body.depth], [s * ped.outer, die, ped.front], 1);
-    box(kit, stone, [s * body.half, 0, 0], [s * ped.outer, die, body.depth], 1);
-    box(kit, stone, [s * ped.inner, die, body.depth], [s * (ped.outer + 0.04), ped.height, ped.front + 0.04], 1);
-    box(kit, stone, [s * body.half, die, 0], [s * (ped.outer + 0.04), ped.height, body.depth], 1);
+    box(kit, stone, [s * ped.inner, 0, body.depth], [s * ped.outer, die, ped.front]);
+    box(kit, stone, [s * body.half, 0, 0], [s * ped.outer, die, body.depth]);
+    box(kit, stone, [s * ped.inner, die, body.depth], [s * (ped.outer + 0.04), ped.height, ped.front + 0.04]);
+    box(kit, stone, [s * body.half, die, 0], [s * (ped.outer + 0.04), ped.height, body.depth]);
     // The corner pier's two pilasters, on the front and on the side, and the narrower one against the wall. The corner's two are pieces apart: their
     // shafts meet face to face, but their bases (to 0.12 m over the pedestal for their plinths) and capitals (the top 0.26 m) run into each other
     // there, as one moulding turning the corner would (#33). Every piece stays closed and the walk reads each alone; a cut through the overlap (0.96
     // to 1.32 m or 5.55 to 5.81 m over the main floor) caps each piece it crosses, so there one's stone shows inside the other's cap.
-    kit.add(front, stone, at(s * p.u, ped.height, body.depth), 2);
-    kit.add(front, stone, at(s * body.half, ped.height, body.depth - p.width / 2, (s * Math.PI) / 2), 2);
-    kit.add(narrow, stone, at(s * body.half, ped.height, anta.d, (s * Math.PI) / 2), 2);
+    kit.add(front, stone, at(s * p.u, ped.height, body.depth));
+    kit.add(front, stone, at(s * body.half, ped.height, body.depth - p.width / 2, (s * Math.PI) / 2));
+    kit.add(narrow, stone, at(s * body.half, ped.height, anta.d, (s * Math.PI) / 2));
     // The blind panel between them: a band at the fluting's foot and a raised frame round the panel above and the one below it, the lower clear of the
     // pilasters' bases (0.36 m, half a width) and the upper of their capitals.
     const d0 = anta.d + anta.width / 2;
     const d1 = body.depth - p.width;
     const face = s * (body.half + 0.025);
-    box(kit, stone, [s * body.half, PORCH.fluted - 0.12, d0], [face, PORCH.fluted + 0.12, d1], 4);
+    box(kit, stone, [s * body.half, PORCH.fluted - 0.12, d0], [face, PORCH.fluted + 0.12, d1]);
     for (const [y0, y1] of [
       [ped.height + p.width / 2 + 0.06, PORCH.fluted - 0.22],
       [PORCH.fluted + 0.22, body.height - 0.35],
@@ -197,21 +196,21 @@ export function westonPorch(kit: Kit): void {
         [[d0 + 0.08, y0 + 0.06], [d0 + 0.14, y1 - 0.06]],
         [[d1 - 0.14, y0 + 0.06], [d1 - 0.08, y1 - 0.06]],
       ] as const) {
-        box(kit, stone, [s * body.half, a[1], a[0]], [face, b[1], b[0]], 4);
+        box(kit, stone, [s * body.half, a[1], a[0]], [face, b[1], b[0]]);
       }
     }
   }
   // Inside the entablature, a block that fills it and rises above its cornice as the balcony's floor.
-  box(kit, stone, [-EDGE, body.height, 0], [EDGE, PORCH.top, PORCH.depth], 6);
+  box(kit, stone, [-EDGE, body.height, 0], [EDGE, PORCH.top, PORCH.depth]);
   // The frieze's carving read as its roundels (#33: oval paterae among garlands), on the front and both sides.
   const frieze = { y: body.height + PORCH.entablature * 0.45, out: PORCH.entablature * 0.012 };
-  for (let k = -4; k <= 4; k++) kit.add(roundel, stone, disc(k * 0.6, frieze.y, PORCH.depth + frieze.out, '+d', 0.22, 0.04), 5);
+  for (let k = -4; k <= 4; k++) kit.add(roundel, stone, disc(k * 0.6, frieze.y, PORCH.depth + frieze.out, '+d', 0.22, 0.04));
   // Four along each side, evenly from 0.45 m off the wall to 0.3 m short of the front, clear of the frieze's mitred corner.
   const side = { from: 0.45, to: PORCH.depth - 0.3, count: 4 };
   for (const s of [-1, 1]) {
     for (let k = 0; k < side.count; k++) {
       const d = side.from + (k * (side.to - side.from)) / (side.count - 1);
-      kit.add(roundel, stone, disc(s * (EDGE + frieze.out), frieze.y, d, s < 0 ? '-u' : '+u', 0.22, 0.04), 5);
+      kit.add(roundel, stone, disc(s * (EDGE + frieze.out), frieze.y, d, s < 0 ? '-u' : '+u', 0.22, 0.04));
     }
   }
 }
@@ -226,11 +225,11 @@ export function westonRailing(kit: Kit): void {
   const r = { u: EDGE - 0.15, front: PORCH.depth - 0.15, back: 0.15, top: 0.9, mid: 0.45, size: 0.05 };
   const posts: (readonly [number, number])[] = [-r.u, -r.u / 3, r.u / 3, r.u].map((u) => [u, r.front] as const);
   posts.push([-r.u, r.back], [r.u, r.back]);
-  for (const [u, d] of posts) kit.add(pipe, green, at(u, PORCH.top, d).multiply(new Matrix4().makeScale(r.size, r.top + r.size / 2, r.size)), 8);
+  for (const [u, d] of posts) kit.add(pipe, green, at(u, PORCH.top, d).multiply(new Matrix4().makeScale(r.size, r.top + r.size / 2, r.size)));
   for (const y of [r.top, r.mid]) {
     const along = new Matrix4().makeRotationZ(-Math.PI / 2).multiply(new Matrix4().makeScale(r.size, 2 * r.u, r.size));
-    kit.add(pipe, green, at(-r.u, PORCH.top + y, r.front).multiply(along), 8);
+    kit.add(pipe, green, at(-r.u, PORCH.top + y, r.front).multiply(along));
     const out = new Matrix4().makeRotationX(Math.PI / 2).multiply(new Matrix4().makeScale(r.size, r.front - r.back, r.size));
-    for (const u of [-r.u, r.u]) kit.add(pipe, green, at(u, PORCH.top + y, r.back).multiply(out), 8);
+    for (const u of [-r.u, r.u]) kit.add(pipe, green, at(u, PORCH.top + y, r.back).multiply(out));
   }
 }

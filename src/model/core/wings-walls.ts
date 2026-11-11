@@ -90,21 +90,21 @@ export function at(e: Elevation, along: number, out = 0): { x: number; z: number
 }
 
 /** A box on an elevation: [a0, a1] along the run, y0..y1, from `out` outside the face to `inn` inside it. */
-export function elevationBox(kit: Kit, e: Elevation, material: Parameters<typeof addBox>[1], a0: number, a1: number, y0: number, y1: number, out: number, inn: number, order: number): void {
+export function elevationBox(kit: Kit, e: Elevation, material: Parameters<typeof addBox>[1], a0: number, a1: number, y0: number, y1: number, out: number, inn: number): void {
   const f0 = e.face - e.inward * out;
   const f1 = e.face + e.inward * inn;
-  if (e.axis === 'x') addBox(kit, material, a0, y0, f0, a1, y1, f1, order);
-  else addBox(kit, material, f0, y0, a0, f1, y1, a1, order);
+  if (e.axis === 'x') addBox(kit, material, a0, y0, f0, a1, y1, f1);
+  else addBox(kit, material, f0, y0, a0, f1, y1, a1);
 }
 
 /** The walls of one elevation: its bays and plain fills, footing to parapet. */
 export function elevationWalls(kit: Kit, e: Elevation): void {
   const geometry = plainBay(e.thickness);
-  e.bays.forEach((c, i) => {
+  e.bays.forEach((c) => {
     const p = at(e, c);
-    kit.add(geometry, palette.brick, placed(p.x, WALL_BASE_Y, p.z, e.facing), i);
+    kit.add(geometry, palette.brick, placed(p.x, WALL_BASE_Y, p.z, e.facing));
   });
-  for (const [a0, a1] of e.fills) elevationBox(kit, e, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, e.thickness, 0);
+  for (const [a0, a1] of e.fills) elevationBox(kit, e, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, e.thickness);
 }
 
 /** Stone trim of a plain elevation: plinth, water table, pilaster strips, sills and lintels, string course, cornice per bay and coping. */
@@ -113,47 +113,47 @@ export function elevationTrim(kit: Kit, e: Elevation): void {
   const all = [...e.bays.map((c) => [c - WESTON_BAY / 2, c + WESTON_BAY / 2] as const), ...e.fills];
   const lo = Math.min(...all.map((r) => r[0]));
   const hi = Math.max(...all.map((r) => r[1]));
-  elevationBox(kit, e, stone, lo, hi, WALL_BASE_Y, LG + 0.6, 0.1, 0, 0);
-  elevationBox(kit, e, stone, lo, hi, L1 - 0.45, L1 + 0.05, 0.12, 0, 1);
-  elevationBox(kit, e, stone, lo, hi, L2 - 0.1, L2 + 0.3, 0.12, 0, 2);
+  elevationBox(kit, e, stone, lo, hi, WALL_BASE_Y, LG + 0.6, 0.1, 0);
+  elevationBox(kit, e, stone, lo, hi, L1 - 0.45, L1 + 0.05, 0.12, 0);
+  elevationBox(kit, e, stone, lo, hi, L2 - 0.1, L2 + 0.3, 0.12, 0);
   const cornice = moulding({ profile: 'cornice-plain', path: [[-WESTON_BAY / 2, 0, 0], [WESTON_BAY / 2, 0, 0]], height: 0.75, projection: 0.65 });
   const edges = [...new Set(e.bays.flatMap((c) => [c - WESTON_BAY / 2, c + WESTON_BAY / 2]).map((v) => Math.round(v * 100) / 100))];
-  edges.forEach((edge, i) => {
-    elevationBox(kit, e, stone, edge - 0.3, edge + 0.3, L1 + 0.05, CORNICE_Y, 0.08, 0, 3 + i);
+  edges.forEach((edge) => {
+    elevationBox(kit, e, stone, edge - 0.3, edge + 0.3, L1 + 0.05, CORNICE_Y, 0.08, 0);
   });
-  e.bays.forEach((c, i) => {
+  e.bays.forEach((c) => {
     for (const h of PLAIN_MAIN) {
       const x = c + (h.x ?? 0);
       const sill = WALL_BASE_Y + (h.y ?? 0);
-      elevationBox(kit, e, stone, x - 0.75, x + 0.75, sill - 0.18, sill, 0.1, 0.05, 3 + i);
-      elevationBox(kit, e, stone, x - 0.75, x + 0.75, sill + h.height, sill + h.height + 0.35, 0.08, 0, 3 + i);
+      elevationBox(kit, e, stone, x - 0.75, x + 0.75, sill - 0.18, sill, 0.1, 0.05);
+      elevationBox(kit, e, stone, x - 0.75, x + 0.75, sill + h.height, sill + h.height + 0.35, 0.08, 0);
     }
     const p = at(e, c);
-    if (!e.shared) kit.add(cornice, stone, placed(p.x, CORNICE_Y, p.z, e.facing), 20 + i);
+    if (!e.shared) kit.add(cornice, stone, placed(p.x, CORNICE_Y, p.z, e.facing));
   });
   // On a shared line the cornice is a flat band, 0.25 m proud; elsewhere the fills get a short cornice block.
-  if (e.shared) elevationBox(kit, e, stone, lo, hi, CORNICE_Y, CORNICE_Y + 0.75, 0.25, 0, 20);
-  else for (const [a0, a1] of e.fills) elevationBox(kit, e, stone, a0, a1, CORNICE_Y, CORNICE_Y + 0.75, 0.2, 0, 20);
-  elevationBox(kit, e, stone, lo, hi, PARAPET_Y, COPING_TOP_Y, 0.08, e.thickness, 30);
+  if (e.shared) elevationBox(kit, e, stone, lo, hi, CORNICE_Y, CORNICE_Y + 0.75, 0.25, 0);
+  else for (const [a0, a1] of e.fills) elevationBox(kit, e, stone, a0, a1, CORNICE_Y, CORNICE_Y + 0.75, 0.2, 0);
+  elevationBox(kit, e, stone, lo, hi, PARAPET_Y, COPING_TOP_Y, 0.08, e.thickness);
 }
 
 /** Windows of a plain elevation (frames, sash bars and glass in the ground and main-floor openings). */
 export function elevationWindows(kit: Kit, e: Elevation): void {
   if (!e.glazed) return;
   const { main, ground } = wingWindows();
-  e.bays.forEach((c, i) => {
+  e.bays.forEach((c) => {
     const reveal = 0.3;
     const g = at(e, c, -reveal);
     const gm = placed(g.x, WALL_BASE_Y + (PLAIN_GROUND.y ?? 0), g.z, e.facing);
-    kit.add(ground.frame, palette.metalDark, gm, i);
-    kit.add(ground.bars, palette.metalDark, gm, i);
-    kit.add(ground.glass, palette.glassDark, gm, i);
+    kit.add(ground.frame, palette.metalDark, gm);
+    kit.add(ground.bars, palette.metalDark, gm);
+    kit.add(ground.glass, palette.glassDark, gm);
     for (const h of PLAIN_MAIN) {
       const p = at(e, c + (h.x ?? 0) * (e.axis === 'x' ? -e.inward : e.inward), -reveal);
       const m = placed(p.x, WALL_BASE_Y + (h.y ?? 0), p.z, e.facing);
-      kit.add(main.frame, palette.metalDark, m, i);
-      kit.add(main.bars, palette.metalDark, m, i);
-      kit.add(main.glass, palette.glassDark, m, i);
+      kit.add(main.frame, palette.metalDark, m);
+      kit.add(main.bars, palette.metalDark, m);
+      kit.add(main.glass, palette.glassDark, m);
     }
   });
 }
@@ -163,11 +163,11 @@ export function wingFoundations(kit: Kit, block: 'b' | 'c'): void {
   const m = core.footing;
   const [x0, z0, x1, z1] = INTERIOR[block];
   const outerX = block === 'b' ? B_SOUTH_X : C_NORTH_X;
-  addBox(kit, m, x0, FOOTING_Y, WEST_Z - 0.2, x1, WALL_BASE_Y, INNER_WEST_Z + 0.3, 0);
-  addBox(kit, m, x0, FOOTING_Y, INNER_EAST_Z - 0.3, x1, WALL_BASE_Y, EAST_Z + 0.2, 2);
+  addBox(kit, m, x0, FOOTING_Y, WEST_Z - 0.2, x1, WALL_BASE_Y, INNER_WEST_Z + 0.3);
+  addBox(kit, m, x0, FOOTING_Y, INNER_EAST_Z - 0.3, x1, WALL_BASE_Y, EAST_Z + 0.2);
   const outerInner = block === 'b' ? outerX + OUTER_WALL + 0.3 : outerX - OUTER_WALL - 0.3;
-  addBox(kit, m, block === 'b' ? outerX - 0.2 : outerInner, FOOTING_Y, WEST_Z - 0.2, block === 'b' ? outerInner : outerX + 0.2, WALL_BASE_Y, EAST_Z + 0.2, 1);
-  addBox(kit, m, x0, WALL_BASE_Y, z0, x1, LG, z1, 3);
+  addBox(kit, m, block === 'b' ? outerX - 0.2 : outerInner, FOOTING_Y, WEST_Z - 0.2, block === 'b' ? outerInner : outerX + 0.2, WALL_BASE_Y, EAST_Z + 0.2);
+  addBox(kit, m, x0, WALL_BASE_Y, z0, x1, LG, z1);
 }
 
 /** The main stair of wing C, main floor to second floor in one stone flight. */
@@ -178,13 +178,13 @@ export function wingFloors(kit: Kit): void {
   for (const block of ['b', 'c'] as const) {
     const [x0, z0, x1, z1] = INTERIOR[block];
     // The main floor runs under the light wells too: they are open courts from it to the sky.
-    addBox(kit, palette.stoneFloor, x0, L1 - SLAB, z0, x1, L1, z1, 0);
+    addBox(kit, palette.stoneFloor, x0, L1 - SLAB, z0, x1, L1, z1);
     const holes = block === 'c' ? [C_STAIR] : [];
-    for (const r of slabRects(block, holes)) addBox(kit, palette.wood, r[0], L2 - SLAB, r[1], r[2], L2, r[3], 1);
+    for (const r of slabRects(block, holes)) addBox(kit, palette.wood, r[0], L2 - SLAB, r[1], r[2], L2, r[3]);
   }
   const risers = 38;
   const flight = stairFlight({ width: C_STAIR[3] - C_STAIR[1] - 0.2, steps: risers, riser: (L2 - L1) / risers, tread: 0.245, cheeks: { width: 0.15, height: 0.95 } });
   const foot = placed(C_STAIR[2], L1, (C_STAIR[1] + C_STAIR[3]) / 2, FACING.north);
-  kit.add(flight.steps, palette.limestone, foot, 2);
-  if (flight.cheeks) kit.add(flight.cheeks, palette.limestone, foot, 2);
+  kit.add(flight.steps, palette.limestone, foot);
+  if (flight.cheeks) kit.add(flight.cheeks, palette.limestone, foot);
 }

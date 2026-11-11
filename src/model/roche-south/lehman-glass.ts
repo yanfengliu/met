@@ -68,7 +68,6 @@ export const NARROW_BAYS = 4;
 interface Piece {
   readonly matrix: ReturnType<typeof bar>;
   readonly glass: boolean;
-  readonly order: number;
 }
 
 /** The pyramid's pieces: eave ring, hips, purlins, rafters, then one pane per face. */
@@ -82,13 +81,13 @@ export function pyramidPieces(): Piece[] {
     const b = base[(i + 1) % n] ?? apex;
     const normal = upNormal(a, b, apex);
     const broad = i % 2 === 1;
-    pieces.push({ matrix: bar(a, b, EAVE_BAR[0], EAVE_BAR[1]), glass: false, order: 0 });
+    pieces.push({ matrix: bar(a, b, EAVE_BAR[0], EAVE_BAR[1]), glass: false });
     // The hip from this face's first corner (each corner once).
     const before = base[(i - 1 + n) % n] ?? apex;
     const hipNormal = unit(add(normal, upNormal(before, a, apex)));
-    pieces.push({ matrix: bar(a, apex, HIP_BAR[0], HIP_BAR[1], hipNormal), glass: false, order: 1 });
-    PURLINS.forEach((h, k) => {
-      pieces.push({ matrix: bar(mix(a, apex, h), mix(b, apex, h), GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: 2 + k });
+    pieces.push({ matrix: bar(a, apex, HIP_BAR[0], HIP_BAR[1], hipNormal), glass: false });
+    PURLINS.forEach((h) => {
+      pieces.push({ matrix: bar(mix(a, apex, h), mix(b, apex, h), GRID_BAR[0], GRID_BAR[1], normal), glass: false });
     });
     // Rafters square to the eave: one from eave fraction s ends on the near hip at fraction 2s (or 2(1 − s)).
     const bays = broad ? BROAD_BAYS : NARROW_BAYS;
@@ -96,10 +95,10 @@ export function pyramidPieces(): Piece[] {
       const s = j / bays;
       const foot = mix(a, b, s);
       const end = Math.abs(s - 0.5) < 1e-9 ? apex : s < 0.5 ? mix(a, apex, 2 * s) : mix(b, apex, 2 * (1 - s));
-      pieces.push({ matrix: bar(foot, end, GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: PURLINS.length + 2 });
+      pieces.push({ matrix: bar(foot, end, GRID_BAR[0], GRID_BAR[1], normal), glass: false });
     }
     const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
-    pieces.push({ matrix: paneMatrix(lifted(a), lifted(b), lifted(apex)), glass: true, order: PURLINS.length + 3 + i });
+    pieces.push({ matrix: paneMatrix(lifted(a), lifted(b), lifted(apex)), glass: true });
   }
   return pieces;
 }
@@ -121,14 +120,14 @@ export function bandPieces(): Piece[] {
       // Rafters from the high edge to the low edge; the end ones are the hips.
       const size = j === 0 || j === bays ? HIP_BAR : GRID_BAR;
       if (j === 0 && i > 0) continue;
-      pieces.push({ matrix: bar(mix(q0, q1, t), mix(p0, p1, t), size[0], size[1], normal), glass: false, order: 0 });
+      pieces.push({ matrix: bar(mix(q0, q1, t), mix(p0, p1, t), size[0], size[1], normal), glass: false });
     }
     for (const t of [0, 1 / 3, 2 / 3, 1]) {
       const size = t === 0 || t === 1 ? HIP_BAR : GRID_BAR;
-      pieces.push({ matrix: bar(mix(q0, p0, t), mix(q1, p1, t), size[0], size[1], normal), glass: false, order: 0 });
+      pieces.push({ matrix: bar(mix(q0, p0, t), mix(q1, p1, t), size[0], size[1], normal), glass: false });
     }
     const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
-    for (const matrix of quadPanes(lifted(q0), lifted(q1), lifted(p1), lifted(p0))) pieces.push({ matrix, glass: true, order: 1 + i });
+    for (const matrix of quadPanes(lifted(q0), lifted(q1), lifted(p1), lifted(p0))) pieces.push({ matrix, glass: true });
   }
   return pieces;
 }
@@ -167,29 +166,29 @@ export function stripPieces(): Piece[] {
       [x0, y1, z1],
     ];
     const normal = upNormal(corners[0], corners[2], corners[1]);
-    pieces.push({ matrix: bar(corners[0], corners[1], HIP_BAR[0], HIP_BAR[1], normal), glass: false, order: 0 });
-    pieces.push({ matrix: bar(corners[3], corners[2], HIP_BAR[0], HIP_BAR[1], normal), glass: false, order: 0 });
+    pieces.push({ matrix: bar(corners[0], corners[1], HIP_BAR[0], HIP_BAR[1], normal), glass: false });
+    pieces.push({ matrix: bar(corners[3], corners[2], HIP_BAR[0], HIP_BAR[1], normal), glass: false });
     const bays = Math.round((x1 - x0) / 0.75);
     for (let j = 0; j <= bays; j++) {
       const x = x0 + ((x1 - x0) * j) / bays;
-      pieces.push({ matrix: bar([x, y0, z0], [x, y1, z1], GRID_BAR[0], GRID_BAR[1], normal), glass: false, order: 0 });
+      pieces.push({ matrix: bar([x, y0, z0], [x, y1, z1], GRID_BAR[0], GRID_BAR[1], normal), glass: false });
     }
     const lifted = (p: V3): Vec => add(p, scale(normal, PANE_LIFT));
-    for (const matrix of quadPanes(lifted(corners[0]), lifted(corners[1]), lifted(corners[2]), lifted(corners[3]))) pieces.push({ matrix, glass: true, order: 1 });
+    for (const matrix of quadPanes(lifted(corners[0]), lifted(corners[1]), lifted(corners[2]), lifted(corners[3]))) pieces.push({ matrix, glass: true });
     // The run's inner end: a triangle from its low edge up to the head's height, under the lead flat, and a pane across to the ring wall. The triangle
     // lies in the bars' end faces' plane, as it did before work unit 15, so outside the end rafter glass and steel share about 30 cm² (review 4); only the
     // 0.25 m pocket by the ring wall sees them.
-    pieces.push({ matrix: paneMatrix([inner, y0, z0], [inner, y1, z0], [inner, y1, z1]), glass: true, order: 1 });
+    pieces.push({ matrix: paneMatrix([inner, y0, z0], [inner, y1, z0], [inner, y1, z1]), glass: true });
     // The pane across to the ring wall stands from the roof's top, under the run's sill bar.
     const ring = inner - Math.sign(inner) * (STRIP_GAP_HALF_X - RING_CROSSING_X);
-    for (const matrix of quadPanes([ring, LEHMAN_ROOF_Y, z0], [inner, LEHMAN_ROOF_Y, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true, order: 1 });
+    for (const matrix of quadPanes([ring, LEHMAN_ROOF_Y, z0], [inner, LEHMAN_ROOF_Y, z0], [inner, y1, z0], [ring, y1, z0])) pieces.push({ matrix, glass: true });
     // The run's outer end over the link wall's coping, 1 cm beyond the bars' ends: from where the glass crosses the coping's height to the brick, here
     // wing B's or C's west wall beyond the old front's end, and up to the head line.
     const outer = inner === x0 ? x1 : x0;
     const end = outer + Math.sign(outer - inner) * END_CLEAR;
     if (y1 > LINK_TOP_Y) {
       const zc = z0 + ((LINK_TOP_Y - y0) / (y1 - y0)) * (z1 - z0);
-      for (const matrix of quadPanes([end, LINK_TOP_Y, zc], [end, LINK_TOP_Y, STRIP_EAST_Z], [end, y1, STRIP_EAST_Z], [end, y1, z1])) pieces.push({ matrix, glass: true, order: 1 });
+      for (const matrix of quadPanes([end, LINK_TOP_Y, zc], [end, LINK_TOP_Y, STRIP_EAST_Z], [end, y1, STRIP_EAST_Z], [end, y1, z1])) pieces.push({ matrix, glass: true });
     }
   };
   run(-STRIP_HALF_X, -STRIP_GAP_HALF_X, -STRIP_GAP_HALF_X);
@@ -197,8 +196,8 @@ export function stripPieces(): Piece[] {
   return pieces;
 }
 
-function addPieces(kit: Kit, pieces: readonly Piece[], orderBase = 0): void {
-  for (const piece of pieces) kit.add(piece.glass ? UNIT_TRIANGLE : UNIT_BOX, piece.glass ? mat.glass : mat.steel, piece.matrix, orderBase + piece.order);
+function addPieces(kit: Kit, pieces: readonly Piece[]): void {
+  for (const piece of pieces) kit.add(piece.glass ? UNIT_TRIANGLE : UNIT_BOX, piece.glass ? mat.glass : mat.steel, piece.matrix);
 }
 
 export const lehmanGlassSteps: readonly StepDef[] = [
@@ -208,11 +207,9 @@ export const lehmanGlassSteps: readonly StepDef[] = [
     year: YEAR,
     title: 'Glass over the gallery ring',
     detail: 'A sloped glazed ceiling over the galleries round the court, and a skylight along the old brick front where the wing meets it.',
-    motion: { kind: 'drop' },
-    stagger: 'order',
     build: (kit) => {
       addPieces(kit, bandPieces());
-      addPieces(kit, stripPieces(), 10);
+      addPieces(kit, stripPieces());
     },
   },
   {
@@ -221,8 +218,6 @@ export const lehmanGlassSteps: readonly StepDef[] = [
     year: YEAR,
     title: 'The glass pyramid over the court',
     detail: 'Eight glazed faces on a light steel grid rise about 11 m from the court walls to one apex, some 27 m above Fifth Avenue grade.',
-    motion: { kind: 'drop' },
-    stagger: 'order',
     build: (kit) => {
       addPieces(kit, pyramidPieces());
     },

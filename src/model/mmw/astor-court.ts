@@ -105,25 +105,25 @@ function gateRing(): BufferGeometry {
 
 /** Paving, the moon gate, lintels over the openings, the tiled coping round the walls and lattice windows in them. */
 function buildFloorWalls(kit: Kit): void {
-  addBox(kit, mmwMaterials.pavingGrey, X0 + FACE, Y, Z0 + FACE, X1 - FACE, Y + 0.05, Z1 - FACE, 0);
+  addBox(kit, mmwMaterials.pavingGrey, X0 + FACE, Y, Z0 + FACE, X1 - FACE, Y + 0.05, Z1 - FACE);
   // The moon gate in the south wall, on the court side of the map's opening, facing north (+X) into the court.
   const gateMatrix = placed(X0 + FACE + 0.13, Y, GATE.z, Math.PI / 2);
-  kit.add(moonGatePanel(), palette.plaster, gateMatrix, 1);
-  kit.add(gateRing(), mmwMaterials.pavingGrey, gateMatrix, 1);
+  kit.add(moonGatePanel(), palette.plaster, gateMatrix);
+  kit.add(gateRing(), mmwMaterials.pavingGrey, gateMatrix);
   // Lintels closing the map's full-height openings above the doorways: the gate's and the Ming Room's.
-  addBox(kit, palette.plaster, X0 - FACE, COPING_Y, -14.65, X0 + FACE, WALL_TOP, -12.95, 2);
-  addBox(kit, palette.plaster, X1 - FACE, LINTEL_Y, MING_DOOR.z0, X1 + FACE, WALL_TOP, MING_DOOR.z1, 2);
+  addBox(kit, palette.plaster, X0 - FACE, COPING_Y, -14.65, X0 + FACE, WALL_TOP, -12.95);
+  addBox(kit, palette.plaster, X1 - FACE, LINTEL_Y, MING_DOOR.z0, X1 + FACE, WALL_TOP, MING_DOOR.z1);
   // The tiled coping: a grey tile eave 0.38 m proud round the court's three garden walls.
   const coping = merged('astor-coping', [
     [UNIT_BOX, box(X0 + FACE, COPING_Y, Z0 + FACE, X1 - FACE, COPING_Y + 0.14, Z0 + FACE + 0.38)],
     [UNIT_BOX, box(X0 + FACE, COPING_Y, Z1 - FACE - 0.38, X1 - FACE, COPING_Y + 0.14, Z1 - FACE)],
     [UNIT_BOX, box(X0 + FACE, COPING_Y, Z0 + FACE + 0.38, X0 + FACE + 0.38, COPING_Y + 0.14, Z1 - FACE - 0.38)],
   ]);
-  kit.add(coping, mmwMaterials.tileGrey, placed(0, 0, 0), 3);
+  kit.add(coping, mmwMaterials.tileGrey, placed(0, 0, 0));
   // Lattice "leak windows" in the west and east walls, in timber.
   const lattice = latticeWindow();
-  for (const x of [115.0, 126.5]) kit.add(lattice, mmwMaterials.timber, placed(x, Y + 1.6, Z0 + FACE, 0), 4);
-  for (const x of [117.5, 125.0]) kit.add(lattice, mmwMaterials.timber, placed(x, Y + 1.6, Z1 - FACE, Math.PI), 4);
+  for (const x of [115.0, 126.5]) kit.add(lattice, mmwMaterials.timber, placed(x, Y + 1.6, Z0 + FACE, 0));
+  for (const x of [117.5, 125.0]) kit.add(lattice, mmwMaterials.timber, placed(x, Y + 1.6, Z1 - FACE, Math.PI));
 }
 
 let latticeCache: BufferGeometry | null = null;
@@ -215,7 +215,7 @@ function buildWalkPavilion(kit: Kit): void {
   for (let k = 0; k <= 7; k += 1) posts.push([X0 + 1.0 + (k * (X1 - X0 - 2.0)) / 7, Z1 - FACE - 2.1, 2.85]);
   for (const x of [116.4, 120.8]) posts.push([x, Z0 + FACE + 2.95, 3.4]);
   for (const z of [Z0 + 1.2, -20.3, -15.2, Z1 - 1.2]) posts.push([X1 - FACE - 1.95, z, 3.5]);
-  posts.forEach(([x, z, h], i) => { kit.add(CYLINDER, mmwMaterials.timber, at(x, Y + h / 2, z, 0, 0.24, h, 0.24), i); });
+  posts.forEach(([x, z, h]) => { kit.add(CYLINDER, mmwMaterials.timber, at(x, Y + h / 2, z, 0, 0.24, h, 0.24)); });
   // Beams under the eaves, low railings between the walk's posts, and the Ming Room's lattice doors and windows on its front wall.
   const timber = merged('astor-timber', [
     [UNIT_BOX, box(X0 + 0.8, Y + 2.7, Z1 - FACE - 2.22, X1 - 0.8, Y + 2.85, Z1 - FACE - 1.98)],
@@ -225,10 +225,10 @@ function buildWalkPavilion(kit: Kit): void {
     ...[0, 1, 2, 3, 4, 5].map((k): [BufferGeometry, Matrix4] => [UNIT_BOX, box(X1 - FACE - 0.1, Y + 0.15, Z0 + 1.8 + k * 1.75, X1 - FACE, Y + 3.2, Z0 + 1.8 + k * 1.75 + 0.12)]),
     [UNIT_BOX, box(X1 - FACE - 0.1, Y + 3.2, Z0 + 1.6, X1 - FACE, Y + 3.35, Z1 - 1.6)],
   ]);
-  kit.add(timber, mmwMaterials.timber, placed(0, 0, 0), 20);
+  kit.add(timber, mmwMaterials.timber, placed(0, 0, 0));
   const lattice = latticeWindow();
-  for (const z of [-22.1, -20.35, -14.95, -13.2]) kit.add(lattice, mmwMaterials.timber, placed(X1 - FACE, Y + 1.0, z, -Math.PI / 2), 21);
-  kit.add(tileRoofs(), mmwMaterials.tileGrey, placed(0, 0, 0), 22);
+  for (const z of [-22.1, -20.35, -14.95, -13.2]) kit.add(lattice, mmwMaterials.timber, placed(X1 - FACE, Y + 1.0, z, -Math.PI / 2));
+  kit.add(tileRoofs(), mmwMaterials.tileGrey, placed(0, 0, 0));
 }
 
 const ROCK = new IcosahedronGeometry(1, 1);
@@ -236,14 +236,14 @@ const ROCK = new IcosahedronGeometry(1, 1);
 /** Taihu rocks round the pool and along the west wall, the pool with its stone curb, bamboo and shrubs. */
 function buildGarden(kit: Kit): void {
   const pool = { x0: 113.1, z0: Z0 + FACE + 0.3, x1: 116.0, z1: -21.4 } as const;
-  addBox(kit, palette.water, pool.x0, Y + 0.05, pool.z0, pool.x1, Y + 0.12, pool.z1, 0);
+  addBox(kit, palette.water, pool.x0, Y + 0.05, pool.z0, pool.x1, Y + 0.12, pool.z1);
   const curb = merged('astor-pool-curb', [
     [UNIT_BOX, box(pool.x0 - 0.2, Y + 0.05, pool.z0 - 0.2, pool.x1 + 0.2, Y + 0.3, pool.z0)],
     [UNIT_BOX, box(pool.x0 - 0.2, Y + 0.05, pool.z1, pool.x1 + 0.2, Y + 0.3, pool.z1 + 0.2)],
     [UNIT_BOX, box(pool.x0 - 0.2, Y + 0.05, pool.z0, pool.x0, Y + 0.3, pool.z1)],
     [UNIT_BOX, box(pool.x1, Y + 0.05, pool.z0, pool.x1 + 0.2, Y + 0.3, pool.z1)],
   ]);
-  kit.add(curb, mmwMaterials.pavingGrey, placed(0, 0, 0), 0);
+  kit.add(curb, mmwMaterials.pavingGrey, placed(0, 0, 0));
   // Rocks: one lumpy geometry, each placed with its own size and turn.
   const rocks = [
     [113.2, -21.0, 0.9, 1.4, 0.8, 0.3], [114.6, -20.7, 0.7, 0.9, 0.6, 1.2], [116.6, -22.6, 0.8, 1.8, 0.7, 2.1],
@@ -252,17 +252,17 @@ function buildGarden(kit: Kit): void {
   ] as const;
   rocks.forEach(([x, z, sx, sy, sz, turn], i) => {
     const q = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), turn).multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.35 * i));
-    kit.add(ROCK, mmwMaterials.rock, new Matrix4().compose(new Vector3(x, Y + sy * 0.55, z), q, new Vector3(sx, sy, sz)), 10 + i);
+    kit.add(ROCK, mmwMaterials.rock, new Matrix4().compose(new Vector3(x, Y + sy * 0.55, z), q, new Vector3(sx, sy, sz)));
   });
   // Bamboo stems in the south-east corner and shrubs by the rocks.
   for (let k = 0; k < 9; k += 1) {
     const x = 113.6 + (k % 3) * 0.45 + (k > 4 ? 0.2 : 0);
     const z = -12.3 - Math.floor(k / 3) * 0.4;
     const h = 3.6 + (k % 4) * 0.5;
-    kit.add(CYLINDER, palette.foliage, at(x, Y + h / 2, z, 0, 0.07, h, 0.07), 20);
+    kit.add(CYLINDER, palette.foliage, at(x, Y + h / 2, z, 0, 0.07, h, 0.07));
   }
   for (const [x, z, s] of [[113.9, -12.8, 1.3], [115.2, -18.9, 0.9], [121.8, -22.8, 0.8], [126.2, -22.9, 0.9]] as const) {
-    kit.add(ROCK, palette.foliage, at(x, Y + s * 0.9 + 1.1, z, 0, s, s, s), 21);
+    kit.add(ROCK, palette.foliage, at(x, Y + s * 0.9 + 1.1, z, 0, s, s, s));
   }
 }
 
@@ -270,8 +270,8 @@ function buildGarden(kit: Kit): void {
 function buildSkylight(kit: Kit): void {
   const glass = hippedSkylight({ width: Z1 - Z0, length: X1 - X0, pitch: 30, curbHeight: 0.35, bays: 8 });
   const m = placed((X0 + X1) / 2, END_ROOF_Y + 0.5, (Z0 + Z1) / 2, Math.PI / 2);
-  kit.add(glass.frame, palette.metalDark, m, 0);
-  kit.add(glass.glass, palette.glass, m, 0);
+  kit.add(glass.frame, palette.metalDark, m);
+  kit.add(glass.glass, palette.glass, m);
 }
 
 
@@ -282,8 +282,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     year: '1981',
     title: 'Pave the Astor Court and cut its moon gate',
     detail: 'A Ming scholar\'s garden court on the north pavilion\'s second floor: grey paving, white walls under grey tile copings, a round moon gate from the south.',
-    motion: { kind: 'rise', distance: 2 },
-    stagger: 'order',
     build: buildFloorWalls,
   },
   {
@@ -292,8 +290,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     year: '1981',
     title: 'Raise the walk, half-pavilion and Ming Room',
     detail: 'Timber columns and tile roofs: a covered walk along the east wall, a half-pavilion on the west wall and the Ming Room\'s porch at the north end.',
-    motion: { kind: 'drop', distance: 3 },
-    stagger: 'order',
     build: buildWalkPavilion,
   },
   {
@@ -302,8 +298,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     year: '1981',
     title: 'Set the rocks, pool and bamboo',
     detail: 'Taihu rocks round a small pool in the south-west corner, more along the west wall, bamboo by the moon gate.',
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build: buildGarden,
   },
   {
@@ -312,8 +306,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     year: '1981',
     title: 'Close the court under its pyramid skylight',
     detail: 'Kevin Roche and John Dinkeloo\'s pyramidal skylight covers the whole court, filling the roof opening left over it since 1913.',
-    motion: { kind: 'drop', distance: 5 },
-    stagger: 'none',
     build: buildSkylight,
   },
 ];

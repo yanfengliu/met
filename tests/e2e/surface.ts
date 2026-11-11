@@ -1,6 +1,6 @@
 /**
  * The first surface along a ray in the finished model, found apart from the page, for the zoom gate (tests/e2e/zoom.spec.ts): the whole sequence's
- * timeline built and evaluated at t = N in the test's own process, then every drawn piece's triangles tested one by one at its final matrix, both faces
+ * timeline built in the test's own process, then every drawn piece's triangles tested one by one at its final matrix, both faces
  * counting (as the page's pick counts them), plus the workspace ground 0.5 m under the lower of grade and the model's lowest point (docs/design/spec.md,
  * Camera framing). Nothing here uses src/viewer/pick.ts, a BVH, the orbit target or the page's state.
  * Bound: it holds for the page, which shows the finished building, with no section cut and no floor view, where every mesh is drawn, which is the
@@ -19,13 +19,12 @@ let model: { readonly timeline: Timeline; readonly meshes: readonly InstancedMes
 function finished(): { readonly timeline: Timeline; readonly meshes: readonly InstancedMesh[]; readonly groundY: number } {
   if (model !== null) return model;
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   const meshes = timeline.steps.flatMap((s) => s.meshes).filter((m) => m.visible && m.count > 0);
   model = { timeline, meshes, groundY: Math.min(0, timeline.bounds.min.y) - 0.5 };
   return model;
 }
 
-/** The whole sequence's timeline at t = N, built once in the test's own process, for what a test reads of the finished model apart from the page. */
+/** The whole sequence's timeline, built once in the test's own process, for what a test reads of the finished model apart from the page. */
 export function finishedTimeline(): Timeline {
   return finished().timeline;
 }

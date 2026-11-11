@@ -4,9 +4,8 @@
  * - the orbit view's click query finds an artwork through untagged glass and its own vitrine glass, at any distance, and never through a wall or a door;
  * - a click on an artwork shows its card, a click on anything else hides it, and so do Esc and a camera preset (their dismissal, `dismiss`, review 6,
  *   F26);
- * - it hides once none of the artwork's pieces is drawn by the camera: the build takes them away (at t = 0, or before its own instance arrives; a
- *   later t does not bring it back), the section cut, a floor view's included, lies under every piece, or they are on no layer the camera draws; a
- *   cut through the object, or through its plinth alone, keeps it, as the picker still meets the artwork there (F27);
+ * - it hides once none of the artwork's pieces is drawn by the camera: the section cut, a floor view's included, lies under every piece, or they are
+ *   on no layer the camera draws; a cut through the object, or through its plinth alone, keeps it, as the picker still meets the artwork there (F27);
  * - walking, the card is the look target's artwork, none for a door or nothing, clicks and Esc change nothing, and entering walk mode replaces an orbit
  *   click's card with the look target's;
  * - leaving walk mode, which tells null before the next frame, keeps the look target's artwork as the orbit view's card, its pieces found as a click's
@@ -42,24 +41,21 @@ interface Piece {
   readonly y?: number;
 }
 
-/** A one-step timeline of slabs across the eye's path, built with stagger `order` (one order per piece), and its page picker. */
+/** A one-step timeline of slabs across the eye's path, and its page picker. */
 function scene(pieces: readonly Piece[]): { timeline: Timeline; picker: ModelPicker } {
   const step: StepDef = {
     id: 'labels',
     chapter: CHAPTERS[0].id,
     title: 'labels',
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build(kit: Kit) {
-      pieces.forEach((p, order) => {
+      pieces.forEach((p) => {
         const matrix = new Matrix4().compose(new Vector3(p.x ?? 0, p.y ?? 1.5, -p.near - 0.05), new Quaternion(), new Vector3(3, 3, 0.1));
-        if (p.tag === undefined) kit.add(cube, p.material, matrix, order);
-        else kit.addTagged(cube, p.material, matrix, p.tag, order);
+        if (p.tag === undefined) kit.add(cube, p.material, matrix);
+        else kit.addTagged(cube, p.material, matrix, p.tag);
       });
     },
   };
   const timeline = new Timeline([step]);
-  timeline.evaluate(1);
   const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), -5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
   return { timeline, picker };
 }
@@ -113,26 +109,6 @@ describe('the card in the orbit view', () => {
     label.dismiss();
     label.frame(false, VIEW);
     expect(label.id, 'dismissed').toBeNull();
-  });
-
-  it('hides when the build takes the artwork away, at t = 0 or before its instance arrives, and a later t does not bring it back', () => {
-    // Two artworks of one geometry and material share a mesh; with stagger order the second one's instance arrives in the second half of the step.
-    const { timeline, picker } = scene([{ near: 3, material: bronze, tag: art('1'), x: 5 }, { near: 3, material: bronze, tag: art('2') }]);
-    const label = new ArtLabel();
-    label.click(picker.hit(forward(), ARTWORK_QUERY));
-    label.frame(false, VIEW);
-    expect(label.id).toBe('2');
-    timeline.evaluate(0.3);
-    expect(timeline.steps[0]?.meshes[0]?.count, 'the first artwork has arrived, the second not').toBe(1);
-    label.frame(false, VIEW);
-    expect(label.id).toBeNull();
-    timeline.evaluate(1);
-    label.frame(false, VIEW);
-    expect(label.id, 'still hidden once it is back').toBeNull();
-    label.click(picker.hit(forward(), ARTWORK_QUERY));
-    timeline.evaluate(0);
-    label.frame(false, VIEW);
-    expect(label.id, 'at t = 0').toBeNull();
   });
 
   it('hides once the cut lies under every piece of the artwork or the camera draws none of its layers, and keeps it while the cut passes through a piece', () => {

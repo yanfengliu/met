@@ -174,7 +174,7 @@ function intervalsAt(x0: number, x1: number, y: number, holes: readonly Hole[], 
 /**
  * Where a channel from `lo` to `hi`, `depth` deep, runs into an opening's jamb, head, sill or arch, the reveal's front strip borders the channel, not
  * stone: a face back to back with it there, facing the channel, closes the channel's end, so it does not look into the reveal, and the stone along
- * vertical lines (docs/design/spec.md, Walk mode: When the build moves). A head or sill on the channel's edge, which its floor or ceiling meets, is left alone.
+ * vertical lines (docs/design/spec.md, Walk mode: Settling). A head or sill on the channel's edge, which its floor or ceiling meets, is left alone.
  */
 function channelSidesInto(b: MeshBuilder, hole: Hole, lo: number, hi: number, depth: number): void {
   const pts = hole.outline;

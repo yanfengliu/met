@@ -59,7 +59,7 @@ export interface MetFacts {
    * title; null when no card shows.
    */
   readonly label: { readonly id: string; readonly title: string } | null;
-  /** Every door the model holds, in step order (src/viewer/doors.ts, `DoorFacts`): its id, state, angle in degrees, locked flag and whether it is built. */
+  /** Every door the model holds, in step order (src/viewer/doors.ts, `DoorFacts`): its id, state, angle in degrees and locked flag. */
   readonly doors: readonly DoorFacts[];
   readonly perf: {
     /**

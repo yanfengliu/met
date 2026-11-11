@@ -63,13 +63,12 @@ interface Piece {
   readonly tag?: PieceTag;
 }
 
-/** A picker over a one-step timeline of `pieces`, at t = N, with the timeline's tags. */
+/** A picker over a one-step timeline of `pieces`, with the timeline's tags. */
 function scene(pieces: readonly Piece[], cut = { enabled: false, height: 0 }): { picker: ModelPicker; timeline: Timeline } {
   const step: StepDef = {
     id: 'pieces',
     chapter: CHAPTERS[0].id,
     title: 'pieces',
-    motion: { kind: 'rise' },
     build(kit: Kit) {
       for (const p of pieces) {
         if (p.tag === undefined) kit.add(cube, p.material, slab(p.near));
@@ -78,7 +77,6 @@ function scene(pieces: readonly Piece[], cut = { enabled: false, height: 0 }): {
     },
   };
   const timeline = new Timeline([step]);
-  timeline.evaluate(timeline.n);
   const meshes = timeline.steps.flatMap((s) => s.meshes);
   return { timeline, picker: new ModelPicker(meshes, new GeometryBvhs(), -5, cut, new Layers(), (mesh, i) => timeline.tagOf(mesh, i)) };
 }
@@ -139,11 +137,8 @@ describe('ModelPicker.hit, the hit query', () => {
     expect(picker.hit(eye, { accept: (tag) => tag?.kind === 'door' }), 'a kind the query does not look for stops the ray').toBeNull();
   });
 
-  it('counts only drawn instances: none of a step not yet started, none on a layer the camera does not draw', () => {
+  it('counts only drawn instances: none on a layer the camera does not draw', () => {
     const { picker, timeline } = scene([{ near: 5, material: bronze, tag: art }]);
-    timeline.evaluate(0);
-    expect(picker.hit(eye, tagged)).toBeNull();
-    timeline.evaluate(1);
     expect(picker.hit(eye, tagged)?.tag).toEqual(art);
     for (const mesh of timeline.steps[0]?.meshes ?? []) mesh.layers.mask = 0;
     expect(picker.hit(eye, tagged)).toBeNull();
@@ -154,7 +149,6 @@ describe('ModelPicker.hit, the hit query', () => {
       id: 'room',
       chapter: CHAPTERS[0].id,
       title: 'room',
-      motion: { kind: 'rise' },
       build(kit: Kit) {
         kit.add(cube, glass, new Matrix4().compose(new Vector3(0, 8, 0), new Quaternion(), new Vector3(10, 0.05, 10)));
         kit.add(cube, glass, new Matrix4().compose(new Vector3(0, 1.2, 0), new Quaternion(), new Vector3(1, 1, 1)));
@@ -163,7 +157,6 @@ describe('ModelPicker.hit, the hit query', () => {
       },
     };
     const timeline = new Timeline([step]);
-    timeline.evaluate(1);
     const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), -5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
     const from = new Vector3(60, 90, 40);
     const pointer = new Ray(from, new Vector3(0, 1.1, 0).sub(from).normalize());
