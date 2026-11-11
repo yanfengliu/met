@@ -72,11 +72,11 @@ The coordinator plans, briefs, accepts and lands. Each item is built by a worker
 
 Order: lighting first, since it sets the tones that surface detail is then tuned on. Artworks run beside it, since their files are apart. Surface detail and surroundings follow lighting (they share the look, and `src/viewer/environment.ts`). The page items follow unit 26.
 
-Decisions waiting on the owner:
-- Item 5: whether paintings may be sampled finer than 8×8 (the line of 2026-10-25 between colour data and a photo texture).
-- Item 8: whether surroundings are environment, like the sky and the workspace ground, or model that arrives by build steps.
-- Item 10: whether one render may be committed for the README and the link preview, since renders are kept out of git.
-- Item 11: which leftovers to do.
+Decisions the owner made on 2026-11-11, each from a question with its options laid out:
+- Item 5: paintings are sampled at 16×16, up from 8×8. They stay colour data, not a photo texture.
+- Item 8: the surroundings are environment, drawn like the sky and the workspace ground: outside the model, its budgets, the section cut and the floor views.
+- Item 10: one small render may be committed for the README and the link preview (a JPEG under 300 KiB, retaken by hand when the look changes). The invariant in AGENTS.md that keeps renders out of git gets this one exception when the item lands.
+- Item 11: all four groups of leftovers are to be done: the Medieval hall (work unit 16's four findings), the Petrie Court's walls, gallery 600 and the Vélez Blanco patio, and the smaller ones (the Hunt wing's open back, Weston's end blocks' windows, the 1880 fronts' stair tower and flicker, the Greek court's columns checked against their photograph).
 
 ## Acceptance criteria
 
@@ -85,17 +85,17 @@ Decisions waiting on the owner:
 
 ## Implementation steps
 
-- [ ] 1. Interior lighting: unit 28, planned, to be dispatched 2026-11-11.
+- [ ] 1. Interior lighting: unit 28, worker "lighting" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5341.
 - [ ] 2. First impression: waits for unit 26.
 - [ ] 3. Wayfinding: waits for unit 26.
 - [ ] 4. Surface detail: after item 1.
-- [ ] 5. Artworks: unit 29, planned, to be dispatched 2026-11-11; the paintings wait for the owner.
+- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing B (more forms) and landing C (paintings at 16×16) follow.
 - [ ] 6. Touch and weaker devices: waits for unit 26. A run on a phone or a weaker GPU cannot be made from this machine.
 - [x] 7. The build replay as a story: dropped, see Scope.
-- [ ] 8. Surroundings and sky: after item 1; waits for the owner's answer on environment or model.
+- [ ] 8. Surroundings and sky: after item 1, as environment.
 - [ ] 9. Shell galleries: after item 4.
-- [ ] 10. Project presentation: the page part waits for unit 26, the picture for the owner.
-- [ ] 11. Fidelity leftovers: wait for the owner's choice.
+- [ ] 10. Project presentation: the page part and AGENTS.md's exception wait for unit 26.
+- [ ] 11. Fidelity leftovers, all four groups: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh cap (130 of 130) bounds the Medieval hall and gallery 600.
 
 ## Outcome
 
