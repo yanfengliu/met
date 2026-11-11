@@ -16,7 +16,7 @@ import { CATALOGUE } from './catalogue.js';
 import { block, bust, canvas, dish, figureGroup, jar, recumbentFigure, slab, standingFigure, unitBox } from './kinds.js';
 import { artMaterial, finishOf, giltMaterial, plinthMaterial, vitrineGlass } from './material.js';
 import type { ArtSurface } from './material.js';
-import type { CatalogueEntry } from './types.js';
+import type { PlaceholderEntry } from './types.js';
 
 /** Where one artwork stands or hangs. */
 export interface Placement {
@@ -53,7 +53,7 @@ function placed(x: number, y: number, z: number, facing: number, w: number, h: n
 }
 
 /** The form an entry takes: a recumbent figure when it is longer than it is high, a group when it is wide, a dish when it is low and wide. */
-export function formOf(entry: CatalogueEntry): BufferGeometry {
+export function formOf(entry: PlaceholderEntry): BufferGeometry {
   const { h, w, d } = entry.size;
   switch (entry.kind) {
     case 'figure':
@@ -72,7 +72,7 @@ export function formOf(entry: CatalogueEntry): BufferGeometry {
 }
 
 /** Plinth heights by form: a low one under a long or block-like object, else one that lifts a small object's middle toward eye height. */
-export function plinthHeight(entry: CatalogueEntry): number {
+export function plinthHeight(entry: PlaceholderEntry): number {
   const { h, w, d } = entry.size;
   const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
   if (entry.kind === 'plinth') return clamp(1.0 - h / 2, 0.2, 0.8);
@@ -88,13 +88,13 @@ export const WALL_GAP = 0.01;
 const FRAME_PROUD = 0.03;
 
 /** The frame's border width: the record's framed size where it gives one, else a border that grows with the painting (derived). */
-export function frameBorder(entry: CatalogueEntry): number {
+export function frameBorder(entry: PlaceholderEntry): number {
   if (entry.framed !== undefined) return Math.max(0.02, Math.min(entry.framed.w - entry.size.w, entry.framed.h - entry.size.h) / 2);
   return Math.min(0.16, Math.max(0.05, 0.04 + 0.05 * Math.min(entry.size.w, entry.size.h)));
 }
 
 /** Every piece of one artwork at its placement; the first is the object itself, whose translation the material keys its colour on. */
-export function artworkPieces(entry: CatalogueEntry, at: Placement): ArtPiece[] {
+export function artworkPieces(entry: PlaceholderEntry, at: Placement): ArtPiece[] {
   const { h, w, d } = entry.size;
   const form = formOf(entry);
   const box = unitBox();
@@ -149,10 +149,14 @@ export function artworkTag(id: number): PieceTag {
   return { kind: 'artwork', id: String(id) };
 }
 
-/** The catalogue entry of an object, or a throw naming it and the fix. */
-export function entryOf(id: number): CatalogueEntry {
+/**
+ * The catalogue entry of an object a placeholder is built of, or a throw naming it and the fix. A fit-out piece's record is no such entry: its
+ * space's own steps build it (fit-out.ts `fitOutEntryOf`), and nothing here places it.
+ */
+export function entryOf(id: number): PlaceholderEntry {
   const entry = CATALOGUE.find((e) => e.id === id);
   if (entry === undefined) throw new Error(`Object ${String(id)} is placed but not in src/model/collection/catalogue.ts; add it to picks.ts and regenerate (npm run met-catalogue).`);
+  if (entry.display === 'fit-out') throw new Error(`Object ${String(id)} is a fit-out piece of ${entry.space}, which that space's own steps build: it has no placeholder to place (src/model/collection/fit-out.ts).`);
   return entry;
 }
 

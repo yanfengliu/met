@@ -1,11 +1,15 @@
 /**
  * The collection catalogue (docs/research/collection.md, Regenerating), run by hand with Node's own TypeScript support, never in CI or the build:
- *   npm run met-catalogue
+ *   npm run met-catalogue                 every entry: the placeholders' and the fit-out pieces'
+ *   npm run met-catalogue -- --fit-out    the fit-out pieces' records alone; the placeholders' entries stay as the committed catalogue has them
  * It reads the picks (src/model/collection/picks.ts), fetches each object's record from The Met's Collection API and, for a public-domain record with an
  * image, that image, at most one request a second, through a cache under research/cache/met-api/ (ignored: a rerun asks the network only for what it
  * has not seen); it decodes each image in the system Chrome (createImageBitmap and canvas getImageData, no image library) into 64 × 64 bins, builds one
  * entry per object by the rules of scripts/met-catalogue-rules.ts, and writes src/model/collection/catalogue.ts at once, through a temporary file: a block,
  * a malformed record, a gallery mismatch or a missing size stops the run before the file is touched, so the previous catalogue stands.
+ * A fit-out piece that is itself an object of the collection (picks.ts `fitOut`) gets its record alone: no image is fetched or sampled for it. With
+ * `--fit-out` the run asks only for those records, starts no browser, and writes each placeholder's entry again as the committed file has it, so adding
+ * a fit-out piece changes no placeholder, whatever The Met has changed in the placeholders' records since they were fetched.
  * It writes all or nothing, and exits 0 written, 1 listing every problem with a record or pick, 2 on a block by the API (HTTP 403 or 429), the message
  * saying when to retry (docs/research/collection.md).
  * Bound: the API's answer is taken as given; the script checks a record's shape and its gallery, not that the object is on view today.
@@ -20,8 +24,8 @@ import type { Browser, Page } from '@playwright/test';
 import type * as RulesModule from './met-catalogue-rules.js';
 import type { Bins } from './met-catalogue-rules.js';
 import type * as RunModule from './met-catalogue-run.js';
-import type { Cached, Store } from './met-catalogue-run.js';
-import type { SpacePicks } from '../src/model/collection/types.js';
+import type { Cached, Run, Store } from './met-catalogue-run.js';
+import type { CatalogueEntry, CatalogueSource, SpacePicks } from '../src/model/collection/types.js';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const CACHE = join(ROOT, 'research', 'cache', 'met-api');
@@ -96,7 +100,15 @@ function writeAtomically(text: string): void {
   renameSync(temporary, OUTPUT);
 }
 
-async function main(): Promise<number> {
+const FIT_OUT_FLAG = '--fit-out';
+
+async function main(args: readonly string[]): Promise<number> {
+  const unknown = args.filter((a) => a !== FIT_OUT_FLAG);
+  if (unknown.length > 0) {
+    console.error(`met-catalogue: unknown argument ${unknown.map((a) => `"${a}"`).join(', ')}; run it with no argument for every entry, or with ${FIT_OUT_FLAG} for the fit-out pieces' records alone.`);
+    return 1;
+  }
+  const fitOutOnly = args.includes(FIT_OUT_FLAG);
   const { SPACES } = await load<{ SPACES: readonly SpacePicks[] }>('../src/model/collection/picks.ts');
   const fetcher = new runner.Fetcher({
     fetch: (url, init) => fetch(url, init),
@@ -107,21 +119,21 @@ async function main(): Promise<number> {
   });
   let browser: Browser | null = null;
   try {
-    browser = await chromium.launch({ channel: 'chrome', headless: true });
-    const page = await browser.newPage();
-    console.log(`Picks: ${String(SPACES.length)} spaces, ${String(SPACES.reduce((n, s) => n + s.picks.length, 0))} objects; cache ${CACHE}`);
-    const code = await runner.runCatalogue({
-      rules,
-      spaces: SPACES,
-      get: (url) => fetcher.get(url),
-      sample: (body, type) => sample(page, body, type),
-      write: writeAtomically,
-      log: (line) => {
-        console.log(line);
-      },
-      samplerVersion: `${SAMPLER}; Chrome ${browser.version()}`,
-      today: new Date().toISOString().slice(0, 10),
-    });
+    const counts = `${String(SPACES.length)} spaces, ${String(SPACES.reduce((n, s) => n + s.picks.length, 0))} objects and ${String(SPACES.reduce((n, s) => n + (s.fitOut?.length ?? 0), 0))} fit-out pieces`;
+    console.log(`Picks: ${counts}; cache ${CACHE}${fitOutOnly ? '; the fit-out records alone, the placeholders kept as committed' : ''}`);
+    const common = { rules, spaces: SPACES, get: (url: string) => fetcher.get(url), write: writeAtomically, log: (line: string) => { console.log(line); }, today: new Date().toISOString().slice(0, 10) };
+    let run: Run;
+    if (fitOutOnly) {
+      // The committed catalogue, whose placeholders are written again as they are; no image is sampled, so no browser starts.
+      const committed = await load<{ CATALOGUE: readonly CatalogueEntry[]; CATALOGUE_SOURCE: CatalogueSource }>('../src/model/collection/catalogue.ts');
+      const kept = { entries: committed.CATALOGUE, source: committed.CATALOGUE_SOURCE };
+      run = { ...common, sample: () => Promise.reject(new Error(`A run with ${FIT_OUT_FLAG} samples no image.`)), samplerVersion: kept.source.sampler, kept };
+    } else {
+      browser = await chromium.launch({ channel: 'chrome', headless: true });
+      const page = await browser.newPage();
+      run = { ...common, sample: (body, type) => sample(page, body, type), samplerVersion: `${SAMPLER}; Chrome ${browser.version()}` };
+    }
+    const code = await runner.runCatalogue(run);
     console.log(`Network requests: ${String(fetcher.requests)}; cache hits: ${String(fetcher.hits)}.`);
     return code;
   } catch (error) {
@@ -137,7 +149,7 @@ async function main(): Promise<number> {
 }
 
 if (import.meta.main) {
-  main()
+  main(process.argv.slice(2))
     .then((code) => {
       process.exit(code);
     })

@@ -1,10 +1,11 @@
 /**
  * The catalogue's rules, free of disk, network and browser (scripts/met-catalogue.ts runs them; scripts/met-catalogue.test.ts checks them): a record of
  * The Met's Collection API (https://metmuseum.github.io/, Object) checked and turned into one catalogue entry, with the colour statistics of its decoded
- * image. The rules are written out in docs/research/collection.md (Measurements, Kinds, Colours); a change here changes that section in the same commit.
- * No run-time import, so Node loads this file as it is.
+ * image, or, for a fit-out piece that is itself an object of the collection, into its record alone (`fitOutEntry`): no kind, display or colour, and no
+ * estimated size. The rules are written out in docs/research/collection.md (Measurements, Kinds, Colours, Fit-out pieces); a change here changes that
+ * section in the same commit. No run-time import, so Node loads this file as it is.
  */
-import type { ArtDisplay, ArtKind, CatalogueEntry, ColourSource, Pick, Size, SizeSource, SpacePicks } from '../src/model/collection/types.js';
+import type { ArtDisplay, ArtKind, ColourSource, FitOutEntry, ObjectRecord, Pick, PlaceholderEntry, Size, SizeSource, SpacePicks } from '../src/model/collection/types.js';
 
 export const API_OBJECTS = 'https://collectionapi.metmuseum.org/public/collection/v1/objects/';
 /** The sampler bins a decoded image into SAMPLER_BINS × SAMPLER_BINS cells; a frame's grid is GRID × GRID of them. */
@@ -181,8 +182,11 @@ export interface SizeResult {
 const MIN_M = 0.005;
 const MAX_M = 25;
 
-/** The object's size by the rules of docs/research/collection.md (Measurements); throws, naming the object, when no height can be found or a value is implausible. */
-export function sizeOf(record: MetRecord, kind: ArtKind, pick: Pick): SizeResult {
+/**
+ * The object's size by the rules of docs/research/collection.md (Measurements); throws, naming the object, when no height can be found or a value is
+ * implausible. A fit-out piece has no kind (`null`) and takes no estimate by one: an axis its record does not measure must come from its pick.
+ */
+export function sizeOf(record: MetRecord, kind: ArtKind | null, pick: Pick): SizeResult {
   const from = objectElement(record.measurements);
   const axes: Partial3 = { ...(from?.axes ?? {}) };
   const sources: Partial<Record<Axis, SizeSource>> = {};
@@ -212,8 +216,20 @@ export function sizeOf(record: MetRecord, kind: ArtKind, pick: Pick): SizeResult
   if (h === undefined) {
     throw new Error(`Object ${String(record.objectID)} ("${record.title}"): no height in its measurements or its dimensions text ("${record.dimensions.slice(0, 80)}"); give one in its pick (size.h, with the reason).`);
   }
-  const w = axes.w ?? estimate(kind, 'w', h, undefined, axes.d);
-  const d = axes.d ?? estimate(kind, 'd', h, w, undefined);
+  let w: number;
+  let d: number;
+  if (kind === null) {
+    if (axes.w === undefined || axes.d === undefined) {
+      const lacking = (['w', 'd'] as const).filter((axis) => axes[axis] === undefined);
+      const names = lacking.map((axis) => (axis === 'w' ? 'width' : 'depth')).join(' and no ');
+      throw new Error(`Object ${String(record.objectID)} ("${record.title}"): its record measures no ${names}, and a fit-out piece takes no estimate by kind; give ${lacking.length === 1 ? 'it' : 'them'} in its pick (${lacking.map((axis) => `size.${axis}`).join(', ')}, with the reason).`);
+    }
+    w = axes.w;
+    d = axes.d;
+  } else {
+    w = axes.w ?? estimate(kind, 'w', h, undefined, axes.d);
+    d = axes.d ?? estimate(kind, 'd', h, w, undefined);
+  }
   const size = { h, w, d };
   for (const [axis, value] of Object.entries(size)) {
     if (!(Number.isFinite(value) && value >= MIN_M && value <= MAX_M)) {
@@ -413,16 +429,8 @@ export function sampleable(record: MetRecord): boolean {
   return record.isPublicDomain && record.primaryImageSmall !== '';
 }
 
-/** One catalogue entry for one picked object (docs/research/collection.md); throws, naming the object, on a gallery mismatch or an unusable size. */
-export function catalogueEntry(input: EntryInput): CatalogueEntry {
-  const { record, pick, space } = input;
-  checkGallery(record, pick, space);
-  const kind = pick.kind?.value ?? kindOf(record);
-  const sized = sizeOf(record, kind, pick);
-  const display = pick.display?.value ?? displayOf(kind, sized.size);
-  if (input.image !== undefined && !sampleable(record)) throw new Error(`Object ${String(record.objectID)}: an image was sampled for a record that is not public domain or has none; sample only sampleable records.`);
-  const fallback = fallbackColour(record.medium, kind);
-  const colour = input.image === undefined ? fallback.colour : meanColour(input.image.bins, kind);
+/** The Met's metadata every entry keeps, as the record gives it, in the order the catalogue writes it. */
+function metadataOf(record: MetRecord, space: SpacePicks): Omit<ObjectRecord, 'size' | 'sizeFrom' | 'element' | 'source'> {
   return {
     id: record.objectID,
     space: space.id,
@@ -438,6 +446,26 @@ export function catalogueEntry(input: EntryInput): CatalogueEntry {
     creditLine: record.creditLine,
     url: record.objectURL,
     publicDomain: record.isPublicDomain,
+  };
+}
+
+/** An entry's provenance: the API URL, the day it was fetched, the record's metadataDate and the start of the response body's SHA-256. */
+function provenanceOf(input: EntryInput): ObjectRecord['source'] {
+  return { url: `${API_OBJECTS}${String(input.record.objectID)}`, fetched: input.fetched, metadataDate: input.record.metadataDate.slice(0, 10), sha256: input.sha256.slice(0, 16) };
+}
+
+/** One catalogue entry for one picked object (docs/research/collection.md); throws, naming the object, on a gallery mismatch or an unusable size. */
+export function catalogueEntry(input: EntryInput): PlaceholderEntry {
+  const { record, pick, space } = input;
+  checkGallery(record, pick, space);
+  const kind = pick.kind?.value ?? kindOf(record);
+  const sized = sizeOf(record, kind, pick);
+  const display = pick.display?.value ?? displayOf(kind, sized.size);
+  if (input.image !== undefined && !sampleable(record)) throw new Error(`Object ${String(record.objectID)}: an image was sampled for a record that is not public domain or has none; sample only sampleable records.`);
+  const fallback = fallbackColour(record.medium, kind);
+  const colour = input.image === undefined ? fallback.colour : meanColour(input.image.bins, kind);
+  return {
+    ...metadataOf(record, space),
     kind,
     kindFrom: pick.kind === undefined ? 'name' : 'pick',
     display,
@@ -450,7 +478,22 @@ export function catalogueEntry(input: EntryInput): CatalogueEntry {
     colour,
     ...(kind === 'frame' && input.image !== undefined ? { grid: gridColours(input.image.bins) } : {}),
     colourFrom: input.image === undefined ? fallback.from : 'image',
-    source: { url: `${API_OBJECTS}${String(record.objectID)}`, fetched: input.fetched, metadataDate: record.metadataDate.slice(0, 10), sha256: input.sha256.slice(0, 16) },
+    source: provenanceOf(input),
     ...(input.image === undefined ? {} : { image: { url: input.image.url, sha256: input.image.sha256.slice(0, 16), width: input.image.bins.width, height: input.image.bins.height } }),
   };
+}
+
+/**
+ * One catalogue entry for a fit-out piece that is itself an object of the collection (docs/research/collection.md, Fit-out pieces): its record's
+ * metadata and its size as the record measures it. Its space's own build steps make it, so nothing of a placeholder is derived: no kind, no colour, no
+ * sampled image. Throws, naming the object, on a gallery mismatch, a pick's kind or display, a sampled image, or an axis neither record nor pick gives.
+ */
+export function fitOutEntry(input: EntryInput): FitOutEntry {
+  const { record, pick, space } = input;
+  const set = [pick.kind === undefined ? '' : 'kind', pick.display === undefined ? '' : 'display'].filter((name) => name !== '');
+  if (set.length > 0) throw new Error(`Object ${String(record.objectID)} ("${record.title}") is a fit-out piece of ${space.id}, which the space's own steps build: its pick sets a ${set.join(' and a ')}, which only a placeholder has; remove ${set.length === 1 ? 'it' : 'them'}.`);
+  if (input.image !== undefined) throw new Error(`Object ${String(record.objectID)}: an image was sampled for a fit-out piece, which takes its colours from its own materials; sample none.`);
+  checkGallery(record, pick, space);
+  const sized = sizeOf(record, null, pick);
+  return { ...metadataOf(record, space), display: 'fit-out', size: sized.size, sizeFrom: sized.sizeFrom, element: sized.element, source: provenanceOf(input) };
 }

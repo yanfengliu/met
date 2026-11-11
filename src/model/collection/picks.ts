@@ -2,6 +2,9 @@
  * The objects on view chosen for each space (docs/research/collection.md, Picks): The Met's object IDs, from the read-only survey of 2026-10-25
  * (worker met-api), each confirmed on view in that space by its record's GalleryNumber. scripts/met-catalogue.ts reads this file and writes catalogue.ts;
  * the spaces' steps place what it lists. Five to twelve objects a space. An override says what it changes and why; the script checks every one.
+ * A space's `fitOut` lists its fit-out pieces that are themselves objects of the collection, each confirmed by its record (2026-11-11): the space's
+ * own build steps make them, so no placeholder is built and the catalogue keeps the record alone, for the piece's card (fit-out.ts). The record's
+ * measurements give the size; a dimension it lacks is given here as the model builds it, with its reason, and the card names it as estimated.
  * Data only, with no run-time import, so Node can load it without a bundler.
  */
 import type { SpacePicks } from './types.js';
@@ -19,6 +22,8 @@ export const SPACES: readonly SpacePicks[] = [
       { id: 551893 },
       { id: 551894, size: { w: 0.6, reason: 'the record gives no width; its pair, 551893, from the same base of the obelisk, is 0.6 m across' } },
     ],
+    // The Temple of Dendur itself, with its gate: one record (roche-north/temple.ts).
+    fitOut: [{ id: 547802 }],
   },
   {
     id: 'greek-roman-court',
@@ -72,6 +77,8 @@ export const SPACES: readonly SpacePicks[] = [
       { id: 468046 },
       { id: 474389 },
     ],
+    // The choir screen from the Cathedral of Valladolid, across the nave (core/choir-screen.ts).
+    fitOut: [{ id: 201926, size: { d: 0.5, reason: 'the record measures the screen’s height and width alone; its limestone base as built here is 0.5 m deep (core/choir-screen.ts)' } }],
   },
   {
     id: 'engelhard-court',
@@ -79,6 +86,15 @@ export const SPACES: readonly SpacePicks[] = [
     galleries: ['700'],
     // Six marbles and bronzes round the court and the two fountain bronzes in its pool.
     picks: [{ id: 12004 }, { id: 11951 }, { id: 11952 }, { id: 10105 }, { id: 10909 }, { id: 11476 }, { id: 11477 }, { id: 12547 }],
+    // Saint-Gaudens's Diana on her pedestal, and Tiffany's loggia from Laurelton Hall at the court's south end (roche-north/engelhard.ts).
+    fitOut: [
+      { id: 11998 },
+      {
+        id: 133,
+        gallery: { value: '701', reason: 'the loggia stands in the strip at the court’s south end, which the floor map numbers 701 and which is one space with the court, gallery 700 (docs/research/interior.md)' },
+        size: { d: 5.33, reason: 'the record measures the loggia’s height and width alone; as built here it stands 5.33 m deep, from its back wall to its cornice’s front (roche-north/engelhard.ts)' },
+      },
+    ],
   },
   {
     id: 'petrie-court',
