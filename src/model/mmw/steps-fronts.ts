@@ -20,7 +20,6 @@ interface Campaign {
   readonly party: Parameters<typeof buildPartyWalls>[1];
   /** Courts whose own steps build their walls, so the galleries' step leaves them out. */
   readonly courts: readonly Rect[];
-  readonly outward: 'x' | '-x';
   readonly words: {
     readonly wings: string;
     readonly foundations: string;
@@ -42,7 +41,6 @@ const NORTH: Campaign = {
   front: NORTH_FRONT,
   party: NORTH_PARTY,
   courts: [ARMOR_COURT],
-  outward: 'x',
   words: {
     wings: 'north wings',
     foundations: 'Footings and ground floors for the north link (Wing E, 1906), the Morgan wing behind it (F, 1908) and the north end pavilion (H, 1910).',
@@ -62,7 +60,6 @@ const SOUTH: Campaign = {
   front: SOUTH_FRONT,
   party: SOUTH_PARTY,
   courts: [ROMAN_COURT],
-  outward: '-x',
   words: {
     wings: 'south wings',
     foundations: 'Footings and ground floors for the south link (Wing J, 1914) and the south end pavilion (K) whose Roman court opened in 1926.',

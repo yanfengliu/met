@@ -5,7 +5,7 @@
  * each step's build.
  * Bound: matrices compare in float32, as the instance buffers hold them.
  */
-import { BoxGeometry, Matrix4, MeshStandardMaterial, PointLight } from 'three';
+import { BoxGeometry, Matrix4, MeshStandardMaterial, PointLight, Vector3 } from 'three';
 import type { BufferGeometry, Material } from 'three';
 import { describe, expect, it } from 'vitest';
 
@@ -124,12 +124,18 @@ describe('the built timeline', () => {
     expect(firstDifference(snapshot(new Timeline(steps)), snapshot(new Timeline(steps)))).toBeNull();
   });
 
-  it('bounds every mesh by its pieces, for culling, and the timeline by every step', () => {
+  it('bounds every mesh by its pieces, box and sphere, for culling and the picker, and the timeline by every step', () => {
     const timeline = new Timeline(steps);
     for (const [i, step] of timeline.steps.entries()) {
       for (const piece of timeline.restingPieces(i)) {
         const mesh = step.meshes[piece.mesh];
         expect(mesh?.boundingBox?.containsBox(piece.box), `${step.def.id}: ${mesh?.name ?? '?'} bounds its piece`).toBe(true);
+        // Three.js's frustum culling and the picker read the sphere (work unit 26, review 0, F4): every corner of the piece's box lies in it.
+        const sphere = mesh?.boundingSphere ?? null;
+        const { min, max } = piece.box;
+        const corners = [0, 1, 2, 3, 4, 5, 6, 7].map((c) => new Vector3((c & 1) !== 0 ? max.x : min.x, (c & 2) !== 0 ? max.y : min.y, (c & 4) !== 0 ? max.z : min.z));
+        const out = corners.filter((p) => sphere === null || p.distanceTo(sphere.center) > sphere.radius * (1 + 1e-12) + 1e-9);
+        expect(out, `${step.def.id}: ${mesh?.name ?? '?'}'s sphere holds its piece`).toEqual([]);
         expect(step.bounds.containsBox(piece.box)).toBe(true);
       }
       expect(timeline.bounds.containsBox(step.bounds)).toBe(true);

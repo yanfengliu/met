@@ -17,8 +17,7 @@
  * The openings the owner chose on 2026-11-04 (work unit 15's follow-up; reviews 5 and 6, F45, F47, F48, F54, F55 and F57): the west front's doorways
  * beside the entrance and the corridors through the east front's inner arches stand clear through the wall, each over a box pinned here from its
  * sources rather than read from the code that builds it, and each corridor is held by brick or wall on lines 8 cm outside the map's (6 cm, the model's
- * leave, and 2 cm); and the brick filling each inner arch round its corridor has the floor band and apron in front of it, and where it stands over the
- * opening its faces stay out of the wall's and the head niche's planes.
+ * leave, and 2 cm); and the brick filling each inner arch round its corridor has the floor band and apron in front of it.
  * Bound: rays, not the walker's capsule: along Z both ways, every 0.1 m across and up each box, 2 cm in from its sides, from 5 cm over the floor to
  * 5 cm under its head, through the wall and 0.3 m out from each face, against the pieces of the core's 1880 building and medieval hall, the Hunt Wing
  * and the Lehman Wing, so a gap between rays goes unseen. The brick is read where it stands in the finished model. The 6 cm
@@ -27,8 +26,8 @@
  * turn the openings' check red, as the corridors 2.2 m wide turn its brick lines red (160 rays passing); the brick built with the walls, whose step
  * holds no trim in front of it, turns its brick check red (6 problems). Two more reds, no longer reproducible since work unit 26 removed the build
  * replay's drops: the brick's faces in the wall's planes as it dropped, as they were before review 6 (96), and a drop of 2.0 m, which turned red the
- * check of each ground window under a west doorway dropping through it (both frames started over the floor), as the step's earlier 2.5 m did; that
- * check went with the drops.
+ * check of each ground window under a west doorway dropping through it (both frames started over the floor), as the step's earlier 2.5 m did. Both
+ * checks went with the drops: in the finished model no brick round a corridor stands over its opening's top (work unit 26, review 0, F0).
  */
 import { Box3, Matrix4, Mesh, Raycaster, Vector3 } from 'three';
 import type { BufferGeometry, InstancedMesh, Material } from 'three';
@@ -160,9 +159,6 @@ const EAST_ARCH_OPENINGS = [
 ] as const;
 /** The east windows' sill, 0.7 m over the main floor: the band and apron under it stand in front of the brick. */
 const EAST_SILL = MAIN_FLOOR + 0.7;
-/** The arches' openings' top, under the impost band, 5.8 m over the main floor; and the head niches' depth behind the east face. */
-const EAST_OPENING_TOP = MAIN_FLOOR + 5.8;
-const NICHE_DEPTH = 0.25;
 
 /** Rays along Z, both ways, every 0.1 m across X and up Y inside a box, 2 cm in from its sides and 5 cm in from floor and head: each one that `blocked` turns false for. */
 function sweep(scene: readonly Mesh[], x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, wantHit: boolean): string[] {
@@ -225,7 +221,7 @@ describe('the openings the owner chose on 2026-11-04', () => {
     expect(open.slice(0, 12), `${String(open.length)} rays passing where brick or wall should stand`).toEqual([]);
   });
 
-  it('set the east front’s brick round its corridors with the band and apron in front of it, its faces out of the wall’s planes where it stands over the opening', () => {
+  it('set the east front’s brick round its corridors with the band and apron in front of it', () => {
     const timeline = new Timeline(vauxSteps);
     const problems: string[] = [];
     let bricks = 0;
@@ -242,15 +238,6 @@ describe('the openings the owner chose on 2026-11-04', () => {
       for (const b of brick) {
         const [x0, x1] = EAST_ARCH_OPENINGS[side(b.rest)] ?? [0, 0];
         if (!trim.some((t) => t.rest.max.x > x0 && t.rest.min.x < x1)) problems.push(`${step.def.id}: brick at X ${b.rest.min.x.toFixed(2)}..${b.rest.max.x.toFixed(2)}, Y ${b.rest.min.y.toFixed(2)} has no band or apron in front of it`);
-      }
-      // A piece standing over the opening's top is inside the wall: neither of its Z faces may lie in the wall's inner face, the head niche's back or the east face.
-      const planes = [INNER_EAST_Z, EAST_Z - NICHE_DEPTH, EAST_Z];
-      for (const b of brick) {
-        if (b.rest.max.y <= EAST_OPENING_TOP + 1e-6) continue;
-        for (const z of [b.rest.min.z, b.rest.max.z]) {
-          const plane = planes.find((p) => Math.abs(z - p) < 0.005);
-          if (plane !== undefined) problems.push(`${step.def.id}: brick at X ${b.rest.min.x.toFixed(2)}, Y ${b.rest.min.y.toFixed(2)}, its top at ${b.rest.max.y.toFixed(2)}, has a face at Z ${z.toFixed(3)}, in the wall's plane at ${plane.toFixed(2)}`);
-        }
       }
     });
     expect(problems.slice(0, 12), `${String(problems.length)} problems`).toEqual([]);

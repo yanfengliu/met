@@ -1,7 +1,8 @@
 /**
  * The floor view's landscape filter (src/viewer/floor-view.ts) on the real sequence, without WebGL: at each floor's cut it hides every landscape mesh
  * with a standing piece over the cut, with the meshes its objects share, and nothing else; it never hides ground or a building mesh; objects stay
- * whole at any cut; and which meshes hide depends on the cut alone, while the timeline's own state stays untouched.
+ * whole at any cut; and it writes nothing of the timeline but layer masks, the timeline's own state untouched (work unit 26, review 0, F3: the check
+ * that a second timeline hides the same meshes went, two builds of one sequence being the same).
  * Bound: what the filter sets (each mesh's layer mask), read here; that the camera then neither draws nor shadows a masked mesh is three.js's
  * layer test, checked by eye in the floor captures and by the canvas in tests/e2e/floors.spec.ts.
  */
@@ -135,20 +136,11 @@ describe('floor view landscape filter', () => {
     expect(problems).toEqual([]);
   });
 
-  it('depends on the cut alone: a floor view over a second timeline hides the same meshes, and the timeline’s state is untouched', () => {
-    const second = new Timeline(SEQUENCE);
-    const before = snapshot(second);
-    const other = new FloorView(second.steps, (i) => second.restingPieces(i));
+  it('writes nothing of the timeline but layer masks: its meshes are byte for byte as before, after every floor’s cut and a sweep of cuts', () => {
+    const before = snapshot(timeline);
     // Every floor's cut and a sweep of cuts 0.25 m apart, from −3 m to 30 m.
-    for (const cut of [...FLOORS.map((f) => f.cut), ...Array.from({ length: 133 }, (_, k) => -3 + k * 0.25)]) {
-      view.apply(cut);
-      other.apply(cut);
-      const a = timeline.steps.flatMap((s) => s.meshes.filter((m) => view.hides(m)).map((m) => m.name));
-      const b = second.steps.flatMap((s) => s.meshes.filter((m) => other.hides(m)).map((m) => m.name));
-      expect(b, `meshes hidden at a ${cut.toFixed(2)} m cut, the second timeline's vs the first's`).toEqual(a);
-    }
-    other.apply(null);
+    for (const cut of [...FLOORS.map((f) => f.cut), ...Array.from({ length: 133 }, (_, k) => -3 + k * 0.25)]) view.apply(cut);
     view.apply(null);
-    expect(firstDifference(snapshot(second), before), 'timeline state after the floor view ran').toBeNull();
+    expect(firstDifference(snapshot(timeline), before), 'timeline state after the floor view ran').toBeNull();
   });
 });

@@ -29,14 +29,14 @@ A first, since it is what the owner sees; B then removes what A leaves unreachab
 ## Acceptance criteria
 
 - [x] A: the default page, every query and both viewports show no timeline, Build menu or follow toggle; the Walk toggle, View menu, floor picker, walk mode, doors and labels work as before; `npm run verify` and `npm run test:e2e` pass; the standard shots of the finished building match main's within capture noise. Verified 2026-11-11: verify passed (752 unit tests in 81 files, 88 e2e); of the 52 standard shots left (64 before, less 10 chapter and 2 mid-build shots), the 48 of the model differ from main's (75abdd3) by at most 2 of 255, and the four UI shots only where the Build button was.
-- [ ] B: no code path moves, hides or tints a piece by a build position; `npm run verify` and `npm run test:e2e` pass; the standard shots match A's within capture noise.
-- [ ] spec.md, AGENTS.md, README.md, local-rules.md and the devlog describe the page and engine as they are.
+- [x] B: no code path moves, hides or tints a piece by a build position; `npm run verify` and `npm run test:e2e` pass; the standard shots match A's within capture noise. Verified 2026-11-11 on `7bb47fc`: no `t`, `evaluate`, motion, stagger, instance colour or light ramp is left in `src/`; a fingerprint of the finished model's content matches A's; verify passed but for one door swing's frame budget under load, which passed three runs alone; the shots match A's but for lone pixels where faces tie in depth, since a mesh's instances are now in the order their step added them (review 0, F2: 21 of 52 shots differ in 1 to 13 pixels, by at most 26 of 255).
+- [x] spec.md, AGENTS.md, README.md, local-rules.md and the devlog describe the page and engine as they are.
 
 ## Implementation steps
 
 - [x] A: page, UI, queries, facts, capture, e2e, docs; merged.
-- [ ] B: engine, model fields, walk, doors, labels, unit tests, docs; merged.
-- [ ] Independent review of the result, findings answered.
+- [ ] B: engine, model fields, walk, doors, labels, unit tests, docs; merged. Committed on the branch (`2859169`, `8053ce6`, merged with main at `7bb47fc`), the review's repairs after it; not yet on main.
+- [x] Independent review of the result, findings answered: `reviews/0_implementation.md`, Codex and Claude on `7bb47fc`, no serious finding, F0 to F6 repaired in tests, wording and one dead field.
 
 ## Outcome
 

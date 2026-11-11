@@ -192,7 +192,7 @@ describe('the door layer', () => {
     expect(facts(layer, 'front')?.angle, 'while the door’s state still says open').toBe(90);
   });
 
-  it('opens with doors=open into the building at load, at once in capture mode and over a swing otherwise, and never opens a locked door', () => {
+  it('heads open into the building at load with doors=open, there at once with an instant sync, as the page’s first sync is, or over a swing with time, and never opens a locked door', () => {
     const { layer } = fixture('open');
     expect(facts(layer, 'front'), 'at load, before any sync: heading open').toMatchObject({ state: 'opening', angle: 0 });
     expect(layer.sync(0.1), 'the fixture’s bronze casts: the shadows too').toBe('shadows');

@@ -3,10 +3,12 @@
  * over a stand-in page (a canvas, a document and a camera rig as far as walk mode reads them, as src/walk/walk-mode.test.ts) with the page's door layer
  * over the fixture doorway of ./door-testing.ts, built 2 m ahead of the plaza spawn. The walker leaves walk mode standing in the open doorway, the door
  * is shut in the orbit view, where nothing holds its swing, and walk mode is entered again where the walker last stood: the door opens away from it at
- * once rather than shut on it, its feet stay on the floor, never lifted onto the door's top edge, and no leaf stands in it. Set down where every pose of
- * the door meets it, by a jamb, the walker is pushed out of the leaf, on the floor. A locked door never opens: the walker set down in its doorway is pushed
- * out of its leaf. Walk mode checks the walker's place against the world when it enters (`settle`), and the door world puts the doors clear of it
- * (`release`), as the page does.
+ * once rather than shut on it, its feet stay on the floor, never lifted onto the door's top edge, and no leaf stands in it. Walk mode stands the doors
+ * before it sets the walker down, so a walker set down by a jamb, where every pose of the door meets it, is placed clear of the closed leaf and the door
+ * stays shut. Where the leaves come into a walker already standing there, by a jamb, no pose of the door is clear of it: the door world opens the door
+ * away and pushes the walker out of the leaf, on the floor (`release`, work unit 26, review 0, F1). A locked door never opens: a walker in its doorway
+ * is pushed out of its leaves, set down or released. Walk mode checks the walker's place against the world when it enters (`settle`), and the door
+ * world puts the doors clear of it (`release`), as the page does.
  * Bound: frame times exactly 1/60 s; the door layer synced before each walking frame as the page syncs it; the oracle is ./door-testing.ts's `gap`.
  */
 import { PerspectiveCamera, Vector3 } from 'three';
@@ -105,33 +107,62 @@ describe('a walker entering walk mode again where it last stood, a door since sh
   });
 });
 
-describe('a walker set down in a doorway, by a jamb and at a locked door', () => {
-  /** The doorway's static world and door world, the walker set down at (x, 0, z) and checked as walk mode checks a new place (`settle`, `release`). */
-  function setDown(defs: readonly DoorDef[], x: number, z: number): { layer: DoorLayer; walker: Walker } {
-    const timeline = new Timeline(doorway(0, 0, 0));
-    const layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), defs, doorLeavesOf);
-    layer.sync(0, true);
-    const bvhs = new GeometryBvhs();
-    const walls = new CollisionWorld(bvhs);
-    walls.build(collisionMeshes(timeline.steps, layer.leafMeshes));
-    const world = new DoorWorld(walls, layer, bvhs);
-    world.refresh();
-    const walker = new Walker(world, FLOOR_Y);
-    walker.place(x, 0, z, 0);
-    walker.settle(0);
-    if (world.release(walker.feet)) walker.standClear();
-    return { layer, walker };
-  }
+/** The axis 0.3 m in from the −X leaf's hinge, in the leaves' mid-plane: closed, open either way, a leaf stands in the body. */
+const JAMB = [-0.352, -0.07] as const;
 
-  it('pushes a walker set down by a jamb, where every pose of the door meets it, out of the leaf, on the floor', () => {
-    // The axis 0.3 m in from the −X leaf's hinge, in the leaves' mid-plane: closed, open either way, a leaf stands in the body.
-    const { layer, walker } = setDown([{ id: ID, locked: false }], -0.352, -0.07);
-    expect(gap(layer, walker.feet), 'pushed out of the leaf').toBeGreaterThan(-0.002);
+/**
+ * The doorway's static world and door world and a walker at (x, 0, z), checked as walk mode checks a place (`settle` from every piece, then `release`).
+ * `leaves` says when the door world stands the doors: `first`, before the walker is set down, as walk mode does, so `place` meets the leaves; `after`,
+ * once it stands there, so the leaves come into a walker already in place, as a door shut onto the place it left does.
+ */
+function setDown(defs: readonly DoorDef[], x: number, z: number, leaves: 'first' | 'after'): { layer: DoorLayer; walker: Walker } {
+  const timeline = new Timeline(doorway(0, 0, 0));
+  const layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), defs, doorLeavesOf);
+  layer.sync(0, true);
+  const bvhs = new GeometryBvhs();
+  const walls = new CollisionWorld(bvhs);
+  walls.build(collisionMeshes(timeline.steps, layer.leafMeshes));
+  // A door world stands no door until its first `refresh`.
+  const world = new DoorWorld(walls, layer, bvhs);
+  if (leaves === 'first') world.refresh();
+  const walker = new Walker(world, FLOOR_Y);
+  walker.place(x, 0, z, 0);
+  world.refresh();
+  walker.settle(0);
+  if (world.release(walker.feet)) walker.standClear();
+  return { layer, walker };
+}
+
+describe('a walker set down in a doorway, by a jamb and at a locked door, as walk mode sets it down', () => {
+  it('stands a walker set down by a jamb, where every pose of the door meets it, clear of the closed leaf as it places it, the door shut, on the floor', () => {
+    const { layer, walker } = setDown([{ id: ID, locked: false }], ...JAMB, 'first');
+    expect(layer.facts()[0]?.angle, 'the door left shut').toBe(0);
+    expect(gap(layer, walker.feet), 'clear of the leaf').toBeGreaterThan(-0.002);
     expect(walker.feet.y, 'on the floor, not on the leaf’s top edge').toBeCloseTo(0, 3);
   });
 
-  it('never opens a locked door: the walker set down in its doorway is pushed out of its leaf, never lifted onto it', () => {
-    const { layer, walker } = setDown([{ id: ID, locked: true }], 0.2, -0.07);
+  it('never opens a locked door: the walker set down in its doorway stands clear of its leaves, never lifted onto them', () => {
+    const { layer, walker } = setDown([{ id: ID, locked: true }], 0.2, -0.07, 'first');
+    const door = layer.facts()[0];
+    expect([door?.locked, door?.angle, door?.state], 'locked and shut').toEqual([true, 0, 'closed']);
+    expect(walker.feet.y, 'on the floor, not on the leaves’ top edge').toBeCloseTo(0, 3);
+    expect(gap(layer, walker.feet), 'clear of the closed leaves').toBeGreaterThan(-0.002);
+    expect(Math.abs(walker.feet.z + 0.07), 'to one side of them').toBeGreaterThan(BODY.radius - 0.002);
+  });
+});
+
+describe('the door world releasing a walker its leaves came into, where no pose of the door is clear of it (`release`)', () => {
+  it('opens the door away from a walker by a jamb and pushes the walker out of the leaf, on the floor', () => {
+    const { layer, walker } = setDown([{ id: ID, locked: false }], ...JAMB, 'after');
+    const door = layer.facts()[0];
+    expect(Math.abs(door?.angle ?? 0), 'open a quarter turn').toBeCloseTo(90, 6);
+    expect(Math.sign(door?.angle ?? 0), 'the walker in the leaves’ mid-plane, a tie, which opens it into the back').toBe(1);
+    expect(gap(layer, walker.feet), 'pushed out of the leaf').toBeGreaterThan(-0.002);
+    expect(walker.feet.y, 'on the floor').toBeCloseTo(0, 3);
+  });
+
+  it('never opens a locked door: it pushes the walker out of its closed leaves instead, never lifting it onto them', () => {
+    const { layer, walker } = setDown([{ id: ID, locked: true }], 0.2, -0.07, 'after');
     const door = layer.facts()[0];
     expect([door?.locked, door?.angle, door?.state], 'locked and shut').toEqual([true, 0, 'closed']);
     expect(walker.feet.y, 'on the floor, not on the leaves’ top edge').toBeCloseTo(0, 3);

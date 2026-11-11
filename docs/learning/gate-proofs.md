@@ -137,7 +137,7 @@ Work unit 2's follow-up (reviews 28 on) moved this file's walks up to the doors 
 ### `src/walk/door-settle.test.ts`
 
 - A door's step completing with the walker in its doorway opens the door away at once, the walker's feet on the floor and no leaf in it: red with no release after the check: shut on it; and with the leaves in the static world: moved 25 cm by `settle`. Gone with the build replay (work unit 26).
-- A door shut in the orbit view onto the place the walker left opens away from it at once when walk mode is entered again there, its feet on the floor and no leaf in it: red with no release after walk mode's check of its place: shut on it, 0° (work unit 26, 2026-11-11). A walker set down by a jamb, and in a locked door's doorway, stays on the floor pushed out of the leaves: red with the leaves in the static world: lifted 0.184 m by `settle`, in both cases (2026-11-11).
+- A door shut in the orbit view onto the place the walker left opens away from it at once when walk mode is entered again there, its feet on the floor and no leaf in it: red with no release after walk mode's check of its place: shut on it, 0° (work unit 26, 2026-11-11). A walker set down by a jamb, and in a locked door's doorway, stays on the floor pushed out of the leaves: red with the leaves in the static world: lifted 0.184 m by `settle`, in both cases (2026-11-11). Where the leaves come into a walker by a jamb, no pose clear, the door opens away a quarter turn and the walker is pushed out: red with such a door left shut (`clear ?? 0` in `DoorWorld.release`): 0°; and a locked door's leaves pushed out of a walker in them: red with `release` passing over locked doors: the leaves 0.35 m inside the body (review 0, F1, 2026-11-11).
 
 ### `src/viewer/doors.test.ts`
 
