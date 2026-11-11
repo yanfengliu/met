@@ -7,8 +7,8 @@
  * it and goes on once the walker steps away, the same at 30, 60 and 144 frames a second and through stalled frames of 0.25 s and 2 s; one swung
  * through a walker in one step is refused though both its ends are clear; a door turned back mid-swing goes back from where it stands; a closing door
  * held by a walker between its leaves turns back open on the side it stands, either side (review 15, F43).
- * The oracle for "never inside the body" is apart from the collision (./door-testing.ts `gap`). A door whose leaves stand in the walker when walk mode checks its place is
- * in ./door-settle.test.ts.
+ * The oracle for "never inside the body" is apart from the collision (./door-testing.ts `gap`). A door whose leaves stand in the walker when walk mode
+ * checks its place is in ./door-settle.test.ts.
  * Bound: the doorway stands square to Z; the walker walks on the doorway's axis or is placed; frame times are exact.
  */
 import { Vector3 } from 'three';

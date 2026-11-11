@@ -281,12 +281,13 @@ export const groveTreesStep: StepDef = {
   detail: 'Fifty-two London planes, thirteen to a grove on a grid turned 45° to the avenue, and a magnolia at each end of the steps.',
   build(kit) {
     const random = seeded(106);
-    let order = 0;
+    // Each tree in turn takes the next of the grove shapes.
+    let tree = 0;
     for (const b of GROVES) {
       for (const [x, z] of groveTrees(b)) {
-        const shape = GROVE_TREES[order % GROVE_TREES.length] ?? GROVE_TREES[0];
+        const shape = GROVE_TREES[tree % GROVE_TREES.length] ?? GROVE_TREES[0];
         if (shape !== undefined) planted(kit, shape, siteMaterials.foliage, x, plazaY(x, z) + BORDER_HEIGHT - 0.05, z, 0.9 + 0.2 * random(), random() * Math.PI * 2);
-        order += 1;
+        tree += 1;
       }
     }
     for (const s of [-1, 1]) {
@@ -294,7 +295,6 @@ export const groveTreesStep: StepDef = {
       const y = plazaY(x, MAGNOLIA_Z) + 0.35;
       kit.add(UNIT_BLOCK, siteMaterials.bark, blockMatrix(x, y, MAGNOLIA_Z, 0.3, 1.6, 0.3));
       kit.add(MAGNOLIA_CROWN, siteMaterials.foliageDark, new Matrix4().makeRotationY(s > 0 ? 0.4 : 2.1).scale(new Vector3(4.6, 9, 4.6)).setPosition(x, y + 0.9, MAGNOLIA_Z));
-      order += 1;
     }
   },
 };

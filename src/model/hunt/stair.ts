@@ -62,7 +62,7 @@ const lazy = <T>(make: () => T): (() => T) => {
 };
 
 /** Both side walls of one kind at |X| = x: front face on the stair, body outward; `south` defaults to the north wall's geometry. */
-function sides(kit: Kit, north: Parameters<Kit['add']>[0], x: number, y: number, order: number, south = north): void {
+function sides(kit: Kit, north: Parameters<Kit['add']>[0], x: number, y: number, south = north): void {
   kit.add(north, hunt.stairStone, at(x, y, HALL_MID_Z, -Math.PI / 2));
   kit.add(south, hunt.stairStone, at(-x, y, HALL_MID_Z, Math.PI / 2));
 }
@@ -101,7 +101,7 @@ export const stairSteps: readonly StepDef[] = [
       box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, CROSS_HALL_FRONT_Z], [STAIR_HALF, SECOND - SLAB, STAIR_TOP_Z]);
       // The top landing runs on under the end wall's arch to the cross hall's floor (hunt-galleries), which starts behind that wall.
       kit.add(stairLanding({ width: w, depth: STAIR_TOP_Z - CROSS_HALL_FRONT_Z + WALL_T, thickness: SLAB }), palette.limestone, at(0, SECOND, STAIR_TOP_Z));
-      sides(kit, lowerWall(), STAIR_HALF, MAIN, 4);
+      sides(kit, lowerWall(), STAIR_HALF, MAIN);
     },
   },
   {
@@ -122,7 +122,7 @@ export const stairSteps: readonly StepDef[] = [
           }
         }
       }
-      sides(kit, arcade(1), ARCADE_X, PODIUM_Y, 0, arcade(-1));
+      sides(kit, arcade(1), ARCADE_X, PODIUM_Y, arcade(-1));
     },
   },
   {
@@ -148,7 +148,7 @@ export const stairSteps: readonly StepDef[] = [
         if (run.modillion !== undefined) for (const m of run.modillions) kit.add(run.modillion, palette.plaster, m);
         if (run.dentil !== undefined) for (const m of run.dentils) kit.add(run.dentil, palette.plaster, m);
       }
-      sides(kit, upperWall(), ARCADE_X, COLUMN_TOP_Y, 1);
+      sides(kit, upperWall(), ARCADE_X, COLUMN_TOP_Y);
       kit.add(barrelVault({ span: 2 * STAIR_HALF, length: HALL_LENGTH, thickness: 0.35 }), palette.plaster, at(0, y, HALL_MID_Z));
       const rib = archivolt({ span: 2 * STAIR_HALF - 0.7, band: 0.35, projection: 0.4 });
       for (const z of PIER_Z) kit.add(rib, palette.plaster, at(0, y, z - 0.2));

@@ -42,11 +42,11 @@ const floor = step('floor', (kit) => {
   block(kit, [-30, -0.2, -30], [30, 0, 30]);
 });
 
-/** A walker on the world of the first `t` of `steps` (default: all), built the way the page builds it. */
-function walkerOn(steps: readonly StepDef[], t = steps.length): { walker: Walker; instances: number } {
+/** A walker on the world of the first `built` of `steps` (default: all), built the way the page builds it. */
+function walkerOn(steps: readonly StepDef[], built = steps.length): { walker: Walker; instances: number } {
   const timeline = new Timeline(steps);
   const world = new CollisionWorld(new GeometryBvhs());
-  const stats = world.build(collisionMeshes(timeline.steps.slice(0, t)));
+  const stats = world.build(collisionMeshes(timeline.steps.slice(0, built)));
   return { walker: new Walker(world, FLOOR_Y), instances: stats.instances };
 }
 
@@ -301,12 +301,12 @@ describe('what the walker collides with', () => {
 
   it('ignores a step left out of the world, and walks into the same wall once it is in', () => {
     const steps = [floor, wall(stone)];
-    for (const [t, blocked] of [[1.5, false], [2, true]] as const) {
-      const { walker } = walkerOn(steps, t);
+    for (const [built, blocked] of [[1, false], [2, true]] as const) {
+      const { walker } = walkerOn(steps, built);
       walker.place(0, 0, 0, facing(0, -1));
       hold(walker, 2, W);
-      if (blocked) expect(walker.feet.z, `t ${String(t)}: stopped by the wall`).toBeGreaterThan(-2);
-      else expect(walker.feet.z, `t ${String(t)}: through the wall left out`).toBeLessThan(-3);
+      if (blocked) expect(walker.feet.z, `${String(built)} steps: stopped by the wall`).toBeGreaterThan(-2);
+      else expect(walker.feet.z, `${String(built)} step: through the wall left out`).toBeLessThan(-3);
     }
   });
 

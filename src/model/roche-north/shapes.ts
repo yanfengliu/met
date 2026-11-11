@@ -2,7 +2,7 @@
  * Geometry helpers of the Roche north area: one cached geometry per distinct shape (docs/design/spec.md, Batching), placed by matrices.
  * - `UNIT_BOX` is a closed 1 m cube centred on the origin; `boxAt` scales it onto a world box, so every plain block of a step batches into one mesh per material.
  * - `prismY` extrudes a plan outline (X, Z) upward; `prismZ` extrudes an elevation outline (X, Y) along Z. Both are closed solids, so the section cut reads them as solid.
- * - `merge` joins fixed parts (a facade's storey, its windows) into one cached geometry, so a composite that never moves apart costs one mesh per material; parts
+ * - `merge` joins fixed parts (a facade's storey, its windows) into one cached geometry, so a composite costs one mesh per material; parts
  *   that are all sheets (a window's glass) make a sheet (../lib/sheet.ts).
  * Shapes made here are local to this folder; parts the library has (columns, glazing, stairs, fittings) come from src/model/lib/.
  */

@@ -142,24 +142,21 @@ export function tierGroups(front: Front): TierGroup[] {
   });
 }
 
-/** Each bay with its run, its start and centre along the run, and its index along the whole front. */
+/** Each bay with its run, and its start and centre along the run. */
 export interface PlacedBay {
   readonly run: Run;
   readonly bay: Bay;
   readonly start: number;
   readonly centre: number;
-  readonly index: number;
 }
 
 export function placedBays(front: Front): PlacedBay[] {
   const out: PlacedBay[] = [];
-  let index = 0;
   for (const r of front.runs) {
     let start = 0;
     for (const bay of r.bays) {
-      out.push({ run: r, bay, start, centre: start + bay.width / 2, index });
+      out.push({ run: r, bay, start, centre: start + bay.width / 2 });
       start += bay.width;
-      index += 1;
     }
   }
   return out;

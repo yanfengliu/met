@@ -136,21 +136,19 @@ describe('floor view landscape filter', () => {
   });
 
   it('depends on the cut alone: a floor view over a second timeline hides the same meshes, and the timeline’s state is untouched', () => {
-    const furniture = timeline.steps.find((s) => s.def.id === 'plaza-furniture');
-    expect(furniture, 'the plaza-furniture step of src/model/site/plaza.ts').toBeDefined();
-    const moving = new Timeline(SEQUENCE);
-    const before = snapshot(moving);
-    const late = new FloorView(moving.steps, (i) => moving.restingPieces(i));
+    const second = new Timeline(SEQUENCE);
+    const before = snapshot(second);
+    const other = new FloorView(second.steps, (i) => second.restingPieces(i));
     // Every floor's cut and a sweep of cuts 0.25 m apart, from −3 m to 30 m.
     for (const cut of [...FLOORS.map((f) => f.cut), ...Array.from({ length: 133 }, (_, k) => -3 + k * 0.25)]) {
       view.apply(cut);
-      late.apply(cut);
+      other.apply(cut);
       const a = timeline.steps.flatMap((s) => s.meshes.filter((m) => view.hides(m)).map((m) => m.name));
-      const b = moving.steps.flatMap((s) => s.meshes.filter((m) => late.hides(m)).map((m) => m.name));
+      const b = second.steps.flatMap((s) => s.meshes.filter((m) => other.hides(m)).map((m) => m.name));
       expect(b, `meshes hidden at a ${cut.toFixed(2)} m cut, the second timeline's vs the first's`).toEqual(a);
     }
-    late.apply(null);
+    other.apply(null);
     view.apply(null);
-    expect(firstDifference(snapshot(moving), before), 'timeline state after the floor view ran').toBeNull();
+    expect(firstDifference(snapshot(second), before), 'timeline state after the floor view ran').toBeNull();
   });
 });

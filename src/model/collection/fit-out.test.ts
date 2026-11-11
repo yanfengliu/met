@@ -14,8 +14,8 @@
  *   and `entryOf` (place.ts), the placeholders' one way to a catalogue entry, refuses each fit-out record, so no collection step can place one.
  * Red (2026-11-11, each mutation made and undone): the court's lamps added through Diana's kit (her step's tagged pieces are then of glass and
  * verdigris too, and nothing of it is untagged); the gate's rail and the forecourt's flagstones added through the temple's kit (metalDark and
- * rn-oldPaving among the tagged); `artworkKit` dropping the order it was given (its own test, before work unit 26); `entryOf` handing a fit-out record on (its test, and
- * the typecheck, since a FitOutEntry is no PlaceholderEntry); and, with the engine's batching stood in for by one
+ * rn-oldPaving among the tagged); `artworkKit` dropping the order it was given (its own test, before work unit 26); `entryOf` handing a fit-out record
+ * on (its test, and the typecheck, since a FitOutEntry is no PlaceholderEntry); and, with the engine's batching stood in for by one
  * that keeps each artwork's pieces apart as a door's are, no line of src/build changed: the sequence makes 911 meshes where the build without the
  * tags makes 744, and src/model/core/core.test.ts fails at 159 meshes of its 130.
  * Bound: which pieces are the object's is the builder's choice, stated here by material; that a visitor reaches each part and that its card shows is
@@ -158,12 +158,7 @@ describe('the fit-out pieces’ tags', () => {
     const shape = (timeline: Timeline): string[] => timeline.steps.flatMap((s) => s.meshes.map((mesh) => `${mesh.name}: ${geometryKey(mesh.geometry)}, ${materialKey(materialOf(mesh))} ×${String(mesh.instanceMatrix.count)}`));
     expect(shape(tagged), 'each step’s meshes in order: geometry, material and instance count').toEqual(shape(plain));
     expect(plain.steps.every((s) => s.tags.every((list) => list === null || list.every((tag) => artworkOf(tag) === null))), 'the untagged build keeps no artwork’s tag').toBe(true);
-    // The empty site, the finished building, and each fit-out step part-way through its arrival and just complete.
-    const at = tagged.steps.filter((s) => s.def.id in PARTS).flatMap((s) => [s.index + 0.3, s.index + 0.6, s.index + 1]);
-    expect(at.length).toBe(3 * Object.keys(PARTS).length);
-    for (const t of [0, ...at, tagged.steps.length]) {
-      expect(firstDifference(snapshot(tagged), snapshot(plain)), `t ${String(t)}`).toBeNull();
-    }
+    expect(firstDifference(snapshot(tagged), snapshot(plain)), 'the scene, byte for byte').toBeNull();
   });
 });
 

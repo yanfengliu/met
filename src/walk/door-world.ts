@@ -42,7 +42,7 @@ export interface MovingDoors {
   angleOf(id: string): number | null;
   /** The angles door `id` rests at open, the one away from `from` (world metres) first: one for a door that opens one way, two for either, none for a locked door. */
   openAngles(id: string, from: Vector3): readonly number[];
-  /** Moves the built doors' swings on by `seconds`; a door for which `clear(id, from, to)` is false holds where it stands and waits. */
+  /** Moves the doors' swings on by `seconds`; a door for which `clear(id, from, to)` is false holds where it stands and waits. */
   advance(seconds: number, clear: (id: string, from: number, to: number) => boolean): void;
   /** Puts door `id` at `angle` radians at once, still. */
   set(id: string, angle: number): void;
