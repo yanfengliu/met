@@ -11,7 +11,7 @@
  *   card, since the gate, one artwork with the temple and built by another step, is still drawn; dragged under the gate, the card goes.
  * The places, the aims and the click points are src/model/collection/fit-out-testing.ts's, which a unit test holds against the finished model. The
  * card's text is compared with the catalogue's record and, written out here, with what The Met's record said when it was fetched (2026-11-11), so a
- * card that showed another record, or a record that changed unseen, fails.
+ * card that showed another record, or a record that changed unseen, fails; the temple's date alone is its pick's, 10 BCE for the record's 10 CE.
  * Red (2026-11-11): with Diana's figure added untagged, as it was before work unit 29, the click on her fails as the live page did: the label stays null.
  * Bound: 1280×720; the card's layout at both sizes, its link's click and the locked pointer are ./labels.spec.ts's own tests on the Triumph of Marius,
  * the same card. Nothing here writes the page's state; clicks and drags are real input.
@@ -29,7 +29,7 @@ import type { Camera } from './helpers.js';
 import { drag, onCanvas, pixelOf, recordRequests, surfaceAt } from './labels-helpers.js';
 import { still, walking } from './route-walk.js';
 
-/** What a landmark's card says, as The Met's record gave it on 2026-11-11: the maker is null where the record names no artist and no culture. */
+/** What a landmark's card says, as The Met's record gave it on 2026-11-11 (or its pick, for a date): the maker is null where the record names no artist and no culture. */
 interface CardText {
   readonly title: string;
   readonly maker: string | null;
@@ -61,8 +61,9 @@ export const LANDMARKS: readonly Landmark[] = [
   {
     name: 'the Temple of Dendur',
     view: viewOf('the Temple of Dendur, from its forecourt'),
-    // The record names no maker; its date reads "completed by 10 CE", which the card shows as given.
-    card: { title: 'The Temple of Dendur', maker: null, date: 'completed by 10 CE', medium: 'Aeolian sandstone', gallery: 'Gallery 131', size: 'H 640.1 × W 640.1 × D 1249.7 cm' },
+    // The record names no maker. Its date reads "completed by 10 CE"; the card shows the pick's "completed by 10 BCE" in its place, as the owner
+    // decided on 2026-11-11 (docs/research/collection.md, The temple's date).
+    card: { title: 'The Temple of Dendur', maker: null, date: 'completed by 10 BCE', medium: 'Aeolian sandstone', gallery: 'Gallery 131', size: 'H 640.1 × W 640.1 × D 1249.7 cm' },
   },
 ];
 

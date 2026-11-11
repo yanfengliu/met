@@ -92,12 +92,7 @@ function axesOf(e: MetMeasurement): Partial3 {
   const put = (axis: Axis, cm: number | undefined): void => {
     if (cm !== undefined && Number.isFinite(cm) && out[axis] === undefined) out[axis] = cmToM(cm);
   };
-  put('h', m['Height']);
-  put('w', m['Width']);
-  put('w', m['Diameter']);
-  put('d', m['Depth']);
-  put('d', m['Length']);
-  put('d', m['Diameter']);
+  for (const [axis, key] of [['h', 'Height'], ['w', 'Width'], ['w', 'Diameter'], ['d', 'Depth'], ['d', 'Length'], ['d', 'Diameter']] as const) put(axis, m[key]);
   return out;
 }
 
@@ -302,10 +297,7 @@ export function hex([r, g, b]: Rgb): string {
 }
 
 function meanOf(bins: Bins, keep: (i: number, j: number) => boolean): { readonly rgb: Rgb; readonly pixels: number } {
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let pixels = 0;
+  let [r, g, b, pixels] = [0, 0, 0, 0];
   for (let j = 0; j < bins.n; j++) {
     for (let i = 0; i < bins.n; i++) {
       if (!keep(i, j)) continue;
@@ -429,15 +421,22 @@ export function sampleable(record: MetRecord): boolean {
   return record.isPublicDomain && record.primaryImageSmall !== '';
 }
 
-/** The Met's metadata every entry keeps, as the record gives it, in the order the catalogue writes it. */
-function metadataOf(record: MetRecord, space: SpacePicks): Omit<ObjectRecord, 'size' | 'sizeFrom' | 'element' | 'source'> {
+/** An entry's date: the record's objectDate as given, or its pick's text in its place, which stands only while the record still gives the text the pick replaces. */
+function dateOf(record: MetRecord, pick: Pick): string {
+  if (pick.date === undefined || pick.date.replaces === record.objectDate) return pick.date?.value ?? record.objectDate;
+  throw new Error(`Object ${String(record.objectID)} ("${record.title}"): its pick replaces the date "${pick.date.replaces}" with "${pick.date.value}", but the record now gives "${record.objectDate}"; read the record, then correct the pick's date or remove it.`);
+}
+
+/** The Met's metadata every entry keeps, as the record gives it but for a date its pick replaces (marked), in the order the catalogue writes it. */
+function metadataOf(record: MetRecord, space: SpacePicks, pick: Pick): Omit<ObjectRecord, 'size' | 'sizeFrom' | 'element' | 'source'> {
   return {
     id: record.objectID,
     space: space.id,
     accession: record.accessionNumber,
     title: record.title,
     maker: record.artistDisplayName !== '' ? record.artistDisplayName : record.culture,
-    date: record.objectDate,
+    date: dateOf(record, pick),
+    ...(pick.date === undefined ? {} : { dateFrom: 'pick' as const }),
     medium: record.medium,
     objectName: record.objectName,
     classification: record.classification,
@@ -465,7 +464,7 @@ export function catalogueEntry(input: EntryInput): PlaceholderEntry {
   const fallback = fallbackColour(record.medium, kind);
   const colour = input.image === undefined ? fallback.colour : meanColour(input.image.bins, kind);
   return {
-    ...metadataOf(record, space),
+    ...metadataOf(record, space, pick),
     kind,
     kindFrom: pick.kind === undefined ? 'name' : 'pick',
     display,
@@ -495,5 +494,5 @@ export function fitOutEntry(input: EntryInput): FitOutEntry {
   if (input.image !== undefined) throw new Error(`Object ${String(record.objectID)}: an image was sampled for a fit-out piece, which takes its colours from its own materials; sample none.`);
   checkGallery(record, pick, space);
   const sized = sizeOf(record, null, pick);
-  return { ...metadataOf(record, space), display: 'fit-out', size: sized.size, sizeFrom: sized.sizeFrom, element: sized.element, source: provenanceOf(input) };
+  return { ...metadataOf(record, space, pick), display: 'fit-out', size: sized.size, sizeFrom: sized.sizeFrom, element: sized.element, source: provenanceOf(input) };
 }

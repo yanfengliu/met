@@ -11,7 +11,8 @@
  * - what is not the object carries no card: a look at the flagstones of the temple's forecourt, at the base course under the temple, at the rail
  *   before the gate and at a lamp of the court meets an untagged surface within an artwork's reach, and finds no artwork;
  * - the card the page then shows is the record's own (src/ui/art-card.ts `cardContent`, as src/main.ts builds its cards from the catalogue): each
- *   piece's title, maker, date, medium, gallery, size and link, written out here from The Met's records as fetched on 2026-11-11.
+ *   piece's title, maker, date, medium, gallery, size and link, written out here from The Met's records as fetched on 2026-11-11, but for the
+ *   temple's date, which its pick corrects to 10 BCE.
  * Every piece has a view of each of its parts, and each view names the part's step, so a part without a view fails here. Each view is a place to
  * stand by the walker's own rule, not by one of this test's (review 0, F7; review 1, F10): walk mode's walker, set down at the view's feet as the
  * page's `spawn=x,y,z,tx,ty,tz` sets it down and checked as walk mode checks it, stays there at rest, its feet at the view's own height and at the
@@ -203,14 +204,15 @@ describe('labelling every fit-out piece in the finished model', () => {
     }
   });
 
-  it('shows each piece’s card from its record: title, maker, date, medium, gallery, size and link, as The Met gave them', () => {
+  it('shows each piece’s card from its record: title, maker, date, medium, gallery, size and link, as The Met gave them, but the temple’s date', () => {
     const cards = FIT_OUT_PIECES.map((piece) => {
       const { id, title, maker, date, medium, gallery, size, url } = cardContent(fitOutEntryOf(piece.id));
       return [id, title, maker, date, medium, gallery, size, url];
     });
     expect(cards).toEqual([
-      // The record names no artist and no culture, so the card shows its date alone; "completed by 10 CE" is the record's own objectDate string.
-      ['547802', 'The Temple of Dendur', null, 'completed by 10 CE', 'Aeolian sandstone', 'Gallery 131', 'H 640.1 × W 640.1 × D 1249.7 cm', 'https://www.metmuseum.org/art/collection/search/547802'],
+      // The record names no artist and no culture, so the card shows its date alone. That date is the pick's, "completed by 10 BCE", in place of the
+      // record's "completed by 10 CE" (the owner's decision of 2026-11-11; docs/research/collection.md, The temple's date).
+      ['547802', 'The Temple of Dendur', null, 'completed by 10 BCE', 'Aeolian sandstone', 'Gallery 131', 'H 640.1 × W 640.1 × D 1249.7 cm', 'https://www.metmuseum.org/art/collection/search/547802'],
       ['11998', 'Diana', 'Augustus Saint-Gaudens', '1892–93, cast 1928', 'Bronze, gilt', 'Gallery 700', 'H 258.4 × W 135.9 × D 35.9 cm', 'https://www.metmuseum.org/art/collection/search/11998'],
       // "Fravrile" is the record's spelling; the depths of the loggia and of the screen are the model's, which the card names as estimated.
       ['133', 'Architectural Elements from Laurelton Hall, Oyster Bay, New York', 'Louis C. Tiffany', 'ca. 1905', 'Limestone, ceramic, and Fravrile glass', 'Gallery 701', 'H 640.1 × W 701 × D 533 cm, depth estimated', 'https://www.metmuseum.org/art/collection/search/133'],

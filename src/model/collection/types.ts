@@ -26,6 +26,17 @@ export interface SizeOverride {
   readonly reason: string;
 }
 
+/**
+ * The date text a card shows in place of the record's `objectDate`, where the record's own is wrong: the record's text it replaces, so that a run
+ * of the script refuses once the record gives another (corrected at the source, or changed again), and why.
+ */
+export interface DateOverride {
+  readonly value: string;
+  /** The record's `objectDate` as it stood when the pick was written. */
+  readonly replaces: string;
+  readonly reason: string;
+}
+
 /** One object chosen for a space, by The Met's object ID; every override is optional and carries its reason. */
 export interface Pick {
   readonly id: number;
@@ -34,6 +45,8 @@ export interface Pick {
   readonly size?: SizeOverride;
   /** Accepts a record whose GalleryNumber is not one of the space's galleries (the value it must have instead). */
   readonly gallery?: Override<string>;
+  /** Shown in place of the record's date; every other record's date is copied as given. */
+  readonly date?: DateOverride;
 }
 
 /** A space of the model and the objects chosen for it. A record must name one of `galleries` (its GalleryNumber) unless its pick overrides it. */
@@ -72,7 +85,10 @@ export interface ObjectRecord {
   readonly title: string;
   /** The artist's display name, else the culture, else ''. */
   readonly maker: string;
+  /** The record's `objectDate` as given, or, where `dateFrom` marks it, the text its pick gives in its place. */
   readonly date: string;
+  /** Present, as 'pick', only where the pick's date stands in place of the record's (picks.ts says which text it replaces, and why). */
+  readonly dateFrom?: 'pick';
   readonly medium: string;
   readonly objectName: string;
   readonly classification: string;

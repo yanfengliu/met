@@ -255,14 +255,15 @@ function differs(what: string, holds: string | number, fromPick: boolean, chosen
 }
 
 /**
- * How a kept placeholder's entry differs from what its pick's own choices give, which need no record to tell: its kind, its display and each
- * dimension against the pick's overrides, set, changed or dropped, and its gallery against the space's galleries and the pick's override
+ * How a kept placeholder's entry differs from what its pick's own choices give, which need no record to tell: its kind, its display, its date and
+ * each dimension against the pick's overrides, set, changed or dropped, and its gallery against the space's galleries and the pick's override
  * (rules.catalogueEntry and rules.checkGallery apply the same). None when a whole run would take the same choices from the pick.
  */
 function staleBy(entry: PlaceholderEntry, pick: Pick, space: SpacePicks): string[] {
   return [
     ...differs('kind', entry.kind, entry.kindFrom === 'pick', pick.kind?.value),
     ...differs('display', entry.display, entry.displayFrom === 'pick', pick.display?.value),
+    ...differs('date', entry.date, entry.dateFrom === 'pick', pick.date?.value),
     ...(['h', 'w', 'd'] as const).flatMap((axis) => differs(`size.${axis}`, entry.size[axis], entry.sizeFrom[axis] === 'pick', pick.size?.[axis])),
     ...(space.galleries.includes(entry.gallery) || pick.gallery?.value === entry.gallery ? [] : [`its gallery ${JSON.stringify(entry.gallery)} is neither one of its space's (${space.galleries.join(', ')}) nor its pick's override`]),
   ];

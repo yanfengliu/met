@@ -24,6 +24,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { CATALOGUE, CATALOGUE_SOURCE } from '../src/model/collection/catalogue.js';
+import { SPACES } from '../src/model/collection/picks.js';
 import type { CatalogueEntry, CatalogueSource, Pick, PlaceholderEntry, SpacePicks } from '../src/model/collection/types.js';
 import * as rules from './met-catalogue-rules.js';
 import type { Bins, MetRecord } from './met-catalogue-rules.js';
@@ -67,10 +68,39 @@ describe('fit-out records from committed records', () => {
       element: 'Overall (Temple proper)',
       source: { url: 'https://collectionapi.metmuseum.org/public/collection/v1/objects/547802', fetched: '2026-11-11', metadataDate: '2026-08-01', sha256: 'abababababababab' },
     });
-    // The date is the record's objectDate as given, though its objectBeginDate and objectEndDate say 10 BCE: nothing here derives or corrects it.
+    // With no date in its pick, the date is the record's objectDate as given, though its objectBeginDate and objectEndDate say 10 BCE: the script
+    // derives and corrects nothing of its own.
     const raw = JSON.parse(body(547802)) as { objectDate: string; objectBeginDate: number; objectEndDate: number };
     expect([raw.objectDate, raw.objectBeginDate, raw.objectEndDate]).toEqual(['completed by 10 CE', -10, -10]);
     expect(e.date).toBe(raw.objectDate);
+  });
+
+  it('takes a pick’s date in place of the record’s only while the record still gives the text the pick replaces, and marks it; every other date is the record’s own', () => {
+    const picks = SPACES.flatMap((s) => s.fitOut ?? []);
+    const own = (id: number): string => (JSON.parse(body(id)) as { objectDate: string }).objectDate;
+    // The picks' one date override, the temple's (the owner's decision of 2026-11-11): the text it replaces is the record's as fetched.
+    expect(picks.filter((p) => p.date !== undefined).map((p) => [p.id, p.date?.value, p.date?.replaces])).toEqual([[547802, 'completed by 10 BCE', own(547802)]]);
+    const temple = picks.find((p) => p.id === 547802);
+    const plain = fitOut(547802, ['131']);
+    const e = fitOut(547802, ['131'], temple);
+    expect([e.date, e.dateFrom, plain.date, plain.dateFrom]).toEqual(['completed by 10 BCE', 'pick', 'completed by 10 CE', undefined]);
+    // The mark stands beside the date, and nothing else of the entry changes.
+    expect(Object.keys(e)).toEqual(Object.keys(plain).flatMap((k) => (k === 'date' ? ['date', 'dateFrom'] : [k])));
+    expect({ ...e, date: plain.date }).toEqual({ ...plain, dateFrom: 'pick' });
+    // A pick that replaces a text the record does not give is refused: the record has changed since the pick was written, or the pick is wrong.
+    expect(() => fitOut(547802, ['131'], { id: 547802, date: { value: 'completed by 10 BCE', replaces: 'completed by 10 B.C.', reason: 'test' } })).toThrow(
+      'Object 547802 ("The Temple of Dendur"): its pick replaces the date "completed by 10 B.C." with "completed by 10 BCE", but the record now gives "completed by 10 CE"; read the record, then correct the pick\'s date or remove it.',
+    );
+    // A placeholder's date is its pick's on the same terms.
+    const dated = rules.catalogueEntry({ record: record(11998), pick: { id: 11998, date: { value: '1893', replaces: own(11998), reason: 'test' } }, space: space(['700']), fetched: '2026-11-11', sha256: '00' });
+    expect([dated.date, dated.dateFrom]).toEqual(['1893', 'pick']);
+    // The other three fit-out pieces, by their own picks, and a placeholder: each date is its record's text, unmarked.
+    for (const pick of picks.filter((p) => p.id !== 547802)) {
+      const entry = rules.fitOutEntry({ record: record(pick.id), pick, space: space([record(pick.id).GalleryNumber]), fetched: '2026-11-11', sha256: '00' });
+      expect([pick.id, entry.date, 'dateFrom' in entry]).toEqual([pick.id, own(pick.id), false]);
+    }
+    const placeholder = rules.catalogueEntry({ record: record(247000), pick: { id: 247000 }, space: space(['162']), fetched: '2026-11-11', sha256: '00' });
+    expect([placeholder.date, 'dateFrom' in placeholder]).toEqual([own(247000), false]);
   });
 
   it('Diana: the figure’s own measurements, not the height she is displayed at nor her pedestal, which only a placeholder keeps', () => {
@@ -203,24 +233,28 @@ describe('the run with fit-out pieces', () => {
     }
   });
 
-  it('keeps no placeholder its pick would no longer give: a kind, a display or a dimension set, changed or dropped in the pick since, or a gallery no longer the space’s or the pick’s', async () => {
+  it('keeps no placeholder its pick would no longer give: a kind, a display, a date or a dimension set, changed or dropped in the pick since, or a gallery no longer the space’s or the pick’s', async () => {
     /** `spaces` with `first` in place of space s1's first pick (object 1247000), and `over` over the space's own fields. */
     const s1 = (spaces: readonly SpacePicks[], first: Pick, over: Partial<SpacePicks> = {}): SpacePicks[] => spaces.map((s, k) => (k === 1 ? { ...s, picks: [first, ...s.picks.slice(1)], ...over } : s));
     const id = 1_247_000;
     const reason = 'chosen in the test';
-    const chosen: Pick = { id, kind: { value: 'slab', reason }, display: { value: 'floor', reason }, size: { d: 0.9, reason } };
-    // Two committed catalogues: one whose picks chose nothing, and one whose pick of 1247000 chose its kind, its display and its depth.
+    /** A date in place of the record's own, which the fixture gives as 69–96 CE. */
+    const date = { value: 'about 80 CE', replaces: '69–96 CE', reason };
+    const chosen: Pick = { id, kind: { value: 'slab', reason }, display: { value: 'floor', reason }, date, size: { d: 0.9, reason } };
+    // Two committed catalogues: one whose picks chose nothing, and one whose pick of 1247000 chose its kind, its display, its date and its depth.
     const plain = await committed();
     const overridden = await committed(s1(picks, chosen));
     const held = plain.kept.entries.find((e): e is PlaceholderEntry => e.id === id && e.display !== 'fit-out');
-    expect([held?.kind, held?.display, held?.sizeFrom.d, held?.gallery], 'the plain entry: a figure on a plinth by the rules, its depth estimated').toEqual(['figure', 'plinth', 'estimate', '162']);
+    expect([held?.kind, held?.display, held?.date, held?.dateFrom, held?.sizeFrom.d, held?.gallery], 'the plain entry: a figure on a plinth by the rules, the record’s date, its depth estimated').toEqual(['figure', 'plinth', '69–96 CE', undefined, 'estimate', '162']);
     const cases: (readonly [string, NonNullable<Run['kept']>, SpacePicks[], string])[] = [
       ['a kind set since', plain.kept, s1(withFitOut, { id, kind: { value: 'slab', reason } }), '(s1:1247000: its kind is "figure", and its pick now sets "slab")'],
       ['a display set since', plain.kept, s1(withFitOut, { id, display: { value: 'floor', reason } }), '(s1:1247000: its display is "plinth", and its pick now sets "floor")'],
+      ['a date given since', plain.kept, s1(withFitOut, { id, date }), '(s1:1247000: its date is "69–96 CE", and its pick now sets "about 80 CE")'],
       ['a depth given since', plain.kept, s1(withFitOut, { id, size: { d: 0.9, reason } }), `(s1:1247000: its size.d is ${String(held?.size.d)}, and its pick now sets 0.9)`],
       ['a kind changed since', overridden.kept, s1(withFitOut, { ...chosen, kind: { value: 'bust', reason } }), '(s1:1247000: its kind is "slab", an earlier pick\'s, and its pick now sets "bust")'],
+      ['a date changed since', overridden.kept, s1(withFitOut, { ...chosen, date: { ...date, value: 'about 90 CE' } }), '(s1:1247000: its date is "about 80 CE", an earlier pick\'s, and its pick now sets "about 90 CE")'],
       ['a depth changed since', overridden.kept, s1(withFitOut, { ...chosen, size: { d: 1.1, reason } }), '(s1:1247000: its size.d is 0.9, an earlier pick\'s, and its pick now sets 1.1)'],
-      ['every choice dropped since', overridden.kept, withFitOut, '(s1:1247000: its kind "slab" is a pick\'s, and its pick sets none now; its display "floor" is a pick\'s, and its pick sets none now; its size.d 0.9 is a pick\'s, and its pick sets none now)'],
+      ['every choice dropped since', overridden.kept, withFitOut, '(s1:1247000: its kind "slab" is a pick\'s, and its pick sets none now; its display "floor" is a pick\'s, and its pick sets none now; its date "about 80 CE" is a pick\'s, and its pick sets none now; its size.d 0.9 is a pick\'s, and its pick sets none now)'],
       ['the space’s gallery changed since', plain.kept, s1(withFitOut, { id }, { galleries: ['999'] }), '(s1:1247000: its gallery "162" is neither one of its space\'s (999) nor its pick\'s override. s1:1254697: its gallery "162" is'],
     ];
     for (const [what, kept, spaces, message] of cases) {
