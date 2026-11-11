@@ -1,6 +1,6 @@
 # Remove the build replay and its animation
 
-Status: active
+Status: complete
 Owner: claude/worktree-remove-build-replay
 Created: 2026-11-11
 Updated: 2026-11-11
@@ -35,9 +35,9 @@ A first, since it is what the owner sees; B then removes what A leaves unreachab
 ## Implementation steps
 
 - [x] A: page, UI, queries, facts, capture, e2e, docs; merged.
-- [ ] B: engine, model fields, walk, doors, labels, unit tests, docs; merged. Committed on the branch (`2859169`, `8053ce6`, merged with main at `7bb47fc`), the review's repairs after it; not yet on main.
+- [x] B: engine, model fields, walk, doors, labels, unit tests, docs; merged: `2859169` and `8053ce6`, merged with main at `7bb47fc`, the review's repairs at `1753938`, landed with this plan's final state.
 - [x] Independent review of the result, findings answered: `reviews/0_implementation.md`, Codex and Claude on `7bb47fc`, no serious finding, F0 to F6 repaired in tests, wording and one dead field.
 
 ## Outcome
 
-Pending.
+Both milestones are on main. A took the build replay off the page (landed at `eacc0fb`, its status fix `4f0e630`). B took the animation out of the engine and the model: the timeline builds every step once, at rest; `player.ts`, `motion.ts` and `stagger.ts` are gone, with the steps' `motion` and `stagger` and the kit's `order`; walk mode builds its collision once; the door layer has no lifecycle. B was gated at `1753938`: `npm run verify` passed (720 unit tests in 84 files, typecheck, lint, build, 93 e2e). The finished model's content is A's to the byte, by a fingerprint of every mesh and light; a mesh's instances are now in the order their step added them, which turns lone pixels where faces tie in depth (21 of the 52 standard shots differ from A's in 1 to 13 pixels, by at most 26 of 255). Review: `reviews/0_implementation.md`, Codex and Claude on `7bb47fc`, no serious finding, F0 to F6 repaired. Limits: the shots were compared on `7bb47fc`, before the review's repairs, which change no render; on a loaded machine the e2e frame budgets can fail with nothing wrong, as one did at `7bb47fc` (work unit 30 moves them to their own gate).
