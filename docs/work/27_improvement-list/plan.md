@@ -37,7 +37,7 @@ Another session removes the build replay in the worktree `remove-build-replay` (
 
 Until unit 26 is on origin's main, this plan's work stays out of `src/ui/**`, `src/main.ts`, `src/build/**`, `src/viewer/facts.ts`, `src/viewer/query.ts`, the e2e specs for the replay, controls, menus and layout, and the replay parts of `docs/design/spec.md`, `README.md` and `AGENTS.md`. So no unit here adds a URL parameter or a `window.__met` fact before then. Which items wait for which of its milestones is under "What follows for this plan" below.
 
-One exception, granted to unit 29 on 2026-11-11: three lines of `src/ui/art-card.test.ts` change (the catalogue's count and the list of records that name no maker), because `src/main.ts` builds the cards from `CATALOGUE` and is not to be touched, so the landmarks' records must join the catalogue. The other session was told.
+Two exceptions, granted to unit 29 on 2026-11-11. Four lines of `src/ui/art-card.test.ts` change (the catalogue's count in the header and in the assertion, and the list of records that name no maker with the comment over it), because `src/main.ts` builds the cards from `CATALOGUE`, so the landmarks' records must join the catalogue. And one closure of `src/main.ts` changes, the one that gathers a clicked artwork's pieces, which review 0 of unit 29 found following one step alone; the other session gave leave for it and said its own edits to that file are elsewhere.
 
 That session answered on 2026-11-11. It lands in two milestones:
 - A, expected within about two hours of the answer: the page without the replay (`src/main.ts`, `src/ui/**`, `src/viewer/facts.ts`, `query.ts`, `camera-rig.ts`; in `viewer.ts` only the bottom inset and the `rig.resize` call), `StepDef` without `focus` and `weight` (33 model files, `collection/place.ts`, `spaces-a.ts`, `spaces-b.ts`), `scripts/capture.ts` without the chapter and mid-build shots and without `t=`, every e2e spec and `helpers.ts` stripped of replay checks, and the docs (the spec, AGENTS.md, the README, the local rule that the build process is the product, retired at the owner's request). It does not touch `src/ui/art-card.test.ts`, the render path, `environment.ts`, `sun.ts` or `index.html`.
@@ -49,12 +49,13 @@ What follows for this plan:
 - A model change that lands before B is carried by that session's codemods; one that lands after B re-runs them from `tmp/wu26-codemods/` in the main checkout. So unit 29's first landing should land before B.
 - When A lands, each worker merges origin's main and gates the merged tree before handing back.
 - The page items (2, 3, 6) and the model items that add steps and pieces (9, 11) start after B, since they live in the files B rewrites.
+- A landed on 2026-11-11 at `eacc0fb`. B is on hold since then: it rewrites `src/build/`, which the owner's permission settings block for that session, and that session has asked the owner whether to go on or stop at A. It asked that this plan's page and model work not be held for B meanwhile; it will say which way B goes. Until it does, nothing here starts in `src/build`, `src/walk/walk-mode.ts` or the steps' `kit.add` lines.
 
 Shared: `tmp/gate.sh` for verify, e2e, shots and sweeps; `tmp/land.sh` for the landing slot; one `MET_PORT` per worktree (5340 the coordinator, 5341 lighting, 5342 artworks).
 
 ### Limits the sweep found that bear on the items
 
-- The core area is at its mesh cap, 130 of 130 (`src/model/core/core.test.ts`), so anything added in the 1880 to 1894 core reuses a mesh or the cap is raised by the owner.
+- The core area stands at 128 of its 130 meshes (`src/model/core/core.test.ts` prints it; the sweep's "130 of 130" came from work unit 21's record and was wrong by 2026-11-11), so anything added in the 1880 to 1894 core has two meshes to spend before it must reuse one or the owner raises the cap.
 - The model is at 744 of 900 meshes and 1.61M of 3M triangles.
 - Three of the eight step lights are used.
 - The walking frame budgets pass on a quiet machine and have failed on a loaded one (16.78 ms in work unit 25, 19.5 and 17.7 ms in work unit 23), so item 1's cost must be measured, not assumed.
@@ -100,13 +101,13 @@ Decisions the owner made on 2026-11-11, each from a question with its options la
 - [ ] 2. First impression: after unit 26's milestone B.
 - [ ] 3. Wayfinding: after unit 26's milestone B.
 - [ ] 4. Surface detail: after item 1.
-- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing B (more forms) and landing C (paintings at 16×16) follow.
+- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing A was handed back at `9176e57` and reviewed (review 0: Codex rejects on one finding, Claude approves with findings); its repairs are with the worker. Landing B (more forms) and landing C (paintings at 16×16) follow.
 - [ ] 6. Touch and weaker devices: after unit 26's milestone B. A run on a phone or a weaker GPU cannot be made from this machine.
 - [x] 7. The build replay as a story: dropped, see Scope.
 - [ ] 8. Surroundings and sky: after item 1, as environment.
 - [ ] 9. Shell galleries: after item 4 and unit 26's milestone B.
 - [ ] 10. Project presentation: after unit 26's milestone A, which rewrites the README and AGENTS.md; `index.html` is free now.
-- [ ] 11. Fidelity leftovers, all four groups, after unit 26's milestone B: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh cap (130 of 130) bounds the Medieval hall and gallery 600.
+- [ ] 11. Fidelity leftovers, all four groups, after unit 26's milestone B: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh budget (128 of 130 used) bounds the Medieval hall and gallery 600.
 
 ## Outcome
 
