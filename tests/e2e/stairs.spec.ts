@@ -19,8 +19,8 @@
  * Bound: walking backward with S stands in for turning round; the frame rate is the page's own (60 a second headless here), so other rates are the unit
  * test's; frame times come from requestAnimationFrame timestamps, one frame late when the loop runs before the page's, and are capped, as the page
  * caps them, at 0.1 s. The plaza end is checked against the surface under the eye, not against the plaza's own level: the stop 0.5 m past the spawn
- * (4.96 m past the foot of the steps) is what keeps the walker off the steps, and a walker over the curb would pass; the cast holds for a page at
- * t = N with no section cut and no floor view, the state these walks open and ./surface.ts rebuilds.
+ * (4.96 m past the foot of the steps) is what keeps the walker off the steps, and a walker over the curb would pass; the cast holds for the finished
+ * building with no section cut and no floor view, the state these walks open and ./surface.ts rebuilds.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';

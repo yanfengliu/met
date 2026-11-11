@@ -216,7 +216,6 @@ export const armorCourtSteps: readonly StepDef[] = [
     detail: 'The court at the heart of the Morgan wing, opened in March 1910 as the Wing of Decorative Arts: a warm stone floor and a low platform down its axis.',
     motion: { kind: 'rise', distance: 2 },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-arms-armor-court' },
     build: buildFloor,
   },
   {
@@ -227,7 +226,6 @@ export const armorCourtSteps: readonly StepDef[] = [
     detail: 'Ionic column pairs in the end openings, framed doors into the side galleries, a string course at the balconies and a cornice under the vault.',
     motion: { kind: 'rise' },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-arms-armor-court' },
     build: buildArcades,
   },
   {
@@ -238,7 +236,6 @@ export const armorCourtSteps: readonly StepDef[] = [
     detail: 'Arms and armour moved into the court in 1956: mounted armours ride in procession under heraldic banners and ring chandeliers; an organ case fills the north balcony.',
     motion: { kind: 'slide', from: [-12, 0, 0] },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-arms-armor-court' },
     build: buildParade,
   },
 ];

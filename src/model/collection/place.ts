@@ -10,7 +10,7 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import type { BufferGeometry, Material } from 'three';
 
-import type { CameraFocus, Kit, PieceTag, StepDef } from '../../build/types.js';
+import type { Kit, PieceTag, StepDef } from '../../build/types.js';
 import type { ChapterId } from '../../build/chapters.js';
 import { CATALOGUE } from './catalogue.js';
 import { block, bust, canvas, dish, figureGroup, jar, recumbentFigure, slab, standingFigure, unitBox } from './kinds.js';
@@ -156,14 +156,15 @@ export function entryOf(id: number): CatalogueEntry {
   return entry;
 }
 
-/** A space's collection step: what the timeline shows of it, and where each of its artworks stands. */
+/** A space's collection step: its id and history, the interior preset that shows the space, and where each of its artworks stands. */
 export interface CollectionStepDef {
   readonly id: string;
   readonly chapter: ChapterId;
   readonly year: string;
   readonly title: string;
   readonly detail: string;
-  readonly focus: CameraFocus;
+  /** The interior preset of src/viewer/presets.ts that shows the space; src/model/reach.test.ts stands the walker where it stands. */
+  readonly preset: string;
   /** The space of picks.ts whose objects it places. */
   readonly space: string;
   readonly placements: readonly Placement[];
@@ -196,7 +197,6 @@ export function collectionStep(def: CollectionStepDef): StepDef {
     detail: def.detail,
     motion: { kind: 'pop' },
     stagger: 'order',
-    focus: def.focus,
     build(kit: Kit) {
       const { pieces, surfaces } = stepArtworks(def);
       const art = artMaterial(`collection-${def.space}`, surfaces);

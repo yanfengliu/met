@@ -203,7 +203,7 @@ test.describe('the walk through real input', () => {
     await noPointerLock(page);
     const f = await open(page, '');
     await throttle(page);
-    expect(f.t, 'the finished building').toBe(f.n);
+    expect(f.doors.filter((d) => !d.built).map((d) => d.id), 'the finished building: doors not built').toEqual([]);
     expect(f.doors.find((d) => d.id === MIDDLE_DOOR), 'the middle door at load').toMatchObject({ state: 'closed', angle: 0, built: true });
     await page.keyboard.press('KeyF');
     const start = await walking(page);

@@ -210,7 +210,6 @@ export const lehmanGlassSteps: readonly StepDef[] = [
     detail: 'A sloped glazed ceiling over the galleries round the court, and a skylight along the old brick front where the wing meets it.',
     motion: { kind: 'drop' },
     stagger: 'order',
-    focus: { kind: 'view', position: [36, 34, -196], target: [0, 10, -153] },
     build: (kit) => {
       addPieces(kit, bandPieces());
       addPieces(kit, stripPieces(), 10);
@@ -224,8 +223,6 @@ export const lehmanGlassSteps: readonly StepDef[] = [
     detail: 'Eight glazed faces on a light steel grid rise about 11 m from the court walls to one apex, some 27 m above Fifth Avenue grade.',
     motion: { kind: 'drop' },
     stagger: 'order',
-    weight: 1.5,
-    focus: { kind: 'view', position: [30, 40, -188], target: [0, 14, -151] },
     build: (kit) => {
       addPieces(kit, pyramidPieces());
     },

@@ -1,19 +1,12 @@
 /**
- * The screen while walking (docs/design/spec.md, Walk mode: The screen; Page: Build replay), through real input at 1280×720 and 390×844, with the build
- * replay closed and open:
- * - closed, as the page opens: entering by the Walk toggle shows the view whole, a crosshair at its centre (where the projection is centred: the
- *   camera's aspect is the whole canvas's), the Build and View buttons and at the bottom right the Walk toggle alone; the label, scrubber, transport,
- *   speeds and floor picker are hidden; the status line's hint shows until the walker first walks; the Build menu's Build replay opens the replay with
- *   the whole bar, whose controls then work and step the build while walking, the view still the whole canvas; its Timeline button folds it and
- *   unfolds it; its close button closes the replay at the finished building, the Walk toggle alone again; the Walk toggle leaves, giving the orbit view
- *   no timeline and no crosshair; F enters again, the Walk toggle alone;
- * - open, by the Build menu in the orbit view: entering by the Walk toggle shows only the Timeline and Walk buttons at the bottom right; Timeline brings
- *   the whole bar back, whose controls work while walking, and folds it again; the Walk toggle leaves, giving the orbit view its whole bar and no
- *   crosshair; F enters again with the bar folded.
+ * The screen while walking (docs/design/spec.md, Walk mode: The screen; Page: Walk toggle), through real input at 1280×720 and 390×844. The orbit view
+ * shows the View menu's button, the floor picker and, in the walk strip at the bottom right, the Walk toggle; entering by the Walk toggle shows the view
+ * whole, a crosshair at its centre (where the projection is centred: the camera's aspect is the whole canvas's), the View button and the walk strip
+ * holding the Walk toggle alone, pressed, the floor picker hidden; the status line's hint shows until the walker first walks; the Walk toggle leaves,
+ * giving the orbit view its controls again with no crosshair and no status line; F enters again, the same screen, and F leaves.
  * Every control in view is inside the viewport, unclipped and apart from the others and from the crosshair, in each state.
- * A click takes effect on the page's next frame (src/main.ts `frame`), so each state is read once the page's next frame has applied it, waiting for
- * the attribute that frame sets, which reports it: the Timeline button's `aria-expanded`, the Walk toggle's `aria-pressed`, the Build replay item's
- * `aria-checked`.
+ * A click takes effect on the page's next frame (src/main.ts `frame`), so each state is read once the page's next frame has applied it, waiting for the
+ * attribute that frame sets, which reports it: the Walk toggle's `aria-pressed`.
  * Bound: the browser gives these tests no pointer lock (./helpers.ts `noPointerLock`), as one without it does, so the mouse reaches the walking
  * screen's controls: a locked pointer reaches none, and Esc leaves walk mode first (work unit 14). ./mouse-look.spec.ts drives the lock, the locked
  * look and Esc, ./walk.spec.ts the drag and the click.
@@ -21,17 +14,15 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { facts, noPointerLock, open, openReplay, press, waitForT, watchErrors } from './helpers.js';
+import { facts, noPointerLock, open, press, watchErrors } from './helpers.js';
 
 const VIEWPORTS = [
   { width: 1280, height: 720 },
   { width: 390, height: 844 },
 ] as const;
 
-/** The bar's controls a folded bar hides, those every walking screen shows, and the Timeline button, which shows while the build replay is open. */
-const FOLDED_AWAY = ['step-label', 'step-detail', 'scrubber', 'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end', 'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'replay-close'];
-const ALWAYS = ['chapter-menu-button', 'view-menu-button', 'walk-toggle'];
-const TIMELINE = 'bar-toggle';
+/** The controls every screen shows, walking or not: the View menu's button and the walk strip's Walk toggle. */
+const ALWAYS = ['view-menu-button', 'walk-toggle'];
 
 interface Box {
   readonly id: string;
@@ -65,7 +56,12 @@ function expectLaidOut(list: readonly Box[], viewport: { width: number; height: 
 }
 
 async function shown(page: Page, ids: readonly string[]): Promise<string[]> {
-  return (await boxes(page, ids)).map((b) => b.id);
+  return (await boxes(page, ids)).map((b) => b.id).sort();
+}
+
+/** The data-testids of what the walk strip holds. */
+async function stripHolds(page: Page): Promise<string[]> {
+  return page.getByTestId('walk-strip').locator('[data-testid]').evaluateAll((list) => list.map((e) => e.dataset['testid'] ?? '?'));
 }
 
 /** Waits until walk mode is on and prepared, the pointer free: the browser gave no lock (`noPointerLock`). */
@@ -78,101 +74,43 @@ for (const viewport of VIEWPORTS) {
   test.describe(`the walking screen at ${String(viewport.width)}x${String(viewport.height)}`, () => {
     test.use({ viewport });
 
-    test('the replay closed: a crosshair at the centre, the menus and the Walk toggle alone; the hint goes at the first step; Build replay brings the whole bar, Timeline folds it, its close button closes the replay; Walk leaves', async ({ page }) => {
+    test('a crosshair at the centre, the View button and the walk strip’s Walk toggle alone; the hint goes at the first step; Walk leaves to the orbit view’s controls; F enters again', async ({ page }) => {
       const errors = watchErrors(page);
       await noPointerLock(page);
-      const f = await open(page, '');
+      const f = await open(page);
+      const floors = ['floor-all', ...f.floors.map((floor) => `floor-${floor.id}`)];
+      const all = [...ALWAYS, 'crosshair', 'walk-status', ...floors];
+      const orbit = [...ALWAYS, ...floors].sort();
+      expect(await shown(page, all), 'the orbit view at load').toEqual(orbit);
+      expect(await stripHolds(page), 'the walk strip in the orbit view').toEqual(['walk-toggle']);
       await press(page, 'walk-toggle');
       await walking(page);
-      const all = [...ALWAYS, TIMELINE, ...FOLDED_AWAY, 'crosshair', 'walk-status', ...f.floors.map((floor) => `floor-${floor.id}`), 'floor-all'];
-      expect((await shown(page, all)).sort(), 'what walking shows with the replay closed').toEqual([...ALWAYS, 'crosshair', 'walk-status'].sort());
+      await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'true');
+      expect(await shown(page, all), 'what walking shows').toEqual([...ALWAYS, 'crosshair', 'walk-status'].sort());
+      expect(await stripHolds(page), 'the walk strip while walking: the Walk toggle alone').toEqual(['walk-toggle']);
       const cross = (await boxes(page, ['crosshair']))[0];
       if (cross === undefined) throw new Error('No crosshair box.');
       expect(Math.abs(cross.x + cross.w / 2 - viewport.width / 2), 'the crosshair across: at the centre').toBeLessThan(1);
       expect(Math.abs(cross.y + cross.h / 2 - viewport.height / 2), 'the crosshair down: at the centre').toBeLessThan(1);
       expect((await facts(page)).camera.aspect, 'the walking view is the whole canvas, centred on the crosshair').toBeCloseTo(viewport.width / viewport.height, 3);
-      expectLaidOut(await boxes(page, [...ALWAYS, 'crosshair', 'walk-status']), viewport, 'walking, the replay closed');
+      expectLaidOut(await boxes(page, [...ALWAYS, 'crosshair', 'walk-status']), viewport, 'walking');
       // The hint goes at the first step.
       await page.keyboard.down('KeyW');
       await expect(page.getByTestId('walk-status')).toBeHidden();
       await page.keyboard.up('KeyW');
-      // Build replay opens the replay with the whole bar; its controls work while walking, and the view stays the whole canvas.
-      await openReplay(page);
-      await expect(page.getByTestId(TIMELINE)).toHaveAttribute('aria-expanded', 'true');
-      expect((await shown(page, [...FOLDED_AWAY, TIMELINE])).sort(), 'the whole bar').toEqual([...FOLDED_AWAY, TIMELINE].sort());
-      expectLaidOut(await boxes(page, [...ALWAYS, TIMELINE, ...FOLDED_AWAY, 'crosshair']), viewport, 'walking, the replay opened');
-      expect((await facts(page)).camera.aspect, 'the view still the whole canvas').toBeCloseTo(viewport.width / viewport.height, 3);
-      await press(page, 'btn-step-back');
-      await waitForT(page, f.n - 1);
-      await press(page, 'btn-end');
-      await waitForT(page, f.n);
-      expect((await facts(page)).walk.mode, 'still walking').toBe('walk');
-      // Timeline folds it and unfolds it again.
-      await press(page, TIMELINE);
-      await expect(page.getByTestId(TIMELINE)).toHaveAttribute('aria-expanded', 'false');
-      expect(await shown(page, FOLDED_AWAY), 'folded').toEqual([]);
-      expectLaidOut(await boxes(page, [...ALWAYS, TIMELINE, 'crosshair']), viewport, 'walking, the replay folded');
-      await press(page, TIMELINE);
-      await expect(page.getByTestId(TIMELINE)).toHaveAttribute('aria-expanded', 'true');
-      // Its close button closes the replay at the finished building: the Walk toggle alone again.
-      await press(page, 'btn-step-back');
-      await waitForT(page, f.n - 1);
-      await press(page, 'replay-close');
-      await expect(page.getByTestId(TIMELINE)).toBeHidden();
-      const closed = await facts(page);
-      expect([closed.replay, closed.t, closed.mode, closed.walk.mode], 'replay, t, mode and walk mode once closed').toEqual([false, f.n, 'paused', 'walk']);
-      expect((await shown(page, [...ALWAYS, TIMELINE, ...FOLDED_AWAY, 'crosshair'])).sort(), 'closed, while walking').toEqual([...ALWAYS, 'crosshair'].sort());
-      // The Walk toggle leaves: the orbit view with no timeline and no crosshair.
+      expectLaidOut(await boxes(page, [...ALWAYS, 'crosshair']), viewport, 'walking, the hint gone');
+      // The Walk toggle leaves: the orbit view's controls again, no crosshair and no status line.
       await press(page, 'walk-toggle');
       await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
       await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'false');
-      expect((await shown(page, [...ALWAYS, TIMELINE, ...FOLDED_AWAY, 'crosshair', 'walk-status'])).sort(), 'the orbit view').toEqual([...ALWAYS].sort());
-      // F enters again, the Walk toggle alone.
+      expect(await shown(page, all), 'the orbit view').toEqual(orbit);
+      expectLaidOut(await boxes(page, orbit), viewport, 'the orbit view');
+      // F enters again, the same screen; F leaves.
       await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
       await page.keyboard.press('KeyF');
       await walking(page);
-      expect(await shown(page, [TIMELINE, ...FOLDED_AWAY]), 'entering again, the replay closed').toEqual([]);
-      await page.keyboard.press('KeyF');
-      await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
-      errors.expectClean();
-    });
-
-    test('the replay open: the menus and the Timeline and Walk buttons; Timeline brings the whole bar back and folds it; Walk leaves to the whole bar', async ({ page }) => {
-      const errors = watchErrors(page);
-      await noPointerLock(page);
-      const f = await open(page, '');
-      await openReplay(page);
-      await press(page, 'walk-toggle');
-      await walking(page);
-      const all = [...ALWAYS, TIMELINE, ...FOLDED_AWAY, 'crosshair', 'walk-status', ...f.floors.map((floor) => `floor-${floor.id}`), 'floor-all'];
-      expect((await shown(page, all)).sort(), 'what walking shows with the replay open').toEqual([...ALWAYS, TIMELINE, 'crosshair', 'walk-status'].sort());
-      expect((await facts(page)).camera.aspect, 'the walking view is the whole canvas, centred on the crosshair').toBeCloseTo(viewport.width / viewport.height, 3);
-      await expect(page.getByTestId(TIMELINE)).toHaveAttribute('aria-expanded', 'false');
-      expectLaidOut(await boxes(page, [...ALWAYS, TIMELINE, 'crosshair', 'walk-status']), viewport, 'walking, folded');
-      // Timeline brings the whole bar back; its controls work while walking.
-      await press(page, TIMELINE);
-      await expect(page.getByTestId(TIMELINE)).toHaveAttribute('aria-expanded', 'true');
-      expect((await shown(page, FOLDED_AWAY)).sort(), 'the unfolded bar').toEqual([...FOLDED_AWAY].sort());
-      expectLaidOut(await boxes(page, [...ALWAYS, TIMELINE, ...FOLDED_AWAY, 'crosshair']), viewport, 'walking, unfolded');
-      await press(page, 'btn-step-back');
-      await waitForT(page, f.n - 1);
-      await press(page, 'btn-end');
-      await waitForT(page, f.n);
-      expect((await facts(page)).walk.mode, 'still walking').toBe('walk');
-      await press(page, TIMELINE);
-      await expect(page.getByTestId(TIMELINE)).toHaveAttribute('aria-expanded', 'false');
-      expect(await shown(page, FOLDED_AWAY), 'folded again').toEqual([]);
-      // The Walk toggle leaves: the orbit view's whole bar, no crosshair, no Timeline button.
-      await press(page, 'walk-toggle');
-      await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
-      await expect(page.getByTestId('walk-toggle')).toHaveAttribute('aria-pressed', 'false');
-      expect((await shown(page, [...ALWAYS, TIMELINE, ...FOLDED_AWAY, 'crosshair', 'walk-status'])).sort(), 'the orbit view').toEqual([...ALWAYS, ...FOLDED_AWAY].sort());
-      // F enters again, folded again.
-      await page.getByTestId('canvas').click({ position: { x: 20, y: 20 } });
-      await page.keyboard.press('KeyF');
-      await walking(page);
-      expect(await shown(page, FOLDED_AWAY), 'entering again starts folded').toEqual([]);
-      expect(await shown(page, [TIMELINE]), 'the Timeline button').toEqual([TIMELINE]);
+      expect(await shown(page, [...ALWAYS, 'crosshair', ...floors]), 'entering again').toEqual([...ALWAYS, 'crosshair'].sort());
+      expect(await stripHolds(page), 'the walk strip, entering again').toEqual(['walk-toggle']);
       await page.keyboard.press('KeyF');
       await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
       errors.expectClean();

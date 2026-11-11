@@ -4,7 +4,6 @@
  * the iron frame and floors, openings and trim, the central hall, the skylit upper galleries, and the roofs last.
  */
 import type { StepDef } from '../../build/types.js';
-import { L1, WEST_Z } from './constants.js';
 import { westFrontHeads, westFrontTrim, westFrontWall, westFrontWindows } from './vaux-front.js';
 import { vauxGalleries, vauxRoof } from './vaux-roof.js';
 import { vauxFoundations, vauxHall, vauxIronFrame, vauxSideTrim, vauxWalls } from './vaux-shell.js';
@@ -29,7 +28,6 @@ export const vauxSteps: readonly StepDef[] = [
     detail: 'The long side walls rise bay by bay on the rhythm of the central hall, with their pointed arches, and the east wall closes the block.',
     motion: { kind: 'grow' },
     stagger: 'z',
-    weight: 1.2,
     build: vauxWalls,
   },
   {
@@ -39,8 +37,6 @@ export const vauxSteps: readonly StepDef[] = [
     detail: 'The park front: five tall arched openings over a rusticated ground storey, the entrance on the axis, with granite bands and a cornice. It survives inside the Lehman Wing.',
     motion: { kind: 'grow' },
     stagger: 'order',
-    weight: 1.3,
-    focus: { kind: 'view', position: [9, L1 + 3, WEST_Z - 34], target: [0, L1 + 5, WEST_Z] },
     build(kit) {
       westFrontWall(kit);
       westFrontTrim(kit);
@@ -97,7 +93,6 @@ export const vauxSteps: readonly StepDef[] = [
     detail: 'Flat roofs with a ridge skylight over each gallery, and the raised lead roof over the central hall. The building opens on 30 March 1880.',
     motion: { kind: 'drop' },
     stagger: 'z',
-    weight: 1.2,
     build: vauxRoof,
   },
 ];

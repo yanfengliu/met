@@ -267,7 +267,7 @@ test.describe('floor picker', () => {
     await page.waitForFunction(() => window.__met?.walk.mode === 'orbit');
     await expect(page.getByTestId('floor-picker')).toBeVisible();
     await expectPressed(page, choices(f), 'all');
-    // The same collision as a fresh page that never chose a floor (a fresh page, as the walk mode keeps its collision while t stays).
+    // The same collision as a fresh page that never chose a floor (a fresh page, as walk mode keeps the collision it built).
     await open(page);
     await press(page, 'walk-toggle');
     expect(walk.collision, 'collision after a floor view vs none').toEqual((await walking()).collision);
@@ -312,7 +312,7 @@ test.describe('floor picker', () => {
     const second = f.floors.find((fl) => fl.id === 'second');
     expect(f.floor.id).toBe('second');
     expect(f.cut).toEqual({ enabled: true, height: second?.cut });
-    expect(f.follow).toBe(false);
+    expect(f.view, 'framed by the floor view, no preset in view').toBeNull();
     expect(orbitAngles(f.camera).elevation).toBeCloseTo(65, 3);
     await expectPressed(page, choices(f), 'second');
     const unknown = await open(page, 'floor=attic');

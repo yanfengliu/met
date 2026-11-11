@@ -38,8 +38,8 @@ export function fixtureSteps(): StepDef[] {
   const stone = new MeshStandardMaterial({ color: 0xbbbbbb });
   const metal = new MeshStandardMaterial({ color: 0x333333, metalness: 1 });
   const steps: StepDef[] = [];
-  MOTIONS.forEach((motion, mi) => {
-    STAGGERS.forEach((stagger, si) => {
+  MOTIONS.forEach((motion) => {
+    STAGGERS.forEach((stagger) => {
       const index = steps.length;
       steps.push({
         id: `fixture-${motion.kind}-${stagger.replace('-', 'neg-')}`,
@@ -47,7 +47,6 @@ export function fixtureSteps(): StepDef[] {
         title: `${motion.kind} / ${stagger}`,
         motion,
         stagger,
-        weight: 0.5 + ((mi + si) % 4) * 0.5,
         build(kit) {
           const rand = random(1000 + index);
           for (let k = 0; k < 9; k += 1) {

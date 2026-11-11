@@ -1,15 +1,14 @@
 /**
  * Capture tooling (docs/design/spec.md, Verification), run by Node's own TypeScript support:
- *   npm run shots                         the standard set: every preset at the finished state, the aerial preset at t = 0 and at each chapter boundary,
- *                                         the section cut, each floor of the floor picker (framed on its own, and from aerial-ne and top), the walker's
- *                                         view at each walk spawn, the doors (the entrance closed and open, Weston's door, a cut through the open
- *                                         entrance), and the page UI at 1280x720 and 390x844 (the default page with no timeline, the build
- *                                         replay open mid-build, and walking), into .shots/shots/
+ *   npm run shots                         the standard set: every preset, the section cut, each floor of the floor picker (framed on its own, and from
+ *                                         aerial-ne and top), the walker's view at each walk spawn, the doors (the entrance closed and open, Weston's
+ *                                         door, a cut through the open entrance), and the page UI at 1280x720 and 390x844 (the default page and
+ *                                         walking), into .shots/shots/
  *   npm run shots -- [--solo <chapter>] [--presets id,id]
  *                                         the same set for one chapter (into .shots/shots-<chapter>/) and/or only the named presets;
  *                                         --solo must be one of the page's chapter ids (window.__met.chapters), or the run fails before writing anything
- *   npm run sweep -- --t 6.5 [--count 12] [--seed 7] [--solo <chapter>]
- *                                         seeded random cameras around the model's bounds at one t, into .shots/sweep-<seed>-t<t>/
+ *   npm run sweep -- [--count 12] [--seed 7] [--solo <chapter>]
+ *                                         seeded random cameras around the model's bounds, into .shots/sweep-<seed>/
  * Each run starts its own Vite dev server on this worktree's MET_PORT through Vite's JS API (strict port: a taken port fails the run instead of
  * attaching to another server), drives the installed Chrome through Playwright, waits for `window.__shotReady`, prints the git revision with a dirty
  * flag so each image is tied to code, and stops the server and browser on every exit path. A console error on any page fails the run.
@@ -42,8 +41,7 @@ const DOOR_CAMS = { entrance: '2.2,5.6,8,0,6.2,-1.2', weston: '-57,5.8,-97.82,-5
 
 /** What the page publishes on `window.__met` that this script reads. */
 interface Facts {
-  readonly n: number;
-  readonly chapters: readonly { readonly id: string; readonly first: number; readonly count: number }[];
+  readonly chapters: readonly { readonly id: string }[];
   readonly presets: readonly { readonly id: string; readonly group: string }[];
   readonly bounds: { readonly min: readonly [number, number, number]; readonly max: readonly [number, number, number] };
   readonly gpu: string;
@@ -122,21 +120,18 @@ function parseArgs(argv: readonly string[]): Map<string, string> {
   const args = new Map<string, string>();
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i] ?? '';
-    if (!key.startsWith('--')) throw new Error(`Unexpected argument "${key}"; options look like --t 6.5 --count 12 --seed 7 --solo <chapter>.`);
+    if (!key.startsWith('--')) throw new Error(`Unexpected argument "${key}"; options look like --count 12 --seed 7 --solo <chapter>.`);
     const value = argv[i + 1];
-    if (value === undefined || value.startsWith('--')) throw new Error(`Option ${key} needs a value, as in ${key} 6.5.`);
+    if (value === undefined || value.startsWith('--')) throw new Error(`Option ${key} needs a value, as in ${key} 12.`);
     args.set(key.slice(2), value);
     i += 1;
   }
   return args;
 }
 
-function numberArg(args: Map<string, string>, name: string, fallback: number | null): number {
+function numberArg(args: Map<string, string>, name: string, fallback: number): number {
   const text = args.get(name);
-  if (text === undefined) {
-    if (fallback === null) throw new Error(`sweep needs --${name}, as in npm run sweep -- --${name} 6.5.`);
-    return fallback;
-  }
+  if (text === undefined) return fallback;
   const value = Number(text);
   if (!Number.isFinite(value)) throw new Error(`--${name} "${text}" is not a number.`);
   return value;
@@ -207,67 +202,60 @@ async function shots(origin: string, args: Map<string, string>): Promise<void> {
   const missing = only?.filter((id) => !f.presets.some((p) => p.id === id)) ?? [];
   if (missing.length > 0) throw new Error(`--presets names unknown preset(s) ${missing.join(', ')}; known: ${f.presets.map((p) => p.id).join(', ')}.`);
   const presets = only === undefined ? f.presets : f.presets.filter((p) => only.includes(p.id));
-  const n = f.n;
   const cut = Math.round(Math.max(1, f.bounds.max[1] * 0.35) * 2) / 2;
   const list: Shot[] = [
-    ...presets.map((p) => ({ name: `preset-${p.id}`, query: `shot=1&noui=1&t=${String(n)}&view=${p.id}`, viewport: MODEL_VIEWPORT })),
-    { name: 'chapter-00-start', query: 'shot=1&noui=1&t=0&view=aerial-ne', viewport: MODEL_VIEWPORT },
-    // The end of each chapter that has steps; chapters without steps share their boundary with the one before.
-    ...f.chapters.flatMap((c, i) => (c.count === 0 ? [] : [{ name: `chapter-${String(i + 1).padStart(2, '0')}-${c.id}`, query: `shot=1&noui=1&t=${String(c.first + c.count)}&view=aerial-ne`, viewport: MODEL_VIEWPORT }])),
-    { name: 'cut-aerial-ne', query: `shot=1&noui=1&t=${String(n)}&view=aerial-ne&cut=${String(cut)}`, viewport: MODEL_VIEWPORT },
-    { name: 'cut-top', query: `shot=1&noui=1&t=${String(n)}&view=top&cut=${String(cut)}`, viewport: MODEL_VIEWPORT },
+    ...presets.map((p) => ({ name: `preset-${p.id}`, query: `shot=1&noui=1&view=${p.id}`, viewport: MODEL_VIEWPORT })),
+    { name: 'cut-aerial-ne', query: `shot=1&noui=1&view=aerial-ne&cut=${String(cut)}`, viewport: MODEL_VIEWPORT },
+    { name: 'cut-top', query: `shot=1&noui=1&view=top&cut=${String(cut)}`, viewport: MODEL_VIEWPORT },
     ...f.floors.flatMap((floor) => [
-      { name: `floor-${floor.id}`, query: `shot=1&noui=1&t=${String(n)}&floor=${floor.id}`, viewport: MODEL_VIEWPORT },
-      ...['aerial-ne', 'top'].map((view) => ({ name: `floor-${floor.id}-${view}`, query: `shot=1&noui=1&t=${String(n)}&floor=${floor.id}&view=${view}`, viewport: MODEL_VIEWPORT })),
+      { name: `floor-${floor.id}`, query: `shot=1&noui=1&floor=${floor.id}`, viewport: MODEL_VIEWPORT },
+      ...['aerial-ne', 'top'].map((view) => ({ name: `floor-${floor.id}-${view}`, query: `shot=1&noui=1&floor=${floor.id}&view=${view}`, viewport: MODEL_VIEWPORT })),
     ]),
-    ...f.walk.spawns.map((id) => ({ name: `walk-${id}`, query: `shot=1&noui=1&t=${String(n)}&walk=1&spawn=${id}`, viewport: MODEL_VIEWPORT })),
-    ...(['closed', 'open'] as const).map((state) => ({ name: `doors-entrance-${state}`, query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.entrance}&doors=${state}`, viewport: MODEL_VIEWPORT })),
-    { name: 'doors-weston', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.weston}`, viewport: MODEL_VIEWPORT },
-    { name: 'doors-cut-open', query: `shot=1&noui=1&t=${String(n)}&cam=${DOOR_CAMS.cut}&cut=6.5&doors=open`, viewport: MODEL_VIEWPORT },
-    // The default page: no position, since a position opens the build replay (docs/design/spec.md, Page: Build replay); the finished building, no timeline.
+    ...f.walk.spawns.map((id) => ({ name: `walk-${id}`, query: `shot=1&noui=1&walk=1&spawn=${id}`, viewport: MODEL_VIEWPORT })),
+    ...(['closed', 'open'] as const).map((state) => ({ name: `doors-entrance-${state}`, query: `shot=1&noui=1&cam=${DOOR_CAMS.entrance}&doors=${state}`, viewport: MODEL_VIEWPORT })),
+    { name: 'doors-weston', query: `shot=1&noui=1&cam=${DOOR_CAMS.weston}`, viewport: MODEL_VIEWPORT },
+    { name: 'doors-cut-open', query: `shot=1&noui=1&cam=${DOOR_CAMS.cut}&cut=6.5&doors=open`, viewport: MODEL_VIEWPORT },
+    // The default page.
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-${v.name}`, query: 'shot=1', viewport: v })),
-    // A position opens the build replay: its whole bar, mid-step.
-    ...UI_VIEWPORTS.map((v) => ({ name: `ui-mid-${v.name}`, query: `shot=1&t=${String(Math.floor(n / 2) + 0.5)}`, viewport: v })),
-    // The walking screen: the crosshair, the status line's hint and the Walk toggle's strip, the build replay closed.
+    // The walking screen: the crosshair, the status line's hint and the Walk toggle's strip.
     ...UI_VIEWPORTS.map((v) => ({ name: `ui-walk-${v.name}`, query: 'shot=1&walk=1&spawn=great-hall', viewport: v })),
   ];
   const scoped = list.map((s) => ({ ...s, query: `${s.query}${extra}` }));
   console.log(`Standard set${solo === undefined ? '' : ` (solo ${solo})`}: ${String(scoped.length)} images.`);
   await capture(origin, scoped, join(OUT, solo === undefined ? 'shots' : `shots-${solo}`));
   console.log(`GPU: ${f.gpu}`);
-  console.log(`Model: ${String(f.stats.pieces)} pieces, ${String(f.stats.meshes)} meshes, ${String(f.stats.triangles)} triangles at t = N.`);
+  console.log(`Model: ${String(f.stats.pieces)} pieces, ${String(f.stats.meshes)} meshes, ${String(f.stats.triangles)} triangles.`);
   console.log(`Build ${f.perf.buildMs.toFixed(0)} ms; ready ${f.perf.readyMs?.toFixed(0) ?? '?'} ms after navigation (first probe page, cold).`);
-  // The benchmark page keeps the solo query, so it measures the same selection at its own N.
-  const finished = await open(origin, `shot=1&noui=1&t=${String(n)}&view=aerial-ne${extra}`, MODEL_VIEWPORT);
+  // The benchmark page keeps the solo query, so it measures the same selection.
+  const finished = await open(origin, `shot=1&noui=1&view=aerial-ne${extra}`, MODEL_VIEWPORT);
   const finishedMs = await finished.evaluate(() => {
     const met = window.__met;
     return met === undefined ? [] : [met.benchmark(30), met.benchmark(30), met.benchmark(30)];
   });
   await finished.close();
-  console.log(`Frame at t = N${solo === undefined ? '' : ` (solo ${solo})`}, aerial-ne, 1600x900, shadow update each frame: ${[...finishedMs].sort((a, b) => a - b)[1]?.toFixed(2) ?? '?'} ms (median of three means of 30).`);
+  console.log(`Frame${solo === undefined ? '' : ` (solo ${solo})`}, aerial-ne, 1600x900, shadow update each frame: ${[...finishedMs].sort((a, b) => a - b)[1]?.toFixed(2) ?? '?'} ms (median of three means of 30).`);
 }
 
 async function sweep(origin: string, args: Map<string, string>): Promise<void> {
-  const t = numberArg(args, 't', null);
   const count = numberArg(args, 'count', 12);
   const seed = numberArg(args, 'seed', Math.floor(Math.random() * 1e6));
   const solo = args.get('solo');
-  const base = `shot=1&noui=1&t=${String(t)}${solo === undefined ? '' : `&solo=${encodeURIComponent(solo)}`}`;
-  console.log(`Sweep seed ${String(seed)} (repeat with --seed ${String(seed)}), t = ${String(t)}, ${String(count)} cameras.`);
+  const base = `shot=1&noui=1${solo === undefined ? '' : `&solo=${encodeURIComponent(solo)}`}`;
+  console.log(`Sweep seed ${String(seed)} (repeat with --seed ${String(seed)}), ${String(count)} cameras.`);
   const probe = await open(origin, base, MODEL_VIEWPORT);
   const f = await facts(probe);
   await probe.close();
   checkSolo(solo, f.chapters.map((c) => c.id));
   const cams = sweepCameras(seed, count, f.bounds.min, f.bounds.max);
   const list = cams.map((cam, i) => ({ name: String(i).padStart(2, '0'), query: `${base}&cam=${cam}`, viewport: MODEL_VIEWPORT }));
-  await capture(origin, list, join(OUT, `sweep-${String(seed)}-t${String(t)}`));
+  await capture(origin, list, join(OUT, `sweep-${String(seed)}`));
 }
 
 /** One run of the command line `argv` (as after `node scripts/capture.ts`): starts the server and browser, captures, and stops both on every path. */
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
   if (command !== 'shots' && command !== 'sweep') {
-    console.error('Usage: node scripts/capture.ts shots [--solo <chapter>] [--presets id,id] | sweep --t <t> [--count 12] [--seed <n>] [--solo <chapter>]');
+    console.error('Usage: node scripts/capture.ts shots [--solo <chapter>] [--presets id,id] | sweep [--count 12] [--seed <n>] [--solo <chapter>]');
     return 2;
   }
   const args = parseArgs(rest);

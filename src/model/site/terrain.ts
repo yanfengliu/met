@@ -19,8 +19,6 @@ export const terrainStep: StepDef = {
   detail: 'The park rises 2 to 9 m west of the avenue; the street band is graded and the footprint excavated to the ground floor.',
   motion: { kind: 'grow' },
   stagger: 'order',
-  weight: 1.5,
-  focus: { kind: 'preset', id: 'aerial-ne' },
   build(kit) {
     const g = groundGeometry();
     kit.add(g.grass, palette.grass, IDENTITY, 0);
@@ -37,7 +35,6 @@ export const padStep: StepDef = {
   title: 'Lay the building pad',
   detail: 'A concrete pad marks the footprint of every wing to come, below the ground floor of the 1902 front.',
   motion: { kind: 'rise', distance: 1.5 },
-  focus: { kind: 'preset', id: 'aerial-ne' },
   build(kit) {
     kit.add(groundGeometry().pad, siteMaterials.pad, IDENTITY);
   },

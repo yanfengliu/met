@@ -92,7 +92,6 @@ export const stairSteps: readonly StepDef[] = [
     detail: 'Two broad flights and a landing climb west from the Great Hall to the second floor between rusticated walls, over a solid stone fill.',
     motion: { kind: 'rise' },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-grand-stair-west' },
     build(kit) {
       const w = 2 * STAIR_HALF;
       const lower = stairFlight({ width: w, steps: 27, riser: (STAIR_LANDING_Y - MAIN) / 27, tread: (STAIR_FOOT_Z - STAIR_MID_FRONT_Z) / 27, nosing: 0.02 });
@@ -115,7 +114,6 @@ export const stairSteps: readonly StepDef[] = [
     detail: 'At the second floor coupled fluted Corinthian columns rise on the walls of the stair, before an arcade of five arches each side that opens onto the galleries.',
     motion: { kind: 'rise' },
     stagger: '-z',
-    focus: { kind: 'preset', id: 'int-grand-stair-west' },
     build(kit) {
       const column = columnParts({ diameter: COLUMN_D, height: COLUMN_TOP_Y - PODIUM_Y, detail: 'low' });
       for (const s of [-1, 1]) {
@@ -139,7 +137,6 @@ export const stairSteps: readonly StepDef[] = [
     detail: 'A full entablature with a deep modillioned cornice runs along both colonnades and a white barrel vault with transverse ribs closes the stair hall; an arched opening leads into the cross hall.',
     motion: { kind: 'drop', distance: 5 },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-grand-stair-west' },
     build(kit) {
       const y = STAIR_VAULT_SPRING_Y;
       const face = COLUMN_X - 0.32;

@@ -47,7 +47,7 @@ export const petrieSpace: CollectionStepDef = {
   year: '1990',
   title: 'Set Canova’s Perseus and the court’s marbles',
   detail: 'Canova’s Perseus and Paris, Carpeaux’s Ugolino, the Autumn vases from the gardens of the Château de Bercy and Houdon’s Bather line the court before the 1888 front.',
-  focus: { kind: 'preset', id: 'int-petrie-court' },
+  preset: 'int-petrie-court',
   space: 'petrie-court',
   placements: PETRIE,
 };
@@ -101,7 +101,7 @@ export const lehmanSpace: CollectionStepDef = {
   year: '1975',
   title: 'Hang the Lehman paintings in their rooms',
   detail: 'Rembrandt, Goya and El Greco, Corot and Ingres, Petrus Christus, Memling and Holbein, Daddi, Botticelli and Giovanni di Paolo, each in the room of the wing that shows it.',
-  focus: { kind: 'preset', id: 'int-lehman-galleries' },
+  preset: 'int-lehman-galleries',
   space: 'lehman-wing',
   placements: LEHMAN,
 };
@@ -133,7 +133,7 @@ export const balconySpace: CollectionStepDef = {
   year: '1902',
   title: 'Fill the balcony’s cases with Chinese ceramics',
   detail: 'Jars, vases, an incense burner, dishes and bowls of Chinese porcelain and stoneware, from the tenth century to the eighteenth, in cases round the Great Hall’s balcony.',
-  focus: { kind: 'preset', id: 'int-great-hall-balcony-west' },
+  preset: 'int-great-hall-balcony-west',
   space: 'great-hall-balcony',
   placements: BALCONY,
 };
@@ -161,7 +161,7 @@ export const europeanPaintingsSpace: CollectionStepDef = {
   year: '2023',
   title: 'Hang Tiepolo’s canvases at the top of the stair',
   detail: 'The three canvases Tiepolo painted for the Ca’ Dolfin in Venice fill gallery 600; Giotto’s Adoration hangs in 601, Filippo Lippi and Memling in 602, as rehung in 2023.',
-  focus: { kind: 'preset', id: 'int-european-paintings-600' },
+  preset: 'int-european-paintings-600',
   space: 'european-paintings-600',
   placements: PAINTINGS,
 };
@@ -194,7 +194,7 @@ export const greekGalleriesSpace: CollectionStepDef = {
   year: '1926',
   title: 'Set the Greek marbles along gallery 153',
   detail: 'Eirene, a wounded warrior and a wounded Amazon, the Diadoumenos and the Great Eleusinian Relief, with vases and a bronze diskos thrower, line the gallery on route R4.',
-  focus: { kind: 'preset', id: 'int-greek-galleries' },
+  preset: 'int-greek-galleries',
   space: 'greek-galleries',
   placements: GREEK,
 };

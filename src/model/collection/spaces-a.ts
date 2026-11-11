@@ -33,7 +33,7 @@ export const dendurSpace: CollectionStepDef = {
   year: '1978',
   title: 'Objects on view by the Temple of Dendur',
   detail: 'The Sphinx of Hatshepsut on the terrace, two column capitals and the bronze crabs from the base of Cleopatra’s Needle on the platform, at their real size.',
-  focus: { kind: 'preset', id: 'int-dendur-se' },
+  preset: 'int-dendur-se',
   space: 'temple-of-dendur',
   placements: DENDUR,
 };
@@ -66,7 +66,7 @@ export const greekCourtSpace: CollectionStepDef = {
   year: '2007',
   title: 'Set the Roman court’s marbles and bronzes',
   detail: 'Two Hercules, Dionysos leaning on a female figure, Hermes and Aphrodite stand round the basin, smaller marbles in cases in the porticoes, as reinstalled in 2007.',
-  focus: { kind: 'preset', id: 'int-greek-roman-court' },
+  preset: 'int-greek-roman-court',
   space: 'greek-roman-court',
   placements: ROMAN,
   // interior-images.md #P6: the court's marbles stand on dark grey pedestals.
@@ -97,7 +97,7 @@ export const armorSpace: CollectionStepDef = {
   year: '1956',
   title: 'Stand armours either side of the parade',
   detail: 'Armours for field and tournament, among them the Earl of Cumberland’s garniture, stand facing the mounted procession, with a horse armour’s cantle plate in a case.',
-  focus: { kind: 'preset', id: 'int-arms-armor-court' },
+  preset: 'int-arms-armor-court',
   space: 'arms-and-armor-court',
   placements: ARMOR,
 };
@@ -120,7 +120,7 @@ export const medievalSpace: CollectionStepDef = {
   year: '1956',
   title: 'Set twelve Virgins and Child in the aisles',
   detail: 'Statues of the Virgin and Child in stone, wood and alabaster, French, German, Italian, Spanish and English, from about 1275 to 1525, one in each bay of the aisles.',
-  focus: { kind: 'preset', id: 'int-medieval-hall-east' },
+  preset: 'int-medieval-hall-east',
   space: 'medieval-sculpture-hall',
   placements: MEDIEVAL,
 };
@@ -146,7 +146,7 @@ export const engelhardSpace: CollectionStepDef = {
   year: '1980',
   title: 'Set the American sculpture round the court',
   detail: 'Barnard’s Struggle of the Two Natures in Man, French’s Angel of Death, Saint-Gaudens’s Hiawatha and Rogers’s Nydia and Ruth stand round the court; two bronzes play in the pool.',
-  focus: { kind: 'preset', id: 'int-engelhard-north' },
+  preset: 'int-engelhard-north',
   space: 'engelhard-court',
   placements: ENGELHARD,
   // interior-images.md #18: the court's marbles stand on grey stone pedestals, as the generic ones before them did.

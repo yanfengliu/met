@@ -58,17 +58,18 @@ export function expectLaidOut(list: readonly Box[], viewport: { width: number; h
 }
 
 /** The orbit view's controls, by data-testid, that the card must keep clear of, with the card. */
-export const ORBIT_CONTROLS = ['step-label', 'step-detail', 'scrubber', 'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end', 'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'replay-close', 'walk-toggle', 'chapter-menu-button', 'view-menu-button', 'floor-all', 'floor-ground', 'floor-main', 'floor-second', 'floor-roof-garden', 'art-card'];
-export const WALK_CONTROLS = ['chapter-menu-button', 'view-menu-button', 'bar-toggle', 'walk-toggle', 'crosshair', 'walk-status', 'art-card'];
+export const ORBIT_CONTROLS = ['walk-toggle', 'view-menu-button', 'floor-all', 'floor-ground', 'floor-main', 'floor-second', 'floor-roof-garden', 'art-card'];
+export const WALK_CONTROLS = ['view-menu-button', 'walk-toggle', 'crosshair', 'walk-status', 'art-card'];
 
-/** A projection of the published camera over the canvas as the page's covers it (src/viewer/camera-rig.ts `resize`; tests/e2e/zoom.spec.ts). */
+/**
+ * A projection of the published camera over the canvas as the page's covers it: the whole canvas, whose width over its height the published aspect is
+ * (src/viewer/camera-rig.ts `resize`; tests/e2e/zoom.spec.ts).
+ */
 async function projection(page: Page, c: Camera): Promise<{ readonly cam: PerspectiveCamera; readonly box: { x: number; y: number; width: number; height: number } }> {
   const box = await page.getByTestId('canvas').boundingBox();
   if (box === null) throw new Error('The canvas has no box.');
+  expect(c.aspect, 'the camera frames the whole canvas: its aspect the canvas’s width over its height').toBeCloseTo(box.width / box.height, 3);
   const cam = new PerspectiveCamera(c.fov, c.aspect, c.near, c.far);
-  const visible = box.width / c.aspect;
-  if (visible < box.height - 0.5) cam.setViewOffset(box.width, visible, 0, 0, box.width, box.height);
-  cam.updateProjectionMatrix();
   cam.position.set(...c.position);
   cam.lookAt(new Vector3(...c.target));
   cam.updateMatrixWorld();

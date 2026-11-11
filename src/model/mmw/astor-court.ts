@@ -274,7 +274,6 @@ function buildSkylight(kit: Kit): void {
   kit.add(glass.glass, palette.glass, m, 0);
 }
 
-const VIEW = { kind: 'box', min: [X0, Y, Z0], max: [X1 + 8.5, Y + 6, Z1] } as const;
 
 export const astorCourtSteps: readonly StepDef[] = [
   {
@@ -285,7 +284,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     detail: 'A Ming scholar\'s garden court on the north pavilion\'s second floor: grey paving, white walls under grey tile copings, a round moon gate from the south.',
     motion: { kind: 'rise', distance: 2 },
     stagger: 'order',
-    focus: VIEW,
     build: buildFloorWalls,
   },
   {
@@ -296,7 +294,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     detail: 'Timber columns and tile roofs: a covered walk along the east wall, a half-pavilion on the west wall and the Ming Room\'s porch at the north end.',
     motion: { kind: 'drop', distance: 3 },
     stagger: 'order',
-    focus: VIEW,
     build: buildWalkPavilion,
   },
   {
@@ -307,7 +304,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     detail: 'Taihu rocks round a small pool in the south-west corner, more along the west wall, bamboo by the moon gate.',
     motion: { kind: 'pop' },
     stagger: 'order',
-    focus: VIEW,
     build: buildGarden,
   },
   {
@@ -318,7 +314,6 @@ export const astorCourtSteps: readonly StepDef[] = [
     detail: 'Kevin Roche and John Dinkeloo\'s pyramidal skylight covers the whole court, filling the roof opening left over it since 1913.',
     motion: { kind: 'drop', distance: 5 },
     stagger: 'none',
-    focus: { kind: 'preset', id: 'aerial-ne' },
     build: buildSkylight,
   },
 ];

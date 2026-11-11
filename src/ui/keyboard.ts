@@ -1,25 +1,18 @@
 /**
  * Keyboard shortcuts (docs/design/spec.md, Page: Keyboard), in two modes.
- * - Orbit view: Space play/pause, Shift+Space play backward, Right step forward, Left step back, Home start, End end; W A S D move the camera
- *   over the ground and Q E down and up while held (Shift doubles the speed; src/viewer/orbit-keys.ts); Page Up and Page Down go up and down a
- *   floor (src/viewer/floors.ts); F enters walk mode.
+ * - Orbit view: W A S D move the camera over the ground and Q E down and up while held (Shift doubles the speed; src/viewer/orbit-keys.ts); Page Up
+ *   and Page Down go up and down a floor (src/viewer/floors.ts); F enters walk mode.
  * - Walk mode: W A S D and the arrow keys walk while held, Shift runs, Space jumps, E opens or closes the door looked at (docs/design/spec.md, Doors),
- *   F and Esc return to the orbit view; the timeline and floor keys are off. E is taken before the held keys, so in walk mode it is never held. With the
+ *   F and Esc return to the orbit view; the floor keys are off. E is taken before the held keys, so in walk mode it is never held. With the
  *   pointer locked the browser takes Esc to free it, and walk mode, told the lock went, leaves (src/walk/walk-mode.ts); with the pointer free an open
  *   menu takes Esc first (src/ui/menus.ts), so the next one leaves, and a menu open when the pointer locks closes (src/ui/ui.ts), though one the keyboard
  *   opens while it is locked stays.
  * Held keys are physical keys (`event.code`), so W A S D sit in the same place on any layout; `bindKeys` returns the set of those held, which the
- * frame loop reads, and empties it when the page loses focus. A focused button keeps Space and Enter for itself, a focused slider other than the
- * scrubber keeps the keys it moves by (arrows, Home, End, Page Up and Page Down), and a text field keeps every key.
+ * frame loop reads, and empties it when the page loses focus. A focused button keeps Space and Enter for itself, a focused slider keeps the keys it
+ * moves by (arrows, Home, End, Page Up and Page Down), and a text field keeps every key.
  */
 
 export interface KeyActions {
-  togglePlay(): void;
-  togglePlayBackward(): void;
-  stepForward(): void;
-  stepBack(): void;
-  toStart(): void;
-  toEnd(): void;
   toggleWalk(): void;
   jump(): void;
   /** E while walking: opens or closes the door the walking eye looks at. */
@@ -30,7 +23,7 @@ export interface KeyActions {
 
 /** Keys whose holding the frame loop reads, by `event.code`. */
 const MOVE_CODES: ReadonlySet<string> = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ShiftLeft', 'ShiftRight']);
-/** The arrows walk in walk mode only; in the orbit view they step the timeline. */
+/** The arrows walk in walk mode only; in the orbit view they are the page's own, for a focused slider or scrolling. */
 const ARROW_CODES: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const SLIDER_KEYS: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown']);
 
@@ -39,7 +32,7 @@ function keepsKey(target: EventTarget | null, key: string): boolean {
   if (target.isContentEditable || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
   if (target instanceof HTMLInputElement) {
     if (target.type !== 'range') return true;
-    return target.dataset['testid'] !== 'scrubber' && SLIDER_KEYS.has(key);
+    return SLIDER_KEYS.has(key);
   }
   if (target instanceof HTMLButtonElement) return key === ' ' || key === 'Enter';
   return false;
@@ -80,23 +73,6 @@ export function bindKeys(actions: KeyActions, walking: () => boolean): ReadonlyS
       }
     } else {
       switch (event.key) {
-        case ' ':
-          if (event.repeat) break;
-          if (event.shiftKey) actions.togglePlayBackward();
-          else actions.togglePlay();
-          break;
-        case 'ArrowRight':
-          actions.stepForward();
-          break;
-        case 'ArrowLeft':
-          actions.stepBack();
-          break;
-        case 'Home':
-          actions.toStart();
-          break;
-        case 'End':
-          actions.toEnd();
-          break;
         case 'PageUp':
           actions.floorUp();
           break;

@@ -266,7 +266,6 @@ export const sacklerSteps: readonly StepDef[] = [
     detail: 'Stone paving for the walkways round the platform, along the glass and beside its long sides.',
     motion: { kind: 'pop' },
     stagger: 'radial',
-    weight: 0.8,
     build: floor,
   },
   {
@@ -287,7 +286,6 @@ export const sacklerSteps: readonly StepDef[] = [
     detail: 'The pool wraps the terrace on three sides and fills the east end, suggesting the Nile before the temple.',
     motion: { kind: 'grow' },
     stagger: 'none',
-    weight: 0.7,
     build: pool,
   },
   {
@@ -298,7 +296,6 @@ export const sacklerSteps: readonly StepDef[] = [
     detail: 'The 8 m sandstone gate goes up course by course on its old paving, a winged sun disk on its cornice.',
     motion: { kind: 'drop', distance: 1.5 },
     stagger: 'y',
-    weight: 1.2,
     build: gate,
   },
   {
@@ -309,8 +306,6 @@ export const sacklerSteps: readonly StepDef[] = [
     detail: 'Eleven courses of Nubian sandstone, carved about 15 BC: the pronaos of two columns, then the vestibule and sanctuary, under cavetto cornices.',
     motion: { kind: 'drop', distance: 1.2 },
     stagger: 'y',
-    weight: 2,
-    focus: { kind: 'preset', id: 'int-dendur-se' },
     build: temple,
   },
   {
@@ -331,8 +326,6 @@ export const sacklerSteps: readonly StepDef[] = [
     detail: 'Stippled glass on white steel fins leans in from the park: the "outdoor glass display case" Thomas Hoving promised.',
     motion: { kind: 'slide', from: [14, 0, 0] },
     stagger: 'z',
-    weight: 1.2,
-    focus: { kind: 'preset', id: 'ref-park-north' },
     build: addGlassWall,
   },
   {

@@ -14,7 +14,6 @@ export const roofSteps: readonly StepDef[] = [
     detail: 'Flat decks with glazed ridges over the top-lit galleries, light wells left open, and the opening the Astor Court\'s skylight fills in 1981.',
     motion: { kind: 'drop', distance: 6 },
     stagger: 'x',
-    focus: { kind: 'preset', id: 'aerial-ne' },
     build: buildNorthRoofs,
   },
   {
@@ -25,7 +24,6 @@ export const roofSteps: readonly StepDef[] = [
     detail: 'The south link\'s skylights and penthouse, and the end pavilion\'s hipped metal roof rising to the opening over the Roman court.',
     motion: { kind: 'drop', distance: 6 },
     stagger: '-x',
-    focus: { kind: 'preset', id: 'aerial-sw' },
     build: buildSouthRoofs,
   },
 ];

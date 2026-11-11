@@ -205,7 +205,6 @@ function buildSkylight(kit: Kit): void {
   kit.add(glass.glass, palette.glass, m, 0);
 }
 
-const VIEW = { kind: 'preset', id: 'int-greek-roman-court' } as const;
 
 export const romanCourtSteps: readonly StepDef[] = [
   {
@@ -216,7 +215,6 @@ export const romanCourtSteps: readonly StepDef[] = [
     detail: 'The court of the south end pavilion, opened on 6 April 1926: dark polished stone with white inlay round a green marble field.',
     motion: { kind: 'rise', distance: 1.5 },
     stagger: 'order',
-    focus: VIEW,
     build: buildFloor,
   },
   {
@@ -227,7 +225,6 @@ export const romanCourtSteps: readonly StepDef[] = [
     detail: 'Sixteen fluted Doric columns ring the court, two more stand in each end opening, under a full entablature over the porticoes\' flat ceilings.',
     motion: { kind: 'rise' },
     stagger: 'order',
-    focus: VIEW,
     build: buildPeristyle,
   },
   {
@@ -238,7 +235,6 @@ export const romanCourtSteps: readonly StepDef[] = [
     detail: 'A round marble basin on a low step at the centre of the peristyle, its water a hand under the rim.',
     motion: { kind: 'pop' },
     stagger: 'order',
-    focus: VIEW,
     build: buildFountain,
   },
 ];
@@ -252,7 +248,6 @@ export const greekCourt2007: readonly StepDef[] = [
     detail: 'Kevin Roche\'s restoration, reopened 20 April 2007, raises the court a storey: Ionic half-columns over the Doric ones, framing grilled windows.',
     motion: { kind: 'rise' },
     stagger: 'order',
-    focus: VIEW,
     build: buildUpperStorey,
   },
   {
@@ -263,7 +258,6 @@ export const greekCourt2007: readonly StepDef[] = [
     detail: 'The skylight, one storey above the court since 1926, rises another storey in 2007, making a two-storey skylit hall under the hipped roof.',
     motion: { kind: 'drop', distance: 5 },
     stagger: 'none',
-    focus: { kind: 'preset', id: 'aerial-sw' },
     build: buildSkylight,
   },
 ];

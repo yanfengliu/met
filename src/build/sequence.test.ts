@@ -14,7 +14,6 @@ import * as mmw from '../model/mmw/index.js';
 import * as rocheNorth from '../model/roche-north/index.js';
 import * as rocheSouth from '../model/roche-south/index.js';
 import * as site from '../model/site/index.js';
-import { PRESETS } from '../viewer/presets.js';
 import { CHAPTERS, SITE_CHAPTER } from './chapters.js';
 import { chapterRanges, compositionMismatches, selectSteps } from './select.js';
 import { COMPOSITION, SEQUENCE } from './sequence.js';
@@ -96,20 +95,14 @@ describe('sequence integrity', () => {
     expect(compositionMismatches({ [SITE_CHAPTER]: [[stray]], [other]: [[], [stray]] })).toEqual([`step "stray" names chapter "${SITE_CHAPTER}" but is composed into "${other}"`]);
   });
 
-  it('gives every step a valid weight, motion and focus', () => {
+  it('gives every step a valid motion', () => {
     const problems: string[] = [];
     for (const step of SEQUENCE) {
-      const weight = step.weight ?? 1;
-      if (!(Number.isFinite(weight) && weight > 0)) problems.push(`${step.id}: weight ${String(weight)} is not a finite number above 0`);
       const motion = step.motion;
       if ((motion.kind === 'rise' || motion.kind === 'drop') && motion.distance !== undefined && !(Number.isFinite(motion.distance) && motion.distance > 0)) {
         problems.push(`${step.id}: ${motion.kind} distance ${String(motion.distance)} is not a finite number above 0`);
       }
       if (motion.kind === 'slide' && !finite(motion.from)) problems.push(`${step.id}: slide.from is not finite`);
-      const focus = step.focus;
-      if (focus?.kind === 'preset' && !PRESETS.some((p) => p.id === focus.id)) problems.push(`${step.id}: focus names preset "${focus.id}", which src/viewer/presets.ts does not define`);
-      if (focus?.kind === 'box' && !(finite([...focus.min, ...focus.max]) && focus.min.every((v, i) => v <= (focus.max[i] ?? Number.NaN)))) problems.push(`${step.id}: focus box is not finite with min <= max`);
-      if (focus?.kind === 'view' && !finite([...focus.position, ...focus.target])) problems.push(`${step.id}: focus view is not finite`);
     }
     expect(problems).toEqual([]);
   });

@@ -108,7 +108,6 @@ export const vaultSteps: readonly StepDef[] = [
     detail: 'Round arches spring from the piers across the nave and along both long walls; behind the long-wall arches the balcony gets its coffered barrel vaults.',
     motion: { kind: 'drop', distance: 6 },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-great-hall-floor-north' },
     build: arches,
   },
   {
@@ -119,7 +118,6 @@ export const vaultSteps: readonly StepDef[] = [
     detail: "Guastavino's thin tile shells: panelled pendentives rise from the piers to a moulded ring in each bay, and a saucer dome closes over it round a glazed oculus.",
     motion: { kind: 'pop' },
     stagger: 'order',
-    focus: { kind: 'preset', id: 'int-great-hall-floor-north' },
     build: domes,
   },
   {
@@ -130,7 +128,6 @@ export const vaultSteps: readonly StepDef[] = [
     detail: 'At each end of the hall a second arch stands behind the last transverse arch, and a painted half-dome closes the shallow end bay above the balcony.',
     motion: { kind: 'drop', distance: 5 },
     stagger: 'x',
-    focus: { kind: 'preset', id: 'int-great-hall-floor-north' },
     build: endVaults,
   },
 ];

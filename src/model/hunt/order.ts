@@ -71,7 +71,6 @@ export const orderSteps: readonly StepDef[] = [
     detail: 'Eight fluted Corinthian columns, 12.75 m tall, rise in four coupled pairs, each with a fluted pilaster on the wall behind it.',
     motion: { kind: 'rise' },
     stagger: 'x',
-    weight: 1.3,
     build(kit) {
       const column = columnParts({
         diameter: HUNT_COLUMN_DIAMETER_LOWER,
