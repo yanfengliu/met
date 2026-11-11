@@ -1,7 +1,6 @@
 /**
  * The placeholder forms (src/model/collection/kinds.ts): each fills the unit box exactly, X and Z −0.5..0.5 and Y 0..1, so a piece's matrix gives an
- * object its real width, height and depth, and its translation, the key of its colour in the shared material (material.ts), stays its plan centre under
- * the pop motion its step uses.
+ * object its real width, height and depth, and its translation, the key of its colour in the shared material (material.ts), is its plan centre.
  * Bound: it checks the geometries' bounding boxes, not their look.
  */
 import { describe, expect, it } from 'vitest';

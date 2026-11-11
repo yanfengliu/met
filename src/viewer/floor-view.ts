@@ -7,8 +7,8 @@
  * - Objects: pieces of one step with the same final matrix (a tree's trunk and crown, a lamp's post and globe), so the meshes they lie in hide
  *   together. A mesh with a standing piece hides when the highest standing piece of its group of meshes rises above the cut.
  * Like the cut, it is a view filter: it sets a hidden mesh's layer mask to none, so the camera neither draws it nor lets it cast a shadow, and it never
- * writes what the timeline writes (matrices, colours, counts, visibility). Which meshes hide depends on the cut alone, read from each piece's final
- * matrix (Timeline.restingPieces), whatever t is, so the scene at t stays a pure function of t and the floor.
+ * writes what the timeline built (matrices, counts, visibility). Which meshes hide depends on the cut alone, read from each piece's final matrix
+ * (Timeline.restingPieces).
  * Bound: it hides whole meshes, so one standing piece over the cut hides every piece of its mesh (all crowns of one tree species); an object whose
  * pieces have different matrices (the magnolias by the steps) can lose its crown alone.
  */
@@ -77,7 +77,7 @@ export class FloorView {
   private height: number | null = null;
   private count = 0;
 
-  /** `resting(i)` gives step i's pieces at rest (Timeline.restingPieces). */
+  /** `resting(i)` gives step i's pieces (Timeline.restingPieces). */
   constructor(steps: readonly BuiltStep[], resting: (index: number) => readonly RestingPiece[]) {
     for (const step of steps) {
       if (!step.meshes.some(isLandscape)) continue;

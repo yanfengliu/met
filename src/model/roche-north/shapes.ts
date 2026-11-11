@@ -55,9 +55,9 @@ export function boxMatrix(min: Vec3, max: Vec3): Matrix4 {
 }
 
 /** Adds a block spanning the world corners `min`..`max` (each axis must have positive extent). */
-export function boxAt(kit: Kit, material: Material, min: Vec3, max: Vec3, order?: number): void {
+export function boxAt(kit: Kit, material: Material, min: Vec3, max: Vec3): void {
   if (!(max[0] > min[0] && max[1] > min[1] && max[2] > min[2])) throw new Error(`boxAt: the box (${min.join(', ')}) to (${max.join(', ')}) has no volume; pass min below max on every axis.`);
-  kit.add(UNIT_BOX, material, boxMatrix(min, max), order);
+  kit.add(UNIT_BOX, material, boxMatrix(min, max));
 }
 
 /** A translation, optionally turned about +Y by `turn` radians and scaled uniformly. */

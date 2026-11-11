@@ -1,6 +1,6 @@
 /**
  * Where a vertical line crosses a piece (src/walk/collision.ts `crossings`, by src/walk/crossing-rule.ts), which the walk's settle reads by parity and
- * its probes by the winding of the faces (docs/design/spec.md, Walk mode: When the build moves), on fixtures built through the page's collision path:
+ * its probes by the winding of the faces (docs/design/spec.md, Walk mode: Settling), on fixtures built through the page's collision path:
  * one surface met through an edge or a corner of its triangles counts once, a block on a block is crossed four times through a face, an edge and a
  * corner, as two faces back to back in one piece count twice, and so do a face looking up and one looking down meeting at the line, so a closed piece
  * is crossed an even number of times; a walker that a piece of two parts is built through is found inside the upper part; a single surface with no
@@ -37,7 +37,7 @@ import { hippedSkylight } from '../model/lib/glazing.js';
 import { sheet } from '../model/lib/sheet.js';
 import { wall } from '../model/lib/wall.js';
 import { GeometryBvhs } from './bvh-cache.js';
-import { CollisionWorld, collisionMeshes, instancesBefore } from './collision.js';
+import { CollisionWorld, collisionMeshes, instanceCount } from './collision.js';
 import { insideBetween, NO_INPUT, Walker } from './walker.js';
 
 const stone = new MeshStandardMaterial({ name: 'stone' });
@@ -85,7 +85,6 @@ const step = (id: string, geometry: BufferGeometry, matrix = new Matrix4()): Ste
   id,
   chapter: CHAPTERS[0].id,
   title: id,
-  motion: { kind: 'rise' },
   build: (kit) => {
     kit.add(geometry, stone, matrix);
   },
@@ -106,12 +105,11 @@ function edgedWithSliver(): BufferGeometry {
   return b.build();
 }
 
-/** The collision world of `steps`, all complete. */
+/** The collision world of `steps`. */
 function world(steps: readonly StepDef[]): CollisionWorld {
   const timeline = new Timeline(steps);
-  timeline.evaluate(steps.length);
   const out = new CollisionWorld(new GeometryBvhs());
-  out.build(collisionMeshes(timeline.steps, steps.length));
+  out.build(collisionMeshes(timeline.steps.slice(0, steps.length)));
   return out;
 }
 
@@ -145,15 +143,13 @@ describe('where a vertical line crosses a piece', () => {
     const steps = [step('floor', floor.build()), step('stack', stacked())];
     const timeline = new Timeline(steps);
     const w = new CollisionWorld(new GeometryBvhs());
-    timeline.evaluate(1);
-    w.build(collisionMeshes(timeline.steps, 1));
+    w.build(collisionMeshes(timeline.steps.slice(0, 1)));
     const walker = new Walker(w, -1);
-    // 1.3 m from the parts' sides, out of reach of the capsule test, so only the check after the build can find it inside.
+    // 1.3 m from the parts' sides, out of reach of the capsule test, so only `settle` can find it inside.
     walker.place(0.7, 0, 0.2, 0);
     expect(walker.feet.y, 'on the floor').toBeCloseTo(0, 6);
-    timeline.evaluate(2);
-    w.build(collisionMeshes(timeline.steps, 2));
-    expect(walker.settle(instancesBefore(timeline.steps, 1)), 'its feet in the lower part and its head in the upper').toBe('moved');
+    w.build(collisionMeshes(timeline.steps.slice(0, 2)));
+    expect(walker.settle(instanceCount(timeline.steps.slice(0, 1))), 'its feet in the lower part and its head in the upper').toBe('moved');
     for (let i = 0; i < 30; i += 1) walker.update(1 / 60, NO_INPUT);
     expect(walker.feet.y, 'on the upper part').toBeCloseTo(3, 6);
     expect(walker.onGround).toBe(true);
@@ -172,13 +168,11 @@ describe('where a vertical line crosses a piece', () => {
     floor.box([-20, -0.2, -20], [20, 0, 20]);
     const timeline = new Timeline([step('floor', floor.build()), step('sheet', sheet)]);
     const walk = new CollisionWorld(new GeometryBvhs());
-    timeline.evaluate(1);
-    walk.build(collisionMeshes(timeline.steps, 1));
+    walk.build(collisionMeshes(timeline.steps.slice(0, 1)));
     const walker = new Walker(walk, -1);
     walker.place(0.3, 0, -0.4, 0);
-    timeline.evaluate(2);
-    walk.build(collisionMeshes(timeline.steps, 2));
-    expect(walker.settle(instancesBefore(timeline.steps, 1)), 'the surface at 1 m crosses its body, but has no inside to hold it').toBe('kept');
+    walk.build(collisionMeshes(timeline.steps.slice(0, 2)));
+    expect(walker.settle(instanceCount(timeline.steps.slice(0, 1))), 'the surface at 1 m crosses its body, but has no inside to hold it').toBe('kept');
   });
 
   it('reads no inside in a declared sheet, even where its panes overlap, so one built through a walker leaves it be; undeclared, the walker is inside', () => {
@@ -203,13 +197,11 @@ describe('where a vertical line crosses a piece', () => {
         floor.box([-20, -0.2, -20], [20, 0, 20]);
         const timeline = new Timeline([step('floor', floor.build()), step('panes', g)]);
         const w = new CollisionWorld(new GeometryBvhs());
-        timeline.evaluate(1);
-        w.build(collisionMeshes(timeline.steps, 1));
+        w.build(collisionMeshes(timeline.steps.slice(0, 1)));
         const walker = new Walker(w, -1);
         walker.place(x, 0, z, 0);
-        timeline.evaluate(2);
-        w.build(collisionMeshes(timeline.steps, 2));
-        const from = instancesBefore(timeline.steps, 1);
+        w.build(collisionMeshes(timeline.steps.slice(0, 2)));
+        const from = instanceCount(timeline.steps.slice(0, 1));
         const line = w.crossings(x, z, -10, 10).find((p) => p.instance >= from);
         expect(line?.heights.length, `${what}: crossings on the walker's axis`).toBe(2);
         expect(line?.sheet, `${what}: ${declared ? '' : 'not '}a sheet`).toBe(declared);
@@ -355,14 +347,12 @@ describe('where a vertical line crosses a piece', () => {
       floor.box([-20, -0.2, -20], [20, 0, 20]);
       const timeline = new Timeline([step('floor', floor.build()), step('overlap', b.build())]);
       const w = new CollisionWorld(new GeometryBvhs());
-      timeline.evaluate(1);
-      w.build(collisionMeshes(timeline.steps, 1));
+      w.build(collisionMeshes(timeline.steps.slice(0, 1)));
       const walker = new Walker(w, -1);
       // Inside both parts, 1.1 m or more from their sides, out of reach of the capsule test.
       walker.place(x, 0, z, 0);
-      timeline.evaluate(2);
-      w.build(collisionMeshes(timeline.steps, 2));
-      expect(walker.settle(instancesBefore(timeline.steps, 1)), `parts ${String(height)} m tall, at X ${String(x)}, Z ${String(z)}`).toBe(settled);
+      w.build(collisionMeshes(timeline.steps.slice(0, 2)));
+      expect(walker.settle(instanceCount(timeline.steps.slice(0, 1))), `parts ${String(height)} m tall, at X ${String(x)}, Z ${String(z)}`).toBe(settled);
       if (settled === 'moved') expect(walker.feet.y, 'on their tops').toBeCloseTo(height, 6);
     }
   });

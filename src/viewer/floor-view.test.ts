@@ -1,7 +1,7 @@
 /**
  * The floor view's landscape filter (src/viewer/floor-view.ts) on the real sequence, without WebGL: at each floor's cut it hides every landscape mesh
  * with a standing piece over the cut, with the meshes its objects share, and nothing else; it never hides ground or a building mesh; objects stay
- * whole at any cut; and which meshes hide depends on the cut alone, never on t, while the timeline's own state stays untouched.
+ * whole at any cut; and which meshes hide depends on the cut alone, while the timeline's own state stays untouched.
  * Bound: what the filter sets (each mesh's layer mask), read here; that the camera then neither draws nor shadows a masked mesh is three.js's
  * layer test, checked by eye in the floor captures and by the canvas in tests/e2e/floors.spec.ts.
  */
@@ -135,20 +135,19 @@ describe('floor view landscape filter', () => {
     expect(problems).toEqual([]);
   });
 
-  it('depends on the cut alone: the same meshes hide whatever t the timeline shows, and its state is untouched', () => {
+  it('depends on the cut alone: a floor view over a second timeline hides the same meshes, and the timeline’s state is untouched', () => {
     const furniture = timeline.steps.find((s) => s.def.id === 'plaza-furniture');
-    expect(furniture, 'the plaza-furniture step (motion drop) of src/model/site/plaza.ts').toBeDefined();
+    expect(furniture, 'the plaza-furniture step of src/model/site/plaza.ts').toBeDefined();
     const moving = new Timeline(SEQUENCE);
-    moving.evaluate((furniture?.index ?? 0) + 0.5);
     const before = snapshot(moving);
     const late = new FloorView(moving.steps, (i) => moving.restingPieces(i));
-    // Every floor's cut and a sweep, so a filter reading the dropping pieces where they are now (up to 1.2 m over their rest) would differ.
+    // Every floor's cut and a sweep of cuts 0.25 m apart, from −3 m to 30 m.
     for (const cut of [...FLOORS.map((f) => f.cut), ...Array.from({ length: 133 }, (_, k) => -3 + k * 0.25)]) {
       view.apply(cut);
       late.apply(cut);
       const a = timeline.steps.flatMap((s) => s.meshes.filter((m) => view.hides(m)).map((m) => m.name));
       const b = moving.steps.flatMap((s) => s.meshes.filter((m) => late.hides(m)).map((m) => m.name));
-      expect(b, `meshes hidden at a ${cut.toFixed(2)} m cut mid-step vs at rest`).toEqual(a);
+      expect(b, `meshes hidden at a ${cut.toFixed(2)} m cut, the second timeline's vs the first's`).toEqual(a);
     }
     late.apply(null);
     view.apply(null);

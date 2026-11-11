@@ -5,8 +5,8 @@
  * jambs (exterior-images.md #53, #60, #61, #63, #64). The west front fills the head with a striped tympanum; the east front's heads hold a roundel inside
  * a moulded light arch and a ring of dark granite blocks round the voussoirs (#67); the side walls' heads, glazed in 1880 (#49), are bricked up.
  * Frames: an arch's parts are placed at the centre of its springing line on the wall face, as arches.ts's rings and tympana are. Each head is two
- * pieces, its light granite and its dark, built in that frame and placed per arch; both arrive in the `vaux-openings` step with one order and drop the
- * same fixed distance, so they move as one (vaux.ts; core/vaux-fronts.test.ts).
+ * pieces, its light granite and its dark, built in that frame and placed per arch; both are in the `vaux-openings` step at one matrix, so they stand as
+ * one (vaux.ts; core/vaux-fronts.test.ts).
  */
 import { Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';

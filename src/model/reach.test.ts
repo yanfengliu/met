@@ -1,7 +1,7 @@
 /**
  * Reachability (work unit 2, M4; docs/design/spec.md, Walk mode: No trap, no dead end): from the walk mode's Great Hall spawn, the walk mode's own walker
  * walks to every space of the finished model that holds artworks, near enough to look at each artwork, to the place of every interior camera preset, to
- * every walk spawn and to both ends of every route of src/model/hunt/routes.ts. The world is the page's: the whole sequence's Timeline at t = N, its solid
+ * every walk spawn and to both ends of every route of src/model/hunt/routes.ts. The world is the page's: the whole sequence's Timeline, its solid
  * pieces (`collisionMeshes`) in a `CollisionWorld` over three-mesh-bvh; the fill (src/walk/reach.ts) moves the real walker from place to place, and the
  * path to each place that meets a target is walked again from the spawn (`replay`), so a target counts only when that path walks end to end; a path
  * that strays from the fill's places does not count, and the fill stops once all are met.
@@ -267,7 +267,6 @@ const planKey = (ix: number, iz: number): number => (ix + 1024) * 2048 + (iz + 1
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   // Each door's meshes, found by their tags: the open doors' leave the world, every other door's stand in it as built, closed.
   for (const id of OPEN_DOORS) if (doorById(id)?.locked !== false) throw new Error(`The fill counts door "${id}" as open, but src/model/doors.ts has no unlocked door of that id.`);
   const doors = timeline.steps.flatMap((s) => s.meshes.flatMap((mesh, m) => (s.tags[m] ?? []).filter((tag) => tag?.kind === 'door').slice(0, 1).map((tag) => ({ mesh, id: tag?.id ?? '' }))));
@@ -275,18 +274,18 @@ beforeAll(() => {
   const closed = doors.filter((d) => !open.has(d.mesh) && d.mesh.count > 0).map((d) => d.mesh);
   opened = open.size;
   const bvhs = new GeometryBvhs();
-  const meshes = [...new Set([...collisionMeshes(timeline.steps, timeline.n).filter((m) => !open.has(m)), ...closed])];
+  const meshes = [...new Set([...collisionMeshes(timeline.steps).filter((m) => !open.has(m)), ...closed])];
   world = new CollisionWorld(bvhs);
   world.build(meshes);
   const floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
   probe = new Walker(world, floorY);
-  // The page's hit query (src/main.ts), the doors as the fill counts them: the door layer at t = N, the Hunt central doors opened, every other door closed.
+  // The page's hit query (src/main.ts), the doors as the fill counts them: the door layer, the Hunt central doors opened, every other door closed.
   const layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf);
-  layer.sync(timeline.n, 0, true);
+  layer.sync(0, true);
   for (const id of OPEN_DOORS) layer.use(id, null);
-  layer.sync(timeline.n, 0, true);
+  layer.sync(0, true);
   const all = timeline.steps.flatMap((s) => s.meshes);
-  // Bounds as the renderer's culling leaves them after a frame, which the picker trusts; at t = N every piece is at rest, so they are exact.
+  // Bounds as the renderer's culling leaves them after a frame, which the picker trusts; every piece stands at its final matrix, so they are exact.
   for (const mesh of all) mesh.computeBoundingSphere();
   const picker = new ModelPicker(all, bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
   layer.registerWith(picker);
@@ -418,14 +417,13 @@ describe('an artwork met by the look target from where the walker rests, not by 
 
   /** `blocks` in stone with `slabs` among them as one artwork, A, meant on level `floor`: its target, a walker in its walk world and the hit query. */
   function site(slabs: readonly Piece[], floor = 0, blocks: readonly Piece[] = GROUND): { readonly target: Target; readonly walker: Walker; readonly query: HitFn } {
-    const timeline = new Timeline([{ id: 'site', chapter: CHAPTERS[0].id, title: 'site', motion: { kind: 'rise' }, build(kit) {
+    const timeline = new Timeline([{ id: 'site', chapter: CHAPTERS[0].id, title: 'site', build(kit) {
       for (const { geometry, matrix } of blocks) kit.add(geometry, stone, matrix);
       for (const { geometry, matrix } of slabs) kit.addTagged(geometry, bronze, matrix, { kind: 'artwork', id: 'A' });
     } }]);
-    timeline.evaluate(1);
     const bvhs = new GeometryBvhs();
     const walls = new CollisionWorld(bvhs);
-    walls.build(collisionMeshes(timeline.steps, 1));
+    walls.build(collisionMeshes(timeline.steps.slice(0, 1)));
     const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, -1, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
     const query: HitFn = (ray, q) => picker.hit(ray, q);
     const into = new Walker(walls, -1);

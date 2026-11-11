@@ -53,29 +53,26 @@ const COLUMN_H = LEVEL_2_NORTH - SLAB - 0.75 - LEVEL_1;
 const windowX = (k: number): number => X0 + (LENGTH * (k + 0.5)) / WINDOWS;
 
 function buildFloor(kit: Kit): void {
-  addBox(kit, mmwMaterials.armorFloor, X0, LEVEL_1, Z0, X1, LEVEL_1 + 0.03, Z1, 0);
+  addBox(kit, mmwMaterials.armorFloor, X0, LEVEL_1, Z0, X1, LEVEL_1 + 0.03, Z1);
   // The low platform the procession rides on, along the court's axis.
-  addBox(kit, mmwMaterials.armorPlatform, 61.5, LEVEL_1, CZ - 2.2, 88.5, LEVEL_1 + 0.32, CZ + 2.2, 1);
-  addBox(kit, mmwMaterials.armorFloor, 61.8, LEVEL_1 + 0.32, CZ - 1.9, 88.2, LEVEL_1 + 0.36, CZ + 1.9, 1);
+  addBox(kit, mmwMaterials.armorPlatform, 61.5, LEVEL_1, CZ - 2.2, 88.5, LEVEL_1 + 0.32, CZ + 2.2);
+  addBox(kit, mmwMaterials.armorFloor, 61.8, LEVEL_1 + 0.32, CZ - 1.9, 88.2, LEVEL_1 + 0.36, CZ + 1.9);
 }
 
 /** Column pairs in the end openings, door surrounds, the balconies' fascia and balustrades, and the impost cornice under the vault. */
 function buildArcades(kit: Kit): void {
   const shaft = column({ order: 'ionic', diameter: COLUMN_D, height: COLUMN_H, fluted: false, detail: 'medium' });
-  let order = 0;
   for (const x of [X0, X1]) {
     for (const z of END_COLUMNS_Z) {
-      kit.add(shaft, palette.limestone, placed(x, LEVEL_1, z), order);
-      order += 1;
+      kit.add(shaft, palette.limestone, placed(x, LEVEL_1, z));
     }
     // The beam over each end opening, carried by the columns.
-    addBox(kit, palette.limestone, x - 0.45, LEVEL_1 + COLUMN_H, Z0 + 2.55, x + 0.45, LEVEL_2_NORTH - SLAB, Z1 - 2.6, order);
+    addBox(kit, palette.limestone, x - 0.45, LEVEL_1 + COLUMN_H, Z0 + 2.55, x + 0.45, LEVEL_2_NORTH - SLAB, Z1 - 2.6);
   }
   const door = surround({ width: 1.75, height: 4.2, head: 'cornice', trim: 0.3 });
   for (const x of DOOR_X) {
-    kit.add(door, palette.limestone, placed(x, LEVEL_1, Z0), order);
-    kit.add(door, palette.limestone, placed(x, LEVEL_1, Z1, Math.PI), order);
-    order += 1;
+    kit.add(door, palette.limestone, placed(x, LEVEL_1, Z0));
+    kit.add(door, palette.limestone, placed(x, LEVEL_1, Z1, Math.PI));
   }
   // Inside the court the mouldings hang inward from a clockwise loop.
   const loop = (y: number): [number, number, number][] => inwardLoop(ARMOR_COURT, y);
@@ -84,16 +81,16 @@ function buildArcades(kit: Kit): void {
     [moulding({ profile: 'string-course', path: loop(LEVEL_2_NORTH - SLAB - 0.15), closed: true, height: 0.75, projection: 0.35 })],
     [moulding({ profile: 'cornice-plain', path: loop(VAULT_SPRING_Y - 0.6), closed: true, height: 0.6, projection: 0.5 })],
   ]);
-  kit.add(lines, palette.limestone, identity, order + 1);
+  kit.add(lines, palette.limestone, identity);
   // The end walls over the balconies, from the galleries' ceiling to the vault's springing.
-  for (const x of [X0, X1]) addBox(kit, palette.plaster, x - 0.3, CLERESTORY_FOOT, Z0, x + 0.3, VAULT_SPRING_Y, Z1, order + 3);
+  for (const x of [X0, X1]) addBox(kit, palette.plaster, x - 0.3, CLERESTORY_FOOT, Z0, x + 0.3, VAULT_SPRING_Y, Z1);
   // Stone balustrades across both balconies on the second floor (P7: turned balusters at the far end).
   const rail = balustrade({ length: SPAN - 0.9, height: 1.05, balusterSpacing: 0.32 });
   const railStone = merged('armor-court-balustrade', [[rail.rail], [rail.plinth], [rail.posts]]);
   for (const [x, turn] of [[X0 + 0.25, -Math.PI / 2], [X1 - 0.25, Math.PI / 2]] as const) {
     const m = placed(x, LEVEL_2_NORTH, CZ, turn);
-    kit.add(railStone, palette.limestone, m, order + 4);
-    for (const b of rail.balusters) kit.add(rail.baluster, palette.limestone, m.clone().multiply(b), order + 4);
+    kit.add(railStone, palette.limestone, m);
+    for (const b of rail.balusters) kit.add(rail.baluster, palette.limestone, m.clone().multiply(b));
   }
 }
 
@@ -107,9 +104,9 @@ function buildParade(kit: Kit): void {
   const riders = [[69.5, -1.1], [73.5, 1.0], [77.5, -0.9], [81.5, 1.1], [85.5, -0.3]] as const;
   riders.forEach(([x, dz], i) => {
     const m = placed(x, LEVEL_1 + 0.36, CZ + dz, turn);
-    kit.add(dark, palette.metalDark, m, i);
-    kit.add(rider.armour, mmwMaterials.steel, m, i);
-    kit.add(rider.caparison, cloths[i % 2] ?? mmwMaterials.clothRed, m, i);
+    kit.add(dark, palette.metalDark, m);
+    kit.add(rider.armour, mmwMaterials.steel, m);
+    kit.add(rider.caparison, cloths[i % 2] ?? mmwMaterials.clothRed, m);
   });
   // Heraldic banners on long poles from both walls, at two heights, in three colours (P7).
   const flag = banner();
@@ -120,29 +117,29 @@ function buildParade(kit: Kit): void {
     const y = LEVEL_2_NORTH + (k % 2 === 0 ? 3.6 : 2.4);
     for (const [z, side] of [[Z0, 0], [Z1, 1]] as const) {
       const m = placed(x, y, z, side === 0 ? 0 : Math.PI);
-      kit.add(flag.pole, palette.bronze, m, 10 + k);
-      kit.add(flag.cloth, colours[(k + side) % 3] ?? mmwMaterials.clothRed, m, 10 + k);
+      kit.add(flag.pole, palette.bronze, m);
+      kit.add(flag.cloth, colours[(k + side) % 3] ?? mmwMaterials.clothRed, m);
     }
   }
   // Two ring chandeliers hung from the vault's crown.
   const drop = VAULT_CROWN_Y - (LEVEL_1 + 11.5);
   const ring = chandelier(drop);
-  for (const x of [CX - LENGTH / 4, CX + LENGTH / 4]) kit.add(ring, mmwMaterials.gilt, placed(x, VAULT_CROWN_Y, CZ), 20);
+  for (const x of [CX - LENGTH / 4, CX + LENGTH / 4]) kit.add(ring, mmwMaterials.gilt, placed(x, VAULT_CROWN_Y, CZ));
   // Glazed cases against the long walls, between the doors.
   const caseXs = [61.0, 70.4, 79.4, 88.4] as const;
   for (const x of caseXs) {
     for (const [z, out] of [[Z0, 1], [Z1, -1]] as const) {
       const z0 = z + out * 0.2;
       const z1 = z + out * 1.2;
-      addBox(kit, palette.metalDark, x - 1.4, LEVEL_1, Math.min(z0, z1), x + 1.4, LEVEL_1 + 0.75, Math.max(z0, z1), 21);
-      addBox(kit, palette.glass, x - 1.35, LEVEL_1 + 0.75, Math.min(z0, z1) + 0.05, x + 1.35, LEVEL_1 + 2.5, Math.max(z0, z1) - 0.05, 21);
+      addBox(kit, palette.metalDark, x - 1.4, LEVEL_1, Math.min(z0, z1), x + 1.4, LEVEL_1 + 0.75, Math.max(z0, z1));
+      addBox(kit, palette.glass, x - 1.35, LEVEL_1 + 0.75, Math.min(z0, z1) + 0.05, x + 1.35, LEVEL_1 + 2.5, Math.max(z0, z1) - 0.05);
     }
   }
   // The organ case on the north balcony, its back to the end wall.
   const organ = organCase();
   const m = placed(X1 + 0.3, LEVEL_2_NORTH, CZ, -Math.PI / 2);
-  kit.add(organ.case, palette.wood, m, 22);
-  kit.add(organ.pipes, mmwMaterials.gilt, m, 22);
+  kit.add(organ.case, palette.wood, m);
+  kit.add(organ.pipes, mmwMaterials.gilt, m);
 }
 
 /** The clerestory walls with their windows, the barrel vault and the gabled roof over the court. */
@@ -154,31 +151,31 @@ function buildVault(kit: Kit): void {
   // One wall geometry serves both sides: the north side's is the south side's turned half round, so its windows mirror about the court's centre.
   const south = wall({ width, height: EAVES_Y - CLERESTORY_FOOT, thickness: CLERESTORY_T, openings });
   const north = wall({ width, height: EAVES_Y - CLERESTORY_FOOT, thickness: CLERESTORY_T, openings: openings.map((o) => ({ ...o, x: -o.x })) });
-  kit.add(south, palette.limestone, placed(centre, CLERESTORY_FOOT, Z0), 0);
-  kit.add(north, palette.limestone, placed(centre, CLERESTORY_FOOT, Z1, Math.PI), 0);
+  kit.add(south, palette.limestone, placed(centre, CLERESTORY_FOOT, Z0));
+  kit.add(north, palette.limestone, placed(centre, CLERESTORY_FOOT, Z1, Math.PI));
   // Gable end walls.
-  for (const x of [rx0, rx1]) addBox(kit, palette.limestone, x - CLERESTORY_T / 2, CLERESTORY_FOOT, Z0 - CLERESTORY_T, x + CLERESTORY_T / 2, EAVES_Y, Z1 + CLERESTORY_T, 1);
+  for (const x of [rx0, rx1]) addBox(kit, palette.limestone, x - CLERESTORY_T / 2, CLERESTORY_FOOT, Z0 - CLERESTORY_T, x + CLERESTORY_T / 2, EAVES_Y, Z1 + CLERESTORY_T);
   // Clerestory glazing, set back in the reveals; seen from the court, its fronts face in.
   const glazing = windowUnit({ width: WINDOW_WIDTH, height: WINDOW_HEIGHT, shape: 'arch', cols: 3, rows: 2, frame: 0.1, bar: 0.05 });
   const glazingMetal = merged('armor-clerestory-metal', [[glazing.frame], [glazing.bars]]);
   for (let k = 0; k < WINDOWS; k += 1) {
     for (const [z, turn] of [[Z0 - 0.4, 0], [Z1 + 0.4, Math.PI]] as const) {
       const m = placed(windowX(k), WINDOW_SILL, z, turn);
-      kit.add(glazingMetal, palette.metalDark, m, 2 + k);
-      kit.add(glazing.glass, palette.glass, m, 2 + k);
+      kit.add(glazingMetal, palette.metalDark, m);
+      kit.add(glazing.glass, palette.glass, m);
     }
   }
   // The vault: plain and cream-white (P7; Robinson in 1910), pierced by the windows' lunettes.
   const vault = lunetteVault({ span: SPAN, rise: VAULT_RISE, length: LENGTH, windows: Array.from({ length: WINDOWS }, (_, k) => windowX(k) - CX), width: WINDOW_WIDTH, sill: WINDOW_SILL - VAULT_SPRING_Y, jamb: WINDOW_JAMB - VAULT_SPRING_Y });
-  kit.add(vault, mmwMaterials.vaultCream, placed(CX, VAULT_SPRING_Y, CZ), 8);
+  kit.add(vault, mmwMaterials.vaultCream, placed(CX, VAULT_SPRING_Y, CZ));
   // Tympana closing the vault's ends over the end walls.
   const end = tympanum();
-  kit.add(end, mmwMaterials.vaultCream, placed(X0, VAULT_SPRING_Y, CZ, Math.PI / 2), 8);
-  kit.add(end, mmwMaterials.vaultCream, placed(X1, VAULT_SPRING_Y, CZ, -Math.PI / 2), 8);
+  kit.add(end, mmwMaterials.vaultCream, placed(X0, VAULT_SPRING_Y, CZ, Math.PI / 2));
+  kit.add(end, mmwMaterials.vaultCream, placed(X1, VAULT_SPRING_Y, CZ, -Math.PI / 2));
   // Gabled metal roof from the eaves to a ridge along the court's axis, over limestone gables.
   const roof = gableRoof();
-  kit.add(roof.roof, palette.roofLead, placed(0, 0, 0), 9);
-  kit.add(roof.gables, palette.limestone, placed(0, 0, 0), 9);
+  kit.add(roof.roof, palette.roofLead, placed(0, 0, 0));
+  kit.add(roof.gables, palette.limestone, placed(0, 0, 0));
 }
 
 let tympanumCache: BufferGeometry | null = null;
@@ -214,8 +211,6 @@ export const armorCourtSteps: readonly StepDef[] = [
     year: '1910',
     title: 'Pave the Arms and Armor Court',
     detail: 'The court at the heart of the Morgan wing, opened in March 1910 as the Wing of Decorative Arts: a warm stone floor and a low platform down its axis.',
-    motion: { kind: 'rise', distance: 2 },
-    stagger: 'order',
     build: buildFloor,
   },
   {
@@ -224,8 +219,6 @@ export const armorCourtSteps: readonly StepDef[] = [
     year: '1910',
     title: 'Frame the court with columns and doors',
     detail: 'Ionic column pairs in the end openings, framed doors into the side galleries, a string course at the balconies and a cornice under the vault.',
-    motion: { kind: 'rise' },
-    stagger: 'order',
     build: buildArcades,
   },
   {
@@ -234,8 +227,6 @@ export const armorCourtSteps: readonly StepDef[] = [
     year: '1956',
     title: 'Ride in the equestrian parade',
     detail: 'Arms and armour moved into the court in 1956: mounted armours ride in procession under heraldic banners and ring chandeliers; an organ case fills the north balcony.',
-    motion: { kind: 'slide', from: [-12, 0, 0] },
-    stagger: 'order',
     build: buildParade,
   },
 ];
@@ -246,8 +237,6 @@ export const armorCourtVaultStep: StepDef = {
   year: '1910',
   title: 'Vault the court under its clerestory',
   detail: 'Ten tall round-headed clerestory windows above the galleries light a cream coffered vault 20 m over the floor, under a gabled metal roof.',
-  motion: { kind: 'drop', distance: 6 },
-  stagger: 'y',
   build: buildVault,
 };
 

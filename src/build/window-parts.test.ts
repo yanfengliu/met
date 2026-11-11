@@ -1,14 +1,14 @@
 /**
  * Window parts in the sequence (docs/design/spec.md, Build-step API, Composite pieces): wherever any role of a part from src/model/lib/window.ts
  * (a window's frame, bars and glass; a door's frame, closed leaves, leaf glass and fanlight glass, and each of its leaves apart, panel and glass) reaches
- * the sequence, every other role does too, in the same step, at the same world matrix and with the same arrival key (so they arrive together), added by
- * `kit.add` or `kit.addTagged` itself or merged into a geometry that is. A door's leaves apart reach it through its closed leaves, which append them.
+ * the sequence, every other role does too, in the same step and at the same world matrix, added by `kit.add` or `kit.addTagged` itself or merged into a
+ * geometry that is. A door's leaves apart reach it through its closed leaves, which append them.
  * Merges are followed through `MeshBuilder.append`, which every merge under src/model uses; parts and merges are recorded by wrapping `windowUnit`,
- * `doorUnit` and `MeshBuilder` before any model module loads. Arrival keys are computed as src/build/timeline.ts computes them, with staggerKeys.
+ * `doorUnit` and `MeshBuilder` before any model module loads.
  * Bound: a part none of whose roles reaches the sequence is not in the model and is not checked; a role with no triangles needs no placement;
  * matrices compare to 0.1 mm; a merge made other than through `MeshBuilder.append` is not followed.
  */
-import { Box3, BufferGeometry, Vector3 } from 'three';
+import { BufferGeometry } from 'three';
 import type { Matrix4 } from 'three';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,6 @@ import type { MeshBuilder } from '../model/lib/builder.js';
 import type * as WindowModule from '../model/lib/window.js';
 import { collectStep } from './kit.js';
 import { SEQUENCE } from './sequence.js';
-import { staggerKeys } from './stagger.js';
 
 type Appended = readonly (readonly [BufferGeometry, Matrix4 | undefined])[];
 
@@ -70,30 +69,17 @@ vi.mock('../model/lib/window.js', async (importOriginal) => {
 interface Placement {
   readonly step: string;
   readonly matrix: Matrix4;
-  /** The piece's arrival key, as the timeline computes it (src/build/stagger.ts): its order, or its world bounding-box centre on the stagger's axis. */
-  readonly key: number;
 }
 
-/** Every piece of every step, by geometry, with its arrival key computed as src/build/timeline.ts does. */
+/** Every piece of every step, by geometry. */
 function placements(): Map<BufferGeometry, Placement[]> {
   const out = new Map<BufferGeometry, Placement[]>();
   for (const step of SEQUENCE) {
-    const pieces = collectStep(step).pieces;
-    const boxes = pieces.map((p) => {
-      if (p.geometry.boundingBox === null) p.geometry.computeBoundingBox();
-      return (p.geometry.boundingBox ?? new Box3()).clone().applyMatrix4(p.matrix);
-    });
-    const centre = boxes.reduce((all, b) => all.union(b), new Box3()).getCenter(new Vector3());
-    const inputs = boxes.map((b, i) => {
-      const c = b.getCenter(new Vector3());
-      return { cx: c.x, cy: c.y, cz: c.z, order: pieces[i]?.order ?? i };
-    });
-    const keys = staggerKeys(step.stagger ?? 'order', inputs, centre.x, centre.z);
-    pieces.forEach((p, i) => {
+    for (const p of collectStep(step).pieces) {
       const list = out.get(p.geometry) ?? [];
-      list.push({ step: step.id, matrix: p.matrix, key: keys[i] ?? Number.NaN });
+      list.push({ step: step.id, matrix: p.matrix });
       out.set(p.geometry, list);
-    });
+    }
   }
   return out;
 }
@@ -123,7 +109,7 @@ function leftOut(name: string, role: string, params: unknown, steps: readonly st
   return LEFT_OUT.some((e) => e.name === name && e.role === role && Object.entries(e.params).every(([k, v]) => given[k] === v) && steps.every((s) => s === e.step));
 }
 
-const signature = (p: Placement): string => `${p.step} key ${String(p.key)} at ${p.matrix.elements.map((v) => (Math.round(v * 1e4) / 1e4 + 0).toFixed(4)).join(',')}`;
+const signature = (p: Placement): string => `${p.step} at ${p.matrix.elements.map((v) => (Math.round(v * 1e4) / 1e4 + 0).toFixed(4)).join(',')}`;
 
 const triangles = (g: BufferGeometry): number => (g.getIndex()?.count ?? g.getAttribute('position').count) / 3;
 

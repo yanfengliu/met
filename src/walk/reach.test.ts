@@ -39,7 +39,6 @@ function rooms(door: number, east = 0, head = 2.5, fill = false): StepDef {
     id: 'rooms',
     chapter: CHAPTERS[0].id,
     title: 'rooms',
-    motion: { kind: 'rise' },
     build(kit) {
       block(kit, [-10, -0.2, -4], [0, 0, 4]);
       block(kit, [0, east - 0.2, -4], [10, east, 4]);
@@ -57,9 +56,8 @@ function rooms(door: number, east = 0, head = 2.5, fill = false): StepDef {
 /** The world the page would build from `step`. */
 function worldOf(step: StepDef): CollisionWorld {
   const timeline = new Timeline([step]);
-  timeline.evaluate(1);
   const world = new CollisionWorld(new GeometryBvhs());
-  world.build(collisionMeshes(timeline.steps, 1));
+  world.build(collisionMeshes(timeline.steps.slice(0, 1)));
   return world;
 }
 
@@ -73,7 +71,6 @@ const groove: StepDef = {
   id: 'groove',
   chapter: CHAPTERS[0].id,
   title: 'groove',
-  motion: { kind: 'rise' },
   build(kit) {
     block(kit, [-6, -0.2, -3], [0.15, 0, 3]);
     block(kit, [0.35, -0.2, -3], [6, 0, 3]);

@@ -106,8 +106,8 @@ describe('pointer lock in walk mode', () => {
   let walk: WalkMode;
   /** Two frames: the one that shows "Preparing walk mode", then the build and the first walking frame. */
   const ready = (held: ReadonlySet<string> = new Set()): void => {
-    walk.frame(1 / 60, 0, held);
-    walk.frame(1 / 60, 0, held);
+    walk.frame(1 / 60, held);
+    walk.frame(1 / 60, held);
   };
   /** A press: the document's capture listeners hear it first, then the canvas it lands on. */
   const press = (init: Record<string, number | string>): void => {
@@ -298,7 +298,7 @@ describe('pointer lock in walk mode', () => {
     bubble('pointermove', { movementX: 30, movementY: 10 });
     ready();
     expect(walk.hint, 'after a look').toBe(true);
-    walk.frame(1 / 60, 0, new Set(['KeyW']));
+    walk.frame(1 / 60, new Set(['KeyW']));
     expect(walk.hint, 'after the first step').toBe(false);
   });
 });

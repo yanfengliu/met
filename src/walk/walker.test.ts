@@ -1,10 +1,10 @@
 /**
  * The walker (src/walk/walker.ts) on fixtures built from real pieces through the page's own collision path: step definitions of boxes and the parts
- * library's stair flight, built by the timeline, evaluated at t, selected by `collisionMeshes` and indexed by `CollisionWorld` over three-mesh-bvh.
+ * library's stair flight, built by the timeline, selected by `collisionMeshes` and indexed by `CollisionWorld` over three-mesh-bvh.
  * Each case drives the walker with keys held for simulated seconds at 60 frames a second, as the page does, and reads its feet and eye.
  * The cases: walls and sliding, a wall turned 30°, a 38° slope walked and a 45° one not, stairs of 0.17 m risers, a 0.3 m step under a 1.8 m ceiling
  * not climbed and a stair under a 2.5 m ceiling climbed only while the body fits, a 0.5 m ledge not climbed, a drop, gaps, a jump, the same walk at
- * 30 and 144 frames a second, and incomplete steps and `userData.solid === false` left out.
+ * 30 and 144 frames a second, and a step left out of the world and `userData.solid === false` left out.
  * Bound: fixtures are axis-aligned rooms, a straight flight (also under a low ceiling) and ledges; the real model is walked in tests/e2e/walk.spec.ts.
  */
 import { BoxGeometry, MathUtils, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
@@ -35,19 +35,18 @@ function block(kit: Kit, min: readonly number[], max: readonly number[], materia
 }
 
 function step(id: string, build: (kit: Kit) => void): StepDef {
-  return { id, chapter: CHAPTERS[0].id, title: id, motion: { kind: 'rise' }, build };
+  return { id, chapter: CHAPTERS[0].id, title: id, build };
 }
 
 const floor = step('floor', (kit) => {
   block(kit, [-30, -0.2, -30], [30, 0, 30]);
 });
 
-/** A walker on the world of `steps` at `t` (default: all complete), the way the page builds it. */
+/** A walker on the world of the first `t` of `steps` (default: all), built the way the page builds it. */
 function walkerOn(steps: readonly StepDef[], t = steps.length): { walker: Walker; instances: number } {
   const timeline = new Timeline(steps);
-  timeline.evaluate(t);
   const world = new CollisionWorld(new GeometryBvhs());
-  const stats = world.build(collisionMeshes(timeline.steps, t));
+  const stats = world.build(collisionMeshes(timeline.steps.slice(0, t)));
   return { walker: new Walker(world, FLOOR_Y), instances: stats.instances };
 }
 
@@ -300,14 +299,14 @@ describe('walker on slopes and turned walls', () => {
 describe('what the walker collides with', () => {
   const wall = (material: Material): StepDef => step(`wall-${material.name}`, (kit) => { block(kit, [-10, 0, -2.3], [10, 3, -2], material); });
 
-  it('ignores a step that is not complete at t, and walks into the same wall once it is', () => {
+  it('ignores a step left out of the world, and walks into the same wall once it is in', () => {
     const steps = [floor, wall(stone)];
     for (const [t, blocked] of [[1.5, false], [2, true]] as const) {
       const { walker } = walkerOn(steps, t);
       walker.place(0, 0, 0, facing(0, -1));
       hold(walker, 2, W);
       if (blocked) expect(walker.feet.z, `t ${String(t)}: stopped by the wall`).toBeGreaterThan(-2);
-      else expect(walker.feet.z, `t ${String(t)}: through the half-built wall`).toBeLessThan(-3);
+      else expect(walker.feet.z, `t ${String(t)}: through the wall left out`).toBeLessThan(-3);
     }
   });
 
@@ -319,7 +318,7 @@ describe('what the walker collides with', () => {
     expect(walker.feet.z).toBeLessThan(-3);
   });
 
-  it('falls to the workspace ground when nothing is built', () => {
+  it('falls to the workspace ground when nothing is in the world', () => {
     const { walker } = walkerOn([floor], 0);
     walker.place(0, 0, 0, 0);
     hold(walker, 1, NO_INPUT);

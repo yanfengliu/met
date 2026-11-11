@@ -17,8 +17,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1977',
     title: 'Foundations of the new American Wing',
     detail: 'Roche Dinkeloo wrap the 1924 wing on its park side: footings, retaining walls and a main-floor slab round the old core.',
-    motion: { kind: 'rise' },
-    stagger: '-z',
     build: americanFoundations,
   },
   {
@@ -27,8 +25,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1978',
     title: 'Limestone walls round the 1924 core',
     detail: "Limestone faces the park on the west and north, with a band of clerestory windows high on the north wall; the court's end walls rise.",
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: americanWalls,
   },
   {
@@ -37,8 +33,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1979',
     title: 'Gallery floors of the American Wing',
     detail: 'Columns and the mezzanine and second-floor plates of the galleries that surround the court and the 1924 period rooms.',
-    motion: { kind: 'rise' },
-    stagger: 'y',
     build: americanFloors,
   },
   {
@@ -47,8 +41,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1980',
     title: 'Engelhard Court floor, terrace and beds',
     detail: 'Stone paving, a terrace before the bank facade with a flight between two raised planting beds, and a small pool in the southern half.',
-    motion: { kind: 'pop' },
-    stagger: 'radial',
     build: engelhardFloor,
   },
   {
@@ -57,8 +49,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1980',
     title: 'Colonnades and glass-fronted balconies',
     detail: 'White tubular columns line the court; balconies over the park-side cafe and the east walk overlook it behind glass fronts (added 2009).',
-    motion: { kind: 'grow' },
-    stagger: 'x',
     build: engelhardColonnades,
   },
   {
@@ -67,8 +57,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1980',
     title: "Tiffany's loggia from Laurelton Hall",
     detail: "Louis Comfort Tiffany's loggia (about 1905) from his Long Island house: limestone columns with capitals of Favrile glass, at the court's south end.",
-    motion: { kind: 'rise', distance: 1.5 },
-    stagger: 'y',
     build: engelhardLoggia,
   },
   {
@@ -77,8 +65,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1980',
     title: 'Diana and the lamp standards',
     detail: "Saint-Gaudens' gilded Diana high on her pedestal, and cast-iron lamp standards before the bank facade and along the colonnades.",
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build: engelhardSculpture,
   },
   engelhardCollectionStep,
@@ -88,8 +74,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1980',
     title: 'Roofs and the ribbed glass gallery roof',
     detail: 'Flat roofs over the galleries and ribbed glazing over the north-west galleries, falling in a glass lean-to to the park wall.',
-    motion: { kind: 'drop' },
-    stagger: 'x',
     build: americanRoofs,
   },
   {
@@ -98,8 +82,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1980',
     title: 'The glass roof of the Engelhard Court',
     detail: 'Seven glazed ridges on white tubular trusses, 70 ft over the court floor, with glass lean-tos down to the park wall and over the east walk.',
-    motion: { kind: 'drop', distance: 6 },
-    stagger: 'x',
     build: engelhardGlassRoof,
   },
   {
@@ -108,8 +90,6 @@ export const americanSteps: readonly StepDef[] = [
     year: '1980',
     title: 'The west curtain wall facing the park',
     detail: 'A wall of reflecting glass closes the court toward Central Park; the wing opened on 11 June 1980. A glazed slot joins it to the Sackler Wing.',
-    motion: { kind: 'slide', from: [0, 0, -12] },
-    stagger: 'x',
     build: engelhardCurtain,
   },
 ];

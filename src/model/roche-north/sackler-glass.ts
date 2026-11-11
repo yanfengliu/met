@@ -38,22 +38,22 @@ const NORTH = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 
 /** The sloped wall: one curtain-wall bay per bay (frame in white steel, stippled glass), a fin on every bay line, the sill and the head beam. */
 export function addGlassWall(kit: Kit): void {
   const bay = curtainWall({ width: BAY, height: RISE, cols: 6, rows: 11, mullionWidth: 0.05, mullionDepth: 0.16, slope: GLASS_LEAN_DEG });
-  BAY_LINES.slice(0, -1).forEach((z0, k) => {
+  BAY_LINES.slice(0, -1).forEach((z0) => {
     const m = new Matrix4().compose(new Vector3(SACKLER_NORTH_FACE_X - 0.03, GLASS_FOOT_Y, z0 + BAY / 2), NORTH, new Vector3(1, 1, 1));
-    kit.add(bay.frame, areaMaterials.whiteSteel, m, k);
-    kit.add(bay.glass, areaMaterials.stippledGlass, m, k);
+    kit.add(bay.frame, areaMaterials.whiteSteel, m);
+    kit.add(bay.glass, areaMaterials.stippledGlass, m);
   });
   // Structural fins: deep white members inside the glass on every bay line, leaning with it.
   const slant = Math.hypot(RISE, RUN);
   const lean = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), (GLASS_LEAN_DEG * Math.PI) / 180);
   const inward = new Vector3(-Math.cos((GLASS_LEAN_DEG * Math.PI) / 180), -Math.sin((GLASS_LEAN_DEG * Math.PI) / 180), 0);
-  BAY_LINES.forEach((z, k) => {
+  BAY_LINES.forEach((z) => {
     const mid = new Vector3(SACKLER_NORTH_FACE_X - RUN / 2, GLASS_FOOT_Y + RISE / 2, z).addScaledVector(inward, 0.45);
-    kit.add(UNIT_BOX, areaMaterials.whiteSteel, new Matrix4().compose(mid, lean, new Vector3(0.62, slant, 0.24)), Math.min(k, BAYS - 1));
+    kit.add(UNIT_BOX, areaMaterials.whiteSteel, new Matrix4().compose(mid, lean, new Vector3(0.62, slant, 0.24)));
   });
   // The granite sill at the foot and the white head beam where the glass meets the roof.
-  boxAt(kit, areaMaterials.platformGranite, [SACKLER_NORTH_FACE_X - 1.1, DENDUR_FLOOR_Y - 0.3, BAY_LINES[0] ?? WEST_Z], [SACKLER_NORTH_FACE_X, GLASS_FOOT_Y, SACKLER_MAX_Z], 0);
-  boxAt(kit, areaMaterials.whiteSteel, [SACKLER_GLASS_TOP_X - 0.9, SACKLER_GLASS_TOP_Y - 0.25, BAY_LINES[0] ?? WEST_Z], [SACKLER_GLASS_TOP_X + 0.15, SACKLER_GLASS_TOP_Y + 0.75, SACKLER_MAX_Z], BAYS - 1);
+  boxAt(kit, areaMaterials.platformGranite, [SACKLER_NORTH_FACE_X - 1.1, DENDUR_FLOOR_Y - 0.3, BAY_LINES[0] ?? WEST_Z], [SACKLER_NORTH_FACE_X, GLASS_FOOT_Y, SACKLER_MAX_Z]);
+  boxAt(kit, areaMaterials.whiteSteel, [SACKLER_GLASS_TOP_X - 0.9, SACKLER_GLASS_TOP_Y - 0.25, BAY_LINES[0] ?? WEST_Z], [SACKLER_GLASS_TOP_X + 0.15, SACKLER_GLASS_TOP_Y + 0.75, SACKLER_MAX_Z]);
 }
 
 /** The hung ceiling: a stippled-glass laylight panel per bay from the south block line to the glass, with track-light rails beneath. */
@@ -61,25 +61,25 @@ export function addCeiling(kit: Kit): void {
   const x0 = SACKLER_BLOCK.minX;
   const x1 = glassX(DENDUR_CEILING_Y) - 0.35;
   const panel = laylight({ width: x1 - x0, length: BAY, cols: 12, rows: 9, frameWidth: 0.08, frameDepth: 0.12 });
-  BAY_LINES.slice(0, -1).forEach((z0, k) => {
+  BAY_LINES.slice(0, -1).forEach((z0) => {
     const m = new Matrix4().makeTranslation((x0 + x1) / 2, DENDUR_CEILING_Y, z0 + BAY / 2);
-    kit.add(panel.frame, areaMaterials.whiteSteelDiffused, m, k);
-    kit.add(panel.glass, areaMaterials.ceilingGlass, m, k);
+    kit.add(panel.frame, areaMaterials.whiteSteelDiffused, m);
+    kit.add(panel.glass, areaMaterials.ceilingGlass, m);
   });
   // Track-light rails hung below the ceiling, running east-west in three lines.
-  for (const x of [123.5, 133.5, 143.5]) boxAt(kit, areaMaterials.whiteSteelDiffused, [x - 0.05, DENDUR_CEILING_Y - 0.55, BAY_LINES[0] ?? 0], [x + 0.05, DENDUR_CEILING_Y - 0.48, SACKLER_MAX_Z - 0.3], BAYS - 1);
+  for (const x of [123.5, 133.5, 143.5]) boxAt(kit, areaMaterials.whiteSteelDiffused, [x - 0.05, DENDUR_CEILING_Y - 0.55, BAY_LINES[0] ?? 0], [x + 0.05, DENDUR_CEILING_Y - 0.48, SACKLER_MAX_Z - 0.3]);
 }
 
 /** The roof: girders on the bay lines over the ceiling, a glazed ridge on every bay running north-south from the block line to the head of the glass. */
 export function addRoof(kit: Kit): void {
   const x0 = SACKLER_BLOCK.minX;
   const x1 = SACKLER_GLASS_TOP_X;
-  BAY_LINES.forEach((z, k) => { boxAt(kit, areaMaterials.whiteSteelDiffused, [x0, DENDUR_CEILING_Y + 0.35, z - 0.18], [x1, SACKLER_ROOF_Y, z + 0.18], Math.min(k, BAYS - 1)); });
+  BAY_LINES.forEach((z) => { boxAt(kit, areaMaterials.whiteSteelDiffused, [x0, DENDUR_CEILING_Y + 0.35, z - 0.18], [x1, SACKLER_ROOF_Y, z + 0.18]); });
   const ridge = ridgeSkylight({ width: BAY, length: x1 - x0, pitch: 15, curbHeight: 0.3, bays: 24, bar: 0.07, barDepth: 0.1 });
   const along = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
-  BAY_LINES.slice(0, -1).forEach((z0, k) => {
+  BAY_LINES.slice(0, -1).forEach((z0) => {
     const m = new Matrix4().compose(new Vector3((x0 + x1) / 2, SACKLER_ROOF_Y, z0 + BAY / 2), along, new Vector3(1, 1, 1));
-    kit.add(ridge.frame, areaMaterials.whiteSteelDiffused, m, k);
-    kit.add(ridge.glass, areaMaterials.clearGlass, m, k);
+    kit.add(ridge.frame, areaMaterials.whiteSteelDiffused, m);
+    kit.add(ridge.glass, areaMaterials.clearGlass, m);
   });
 }

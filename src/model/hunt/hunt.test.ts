@@ -7,7 +7,7 @@
  * from the coordinator (650,000 triangles counting instances, 170 instanced meshes, 2 step lights).
  * The walk routes (plan docs/work/1_first-person-walk, M2; the whole walks are in routes.test.ts): the central doors' glazing is passable to the walk mode
  * and looks like the palette's, while the palette and the other glazing stay solid; the floor is whole behind the three arches' screens and under the
- * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's walk collision at t = N,
+ * Grand Staircase's end arch, flush with the main and the second floor (a 10 cm plan grid over each area, against this area's walk collision,
  * src/walk/collision.ts).
  * The 1880 east front's openings (work unit 23, reviews 0 and 1): a 9 by 9 grid of lines through each clear opening the front lists
  * (src/model/core/vaux-east.ts eastOpenings: the main floor passage, the corridors, the outer passages, the north second-floor door, gallery 600's
@@ -210,13 +210,12 @@ function look(material: Material): string {
 }
 
 let area: CollisionWorld | undefined;
-/** This area's walk collision at t = N, built as the page builds it (src/walk/collision.ts). */
+/** This area's walk collision, built as the page builds it (src/walk/collision.ts). */
 function areaWorld(): CollisionWorld {
   if (area === undefined) {
     const timeline = new Timeline(AREA);
-    timeline.evaluate(timeline.n);
     area = new CollisionWorld(new GeometryBvhs());
-    area.build(collisionMeshes(timeline.steps, timeline.n));
+    area.build(collisionMeshes(timeline.steps));
   }
   return area;
 }

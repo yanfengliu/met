@@ -136,11 +136,12 @@ Work unit 2's follow-up (reviews 28 on) moved this file's walks up to the doors 
 
 ### `src/walk/door-settle.test.ts`
 
-- A door's step completing with the walker in its doorway opens the door away at once, the walker's feet on the floor and no leaf in it: red with no release after the check: shut on it; and with the leaves in the static world: moved 25 cm by `settle`.
+- A door's step completing with the walker in its doorway opens the door away at once, the walker's feet on the floor and no leaf in it: red with no release after the check: shut on it; and with the leaves in the static world: moved 25 cm by `settle`. Gone with the build replay (work unit 26).
+- A door shut in the orbit view onto the place the walker left opens away from it at once when walk mode is entered again there, its feet on the floor and no leaf in it: red with no release after walk mode's check of its place: shut on it, 0° (work unit 26, 2026-11-11). A walker set down by a jamb, and in a locked door's doorway, stays on the floor pushed out of the leaves: red with the leaves in the static world: lifted 0.184 m by `settle`, in both cases (2026-11-11).
 
 ### `src/viewer/doors.test.ts`
 
-- The timeline's state byte for byte a timeline's without the door layer, the layer hiding by layer masks only: red when it hides by `visible`.
+- The timeline's meshes byte for byte a timeline's without the door layer, the layer hiding by layer masks only: red when it hides by `visible`.
 - A door's piece that the step's resting pieces leave out, a locked door's included, refused naming the door and the piece: red with the silent skip of `0defda0` (review 17, F47).
 
 ### `src/viewer/pick.test.ts` and `src/walk/look.test.ts`

@@ -79,20 +79,18 @@ export const parkLampsStep: StepDef = {
   chapter: 'site',
   title: 'Set the park’s lamps and benches',
   detail: 'Cast-iron lamp posts with acorn globes line the paths and East Drive, and slatted benches face the walks.',
-  motion: { kind: 'grow' },
-  stagger: 'order',
   build(kit) {
-    PARK_LAMPS.forEach(([x, z], k) => {
+    PARK_LAMPS.forEach(([x, z]) => {
       const m = new Matrix4().makeTranslation(x, parkY(x, z) - 0.05, z);
-      kit.add(LAMP.post, siteMaterials.metalDark, m, k);
-      kit.add(LAMP.lamp, siteMaterials.lampGlobe, m, k);
+      kit.add(LAMP.post, siteMaterials.metalDark, m);
+      kit.add(LAMP.lamp, siteMaterials.lampGlobe, m);
     });
-    OSM_BENCHES.filter(fits).forEach(([x, z], k) => {
+    OSM_BENCHES.filter(fits).forEach(([x, z]) => {
       // The sitter (+Z) faces the nearest path.
       const [qx, qz] = nearestOnPaths([x, z]);
       const m = new Matrix4().makeRotationY(Math.atan2(qx - x, qz - z)).setPosition(x, parkY(x, z) - 0.03, z);
-      kit.add(BENCH.frame, siteMaterials.metalDark, m, PARK_LAMPS.length + k);
-      kit.add(BENCH.seat, siteMaterials.wood, m, PARK_LAMPS.length + k);
+      kit.add(BENCH.frame, siteMaterials.metalDark, m);
+      kit.add(BENCH.seat, siteMaterials.wood, m);
     });
   },
 };

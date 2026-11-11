@@ -79,25 +79,23 @@ function campaignSteps(c: Campaign): StepDef[] {
   const id = (part: string): string => `mmw-${c.key}-${part}`;
   const w = c.words;
   return [
-    { id: id('foundations'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Lay the ${w.wings}' foundations`, detail: w.foundations, motion: { kind: 'rise' }, stagger: c.outward, build: (kit) => { buildFoundations(kit, c.wings); } },
+    { id: id('foundations'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Lay the ${w.wings}' foundations`, detail: w.foundations, build: (kit) => { buildFoundations(kit, c.wings); } },
     {
       id: id('walls'),
       chapter: 'mckim-mead-white-1926',
       year: c.year,
       title: `Raise the ${w.wings}' limestone walls`,
       detail: w.walls,
-      motion: { kind: 'grow' },
-      stagger: 'order',
       build: (kit) => {
         buildFrontWalls(kit, c.front);
-        buildPartyWalls(kit, c.party, 100);
+        buildPartyWalls(kit, c.party);
       },
     },
-    { id: id('floors'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Lay the ${w.wings}' upper floors`, detail: w.floors, motion: { kind: 'drop', distance: 6 }, stagger: 'y', build: (kit) => { buildFloors(kit, c.wings); } },
-    { id: id('galleries'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Wall off the ${w.wings}' galleries`, detail: w.galleries, motion: { kind: 'grow' }, stagger: c.outward, build: (kit) => { buildPartitions(kit, c.wings, c.courts); } },
-    { id: id('windows'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Glaze the ${w.wings}' windows`, detail: w.windows, motion: { kind: 'pop' }, stagger: 'order', build: (kit) => { buildFrontWindows(kit, c.front); } },
-    { id: id('orders'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Set the ${w.wings}' pilasters and arches`, detail: w.orders, motion: { kind: 'rise', distance: 4 }, stagger: 'order', build: (kit) => { buildFrontOrders(kit, c.front); } },
-    { id: id('cornices'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Crown the ${w.wings} with their cornice`, detail: w.cornices, motion: { kind: 'drop', distance: 5 }, stagger: 'order', build: (kit) => { buildFrontCornices(kit, c.front); } },
+    { id: id('floors'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Lay the ${w.wings}' upper floors`, detail: w.floors, build: (kit) => { buildFloors(kit, c.wings); } },
+    { id: id('galleries'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Wall off the ${w.wings}' galleries`, detail: w.galleries, build: (kit) => { buildPartitions(kit, c.wings, c.courts); } },
+    { id: id('windows'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Glaze the ${w.wings}' windows`, detail: w.windows, build: (kit) => { buildFrontWindows(kit, c.front); } },
+    { id: id('orders'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Set the ${w.wings}' pilasters and arches`, detail: w.orders, build: (kit) => { buildFrontOrders(kit, c.front); } },
+    { id: id('cornices'), chapter: 'mckim-mead-white-1926', year: c.year, title: `Crown the ${w.wings} with their cornice`, detail: w.cornices, build: (kit) => { buildFrontCornices(kit, c.front); } },
   ];
 }
 

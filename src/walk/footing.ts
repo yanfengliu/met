@@ -1,7 +1,7 @@
 /**
  * The ground under a walker's footprint (docs/design/spec.md, Walk mode: Ground), for ./walker.ts: the surface under the body's centre or, over a gap or
  * groove there, the lower rim of a pair of opposite side probes STRADDLE (0.3 m) out, whichever is higher, so a body bridges a gap narrower than itself
- * yet falls off an edge as soon as its centre passes it; and whether pieces were built under its sides, for the walker's check after a build.
+ * yet falls off an edge as soon as its centre passes it; and whether pieces numbered from some index on lie under its sides, for the check of its place.
  * Bound: four pairs of probes, along X, along Z and on both diagonals, 0.6 m apart; a pair bridges a groove where both its probes stand on the rims,
  * so a groove under 0.27 m wide (0.3 m × cos 22.5°) is bridged wherever the centre stands in it, at any angle to the axes.
  */

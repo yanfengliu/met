@@ -1,6 +1,6 @@
 /**
  * The kit a step's `build` receives: it records pieces and lights and rejects malformed input with a message naming the step, the piece and the fix.
- * Bound: it checks each piece's own inputs (geometry with positions, a single material, a finite affine matrix, a finite order, a tag's kind and id) and
+ * Bound: it checks each piece's own inputs (geometry with positions, a single material, a finite affine matrix, a tag's kind and id) and
  * each light's type and shadow flag; whole-sequence rules (the light cap, site bounds, budgets) are checked by the timeline and the sequence tests.
  */
 import { BufferGeometry, Material, Matrix4, PointLight, SpotLight } from 'three';
@@ -12,7 +12,6 @@ export interface CollectedPiece {
   readonly material: Material;
   /** A copy of the final world matrix, so later changes by the builder do not move the piece. */
   readonly matrix: Matrix4;
-  readonly order: number;
   /** A frozen copy of the tag `kit.addTagged` was given, or null for `kit.add`. */
   readonly tag: PieceTag | null;
 }
@@ -55,29 +54,26 @@ function checkTag(step: StepDef, index: number, tag: unknown): PieceTag {
 export function collectStep(step: StepDef): CollectedStep {
   const pieces: CollectedPiece[] = [];
   const lights: (PointLight | SpotLight)[] = [];
-  const piece = (geometry: BufferGeometry, material: Material, matrix: Matrix4, order: number | undefined, tag: PieceTag | null): void => {
+  const piece = (geometry: BufferGeometry, material: Material, matrix: Matrix4, tag: PieceTag | null): void => {
     const index = pieces.length;
     if (!(geometry instanceof BufferGeometry) || !geometry.hasAttribute('position')) {
       fail(step, `piece ${String(index)} has no BufferGeometry with a position attribute; pass a geometry from src/model/lib/ or THREE.`);
     }
     if (!(material instanceof Material)) {
-      fail(step, `piece ${String(index)} has no single THREE.Material; a piece of several materials is several add calls with the same order.`);
+      fail(step, `piece ${String(index)} has no single THREE.Material; a piece of several materials is several add calls at the same matrix.`);
     }
-    if (order !== undefined && !Number.isFinite(order)) {
-      fail(step, `piece ${String(index)} has a non-finite order (${String(order)}); pass a finite number or leave it out.`);
-    }
-    pieces.push({ geometry, material, matrix: checkMatrix(step, index, matrix), order: order ?? index, tag });
+    pieces.push({ geometry, material, matrix: checkMatrix(step, index, matrix), tag });
   };
   const kit: Kit = {
-    add(geometry: BufferGeometry, material: Material, matrix: Matrix4, order?: number): void {
-      piece(geometry, material, matrix, order, null);
+    add(geometry: BufferGeometry, material: Material, matrix: Matrix4): void {
+      piece(geometry, material, matrix, null);
     },
-    addTagged(geometry: BufferGeometry, material: Material, matrix: Matrix4, tag: PieceTag, order?: number): void {
-      piece(geometry, material, matrix, order, checkTag(step, pieces.length, tag));
+    addTagged(geometry: BufferGeometry, material: Material, matrix: Matrix4, tag: PieceTag): void {
+      piece(geometry, material, matrix, checkTag(step, pieces.length, tag));
     },
     light(light: PointLight | SpotLight): void {
       if (!(light instanceof PointLight) && !(light instanceof SpotLight)) {
-        fail(step, `light ${String(lights.length)} is neither a THREE.PointLight nor a THREE.SpotLight; only those two kinds switch on with a step.`);
+        fail(step, `light ${String(lights.length)} is neither a THREE.PointLight nor a THREE.SpotLight; only those two kinds are step lights.`);
       }
       if (light.castShadow) {
         fail(step, `light ${String(lights.length)} casts shadows; step lights never cast shadows (docs/design/spec.md, Kit), so set castShadow = false.`);

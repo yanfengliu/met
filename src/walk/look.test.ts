@@ -30,13 +30,12 @@ interface Piece {
   readonly tag?: PieceTag;
 }
 
-/** The page's hit query over a one-step timeline of slabs across the eye's path, at t = N. */
+/** The page's hit query over a one-step timeline of slabs across the eye's path. */
 function hitIn(pieces: readonly Piece[]): HitFn {
   const step: StepDef = {
     id: 'look',
     chapter: CHAPTERS[0].id,
     title: 'look',
-    motion: { kind: 'rise' },
     build(kit: Kit) {
       for (const p of pieces) {
         const matrix = new Matrix4().compose(new Vector3(0, 1.5, -p.near - 0.05), new Quaternion(), new Vector3(3, 3, 0.1));
@@ -46,7 +45,6 @@ function hitIn(pieces: readonly Piece[]): HitFn {
     },
   };
   const timeline = new Timeline([step]);
-  timeline.evaluate(1);
   const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), -5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
   return (ray, query) => picker.hit(ray, query);
 }
@@ -97,7 +95,6 @@ describe('the look target with a viewer-side stand-in (ModelPicker.register)', (
       id: 'room',
       chapter: CHAPTERS[0].id,
       title: 'room',
-      motion: { kind: 'rise' },
       build(kit: Kit) {
         kit.addTagged(cube, bronze, slab(0, -4.05, 3, 0.1), art);
         kit.addTagged(cube, bronze, slab(-3.05, -3, 0.1, 4), { kind: 'artwork', id: 'left' });
@@ -105,7 +102,6 @@ describe('the look target with a viewer-side stand-in (ModelPicker.register)', (
       },
     };
     const timeline = new Timeline([step]);
-    timeline.evaluate(1);
     const meshes = timeline.steps.flatMap((s) => s.meshes);
     const picker = new ModelPicker(meshes, new GeometryBvhs(), -5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
     const left = new Vector3(-3, 0, -4).normalize();

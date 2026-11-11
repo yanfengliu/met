@@ -1,12 +1,12 @@
 /**
- * The walk collision world (docs/design/spec.md, Walk mode): every piece of every step complete at the current t (f = 1) whose material is solid
- * (`userData.solid !== false`), in world space, as instances of per-geometry BVHs (./bvh-cache.ts) found through a uniform grid over X and Z.
+ * The walk collision world (docs/design/spec.md, Walk mode): every piece of the model whose material is solid (`userData.solid !== false`), in
+ * world space, as instances of per-geometry BVHs (./bvh-cache.ts) found through a uniform grid over X and Z.
  * Two queries: push a capsule out of every triangle it overlaps (`resolveCapsule`), and find the first surface below a point (`groundBelow`); a third,
- * every crossing of a vertical line with each piece (`crossings`), checks the walker after a build, and a fourth, whether a capsule meets anything
- * (`meets`), checks a door's swing against the walker. A small world of pieces that move (`buildPieces`, the doors' leaves: src/walk/door-world.ts)
- * scans its pieces rather than a grid, so `move` keeps its matrices, inverses and boxes right at once; the static world is built once per build.
- * A build reads the instance matrices of complete steps, which hold their final matrices (docs/design/spec.md, Timeline position), and never writes
- * the scene, so walking leaves the determinism contract alone. The section cut changes nothing here.
+ * every crossing of a vertical line with each piece (`crossings`), checks the walker's place on entering walk mode, and a fourth, whether a capsule
+ * meets anything (`meets`), checks a door's swing against the walker. A small world of pieces that move (`buildPieces`, the doors' leaves:
+ * src/walk/door-world.ts) scans its pieces rather than a grid, so `move` keeps its matrices, inverses and boxes right at once; the static world is
+ * built once.
+ * A build reads the steps' instance matrices, the pieces' final matrices, and never writes the scene. The section cut changes nothing here.
  * Bound: capsule-to-triangle distances are exact (three-mesh-bvh ExtendedTriangle) in world space for any affine piece matrix, because triangles are
  * taken out to world space rather than the capsule into a piece's frame; a capsule moved more than COLLISION_MARGIN by one query can miss a triangle
  * near its new place until the next query.
@@ -34,22 +34,20 @@ export function isSolid(material: Material | readonly Material[]): boolean {
   return (material instanceof Material ? [material] : material).some((m) => m.userData['solid'] !== false);
 }
 
-/** Steps complete at `t` (f = 1): the first ⌊t⌋ of `n`. */
-export function completeSteps(t: number, n: number): number {
-  return Math.max(0, Math.min(n, Math.floor(t)));
+/**
+ * The meshes walking collides with among `steps`' (the page passes every step): those with a solid material, but those in `leaveOut` (the closed
+ * leaves of the doors that open, which collide where the door layer turns them: src/walk/door-world.ts).
+ */
+export function collisionMeshes(steps: readonly BuiltStep[], leaveOut?: ReadonlySet<InstancedMesh>): InstancedMesh[] {
+  return steps.flatMap((s) => s.meshes.filter((m) => isSolid(m.material) && leaveOut?.has(m) !== true));
 }
 
 /**
- * The meshes walking collides with at `t`: those of steps complete at `t`, visible, with a solid material, but those in `leaveOut` (the closed leaves of
- * the doors that open, which collide where the door layer turns them: src/walk/door-world.ts).
+ * How many instances `steps` put in a world `build` from `collisionMeshes`: in a world built from these steps and more after them, the instances
+ * numbered from this on are the later steps' (`Walker.settle`).
  */
-export function collisionMeshes(steps: readonly BuiltStep[], t: number, leaveOut?: ReadonlySet<InstancedMesh>): InstancedMesh[] {
-  return steps.slice(0, completeSteps(t, steps.length)).flatMap((s) => s.meshes.filter((m) => m.visible && m.count > 0 && isSolid(m.material) && leaveOut?.has(m) !== true));
-}
-
-/** How many instances the first `complete` steps put in a world `build` from `collisionMeshes`: its instances numbered from this on are later steps'. */
-export function instancesBefore(steps: readonly BuiltStep[], complete: number, leaveOut?: ReadonlySet<InstancedMesh>): number {
-  return collisionMeshes(steps, complete, leaveOut).reduce((sum, mesh) => sum + mesh.count, 0);
+export function instanceCount(steps: readonly BuiltStep[], leaveOut?: ReadonlySet<InstancedMesh>): number {
+  return collisionMeshes(steps, leaveOut).reduce((sum, mesh) => sum + mesh.count, 0);
 }
 
 /**
@@ -445,7 +443,7 @@ export class CollisionWorld {
 
   /**
    * Every crossing of the vertical line through (x, z) with each solid piece whose world box reaches the span from `bottom` to `top`, over the piece's
-   * whole height, lowest first, for walk mode's check of the walker after a build (src/walk/walker.ts, `settle`): its hits counted by the crossing rule
+   * whole height, lowest first, for walk mode's check of the walker's place (src/walk/walker.ts, `settle`): its hits counted by the crossing rule
    * (./crossing-rule.ts), so a closed piece is crossed an even number of times (src/model/closure.test.ts).
    */
   crossings(x: number, z: number, bottom: number, top: number): LineCrossings[] {

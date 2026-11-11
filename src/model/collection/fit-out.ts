@@ -5,7 +5,7 @@
  * picks.ts lists it under its space's `fitOut`, the catalogue keeps its record alone (catalogue.ts, display "fit-out"), and its builder adds its
  * pieces through `artworkKit`, which tags each with its Met object ID as a placeholder's pieces are tagged (place.ts `artworkTag`). So the look
  * target and an orbit-view click find it as they find a placeholder, and the page shows its card (Collection: Labels).
- * An artwork's tag splits no mesh (src/build/batch.ts keeps only doors apart): a tagged piece batches, arrives and draws as it did untagged, which
+ * An artwork's tag splits no mesh (src/build/batch.ts keeps only doors apart): a tagged piece batches and draws as it did untagged, which
  * src/model/collection/fit-out.test.ts holds on the real steps.
  */
 import type { Kit } from '../../build/types.js';
@@ -30,18 +30,18 @@ export function fitOutEntryOf(id: number): FitOutEntry {
 
 /**
  * A kit that adds every piece as a piece of the fit-out artwork `id`: `add` becomes `addTagged` with the artwork's tag, the piece's geometry,
- * material, matrix and order as given, so a builder written for a plain kit builds the same pieces, tagged. A piece the builder tags itself (a
- * door's leaf) keeps its own tag, and lights pass through. Throws unless the catalogue holds a fit-out record for `id`, so no piece is tagged
- * with an ID the page has no card for.
+ * material and matrix as given, so a builder written for a plain kit builds the same pieces, tagged. A piece the builder tags itself (a door's
+ * leaf) keeps its own tag, and lights pass through. Throws unless the catalogue holds a fit-out record for `id`, so no piece is tagged with an
+ * ID the page has no card for.
  */
 export function artworkKit(kit: Kit, id: number): Kit {
   const tag = artworkTag(fitOutEntryOf(id).id);
   return {
-    add(geometry, material, matrix, order) {
-      kit.addTagged(geometry, material, matrix, tag, order);
+    add(geometry, material, matrix) {
+      kit.addTagged(geometry, material, matrix, tag);
     },
-    addTagged(geometry, material, matrix, own, order) {
-      kit.addTagged(geometry, material, matrix, own, order);
+    addTagged(geometry, material, matrix, own) {
+      kit.addTagged(geometry, material, matrix, own);
     },
     light(light) {
       kit.light(light);

@@ -1,5 +1,5 @@
 /**
- * Every placeholder can be labelled in the finished model (docs/design/spec.md, Collection: Labels): the whole sequence's Timeline at t = N, the page's
+ * Every placeholder can be labelled in the finished model (docs/design/spec.md, Collection: Labels): the whole sequence's Timeline, the page's
  * picker over it (src/viewer/pick.ts, with the timeline's tags) and, for each of the 94 artworks, a visitor standing before it: the eye 1.6 m over the
  * floor its placement names, `STAND` metres out from the object's front along the way it faces, looking at the object's middle. From there the walking
  * eye's look target (src/walk/look.ts) is that artwork, within its 6 m reach, and so is what the orbit view's click query (src/viewer/art-label.ts
@@ -32,7 +32,6 @@ let picker: ModelPicker;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), Math.min(0, timeline.bounds.min.y) - 0.5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
 }, 120_000);
 

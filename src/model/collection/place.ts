@@ -1,9 +1,9 @@
 /**
  * The collection's placeholders as pieces (docs/design/spec.md, Collection): an artwork's catalogue entry (catalogue.ts) and its placement in a space give
  * its pieces, all at the object's real size: the object in its form (kinds.ts), and its plinth, its vitrine (objects under 0.6 m) or its frame (paintings).
- * Every piece of one artwork is added together, with one `order`, so they arrive together, and tagged with its object ID (`artworkTag`), so the look
- * target and an orbit-view click find the artwork whichever of its pieces they meet, vitrine glass included (docs/design/spec.md, Collection: Labels).
- * One step per space (`collectionStep`) builds its artworks with one shared material (material.ts) and a stagger by order.
+ * Every piece of one artwork is added together and tagged with its object ID (`artworkTag`), so the look target and an orbit-view click find the
+ * artwork whichever of its pieces they meet, vitrine glass included (docs/design/spec.md, Collection: Labels).
+ * One step per space (`collectionStep`) builds its artworks with one shared material (material.ts), one artwork after another.
  * Derived, not measured (docs/research/collection.md, Display): plinth heights and margins, vitrine sizes, frame borders where the record gives no
  * framed size, the hanging height, and each object's roughness and metalness.
  */
@@ -191,7 +191,7 @@ export function stepArtworks(def: CollectionStepDef): { readonly pieces: readonl
   return { pieces, surfaces };
 }
 
-/** The step that builds one space's artworks: each one's pieces together (one order per artwork), popping into place one artwork after another. */
+/** The step that builds one space's artworks: each one's pieces together, one artwork after another. */
 export function collectionStep(def: CollectionStepDef): StepDef {
   return {
     id: def.id,
@@ -199,19 +199,17 @@ export function collectionStep(def: CollectionStepDef): StepDef {
     year: def.year,
     title: def.title,
     detail: def.detail,
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build(kit: Kit) {
       const { pieces, surfaces } = stepArtworks(def);
       const art = artMaterial(`collection-${def.space}`, surfaces);
       const material: Record<ArtPiece['role'], Material> = { object: art, plinth: def.plinth ?? plinthMaterial, glass: vitrineGlass, gilt: giltMaterial };
       def.placements.forEach(({ id }, order) => {
-        // One artwork, The Met's object `id`: all its pieces together under one order, each tagged with its object ID. Artwork tags never split a mesh
+        // One artwork, The Met's object `id`: all its pieces together, each tagged with its object ID. Artwork tags never split a mesh
         // (src/build/batch.ts keeps only doors apart), so the step's meshes are those untagged pieces would make.
         const artwork = pieces[order] ?? [];
         if (artwork.length === 0) throw new Error(`Step "${def.id}": object ${String(id)} has no pieces; check its catalogue entry's display.`);
         const tag = artworkTag(id);
-        for (const piece of artwork) kit.addTagged(piece.geometry, material[piece.role], piece.matrix, tag, order);
+        for (const piece of artwork) kit.addTagged(piece.geometry, material[piece.role], piece.matrix, tag);
       });
     },
   };

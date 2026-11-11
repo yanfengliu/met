@@ -150,37 +150,37 @@ export function choirScreen(plain: Kit): void {
   // middle piers' plinths (medieval-hall.ts).
   const die = GATE - 0.08;
   for (const s of [-1, 1]) {
-    addBox(kit, palette.limestone, s * die, L1, z0 - 0.25, s * (W + 0.08), y(foot0), z0 + 0.25, 0);
-    addBox(kit, palette.limestone, s * GATE_PLINTH, L1, z0 - 0.25, s * die, y(BASE_PLINTH), z0 + 0.25, 0);
+    addBox(kit, palette.limestone, s * die, L1, z0 - 0.25, s * (W + 0.08), y(foot0), z0 + 0.25);
+    addBox(kit, palette.limestone, s * GATE_PLINTH, L1, z0 - 0.25, s * die, y(BASE_PLINTH), z0 + 0.25);
   }
   const bar = cylinder(6);
   const round = cylinder(20);
   TIERS.forEach(([b, t, top], tier) => {
     const tierPosts = tier === 0 ? [-W, -3.2, -GATE, GATE, 3.2, W] : [-W, -3.2, 0, 3.2, W];
-    for (const px of tierPosts) addBox(kit, iron, px - 0.08, y(b), z0 - 0.08, px + 0.08, y(t), z0 + 0.08, 2 + tier * 3);
+    for (const px of tierPosts) addBox(kit, iron, px - 0.08, y(b), z0 - 0.08, px + 0.08, y(t), z0 + 0.08);
     for (let x = -W + BAR_SPACING; x < W - BAR_SPACING / 2; x += BAR_SPACING) {
       if (tierPosts.some((p) => Math.abs(p - x) < 0.1) || (tier === 0 && Math.abs(x) < GATE)) continue;
-      kit.add(bar, iron, placed(x, y(b), z0, 0, [0.045, t - b, 0.045]), 2 + tier * 3);
+      kit.add(bar, iron, placed(x, y(b), z0, 0, [0.045, t - b, 0.045]));
     }
     // Frieze: a dark band over a gilt moulding and under a gilt cornice and a dark bar, studded with gilt bosses.
     const h = top - t;
-    addBox(kit, iron, -W - 0.05, y(t), z0 - 0.13, W + 0.05, y(top), z0 + 0.13, 3 + tier * 3);
+    addBox(kit, iron, -W - 0.05, y(t), z0 - 0.13, W + 0.05, y(top), z0 + 0.13);
     for (const [a, b2] of [
       [0, MOULDING],
       CORNICE,
     ] as const) {
-      addBox(kit, gilt, -W - 0.07, y(t + a * h), z0 - 0.16, W + 0.07, y(t + b2 * h), z0 + 0.16, 3 + tier * 3);
+      addBox(kit, gilt, -W - 0.07, y(t + a * h), z0 - 0.16, W + 0.07, y(t + b2 * h), z0 + 0.16);
     }
     const boss = t + ((MOULDING + CORNICE[0]) / 2) * h;
     for (let x = -W + 0.4; x < W - 0.2; x += 0.8) {
-      for (const side of [-1, 1]) kit.add(round, gilt, disc(x, boss, 0.12, 0.06, side * 0.14), 3 + tier * 3);
+      for (const side of [-1, 1]) kit.add(round, gilt, disc(x, boss, 0.12, 0.06, side * 0.14));
     }
   });
   // The gate's arched head in the lowest tier, iron on both faces, its crown 5 mm into the frieze, past the 0.5 mm its facets lose at the crown.
   const rise = (TIERS[0]?.[1] ?? 4.41) - GATE_SPRING - GATE_BAND + 0.005;
   const arch = voussoirRing({ head: 'segmental', span: 2 * GATE, rise, band: GATE_BAND, count: 11, projection: 0.06, parity: 'all', back: true });
-  kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 + 0.08), 2);
-  kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 - 0.08, Math.PI), 2);
+  kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 + 0.08));
+  kit.add(arch, iron, placed(0, y(GATE_SPRING), z0 - 0.08, Math.PI));
   gateFrame(kit, foot0);
   leaves(kit, foot0);
   cresting(kit, TIERS[2]?.[2] ?? 11.15);
@@ -193,9 +193,9 @@ function gateFrame(kit: Kit, foot: number): void {
   const [z0, die] = [SCREEN_Z, GATE - 0.08];
   const [head0, head1] = JAMB_HEAD;
   for (const s of [-1, 1]) {
-    addBox(kit, iron, s * GATE_CLEAR, L1 + BASE_PLINTH, z0 - 0.02, s * die, L1 + foot, z0 + 0.02, 2);
-    for (const bx of JAMB_BARS) kit.add(bar, iron, placed(s * bx, L1 + foot, z0, 0, [0.045, head0 - foot, 0.045]), 2);
-    addBox(kit, iron, s * GATE_CLEAR, L1 + head0, z0 - 0.03, s * die, L1 + head1, z0 + 0.03, 2);
+    addBox(kit, iron, s * GATE_CLEAR, L1 + BASE_PLINTH, z0 - 0.02, s * die, L1 + foot, z0 + 0.02);
+    for (const bx of JAMB_BARS) kit.add(bar, iron, placed(s * bx, L1 + foot, z0, 0, [0.045, head0 - foot, 0.045]));
+    addBox(kit, iron, s * GATE_CLEAR, L1 + head0, z0 - 0.03, s * die, L1 + head1, z0 + 0.03);
   }
 }
 
@@ -208,16 +208,16 @@ function leaves(kit: Kit, foot: number): void {
   for (const s of [-1, 1]) {
     const x = (u: number): number => s * (GATE + u);
     LEAF_TOP.forEach(([u, top], k) => {
-      if (k > 0) kit.add(bar, iron, placed(x(u), L1 + foot, z, 0, [0.035, top - foot, 0.035]), 2);
+      if (k > 0) kit.add(bar, iron, placed(x(u), L1 + foot, z, 0, [0.035, top - foot, 0.035]));
       const [u1, top1] = LEAF_TOP[k + 1] ?? [u, top];
-      if (u1 > u) kit.add(UNIT_BOX, iron, slant(x(u), top, Math.hypot(u1 - u, top1 - top) + 0.01, Math.atan2(s * (u1 - u), top1 - top), 0.035, 0.04, -LEAF_OFF), 2);
+      if (u1 > u) kit.add(UNIT_BOX, iron, slant(x(u), top, Math.hypot(u1 - u, top1 - top) + 0.01, Math.atan2(s * (u1 - u), top1 - top), 0.035, 0.04, -LEAF_OFF));
     });
     // The stub the top rail runs on to past the last bar, level.
-    addBox(kit, iron, x(outer[0]), L1 + outer[1] - 0.0175, z - 0.02, x(LEAF_STUB), L1 + outer[1] + 0.0175, z + 0.02, 2);
-    addBox(kit, iron, x(inner), L1 + foot, z - 0.02, x(outer[0] + 0.02), L1 + foot + 0.04, z + 0.02, 2);
+    addBox(kit, iron, x(outer[0]), L1 + outer[1] - 0.0175, z - 0.02, x(LEAF_STUB), L1 + outer[1] + 0.0175, z + 0.02);
+    addBox(kit, iron, x(inner), L1 + foot, z - 0.02, x(outer[0] + 0.02), L1 + foot + 0.04, z + 0.02);
     if (s < 0) continue;
-    addBox(kit, iron, x(inner), L1 + LEAF_RAIL - 0.02, z - 0.02, x(outer[0] + 0.02), L1 + LEAF_RAIL + 0.02, z + 0.02, 2);
-    addBox(kit, iron, x(0.4), L1 + LEAF_RAIL - 0.22, z - 0.035, x(0.5), L1 + LEAF_RAIL - 0.02, z + 0.035, 2);
+    addBox(kit, iron, x(inner), L1 + LEAF_RAIL - 0.02, z - 0.02, x(outer[0] + 0.02), L1 + LEAF_RAIL + 0.02, z + 0.02);
+    addBox(kit, iron, x(0.4), L1 + LEAF_RAIL - 0.22, z - 0.035, x(0.5), L1 + LEAF_RAIL - 0.02, z + 0.035);
   }
 }
 
@@ -231,59 +231,59 @@ function cresting(kit: Kit, foot: number): void {
   const bar = cylinder(6);
   const half = voussoirRing({ head: 'round', span: 1, band: HALF_BAND, count: 9, projection: 0.1, parity: 'all', back: true });
   const base = foot + PLINTH;
-  const vase = (x: number, at: number, h: number, material: Material, order: number): void => {
-    for (const [b, t, w] of URN) kit.add(round, material, placed(x, y(at + b * h), z0, 0, [w * h, (t - b) * h, w * h]), order);
+  const vase = (x: number, at: number, h: number, material: Material): void => {
+    for (const [b, t, w] of URN) kit.add(round, material, placed(x, y(at + b * h), z0, 0, [w * h, (t - b) * h, w * h]));
   };
   for (const [x0, x1] of PLINTHS) {
-    for (const s of x0 < 0 ? [1] : [-1, 1]) addBox(kit, iron, s * x0, y(foot), z0 - 0.1, s * x1, y(base), z0 + 0.1, 12);
+    for (const s of x0 < 0 ? [1] : [-1, 1]) addBox(kit, iron, s * x0, y(foot), z0 - 0.1, s * x1, y(base), z0 + 0.1);
   }
   // The medallions: openwork, as both photographs show them against the wall behind: a gilt ring `w` by `h` with eight gilt spokes to a gilt boss, a
   // gilt rim round it, a stem down to the plinth and two scrolls springing from the plinth, `offset` either side, their feet on it.
   const medallion = (x: number, cy: number, w: number, h: number, rim: readonly [number, number], scroll: readonly [number, number, number]): void => {
-    for (const turn of [0, Math.PI]) kit.add(half, gilt, ringAt(x, cy, turn, w / HALF_OUT, h / HALF_OUT), 12);
+    for (const turn of [0, Math.PI]) kit.add(half, gilt, ringAt(x, cy, turn, w / HALF_OUT, h / HALF_OUT));
     const [a, b] = [w / (2 * HALF_OUT), h / (2 * HALF_OUT)];
     for (let k = 0; k < 8; k++) {
       const lean = (k * Math.PI) / 4;
-      kit.add(UNIT_BOX, gilt, slant(x, cy, 1 / Math.hypot(Math.sin(lean) / a, Math.cos(lean) / b), lean, 0.03, 0.03), 12);
+      kit.add(UNIT_BOX, gilt, slant(x, cy, 1 / Math.hypot(Math.sin(lean) / a, Math.cos(lean) / b), lean, 0.03, 0.03));
     }
-    kit.add(round, gilt, disc(x, cy, w * 0.28, 0.12), 12);
-    addBox(kit, gilt, x - 0.06, y(base), z0 - 0.05, x + 0.06, y(cy - h / 2), z0 + 0.05, 12);
-    for (const turn of [0, Math.PI]) kit.add(half, gilt, ringAt(x, cy, turn, rim[0], rim[1]), 12);
+    kit.add(round, gilt, disc(x, cy, w * 0.28, 0.12));
+    addBox(kit, gilt, x - 0.06, y(base), z0 - 0.05, x + 0.06, y(cy - h / 2), z0 + 0.05);
+    for (const turn of [0, Math.PI]) kit.add(half, gilt, ringAt(x, cy, turn, rim[0], rim[1]));
     const [offset, sw, sh] = scroll;
-    for (const sx of [-1, 1]) kit.add(half, gilt, ringAt(x + sx * offset, base, 0, sw, sh), 12);
+    for (const sx of [-1, 1]) kit.add(half, gilt, ringAt(x + sx * offset, base, 0, sw, sh));
   };
   // The middle group: the round medallion, a stem up to the crown, a dark urn with scrolled branches either side, a dark spire and the rayed cross.
   medallion(0, 12.15, 1.05, 1.05, [1.6, 1.6], [0.93, 0.9, 1.3]);
-  addBox(kit, gilt, -0.06, y(12.95), z0 - 0.05, 0.06, y(13.28), z0 + 0.05, 14);
-  kit.add(round, iron, placed(0, y(13.28), z0, 0, [1.0, 0.26, 0.36]), 14);
-  for (const at of [13.28, 13.5]) kit.add(round, gilt, placed(0, y(at), z0, 0, [1.04, 0.04, 0.4]), 14);
+  addBox(kit, gilt, -0.06, y(12.95), z0 - 0.05, 0.06, y(13.28), z0 + 0.05);
+  kit.add(round, iron, placed(0, y(13.28), z0, 0, [1.0, 0.26, 0.36]));
+  for (const at of [13.28, 13.5]) kit.add(round, gilt, placed(0, y(at), z0, 0, [1.04, 0.04, 0.4]));
   const crownTop = 13.54;
   const urnHeight = 0.59;
-  vase(0, crownTop, urnHeight, iron, 14);
-  for (const s of [-1, 1]) kit.add(half, gilt, ringAt(s * 0.32, crownTop + 0.3, s * (-Math.PI / 2), 0.6, 0.6), 14);
+  vase(0, crownTop, urnHeight, iron);
+  for (const s of [-1, 1]) kit.add(half, gilt, ringAt(s * 0.32, crownTop + 0.3, s * (-Math.PI / 2), 0.6, 0.6));
   const [mouth, spire, cross] = [crownTop + URN_MOUTH * urnHeight, 14.4, 15.18];
   for (const [b, t, w] of [
     [mouth, 14.22, 0.2],
     [14.22, spire, 0.08],
   ] as const) {
-    kit.add(round, iron, placed(0, y(b), z0, 0, [w, t - b, w]), 14);
+    kit.add(round, iron, placed(0, y(b), z0, 0, [w, t - b, w]));
   }
-  addBox(kit, gilt, -0.05, y(spire - 0.04), z0 - 0.05, 0.05, y(SCREEN_HEIGHT), z0 + 0.05, 14);
-  addBox(kit, gilt, -0.65, y(cross - 0.05), z0 - 0.05, 0.65, y(cross + 0.05), z0 + 0.05, 14);
-  kit.add(round, gilt, disc(0, cross, 0.26, 0.1), 14);
-  for (const lean of [1, 3, 5, 7]) kit.add(UNIT_BOX, gilt, slant(0, cross, 0.4, (lean * Math.PI) / 4), 14);
+  addBox(kit, gilt, -0.05, y(spire - 0.04), z0 - 0.05, 0.05, y(SCREEN_HEIGHT), z0 + 0.05);
+  addBox(kit, gilt, -0.65, y(cross - 0.05), z0 - 0.05, 0.65, y(cross + 0.05), z0 + 0.05);
+  kit.add(round, gilt, disc(0, cross, 0.26, 0.1));
+  for (const lean of [1, 3, 5, 7]) kit.add(UNIT_BOX, gilt, slant(0, cross, 0.4, (lean * Math.PI) / 4));
   // The side groups: an oval medallion; a stem up to a gilt bar joining the halves of a broken pediment, whose outer ends rest on C-scrolls rising from
   // the medallion's rim; and a sunburst of seven rays, the outer ones shorter, rising from the bar.
   for (const s of [-1, 1]) {
     const x = s * SIDE_X;
     medallion(x, 12.4, 0.75, 1.0, [0.95, 1.2], [0.63, 0.9, 1.1]);
-    addBox(kit, gilt, x - 0.04, y(12.95), z0 - 0.04, x + 0.04, y(13.6), z0 + 0.04, 13);
-    addBox(kit, gilt, x - 0.17, y(13.6), z0 - 0.05, x + 0.17, y(13.66), z0 + 0.05, 13);
+    addBox(kit, gilt, x - 0.04, y(12.95), z0 - 0.04, x + 0.04, y(13.6), z0 + 0.04);
+    addBox(kit, gilt, x - 0.17, y(13.6), z0 - 0.05, x + 0.17, y(13.66), z0 + 0.05);
     for (const side of [-1, 1]) {
-      kit.add(UNIT_BOX, iron, slant(x + side * 0.52, 13.33, 0.48, -side * 0.84, 0.1, 0.12), 13);
-      kit.add(half, gilt, ringAt(x + side * 0.5, 12.875, -side * (Math.PI / 2), 0.85, 0.5), 13);
+      kit.add(UNIT_BOX, iron, slant(x + side * 0.52, 13.33, 0.48, -side * 0.84, 0.1, 0.12));
+      kit.add(half, gilt, ringAt(x + side * 0.5, 12.875, -side * (Math.PI / 2), 0.85, 0.5));
     }
-    for (let k = -3; k <= 3; k++) kit.add(UNIT_BOX, gilt, slant(x, 13.63, 0.65 - 0.038 * Math.abs(k), (k * Math.PI) / 15, 0.03, 0.04), 13);
+    for (let k = -3; k <= 3; k++) kit.add(UNIT_BOX, gilt, slant(x, 13.63, 0.65 - 0.038 * Math.abs(k), (k * Math.PI) / 15, 0.03, 0.04));
   }
   // The finials and the end urns: a pedestal on a stem (on two legs at the ends), an iron urn and a gilt spray of three flowers.
   for (const f of FINIALS) {
@@ -292,15 +292,15 @@ function cresting(kit: Kit, foot: number): void {
     for (const s of [-1, 1]) {
       const x = s * f.x;
       const legs = f.legs === 2 ? [x - 0.3, x + 0.3] : [x];
-      for (const lx of legs) kit.add(bar, gilt, placed(lx, y(base), z0, 0, [0.07, p0 - base, 0.07]), 13);
-      addBox(kit, iron, x - f.width / 2, y(p0), z0 - 0.1, x + f.width / 2, y(p1), z0 + 0.1, 13);
-      vase(x, p1, f.urn, iron, 13);
+      for (const lx of legs) kit.add(bar, gilt, placed(lx, y(base), z0, 0, [0.07, p0 - base, 0.07]));
+      addBox(kit, iron, x - f.width / 2, y(p0), z0 - 0.1, x + f.width / 2, y(p1), z0 + 0.1);
+      vase(x, p1, f.urn, iron);
       const stem = f.top - rim;
       const from = p1 + URN_MOUTH * f.urn;
       for (const lean of [-0.45, 0, 0.45]) {
         const len = lean === 0 ? f.top - from - 0.05 : 0.8 * stem;
-        kit.add(UNIT_BOX, gilt, slant(x, from, len, lean, 0.025, 0.03), 13);
-        kit.add(round, gilt, disc(x + len * Math.sin(lean), from + len * Math.cos(lean), 0.11, 0.05), 13);
+        kit.add(UNIT_BOX, gilt, slant(x, from, len, lean, 0.025, 0.03));
+        kit.add(round, gilt, disc(x + len * Math.sin(lean), from + len * Math.cos(lean), 0.11, 0.05));
       }
     }
   }

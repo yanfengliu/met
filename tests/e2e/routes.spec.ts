@@ -203,8 +203,7 @@ test.describe('the walk through real input', () => {
     await noPointerLock(page);
     const f = await open(page, '');
     await throttle(page);
-    expect(f.doors.filter((d) => !d.built).map((d) => d.id), 'the finished building: doors not built').toEqual([]);
-    expect(f.doors.find((d) => d.id === MIDDLE_DOOR), 'the middle door at load').toMatchObject({ state: 'closed', angle: 0, built: true });
+    expect(f.doors.find((d) => d.id === MIDDLE_DOOR), 'the middle door at load').toMatchObject({ state: 'closed', angle: 0 });
     await page.keyboard.press('KeyF');
     const start = await walking(page);
     expect(await page.evaluate(() => window.__met?.walk.spawn), 'walk mode starts on the plaza').toBe('plaza');
@@ -265,7 +264,7 @@ test.describe('the walk through real input', () => {
     test.setTimeout(60_000 * throttleRate());
     const door = doorPlan(MIDDLE_DOOR);
     await openAt(page, 'middle-door-from-the-hall', [0, MAIN_FLOOR_Y, door.back - 2.6], [0, MAIN_FLOOR_Y + EYE, door.middle[1]]);
-    expect(await doorFacts(page, MIDDLE_DOOR), 'shut at load').toMatchObject({ state: 'closed', angle: 0, built: true });
+    expect(await doorFacts(page, MIDDLE_DOOR), 'shut at load').toMatchObject({ state: 'closed', angle: 0 });
     const samples: Sample[] = [];
     const from = await screenMark(page);
     const held = await into(page, ['KeyW'], PLUS_Z, door.back - BODY.radius - 0.1, samples, 15_000 * throttleRate());
@@ -290,7 +289,7 @@ test.describe('the walk through real input', () => {
     const into529 = outOf(door, 'back');
     const across: Facing = [-door.normal[1], door.normal[0]];
     await openAt(page, 'weston-door-from-the-court', [WESTON_APPROACH[0], MAIN_FLOOR_Y, WESTON_APPROACH[1]], [door.middle[0], MAIN_FLOOR_Y + EYE, door.middle[1]]);
-    expect(await doorFacts(page, 'weston'), 'Weston’s door at load').toMatchObject({ state: 'closed', angle: 0, locked: false, built: true });
+    expect(await doorFacts(page, 'weston'), 'Weston’s door at load').toMatchObject({ state: 'closed', angle: 0, locked: false });
     const samples: Sample[] = [];
     const from = await screenMark(page);
     const held = await into(page, ['KeyW'], into529, -(door.front + BODY.radius + 0.1), samples, 15_000 * throttleRate());

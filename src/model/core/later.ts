@@ -17,8 +17,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     year: '1939',
     title: 'Lay the Medieval Sculpture Hall floor',
     detail: "Otto R. Eggers's hall fills Vaux's central hall; first a floor of white marble and dark slate, laid from the centre.",
-    motion: { kind: 'drop', distance: 2 },
-    stagger: 'radial',
     build: hallFloor,
   },
   {
@@ -27,8 +25,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     year: '1939',
     title: 'Raise two rows of piers in six bays',
     detail: 'Fourteen compound piers, the end ones against the end walls; the shafts toward the nave rise on to carry the vault.',
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: hallPiers,
   },
   {
@@ -37,8 +33,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     year: '1939',
     title: 'Turn the pointed arcades to the aisles',
     detail: 'Pointed arches between the piers open the nave to its aisles, under the picture galleries of the second floor.',
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: hallArcades,
   },
   {
@@ -47,8 +41,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     year: '1939',
     title: 'Build the clerestory and the groin vault',
     detail: 'Nave walls with round-headed clerestory windows, a white groin vault on transverse ribs, plaster end walls with balconies; the hall opens in January 1939.',
-    motion: { kind: 'drop' },
-    stagger: 'z',
     build: hallClerestoryVault,
   },
   {
@@ -57,8 +49,6 @@ export const medievalHallSteps: readonly StepDef[] = [
     year: '1956',
     title: 'Install the Valladolid choir screen',
     detail: 'The 1763 wrought-iron screen from Valladolid Cathedral, 15.85 m high and 12.80 m wide, gilded and painted, across the nave between its middle piers.',
-    motion: { kind: 'drop', distance: 4 },
-    stagger: 'y',
     build: choirScreen,
   },
 ];
@@ -70,8 +60,6 @@ export const europeanPaintingsGlazing2023Steps: readonly StepDef[] = [
     year: '2023',
     title: 'Glaze the European Paintings skylights',
     detail: 'New laminated glass in every gallery skylight and laylight over the old core, about 30,000 sq ft, replaced from 2018 and finished in 2023.',
-    motion: { kind: 'slide', from: [0, 3, 0] },
-    stagger: 'z',
     build: (kit) => {
       for (const block of ['a', 'b', 'c'] as const) skylightAndLaylightGlass(kit, block);
     },

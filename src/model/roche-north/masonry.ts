@@ -1,6 +1,6 @@
 /**
- * Ashlar masonry for the Temple of Dendur and its gate: walls laid course by course from one shared chamfered block, so a whole temple is one instanced mesh
- * and a `stagger: 'y'` step lays it course by course. Corners bond: on alternate courses the long walls or the end walls run through the corner.
+ * Ashlar masonry for the Temple of Dendur and its gate: walls laid course by course from one shared chamfered block, so a whole temple is one instanced mesh.
+ * Corners bond: on alternate courses the long walls or the end walls run through the corner.
  * Units metres; a `Course` plan is in the monument's local frame (origin at its base centre, front +Z), placed by `frame`.
  */
 import { Matrix4, Quaternion, Vector3 } from 'three';

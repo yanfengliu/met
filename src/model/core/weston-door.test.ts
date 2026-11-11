@@ -1,5 +1,5 @@
 /**
- * Weston's 1888 door against the walker (docs/design/spec.md, Doors), headless, through the page's path on the real sequence at t = N: the whole
+ * Weston's 1888 door against the walker (docs/design/spec.md, Doors), headless, through the page's path on the real sequence: the whole
  * sequence's Timeline, the page's door layer over it (src/viewer/doors.ts) and the walk's world as walk mode builds it (src/walk/door-world.ts
  * `walkWorld`: the static world without the doors' leaves, and the leaves where the layer stands them), with the walk mode's own walker
  * (src/walk/walker.ts) stepped at 60 frames a second. From the Petrie Court on the door's axis the closed door, near the porch's front, stops the walker
@@ -56,11 +56,10 @@ let frontX: number;
 
 beforeAll(() => {
   timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'closed');
-  layer.sync(timeline.n, 0, true);
+  layer.sync(0, true);
   const bvhs = new GeometryBvhs();
-  world = walkWorld(timeline.steps, timeline.n, layer, bvhs);
+  world = walkWorld(timeline.steps, layer, bvhs);
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
   const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
   layer.registerWith(picker);
@@ -99,7 +98,7 @@ const at = (walker: Walker): string => `(${walker.feet.x.toFixed(3)}, ${walker.f
 
 describe("Weston's 1888 door, walked from the Petrie Court", () => {
   it('stops a walker at the closed leaves; opened as E opens it, it swings inward and the walker walks through into gallery 529 and back out', () => {
-    expect(layer.facts().find((d) => d.id === 'weston'), 'the door, built and closed').toEqual({ id: 'weston', state: 'closed', angle: 0, locked: false, built: true });
+    expect(layer.facts().find((d) => d.id === 'weston'), 'the door, closed').toEqual({ id: 'weston', state: 'closed', angle: 0, locked: false });
     const walker = new Walker(world, floorY);
     walker.place(COURT_X, MAIN_FLOOR_Y, WESTON_DOOR.z, NORTH);
     expect(walker.feet.y, `placed on the court's floor at ${at(walker)}`).toBeCloseTo(MAIN_FLOOR_Y, 3);
@@ -134,7 +133,7 @@ describe("Weston's 1888 door, walked from the Petrie Court", () => {
 
   it('stands its passage clear, open: from before the porch through the old front into gallery 529, nothing across it inside the open leaves', () => {
     if (layer.facts().find((d) => d.id === 'weston')?.state === 'closed') layer.use('weston', new Vector3(COURT_X, MAIN_FLOOR_Y + BODY.eye, WESTON_DOOR.z));
-    layer.sync(timeline.n, 0, true);
+    layer.sync(0, true);
     expect(angle(), 'standing open, a quarter turn inward').toBeCloseTo(90, 6);
     // From 0.1 m before the pedestals' front to 1.5 m past the old front's inner face; across the doorway to 1.4 m each side of its axis, where the
     // open leaves' inner faces stand about 1.47 m out; from 0.3 m over the floor, clear of the frame's sill, to 4.6 m, under its head (4.83 m).

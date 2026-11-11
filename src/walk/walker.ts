@@ -133,7 +133,7 @@ export class Walker {
     this.yaw = yaw;
     this.pitch = MathUtils.clamp(pitch, -MOTION.maxPitch, MOTION.maxPitch);
     this.rest(false);
-    // Nothing built under the place (t = 0, for one), or only below the workspace ground: that ground, at once rather than after a fall to it.
+    // Nothing under the place (a spawn over empty ground, for one), or only below the workspace ground: that ground, at once rather than after a fall to it.
     const found = this.world.groundBelow(x, y + 1, z, 1 + y - this.floorY, this.hit);
     this.feet.y = found ? Math.max(this.hit.y, this.floorY) : this.floorY;
     this.onGround = this.feet.y <= this.floorY || this.hit.normalY >= MIN_WALKABLE_NORMAL_Y;
@@ -144,7 +144,7 @@ export class Walker {
   }
 
   /**
-   * Checks the walker against a world just built (docs/design/spec.md, Walk mode: When the build moves). It stays where it is unless it is buried,
+   * Checks the walker against a world just built (docs/design/spec.md, Walk mode: Settling). It stays where it is unless it is buried,
    * the model over it with nothing but the workspace ground under it, or embedded, the line from just over its feet to its head inside a piece
    * numbered `from` or later (the pieces added since it was last checked), a sheet having no inside (src/model/lib/sheet.ts). Then it moves, at rest,
    * to the lowest walkable surface over its feet where its body stands clear (`clearAt`), and on onto the rims of a groove there (`ontoRims`). One

@@ -2,7 +2,7 @@
  * Skylights and laylights of the second-floor picture galleries (interior.md, "Second-floor European Paintings galleries"; exterior.md [R2]).
  * Each gallery has a ridge skylight on a curb over an opening in its roof and a flat laylight under the opening at ceiling height. Frames are
  * unit boxes stretched along each bar and glass is a unit quad or triangle stretched over each pane, so every skylight of any size shares the
- * same few geometries: one instanced mesh per material per step. Frames arrive with the roofs; the glass arrives in 2023 (skylights-2023).
+ * same few geometries: one instanced mesh per material per step. The frames are built with the roofs; the glass in 2023 (skylights-2023).
  */
 import { Matrix4, Vector3 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -71,17 +71,17 @@ function ridgeFrame(ridge: Ridge): { base: number; rise: number; ends: [Vector3,
 }
 
 /** The curbs round a gallery's opening (roof material) and the bars of its ridge skylights (dark metal). */
-export function skylightFrames(kit: Kit, gallery: Gallery, order: number): void {
+export function skylightFrames(kit: Kit, gallery: Gallery): void {
   const o = gallery.opening;
   if (o === null) return;
   const [x0, z0, x1, z1] = o;
   const t = CURB_WALL;
   const y0 = ROOF_Y;
   const y1 = ROOF_Y + SKYLIGHT_CURB;
-  addBox(kit, palette.roofLead, x0 - t, y0, z0 - t, x1 + t, y1, z0, order);
-  addBox(kit, palette.roofLead, x0 - t, y0, z1, x1 + t, y1, z1 + t, order);
-  addBox(kit, palette.roofLead, x0 - t, y0, z0, x0, y1, z1, order);
-  addBox(kit, palette.roofLead, x1, y0, z0, x1 + t, y1, z1, order);
+  addBox(kit, palette.roofLead, x0 - t, y0, z0 - t, x1 + t, y1, z0);
+  addBox(kit, palette.roofLead, x0 - t, y0, z1, x1 + t, y1, z1 + t);
+  addBox(kit, palette.roofLead, x0 - t, y0, z0, x0, y1, z1);
+  addBox(kit, palette.roofLead, x1, y0, z0, x1 + t, y1, z1);
   const metal = core.aluminium;
   for (const ridge of ridgesOver(o)) {
     const { ends, half, up } = ridgeFrame(ridge);
@@ -90,22 +90,22 @@ export function skylightFrames(kit: Kit, gallery: Gallery, order: number): void 
     const dir = b.clone().sub(a).normalize();
     const top0 = a.clone().add(up);
     const top1 = b.clone().add(up);
-    kit.add(UNIT_BOX, metal, barMatrix(top0, top1, BAR * 1.5, BAR_DEPTH, new Vector3(0, 1, 0)), order);
+    kit.add(UNIT_BOX, metal, barMatrix(top0, top1, BAR * 1.5, BAR_DEPTH, new Vector3(0, 1, 0)));
     for (const side of [-1, 1]) {
       const off = half.clone().multiplyScalar(side);
       const slopeNormal = off.clone().normalize().multiplyScalar(up.y).add(new Vector3(0, half.length(), 0)).normalize();
-      kit.add(UNIT_BOX, metal, barMatrix(a.clone().add(off), b.clone().add(off), BAR, BAR_DEPTH, slopeNormal), order);
+      kit.add(UNIT_BOX, metal, barMatrix(a.clone().add(off), b.clone().add(off), BAR, BAR_DEPTH, slopeNormal));
       const rafters = Math.max(1, Math.round(length / RAFTER_SPACING));
       for (let k = 0; k <= rafters; k++) {
         const p = a.clone().addScaledVector(dir, (length * k) / rafters);
-        kit.add(UNIT_BOX, metal, barMatrix(p.clone().add(off), p.clone().add(up), BAR, BAR_DEPTH, slopeNormal), order);
+        kit.add(UNIT_BOX, metal, barMatrix(p.clone().add(off), p.clone().add(up), BAR, BAR_DEPTH, slopeNormal));
       }
     }
   }
 }
 
 /** The glass of a gallery's ridge skylights: two slopes and two gable ends each. */
-export function skylightGlass(kit: Kit, gallery: Gallery, order: number): void {
+export function skylightGlass(kit: Kit, gallery: Gallery): void {
   const o = gallery.opening;
   if (o === null) return;
   for (const ridge of ridgesOver(o)) {
@@ -121,7 +121,7 @@ export function skylightGlass(kit: Kit, gallery: Gallery, order: number): void {
       const outward = off.clone().add(up);
       // paneMatrix's normal is v × u: keep `along` when along × u already points outward.
       const v = new Vector3().crossVectors(along, u).dot(outward) > 0 ? along.clone() : along.clone().negate();
-      kit.add(UNIT_PANE, glassBoth, paneMatrix(centre, u, v), order);
+      kit.add(UNIT_PANE, glassBoth, paneMatrix(centre, u, v));
     }
     for (const [end, sign] of [
       [a, -1],
@@ -135,13 +135,13 @@ export function skylightGlass(kit: Kit, gallery: Gallery, order: number): void {
       const z = new Vector3().crossVectors(basisX, basisY).normalize();
       const flip = z.dot(out) < 0 ? -1 : 1;
       const m = new Matrix4().makeBasis(basisX.multiplyScalar(flip), basisY, z.multiplyScalar(flip)).setPosition(end);
-      kit.add(UNIT_GABLE, glassBoth, m, order);
+      kit.add(UNIT_GABLE, glassBoth, m);
     }
   }
 }
 
 /** The laylight frame: a flat grid of bars under the opening, at the ceiling. */
-export function laylightFrame(kit: Kit, gallery: Gallery, order: number): void {
+export function laylightFrame(kit: Kit, gallery: Gallery): void {
   const o = gallery.opening;
   if (o === null) return;
   const [x0, z0, x1, z1] = o;
@@ -151,19 +151,19 @@ export function laylightFrame(kit: Kit, gallery: Gallery, order: number): void {
   const nz = Math.max(1, Math.round((z1 - z0) / LAYLIGHT_SPACING));
   for (let i = 0; i <= nx; i++) {
     const x = x0 + ((x1 - x0) * i) / nx;
-    addBox(kit, metal, x - BAR / 2, y, z0, x + BAR / 2, y + BAR_DEPTH, z1, order);
+    addBox(kit, metal, x - BAR / 2, y, z0, x + BAR / 2, y + BAR_DEPTH, z1);
   }
   for (let k = 0; k <= nz; k++) {
     const z = z0 + ((z1 - z0) * k) / nz;
-    addBox(kit, metal, x0, y, z - BAR / 2, x1, y + BAR_DEPTH, z + BAR / 2, order);
+    addBox(kit, metal, x0, y, z - BAR / 2, x1, y + BAR_DEPTH, z + BAR / 2);
   }
 }
 
 /** The laylight's glass: one pane at the ceiling facing down into the gallery. */
-export function laylightGlass(kit: Kit, gallery: Gallery, order: number): void {
+export function laylightGlass(kit: Kit, gallery: Gallery): void {
   const o = gallery.opening;
   if (o === null) return;
   const [x0, z0, x1, z1] = o;
   const centre = new Vector3((x0 + x1) / 2, GALLERY_CEILING_Y + BAR_DEPTH / 2, (z0 + z1) / 2);
-  kit.add(UNIT_PANE, glassBoth, paneMatrix(centre, new Vector3(x1 - x0, 0, 0), new Vector3(0, 0, -(z1 - z0))), order);
+  kit.add(UNIT_PANE, glassBoth, paneMatrix(centre, new Vector3(x1 - x0, 0, 0), new Vector3(0, 0, -(z1 - z0))));
 }

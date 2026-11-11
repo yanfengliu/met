@@ -63,8 +63,8 @@ const lazy = <T>(make: () => T): (() => T) => {
 
 /** Both side walls of one kind at |X| = x: front face on the stair, body outward; `south` defaults to the north wall's geometry. */
 function sides(kit: Kit, north: Parameters<Kit['add']>[0], x: number, y: number, order: number, south = north): void {
-  kit.add(north, hunt.stairStone, at(x, y, HALL_MID_Z, -Math.PI / 2), order);
-  kit.add(south, hunt.stairStone, at(-x, y, HALL_MID_Z, Math.PI / 2), order);
+  kit.add(north, hunt.stairStone, at(x, y, HALL_MID_Z, -Math.PI / 2));
+  kit.add(south, hunt.stairStone, at(-x, y, HALL_MID_Z, Math.PI / 2));
 }
 
 const lowerWall = lazy(() => wall({ width: HALL_LENGTH, height: PODIUM_Y - MAIN, thickness: WALL_T, rustication: { course: 0.55, joint: 0.06, depth: 0.04, stop: PODIUM_Y - MAIN - 1.2 } }));
@@ -90,19 +90,17 @@ export const stairSteps: readonly StepDef[] = [
     year: '1901',
     title: 'Build the Grand Staircase flights',
     detail: 'Two broad flights and a landing climb west from the Great Hall to the second floor between rusticated walls, over a solid stone fill.',
-    motion: { kind: 'rise' },
-    stagger: 'order',
     build(kit) {
       const w = 2 * STAIR_HALF;
       const lower = stairFlight({ width: w, steps: 27, riser: (STAIR_LANDING_Y - MAIN) / 27, tread: (STAIR_FOOT_Z - STAIR_MID_FRONT_Z) / 27, nosing: 0.02 });
-      kit.add(lower.steps, palette.limestone, at(0, MAIN, STAIR_FOOT_Z), 0);
-      kit.add(stairLanding({ width: w, depth: STAIR_MID_FRONT_Z - STAIR_MID_BACK_Z, thickness: STAIR_LANDING_Y - MAIN }), palette.limestone, at(0, STAIR_LANDING_Y, STAIR_MID_FRONT_Z), 1);
+      kit.add(lower.steps, palette.limestone, at(0, MAIN, STAIR_FOOT_Z));
+      kit.add(stairLanding({ width: w, depth: STAIR_MID_FRONT_Z - STAIR_MID_BACK_Z, thickness: STAIR_LANDING_Y - MAIN }), palette.limestone, at(0, STAIR_LANDING_Y, STAIR_MID_FRONT_Z));
       const upper = stairFlight({ width: w, steps: 19, riser: (SECOND - STAIR_LANDING_Y) / 19, tread: (STAIR_MID_BACK_Z - STAIR_TOP_Z) / 19, nosing: 0.02 });
-      box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, STAIR_TOP_Z], [STAIR_HALF, STAIR_LANDING_Y, STAIR_MID_BACK_Z], 2);
-      kit.add(upper.steps, palette.limestone, at(0, STAIR_LANDING_Y, STAIR_MID_BACK_Z), 2);
-      box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, CROSS_HALL_FRONT_Z], [STAIR_HALF, SECOND - SLAB, STAIR_TOP_Z], 3);
+      box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, STAIR_TOP_Z], [STAIR_HALF, STAIR_LANDING_Y, STAIR_MID_BACK_Z]);
+      kit.add(upper.steps, palette.limestone, at(0, STAIR_LANDING_Y, STAIR_MID_BACK_Z));
+      box(kit, hunt.stairStone, [-STAIR_HALF, MAIN, CROSS_HALL_FRONT_Z], [STAIR_HALF, SECOND - SLAB, STAIR_TOP_Z]);
       // The top landing runs on under the end wall's arch to the cross hall's floor (hunt-galleries), which starts behind that wall.
-      kit.add(stairLanding({ width: w, depth: STAIR_TOP_Z - CROSS_HALL_FRONT_Z + WALL_T, thickness: SLAB }), palette.limestone, at(0, SECOND, STAIR_TOP_Z), 3);
+      kit.add(stairLanding({ width: w, depth: STAIR_TOP_Z - CROSS_HALL_FRONT_Z + WALL_T, thickness: SLAB }), palette.limestone, at(0, SECOND, STAIR_TOP_Z));
       sides(kit, lowerWall(), STAIR_HALF, MAIN, 4);
     },
   },
@@ -112,8 +110,6 @@ export const stairSteps: readonly StepDef[] = [
     year: '1902',
     title: 'Raise the staircase colonnades and arcades',
     detail: 'At the second floor coupled fluted Corinthian columns rise on the walls of the stair, before an arcade of five arches each side that opens onto the galleries.',
-    motion: { kind: 'rise' },
-    stagger: '-z',
     build(kit) {
       const column = columnParts({ diameter: COLUMN_D, height: COLUMN_TOP_Y - PODIUM_Y, detail: 'low' });
       for (const s of [-1, 1]) {
@@ -135,8 +131,6 @@ export const stairSteps: readonly StepDef[] = [
     year: '1902',
     title: 'Vault the staircase and its top hall',
     detail: 'A full entablature with a deep modillioned cornice runs along both colonnades and a white barrel vault with transverse ribs closes the stair hall; an arched opening leads into the cross hall.',
-    motion: { kind: 'drop', distance: 5 },
-    stagger: 'order',
     build(kit) {
       const y = STAIR_VAULT_SPRING_Y;
       const face = COLUMN_X - 0.32;
@@ -150,25 +144,25 @@ export const stairSteps: readonly StepDef[] = [
       ];
       for (const path of [north, south]) {
         const run = entablature({ path, height: y - COLUMN_TOP_Y, modillions: true, dentils: true });
-        kit.add(run.moulding, palette.plaster, at(0, 0, 0), 0);
-        if (run.modillion !== undefined) for (const m of run.modillions) kit.add(run.modillion, palette.plaster, m, 0);
-        if (run.dentil !== undefined) for (const m of run.dentils) kit.add(run.dentil, palette.plaster, m, 0);
+        kit.add(run.moulding, palette.plaster, at(0, 0, 0));
+        if (run.modillion !== undefined) for (const m of run.modillions) kit.add(run.modillion, palette.plaster, m);
+        if (run.dentil !== undefined) for (const m of run.dentils) kit.add(run.dentil, palette.plaster, m);
       }
       sides(kit, upperWall(), ARCADE_X, COLUMN_TOP_Y, 1);
-      kit.add(barrelVault({ span: 2 * STAIR_HALF, length: HALL_LENGTH, thickness: 0.35 }), palette.plaster, at(0, y, HALL_MID_Z), 2);
+      kit.add(barrelVault({ span: 2 * STAIR_HALF, length: HALL_LENGTH, thickness: 0.35 }), palette.plaster, at(0, y, HALL_MID_Z));
       const rib = archivolt({ span: 2 * STAIR_HALF - 0.7, band: 0.35, projection: 0.4 });
-      for (const z of PIER_Z) kit.add(rib, palette.plaster, at(0, y, z - 0.2), 2);
+      for (const z of PIER_Z) kit.add(rib, palette.plaster, at(0, y, z - 0.2));
       // The top: the stair hall's end wall with its arched opening, and the cross hall's ceiling and back wall.
       const end = wall({ width: 2 * ARCADE_X + 2 * ARCADE_T, height: STAIR_WALL_TOP_Y - SECOND, thickness: WALL_T, openings: [{ shape: 'arch', x: 0, y: 0, width: 5.4, height: 6.6 }] });
-      kit.add(end, hunt.stairStone, at(0, SECOND, CROSS_HALL_FRONT_Z), 3);
+      kit.add(end, hunt.stairStone, at(0, SECOND, CROSS_HALL_FRONT_Z));
       const ceiling = SECOND + 6.6;
-      box(kit, palette.plaster, [-CROSS_HALL_HALF, ceiling, CROSS_HALL_BACK_Z], [CROSS_HALL_HALF, ceiling + 0.4, CROSS_HALL_FRONT_Z - WALL_T], 4);
+      box(kit, palette.plaster, [-CROSS_HALL_HALF, ceiling, CROSS_HALL_BACK_Z], [CROSS_HALL_HALF, ceiling + 0.4, CROSS_HALL_FRONT_Z - WALL_T]);
       // The back wall and its round-arched doorway on the axis into gallery 600, standing on the core's east wall (from BACK_Z to the hall's back face,
       // dims.ts), whose own granite lining of the same section carries the doorway on into the gallery (src/model/core/vaux-east.ts).
       const hw = GALLERY_600_DOOR_HALF_WIDTH;
       // Between the hall's side walls' inner faces, so no face of it lies with theirs on the core's (work unit 23, review 0, F2 and F3).
       const back = wall({ width: 2 * (GALLERY_OUTER_X - PARTITION_T / 2), height: ceiling + 0.4 - SECOND, thickness: CROSS_HALL_BACK_Z - BACK_Z, openings: [{ shape: 'arch', x: 0, y: 0, width: 2 * hw, height: GALLERY_600_DOOR_CROWN }] });
-      kit.add(back, hunt.stairStone, at(0, SECOND, CROSS_HALL_BACK_Z), 4);
+      kit.add(back, hunt.stairStone, at(0, SECOND, CROSS_HALL_BACK_Z));
     },
   },
 ];

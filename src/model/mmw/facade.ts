@@ -4,7 +4,6 @@
  * front's face line: the water table round the whole front, the links' main entablature and dentilled cornice, and the pavilions' architrave, frieze,
  * modillioned cornice and parapet coping ([E43], [E42]; dims.ts).
  * Two height tiers (dims.ts): the links' cornice stops against the end pavilion, whose cornice springs from its top and returns along the seam wall.
- * Build order: `order` is the bay's index along its front, so a step's pieces arrive along the facade.
  */
 import { BoxGeometry, Matrix4 } from 'three';
 import type { BufferGeometry } from 'three';
@@ -47,10 +46,10 @@ const BASE_REVEAL = 0.32;
 const TRIM_BOX: BufferGeometry = new BoxGeometry(1, 1, 1);
 
 /** A box of TRIM_BOX on a facade: `a0..a1` along the line, `y0..y1` up, `o0..o1` out from the face. */
-function addTrim(kit: Kit, line: FacadeLine, a0: number, a1: number, y0: number, y1: number, o0: number, o1: number, order: number): void {
+function addTrim(kit: Kit, line: FacadeLine, a0: number, a1: number, y0: number, y1: number, o0: number, o1: number): void {
   const [xa, za] = onLine(line, a0, o0);
   const [xb, zb] = onLine(line, a1, o1);
-  kit.add(TRIM_BOX, palette.limestoneDark, boxMatrix(Math.min(xa, xb), y0, Math.min(za, zb), Math.max(xa, xb), y1, Math.max(za, zb)), order);
+  kit.add(TRIM_BOX, palette.limestoneDark, boxMatrix(Math.min(xa, xb), y0, Math.min(za, zb), Math.max(xa, xb), y1, Math.max(za, zb)));
 }
 
 /**
@@ -59,23 +58,23 @@ function addTrim(kit: Kit, line: FacadeLine, a0: number, a1: number, y0: number,
  */
 export function buildFrontWalls(kit: Kit, front: Front): void {
   for (const placed of placedBays(front)) {
-    const { run: r, bay, start, centre, index } = placed;
+    const { run: r, bay, start, centre } = placed;
     if (bay.kind === 'pier') {
       const first = start === 0;
       const last = Math.abs(start + bay.width - r.line.length) < 1e-6;
       const a0 = first ? -r.extendStart : start;
       const a1 = last ? r.line.length + r.extendEnd : start + bay.width;
       if (a1 - a0 < 1e-6) continue;
-      kit.add(pier(r.tier), palette.limestone, onFacade(r.line, (a0 + a1) / 2, WALL_FOOT_Y, 0, a1 - a0, 1, 1), index);
+      kit.add(pier(r.tier), palette.limestone, onFacade(r.line, (a0 + a1) / 2, WALL_FOOT_Y, 0, a1 - a0, 1, 1));
       continue;
     }
     const geometry = bay.kind === 'arch' || bay.kind === 'giant' ? archBay(r.tier) : bay.kind === 'door' ? doorBay(r.tier) : endBay(bay.width, r.tier);
-    kit.add(geometry, palette.limestone, onFacade(r.line, centre, WALL_FOOT_Y), index);
+    kit.add(geometry, palette.limestone, onFacade(r.line, centre, WALL_FOOT_Y));
   }
   const { seam } = front;
   const [x0, z0] = onLine(seam.line, 0, -PARTY_WALL);
   const [x1, z1] = onLine(seam.line, seam.line.length, 0);
-  kit.add(UNIT_BOX, palette.limestone, boxMatrix(Math.min(x0, x1), seam.foot, Math.min(z0, z1), Math.max(x0, x1), END_TIER.wallTop, Math.max(z0, z1)), seam.where === 'before' ? 0 : placedBays(front).length);
+  kit.add(UNIT_BOX, palette.limestone, boxMatrix(Math.min(x0, x1), seam.foot, Math.min(z0, z1), Math.max(x0, x1), END_TIER.wallTop, Math.max(z0, z1)));
 }
 
 /** Windows and doors: the bronze arched windows, the grilled base windows and the links' doors; each window's metal is one merged geometry, and a door's leaves are its own piece. */
@@ -85,23 +84,23 @@ export function buildFrontWindows(kit: Kit, front: Front): void {
   const base = baseWindowUnit();
   const baseMetal = merged('front-base-window-metal', [[base.frame], [base.bars]]);
   const door = linkDoor();
-  for (const { run: r, bay, centre, index } of placedBays(front)) {
+  for (const { run: r, bay, centre } of placedBays(front)) {
     if (bay.kind === 'pier') continue;
     if (bay.kind !== 'end') {
       const m = onFacade(r.line, centre, ARCH_SILL_Y, -WINDOW_REVEAL);
-      kit.add(archMetal, palette.metalDark, m, index);
-      kit.add(arch.glass, palette.glassDark, m, index);
+      kit.add(archMetal, palette.metalDark, m);
+      kit.add(arch.glass, palette.glassDark, m);
     }
     if (bay.kind === 'door') {
       // The link's door is locked (src/model/doors.ts): its leaves stay shut over the drop behind them, and solid.
       const m = onFacade(r.line, centre, -0.4, -BASE_REVEAL);
-      kit.add(door.frame, palette.bronze, m, index);
-      kit.addTagged(door.leaf, palette.bronze, m, doorTag(`mmw-${front.name}-link`), index);
-      if (door.glass !== undefined) kit.add(door.glass, palette.glassDark, m, index);
+      kit.add(door.frame, palette.bronze, m);
+      kit.addTagged(door.leaf, palette.bronze, m, doorTag(`mmw-${front.name}-link`));
+      if (door.glass !== undefined) kit.add(door.glass, palette.glassDark, m);
     } else {
       const m = onFacade(r.line, centre, BASE_WINDOW_SILL_Y, -BASE_REVEAL);
-      kit.add(baseMetal, palette.metalDark, m, index);
-      kit.add(base.glass, palette.glassDark, m, index);
+      kit.add(baseMetal, palette.metalDark, m);
+      kit.add(base.glass, palette.glassDark, m);
     }
   }
 }
@@ -124,22 +123,20 @@ function pilasterOf(r: Run): { readonly width: number; readonly geometry: Buffer
 
 /** The orders: pilasters (with the Tuscan strips' attic piers), and each arch's archivolt and keystone (one geometry each). */
 export function buildFrontOrders(kit: Kit, front: Front): void {
-  let base = 0;
   for (const r of front.runs) {
     const p = pilasterOf(r);
     if (p !== null) {
-      for (const at of pilasterStations(r, p.width / 2)) kit.add(p.geometry, palette.limestone, onFacade(r.line, at, WATER_TABLE_Y), base + Math.round(at / 5.2));
+      for (const at of pilasterStations(r, p.width / 2)) kit.add(p.geometry, palette.limestone, onFacade(r.line, at, WATER_TABLE_Y));
     }
-    base += r.bays.length;
   }
   const key = crownKeystone();
   const lift = (y: number): Matrix4 => new Matrix4().makeTranslation(0, y, 0);
   const archTrim = merged('front-arch-trim', [[windowArchivolt()], [key, lift(ARCH_WIDTH / 2)]]);
   const nicheTrim = merged('front-niche-trim', [[nicheArchivolt()], [key, lift(NICHE_WIDTH / 2)]]);
-  for (const { run: r, bay, centre, index } of placedBays(front)) {
+  for (const { run: r, bay, centre } of placedBays(front)) {
     if (bay.kind === 'pier') continue;
-    if (bay.kind === 'end') kit.add(nicheTrim, palette.limestone, onFacade(r.line, centre, NICHE_CROWN_Y - NICHE_WIDTH / 2), index);
-    else kit.add(archTrim, palette.limestone, onFacade(r.line, centre, ARCH_CROWN_Y - ARCH_WIDTH / 2), index);
+    if (bay.kind === 'end') kit.add(nicheTrim, palette.limestone, onFacade(r.line, centre, NICHE_CROWN_Y - NICHE_WIDTH / 2));
+    else kit.add(archTrim, palette.limestone, onFacade(r.line, centre, ARCH_CROWN_Y - ARCH_WIDTH / 2));
   }
 }
 
@@ -177,25 +174,25 @@ export function buildFrontCornices(kit: Kit, front: Front): void {
       return [[frieze], [g.crown.moulding]];
     }),
   ]);
-  kit.add(lines, palette.limestone, new Matrix4(), 0);
-  groups.forEach(({ tier, lines: faces, crown }, gi) => {
+  kit.add(lines, palette.limestone, new Matrix4());
+  groups.forEach(({ tier, lines: faces, crown }) => {
     const modillion = crown.modillion;
-    if (modillion !== undefined) crown.modillions.forEach((m, i) => { kit.add(modillion, palette.limestone, m, 3 + gi + Math.floor(i / 8)); });
+    if (modillion !== undefined) crown.modillions.forEach((m) => { kit.add(modillion, palette.limestone, m); });
     const dentil = crown.dentil;
-    if (dentil !== undefined) crown.dentils.forEach((m, i) => { kit.add(dentil, palette.limestone, m, 3 + gi + Math.floor(i / 32)); });
-    faces.forEach((line, i) => {
+    if (dentil !== undefined) crown.dentils.forEach((m) => { kit.add(dentil, palette.limestone, m); });
+    faces.forEach((line) => {
       const r = front.runs.find((x) => x.line === line);
       const a0 = -(r?.extendStart ?? 0);
       const a1 = line.length + (r?.extendEnd ?? 0);
       // The links' coping stands back behind the cornice; the pavilions' caps the parapet and overhangs it a little.
-      if (tier.architraveY === null) addTrim(kit, line, a0, a1, tier.top, tier.top + 0.35, -0.95, -0.35, 2 + gi + i);
-      else addTrim(kit, line, a0, a1, tier.wallTop, tier.wallTop + PARAPET_COPING, -1.25, 0.12, 2 + gi + i);
+      if (tier.architraveY === null) addTrim(kit, line, a0, a1, tier.top, tier.top + 0.35, -0.95, -0.35);
+      else addTrim(kit, line, a0, a1, tier.wallTop, tier.wallTop + PARAPET_COPING, -1.25, 0.12);
     });
     // Pedestals on the parapet over the corner pilasters of a pavilion front ([E39]).
     for (const r of front.runs) {
       if (r.tier !== tier || !r.cornerPilasters) continue;
       const half = GIANT_PILASTER_WIDTH / 2 + 0.15;
-      for (const at of [GIANT_PILASTER_WIDTH / 2, r.line.length - GIANT_PILASTER_WIDTH / 2]) addTrim(kit, r.line, at - half, at + half, tier.top, tier.wallTop, -0.2, 0.25, 4 + gi);
+      for (const at of [GIANT_PILASTER_WIDTH / 2, r.line.length - GIANT_PILASTER_WIDTH / 2]) addTrim(kit, r.line, at - half, at + half, tier.top, tier.wallTop, -0.2, 0.25);
     }
   });
 }

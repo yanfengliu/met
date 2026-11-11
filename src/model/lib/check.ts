@@ -267,7 +267,7 @@ export interface Opening {
 
 /**
  * Whether lines parallel to `direction` (in the geometry's frame) cross the geometry an odd number of times anywhere: where they do, it has no inside by
- * the parity rule the walk's settle reads (docs/design/spec.md, Walk mode: When the build moves) and the section cut shows no cut face. Null when every
+ * the parity rule the walk's settle reads (docs/design/spec.md, Walk mode: Settling) and the section cut shows no cut face. Null when every
  * such line crosses it an even number of times, as a closed solid; a face along the lines (a wall's end, seen along vertical lines) changes nothing.
  * Method: the parity changes only across the projection of an edge that an odd number of triangles share (vertices joined by exact position), so it is
  * even everywhere exactly when those projected edges, each split at the others' ends on it, cover every stretch of the plane an even number of times.

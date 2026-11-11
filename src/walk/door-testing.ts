@@ -31,7 +31,7 @@ function block(kit: Kit, min: readonly number[], max: readonly number[], materia
   kit.add(cube, material, new Matrix4().compose(new Vector3((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), new Quaternion(), new Vector3(x1 - x0, y1 - y0, z1 - z0)));
 }
 
-const step = (id: string, build: (kit: Kit) => void): StepDef => ({ id, chapter: CHAPTERS[0].id, title: id, motion: { kind: 'rise' }, build });
+const step = (id: string, build: (kit: Kit) => void): StepDef => ({ id, chapter: CHAPTERS[0].id, title: id, build });
 
 /** A floor, a wall across Z with a doorway the door's width at its front face `z`, and the entrance's door in it: steps 0, 1 and 2, about (x, y, z). */
 export function doorway(x = 0, y = 0, z = 0): StepDef[] {

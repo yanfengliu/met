@@ -43,17 +43,17 @@ const SOUTH_PENTHOUSE: Rect = [-87.3, SOUTH_LINK.z0 + PARTY_WALL, -62.0, -41.0];
 
 const WELL_WALL = 0.4;
 
-function deck(kit: Kit, material: Material, rects: readonly Rect[], holes: readonly Rect[], top: number, order: number): void {
-  for (const rect of rects) for (const [x0, z0, x1, z1] of subtract(rect, holes)) addBox(kit, material, x0, top - SLAB, z0, x1, top, z1, order);
+function deck(kit: Kit, material: Material, rects: readonly Rect[], holes: readonly Rect[], top: number): void {
+  for (const rect of rects) for (const [x0, z0, x1, z1] of subtract(rect, holes)) addBox(kit, material, x0, top - SLAB, z0, x1, top, z1);
 }
 
 /** Walls round a light well or opening, from `y0` to `y1`, standing just inside its edges. */
-function lining(kit: Kit, [x0, z0, x1, z1]: Rect, y0: number, y1: number, order: number): void {
+function lining(kit: Kit, [x0, z0, x1, z1]: Rect, y0: number, y1: number): void {
   const t = WELL_WALL;
-  addBox(kit, palette.limestone, x0, y0, z0, x1, y1, z0 + t, order);
-  addBox(kit, palette.limestone, x0, y0, z1 - t, x1, y1, z1, order);
-  addBox(kit, palette.limestone, x0, y0, z0 + t, x0 + t, y1, z1 - t, order);
-  addBox(kit, palette.limestone, x1 - t, y0, z0 + t, x1, y1, z1 - t, order);
+  addBox(kit, palette.limestone, x0, y0, z0, x1, y1, z0 + t);
+  addBox(kit, palette.limestone, x0, y0, z1 - t, x1, y1, z1);
+  addBox(kit, palette.limestone, x0, y0, z0 + t, x0 + t, y1, z1 - t);
+  addBox(kit, palette.limestone, x1 - t, y0, z0 + t, x1, y1, z1 - t);
 }
 
 /** A glazed ridge over a rectangle, its ridge along X or Z, standing on the deck at `y`. */
@@ -65,7 +65,7 @@ interface Ridge {
 }
 
 /** A step's glazed ridges as one frame geometry and one glass geometry (one instanced mesh each), placed in world coordinates. */
-function ridges(kit: Kit, key: string, list: readonly Ridge[], order: number): void {
+function ridges(kit: Kit, key: string, list: readonly Ridge[]): void {
   const frames: [BufferGeometry, Matrix4][] = [];
   const panes: [BufferGeometry, Matrix4][] = [];
   for (const { rect: [x0, z0, x1, z1], y, alongX, pitch } of list) {
@@ -78,8 +78,8 @@ function ridges(kit: Kit, key: string, list: readonly Ridge[], order: number): v
     panes.push([g.glass, m]);
   }
   const identity = new Matrix4();
-  kit.add(merged(key + '-frames', frames), palette.metalDark, identity, order);
-  kit.add(merged(key + '-glass', panes), palette.glass, identity, order);
+  kit.add(merged(key + '-frames', frames), palette.metalDark, identity);
+  kit.add(merged(key + '-glass', panes), palette.glass, identity);
 }
 
 const wing = (block: string): (typeof WINGS)[number] => {
@@ -96,25 +96,25 @@ export function buildNorthRoofs(kit: Kit): void {
   const e = interior('north-e');
   const well3 = wing('north-e').lightWells[0]?.rect;
   const eHoles = [NORTH_SKYLIGHT_208, NORTH_FRONT_RANGE, ...(well3 === undefined ? [] : [well3])];
-  deck(kit, mmwMaterials.roofDeck, e, eHoles, LINK_ROOF_Y, 0);
-  deck(kit, palette.roofLead, [NORTH_FRONT_RANGE], [], LINK_ROOF_Y + 0.25, 1);
-  if (well3 !== undefined) lining(kit, well3, LEVEL_2_FRONT, LINK_ROOF_Y + 0.6, 3);
+  deck(kit, mmwMaterials.roofDeck, e, eHoles, LINK_ROOF_Y);
+  deck(kit, palette.roofLead, [NORTH_FRONT_RANGE], [], LINK_ROOF_Y + 0.25);
+  if (well3 !== undefined) lining(kit, well3, LEVEL_2_FRONT, LINK_ROOF_Y + 0.6);
 
   const h = interior('north-h');
-  deck(kit, mmwMaterials.roofDeck, h, [ASTOR_COURT, NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK, NORTH_PAVILION_84TH], END_ROOF_Y, 10);
-  deck(kit, mmwMaterials.roofDeck, [NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK, NORTH_PAVILION_84TH], [], END_ROOF_Y - 0.6, 11);
-  lining(kit, ASTOR_COURT, END_ROOF_Y - SLAB, END_ROOF_Y + 0.5, 14);
+  deck(kit, mmwMaterials.roofDeck, h, [ASTOR_COURT, NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK, NORTH_PAVILION_84TH], END_ROOF_Y);
+  deck(kit, mmwMaterials.roofDeck, [NORTH_PAVILION_RIDGE, NORTH_PAVILION_BACK, NORTH_PAVILION_84TH], [], END_ROOF_Y - 0.6);
+  lining(kit, ASTOR_COURT, END_ROOF_Y - SLAB, END_ROOF_Y + 0.5);
   northTile ??= hipRing(NORTH_PAVILION_TILE, NORTH_TILE_RIDGE, END_ROOF_Y, NORTH_TILE_RISE).build();
-  kit.add(northTile, mmwMaterials.roofTile, new Matrix4(), 12);
+  kit.add(northTile, mmwMaterials.roofTile, new Matrix4());
   const [rx0r, rz0r, rx1r, rz1r] = NORTH_TILE_RIDGE;
-  addBox(kit, mmwMaterials.roofTile, rx0r - 0.15, END_ROOF_Y + NORTH_TILE_RISE - 0.1, rz0r - 0.1, rx1r + 0.15, END_ROOF_Y + NORTH_TILE_RISE + 0.12, rz1r + 0.1, 12);
+  addBox(kit, mmwMaterials.roofTile, rx0r - 0.15, END_ROOF_Y + NORTH_TILE_RISE - 0.1, rz0r - 0.1, rx1r + 0.15, END_ROOF_Y + NORTH_TILE_RISE + 0.12, rz1r + 0.1);
   const [wx0, wz0, wx1, wz1] = NORTH_PAVILION_WHITE;
-  addBox(kit, palette.plaster, wx0, END_ROOF_Y, wz0, wx1, END_ROOF_Y + 1.2, wz1, 13);
+  addBox(kit, palette.plaster, wx0, END_ROOF_Y, wz0, wx1, END_ROOF_Y + 1.2, wz1);
 
   const f = interior('north-f');
   const well5 = wing('north-f').lightWells[0]?.rect;
-  deck(kit, mmwMaterials.roofDeck, f, [ARMOR_ROOF, MORGAN_RIDGES, ...(well5 === undefined ? [] : [well5])], MORGAN_ROOF_Y, 20);
-  deck(kit, mmwMaterials.roofDeck, [MORGAN_RIDGES], [], MORGAN_ROOF_Y - 0.4, 21);
+  deck(kit, mmwMaterials.roofDeck, f, [ARMOR_ROOF, MORGAN_RIDGES, ...(well5 === undefined ? [] : [well5])], MORGAN_ROOF_Y);
+  deck(kit, mmwMaterials.roofDeck, [MORGAN_RIDGES], [], MORGAN_ROOF_Y - 0.4);
   const count = 13;
   const [rx0, rz0, rx1, rz1] = MORGAN_RIDGES;
   const pitchWidth = (rz1 - rz0) / count;
@@ -128,15 +128,14 @@ export function buildNorthRoofs(kit: Kit): void {
       { rect: NORTH_PAVILION_84TH, y: END_ROOF_Y - 0.6, alongX: false, pitch: 26 },
       ...Array.from({ length: count }, (_, k): Ridge => ({ rect: [rx0, rz0 + k * pitchWidth, rx1, rz0 + (k + 1) * pitchWidth], y: MORGAN_ROOF_Y - 0.4, alongX: true, pitch: 32 })),
     ],
-    22,
   );
-  if (well5 !== undefined) lining(kit, well5, LEVEL_2_NORTH, MORGAN_ROOF_Y + 0.6, 40);
+  if (well5 !== undefined) lining(kit, well5, LEVEL_2_NORTH, MORGAN_ROOF_Y + 0.6);
   // Steps up from the Morgan wing's lower deck to the link's coping and the pavilion's parapet.
-  addBox(kit, palette.limestone, 49.4, MORGAN_ROOF_Y - SLAB, -38.5, 88.6, LINK_TIER.top + 0.35, -37.9, 41);
-  addBox(kit, palette.limestone, 88.6, MORGAN_ROOF_Y - SLAB, -41.3, 118.0, END_PARAPET_Y, -40.7, 41);
+  addBox(kit, palette.limestone, 49.4, MORGAN_ROOF_Y - SLAB, -38.5, 88.6, LINK_TIER.top + 0.35, -37.9);
+  addBox(kit, palette.limestone, 88.6, MORGAN_ROOF_Y - SLAB, -41.3, 118.0, END_PARAPET_Y, -40.7);
   // Rooftop plant over the auditorium and the court's north end (orthophoto).
-  for (let k = 0; k < 6; k += 1) addBox(kit, mmwMaterials.plant, 55.5 + k * 4.0, MORGAN_ROOF_Y, -49.0, 58.3 + k * 4.0, MORGAN_ROOF_Y + 2.2, -43.5, 42);
-  for (const [x, z] of [[88.5, -62.5], [93.5, -62.5], [88.5, -55.5], [93.5, -55.5]] as const) addBox(kit, mmwMaterials.plant, x - 2.2, MORGAN_ROOF_Y, z - 2.2, x + 2.2, MORGAN_ROOF_Y + 1.6, z + 2.2, 43);
+  for (let k = 0; k < 6; k += 1) addBox(kit, mmwMaterials.plant, 55.5 + k * 4.0, MORGAN_ROOF_Y, -49.0, 58.3 + k * 4.0, MORGAN_ROOF_Y + 2.2, -43.5);
+  for (const [x, z] of [[88.5, -62.5], [93.5, -62.5], [88.5, -55.5], [93.5, -55.5]] as const) addBox(kit, mmwMaterials.plant, x - 2.2, MORGAN_ROOF_Y, z - 2.2, x + 2.2, MORGAN_ROOF_Y + 1.6, z + 2.2);
 }
 
 /** The south end pavilion's hipped roof: four slopes from the eave rectangle at `y0` up to the opening's rectangle at `y0 + rise`, with undersides and edges. */
@@ -169,8 +168,8 @@ let southHip: ReturnType<MeshBuilder['build']> | null = null;
 export function buildSouthRoofs(kit: Kit): void {
   const j = interior('south-j');
   const well1 = wing('south-j').lightWells[0]?.rect;
-  deck(kit, mmwMaterials.roofDeck, j, [SOUTH_SKYLIGHT_153, SOUTH_FRONT_RANGE, ...(well1 === undefined ? [] : [well1])], LINK_ROOF_Y, 0);
-  deck(kit, mmwMaterials.roofDeck, [SOUTH_SKYLIGHT_153, SOUTH_FRONT_RANGE], [], LINK_ROOF_Y - 0.5, 1);
+  deck(kit, mmwMaterials.roofDeck, j, [SOUTH_SKYLIGHT_153, SOUTH_FRONT_RANGE, ...(well1 === undefined ? [] : [well1])], LINK_ROOF_Y);
+  deck(kit, mmwMaterials.roofDeck, [SOUTH_SKYLIGHT_153, SOUTH_FRONT_RANGE], [], LINK_ROOF_Y - 0.5);
   ridges(
     kit,
     'south-ridges',
@@ -178,22 +177,21 @@ export function buildSouthRoofs(kit: Kit): void {
       { rect: SOUTH_SKYLIGHT_153, y: LINK_ROOF_Y - 0.5, alongX: true, pitch: 28 },
       { rect: SOUTH_FRONT_RANGE, y: LINK_ROOF_Y - 0.5, alongX: true, pitch: 22 },
     ],
-    2,
   );
-  if (well1 !== undefined) lining(kit, well1, LEVEL_2_FRONT, LINK_ROOF_Y + 0.6, 4);
+  if (well1 !== undefined) lining(kit, well1, LEVEL_2_FRONT, LINK_ROOF_Y + 0.6);
   const [px0, pz0, px1, pz1] = SOUTH_PENTHOUSE;
-  addBox(kit, mmwMaterials.plant, px0, LINK_ROOF_Y, pz0, px1, LINK_ROOF_Y + 3.6, pz1, 5);
-  addBox(kit, palette.roofLead, px0 - 0.2, LINK_ROOF_Y + 3.6, pz0 - 0.2, px1 + 0.2, LINK_ROOF_Y + 3.9, pz1 + 0.2, 6);
+  addBox(kit, mmwMaterials.plant, px0, LINK_ROOF_Y, pz0, px1, LINK_ROOF_Y + 3.6, pz1);
+  addBox(kit, palette.roofLead, px0 - 0.2, LINK_ROOF_Y + 3.6, pz0 - 0.2, px1 + 0.2, LINK_ROOF_Y + 3.9, pz1 + 0.2);
 
   // The end pavilion: a flat strip on the link's side, then the hipped roof round the court's opening.
-  addBox(kit, mmwMaterials.roofDeck, -89.3, END_ROOF_Y - SLAB, -37.7, -88.1, END_ROOF_Y, -3.1, 10);
+  addBox(kit, mmwMaterials.roofDeck, -89.3, END_ROOF_Y - SLAB, -37.7, -88.1, END_ROOF_Y, -3.1);
   const outer: Rect = [-150.41, -37.7, -89.3, 8.65];
   southHip ??= hipRing(outer, ROMAN_WELL, END_ROOF_Y + 0.4, SOUTH_HIP_RISE).build();
-  kit.add(southHip, palette.roofLead, placed(0, 0, 0), 11);
+  kit.add(southHip, palette.roofLead, placed(0, 0, 0));
   // The second-floor galleries' ceiling under the hip, open over the court's light well.
-  deck(kit, mmwMaterials.roofDeck, [outer], [ROMAN_WELL], END_ROOF_Y, 10);
+  deck(kit, mmwMaterials.roofDeck, [outer], [ROMAN_WELL], END_ROOF_Y);
   // Lining the well up to the hip's opening, its inner faces flush with the second floor's well walls (0.225 m inside the line).
   const [wx0, wz0, wx1, wz1] = ROMAN_WELL;
   const grow = WELL_WALL - 0.225;
-  lining(kit, [wx0 - grow, wz0 - grow, wx1 + grow, wz1 + grow], END_ROOF_Y - SLAB, END_ROOF_Y + 0.4 + SOUTH_HIP_RISE, 12);
+  lining(kit, [wx0 - grow, wz0 - grow, wx1 + grow, wz1 + grow], END_ROOF_Y - SLAB, END_ROOF_Y + 0.4 + SOUTH_HIP_RISE);
 }

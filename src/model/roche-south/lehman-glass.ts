@@ -197,8 +197,8 @@ export function stripPieces(): Piece[] {
   return pieces;
 }
 
-function addPieces(kit: Kit, pieces: readonly Piece[], orderBase = 0): void {
-  for (const piece of pieces) kit.add(piece.glass ? UNIT_TRIANGLE : UNIT_BOX, piece.glass ? mat.glass : mat.steel, piece.matrix, orderBase + piece.order);
+function addPieces(kit: Kit, pieces: readonly Piece[]): void {
+  for (const piece of pieces) kit.add(piece.glass ? UNIT_TRIANGLE : UNIT_BOX, piece.glass ? mat.glass : mat.steel, piece.matrix);
 }
 
 export const lehmanGlassSteps: readonly StepDef[] = [
@@ -208,11 +208,9 @@ export const lehmanGlassSteps: readonly StepDef[] = [
     year: YEAR,
     title: 'Glass over the gallery ring',
     detail: 'A sloped glazed ceiling over the galleries round the court, and a skylight along the old brick front where the wing meets it.',
-    motion: { kind: 'drop' },
-    stagger: 'order',
     build: (kit) => {
       addPieces(kit, bandPieces());
-      addPieces(kit, stripPieces(), 10);
+      addPieces(kit, stripPieces());
     },
   },
   {
@@ -221,8 +219,6 @@ export const lehmanGlassSteps: readonly StepDef[] = [
     year: YEAR,
     title: 'The glass pyramid over the court',
     detail: 'Eight glazed faces on a light steel grid rise about 11 m from the court walls to one apex, some 27 m above Fifth Avenue grade.',
-    motion: { kind: 'drop' },
-    stagger: 'order',
     build: (kit) => {
       addPieces(kit, pyramidPieces());
     },

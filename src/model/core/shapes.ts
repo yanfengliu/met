@@ -73,8 +73,8 @@ export function boxMatrix(x0: number, y0: number, z0: number, x1: number, y1: nu
 }
 
 /** Adds a unit box filling a world box. */
-export function addBox(kit: Kit, material: Material, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, order?: number): void {
-  kit.add(UNIT_BOX, material, boxMatrix(x0, y0, z0, x1, y1, z1), order);
+export function addBox(kit: Kit, material: Material, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): void {
+  kit.add(UNIT_BOX, material, boxMatrix(x0, y0, z0, x1, y1, z1));
 }
 
 /** A matrix placing a part at (x, y, z) turned `yaw` radians about +Y (0 keeps its front toward +Z), optionally scaled. */

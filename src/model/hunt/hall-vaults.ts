@@ -44,23 +44,23 @@ function arches(kit: Kit): void {
   const y = HALL_ARCH_SPRING_Y;
   // The transverse arches' coffered soffits (P2), a ring of coffers just inside each opening, its axis across the arch, the shell's back hidden in the arch.
   const soffit = barrelVault({ span: NAVE - 0.2, length: PIER_W - 0.04, thickness: 0.16, coffers: { across: 15, along: 2, depth: 0.12, rib: 0.2 } });
-  PIER_X.forEach((x, i) => {
-    kit.add(transverse(), hunt.hallStone, at(x + PIER_W / 2, y, NAVE_MID_Z, Math.PI / 2), i);
-    kit.add(soffit, hunt.hallStone, at(x, y + 0.045, NAVE_MID_Z, Math.PI / 2), i);
+  PIER_X.forEach((x) => {
+    kit.add(transverse(), hunt.hallStone, at(x + PIER_W / 2, y, NAVE_MID_Z, Math.PI / 2));
+    kit.add(soffit, hunt.hallStone, at(x, y + 0.045, NAVE_MID_Z, Math.PI / 2));
     const band = archivolt({ span: NAVE, band: 0.85, projection: 0.12 });
-    kit.add(band, hunt.hallStone, at(x + PIER_W / 2, y + 0.045, NAVE_MID_Z, Math.PI / 2), i);
-    kit.add(band, hunt.hallStone, at(x - PIER_W / 2, y + 0.045, NAVE_MID_Z, -Math.PI / 2), i);
+    kit.add(band, hunt.hallStone, at(x + PIER_W / 2, y + 0.045, NAVE_MID_Z, Math.PI / 2));
+    kit.add(band, hunt.hallStone, at(x - PIER_W / 2, y + 0.045, NAVE_MID_Z, -Math.PI / 2));
   });
   const ring = archivolt({ span: BAY, band: 0.75, projection: 0.12 });
-  bayOpenings().forEach(([a, b], i) => {
+  bayOpenings().forEach(([a, b]) => {
     const cx = (a + b) / 2;
     // The long walls' arches face the nave; behind each, the balcony's coffered vault runs back to the outer wall.
-    kit.add(longitudinal(), hunt.hallStone, at(cx, y, NAVE_EAST_Z, Math.PI), 4 + i);
-    kit.add(ring, hunt.hallStone, at(cx, y + 0.045, NAVE_EAST_Z, Math.PI), 4 + i);
-    kit.add(balconyVault(), hunt.hallStone, at(cx, y, (NAVE_EAST_Z + WALL_BACK_Z) / 2), 4 + i);
-    kit.add(longitudinal(), hunt.hallStone, at(cx, y, NAVE_WEST_Z), 4 + i);
-    kit.add(ring, hunt.hallStone, at(cx, y + 0.045, NAVE_WEST_Z), 4 + i);
-    kit.add(balconyVault(), hunt.hallStone, at(cx, y, (NAVE_WEST_Z + HALL_WEST_Z) / 2), 4 + i);
+    kit.add(longitudinal(), hunt.hallStone, at(cx, y, NAVE_EAST_Z, Math.PI));
+    kit.add(ring, hunt.hallStone, at(cx, y + 0.045, NAVE_EAST_Z, Math.PI));
+    kit.add(balconyVault(), hunt.hallStone, at(cx, y, (NAVE_EAST_Z + WALL_BACK_Z) / 2));
+    kit.add(longitudinal(), hunt.hallStone, at(cx, y, NAVE_WEST_Z));
+    kit.add(ring, hunt.hallStone, at(cx, y + 0.045, NAVE_WEST_Z));
+    kit.add(balconyVault(), hunt.hallStone, at(cx, y, (NAVE_WEST_Z + HALL_WEST_Z) / 2));
   });
 }
 
@@ -72,13 +72,13 @@ function domes(kit: Kit): void {
   // Height of the shell's inner surface at the oculus edge, where the glazed light sits.
   const rho = ((NAVE / 2) ** 2 + DOME_RISE ** 2) / (2 * DOME_RISE);
   const edge = DOME_RISE - rho + Math.sqrt(rho * rho - OCULUS * OCULUS);
-  DOME_X.forEach((x, i) => {
-    kit.add(pend, hunt.domeStone, scaled(x, HALL_ARCH_SPRING_Y, NAVE_MID_Z, SX, 1, 1), i);
-    kit.add(base, hunt.domeStone, scaled(x, RING_Y, NAVE_MID_Z, SX, 1, 1), i);
-    kit.add(shell, hunt.domeStone, scaled(x, DOME_BASE_Y, NAVE_MID_Z, SX, 1, 1), i);
+  DOME_X.forEach((x) => {
+    kit.add(pend, hunt.domeStone, scaled(x, HALL_ARCH_SPRING_Y, NAVE_MID_Z, SX, 1, 1));
+    kit.add(base, hunt.domeStone, scaled(x, RING_Y, NAVE_MID_Z, SX, 1, 1));
+    kit.add(shell, hunt.domeStone, scaled(x, DOME_BASE_Y, NAVE_MID_Z, SX, 1, 1));
     const m = scaled(x, DOME_BASE_Y + edge, NAVE_MID_Z, SX, 1, 1);
-    kit.add(light.frame, palette.metalDark, m, i);
-    kit.add(light.glass, palette.glass, m, i);
+    kit.add(light.frame, palette.metalDark, m);
+    kit.add(light.glass, palette.glass, m);
   });
 }
 
@@ -88,14 +88,14 @@ function endVaults(kit: Kit): void {
   const shell = halfDome(END.span / 2, 0.3, 28);
   for (const s of [-1, 1]) {
     // The arch framing the half-dome, behind the transverse arch, facing the nave.
-    kit.add(endArch(), hunt.hallStone, at(s * face, HALL_ARCH_SPRING_Y, NAVE_MID_Z, s > 0 ? -Math.PI / 2 : Math.PI / 2), s > 0 ? 1 : 0);
+    kit.add(endArch(), hunt.hallStone, at(s * face, HALL_ARCH_SPRING_Y, NAVE_MID_Z, s > 0 ? -Math.PI / 2 : Math.PI / 2));
     // The half-dome: its flat face on the arch's back, the shell flattened into the bay's depth.
     const m = new THREE.Matrix4().makeTranslation(s * (face + 0.6), END.spring + 0.05, NAVE_MID_Z);
     if (s > 0) m.multiply(new THREE.Matrix4().makeRotationY(Math.PI));
     m.multiply(new THREE.Matrix4().makeScale(depth / (END.span / 2), 1, 1));
-    kit.add(shell, hunt.halfDome, m, s > 0 ? 1 : 0);
+    kit.add(shell, hunt.halfDome, m);
     // The end balcony's ceiling under the half-dome's springing (P1: a cornice over the balcony's cases), run on over the ends of both aisles.
-    box(kit, hunt.hallStone, [s > 0 ? face : -HALL_X, HALL_ARCH_SPRING_Y, HALL_WEST_Z], [s > 0 ? HALL_X : -face, END.spring, WALL_BACK_Z], s > 0 ? 1 : 0);
+    box(kit, hunt.hallStone, [s > 0 ? face : -HALL_X, HALL_ARCH_SPRING_Y, HALL_WEST_Z], [s > 0 ? HALL_X : -face, END.spring, WALL_BACK_Z]);
   }
 }
 
@@ -106,8 +106,6 @@ export const vaultSteps: readonly StepDef[] = [
     year: '1901',
     title: 'Turn the Great Hall arches and balcony vaults',
     detail: 'Round arches spring from the piers across the nave and along both long walls; behind the long-wall arches the balcony gets its coffered barrel vaults.',
-    motion: { kind: 'drop', distance: 6 },
-    stagger: 'order',
     build: arches,
   },
   {
@@ -116,8 +114,6 @@ export const vaultSteps: readonly StepDef[] = [
     year: '1901',
     title: 'Vault the three saucer domes',
     detail: "Guastavino's thin tile shells: panelled pendentives rise from the piers to a moulded ring in each bay, and a saucer dome closes over it round a glazed oculus.",
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build: domes,
   },
   {
@@ -126,8 +122,6 @@ export const vaultSteps: readonly StepDef[] = [
     year: '1902',
     title: 'Close the end bays with half-domes',
     detail: 'At each end of the hall a second arch stands behind the last transverse arch, and a painted half-dome closes the shallow end bay above the balcony.',
-    motion: { kind: 'drop', distance: 5 },
-    stagger: 'x',
     build: endVaults,
   },
 ];

@@ -142,7 +142,7 @@ export function tierGroups(front: Front): TierGroup[] {
   });
 }
 
-/** Each bay with its run, its start and centre along the run, and its index along the whole front (for build order). */
+/** Each bay with its run, its start and centre along the run, and its index along the whole front. */
 export interface PlacedBay {
   readonly run: Run;
   readonly bay: Bay;

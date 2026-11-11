@@ -129,9 +129,9 @@ function partsOf(b: EndBlock): [number, number][] {
 }
 
 /** A world box `out` from d0 to d1 off the front's face, y from y0 to y1, along the block from u0 to u1. */
-function boxOut(kit: Kit, b: EndBlock, material: Parameters<typeof addBox>[1], d0: number, d1: number, y0: number, y1: number, u0: number, u1: number, order: number): void {
+function boxOut(kit: Kit, b: EndBlock, material: Parameters<typeof addBox>[1], d0: number, d1: number, y0: number, y1: number, u0: number, u1: number): void {
   const [z0, z1] = span(b, u0, u1);
-  addBox(kit, material, out(d1), y0, z0, out(d0), y1, z1, order);
+  addBox(kit, material, out(d1), y0, z0, out(d0), y1, z1);
 }
 
 /**
@@ -150,13 +150,13 @@ export function westonEndWalls(kit: Kit): void {
   for (const b of END_BLOCKS) {
     const length = Math.abs(b.outer - b.inner);
     const parts = partsOf(b);
-    boxOut(kit, b, palette.brick, 0, PROJ, BASE.top, PODIUM.bottom, 0, length, 0);
-    boxOut(kit, b, palette.brick, 0, PROJ, HEAD, PARAPET_Y, 0, length, 2);
+    boxOut(kit, b, palette.brick, 0, PROJ, BASE.top, PODIUM.bottom, 0, length);
+    boxOut(kit, b, palette.brick, 0, PROJ, HEAD, PARAPET_Y, 0, length);
     parts.forEach(([u0, u1], i) => {
-      boxOut(kit, b, palette.brick, 0, i % 2 === 1 ? PROJ - RECESS : PROJ, PODIUM.top, HEAD, u0, u1, i % 2 === 1 ? 1 : 0);
+      boxOut(kit, b, palette.brick, 0, i % 2 === 1 ? PROJ - RECESS : PROJ, PODIUM.top, HEAD, u0, u1);
     });
     const { us, width } = pilasters(b);
-    for (const u of us) boxOut(kit, b, palette.brick, PROJ, PROJ + STANDS.pilaster, UPPER.base, UPPER.console, u - width / 2, u + width / 2, 7);
+    for (const u of us) boxOut(kit, b, palette.brick, PROJ, PROJ + STANDS.pilaster, UPPER.base, UPPER.console, u - width / 2, u + width / 2);
   }
 }
 
@@ -197,9 +197,9 @@ export function westonEndTrim(kit: Kit): void {
     const length = Math.abs(b.outer - b.inner);
     const parts = partsOf(b);
     // The base course round the ground storey, and the podium and its cap, returned to the front's face.
-    boxOut(kit, b, stone, 0, BASE.out, WALL_BASE_Y, BASE.top, -(BASE.out - PROJ), length, 0);
-    boxOut(kit, b, stone, 0, PODIUM.out, PODIUM.bottom, PODIUM.top - PODIUM.cap, 0, length, 1);
-    boxOut(kit, b, stone, 0, PODIUM.out + 0.06, PODIUM.top - PODIUM.cap, PODIUM.top, -0.06, length, 1);
+    boxOut(kit, b, stone, 0, BASE.out, WALL_BASE_Y, BASE.top, -(BASE.out - PROJ), length);
+    boxOut(kit, b, stone, 0, PODIUM.out, PODIUM.bottom, PODIUM.top - PODIUM.cap, 0, length);
+    boxOut(kit, b, stone, 0, PODIUM.out + 0.06, PODIUM.top - PODIUM.cap, PODIUM.top, -0.06, length);
     // A Tuscan column in each bay (#35 and #46): a plinth, a torus and a fillet, the plain shaft of dark granite, an astragal, an echinus and an abacus.
     const c = COLUMN;
     const shaft0 = PODIUM.top + c.plinth + c.torus + c.fillet;
@@ -208,45 +208,45 @@ export function westonEndTrim(kit: Kit): void {
       if (i % 2 === 0) return;
       const x = out(PROJ);
       const zz = zAt(b, (u0 + u1) / 2);
-      addBox(kit, stone, x - 0.45, PODIUM.top, zz - 0.45, x + 0.45, PODIUM.top + c.plinth, zz + 0.45, 3);
-      kit.add(disc, stone, drum(x, PODIUM.top + c.plinth, PODIUM.top + c.plinth + c.torus, zz, COLUMN_D + 0.2), 3);
-      kit.add(disc, stone, drum(x, PODIUM.top + c.plinth + c.torus, shaft0, zz, COLUMN_D + 0.08), 3);
-      kit.add(disc, core.westonGranite, drum(x, shaft0, shaft1, zz, COLUMN_D), 4);
-      kit.add(disc, stone, drum(x, shaft1, shaft1 + c.astragal, zz, COLUMN_D + 0.06), 5);
-      kit.add(disc, stone, drum(x, shaft1 + c.astragal, HEAD - c.abacus, zz, COLUMN_D + 0.14), 5);
-      addBox(kit, stone, x - 0.38, HEAD - c.abacus, zz - 0.38, x + 0.38, HEAD, zz + 0.38, 5);
+      addBox(kit, stone, x - 0.45, PODIUM.top, zz - 0.45, x + 0.45, PODIUM.top + c.plinth, zz + 0.45);
+      kit.add(disc, stone, drum(x, PODIUM.top + c.plinth, PODIUM.top + c.plinth + c.torus, zz, COLUMN_D + 0.2));
+      kit.add(disc, stone, drum(x, PODIUM.top + c.plinth + c.torus, shaft0, zz, COLUMN_D + 0.08));
+      kit.add(disc, core.westonGranite, drum(x, shaft0, shaft1, zz, COLUMN_D));
+      kit.add(disc, stone, drum(x, shaft1, shaft1 + c.astragal, zz, COLUMN_D + 0.06));
+      kit.add(disc, stone, drum(x, shaft1 + c.astragal, HEAD - c.abacus, zz, COLUMN_D + 0.14));
+      addBox(kit, stone, x - 0.38, HEAD - c.abacus, zz - 0.38, x + 0.38, HEAD, zz + 0.38);
     });
     // The entablature: its body before the piers and round the return to the front's face, under a crown that overhangs it on both.
     const { body, crown, crownFrom } = END_ENTABLATURE_RETURN;
-    boxOut(kit, b, stone, 0, PROJ, HEAD, crownFrom, -body, 0, 6);
-    boxOut(kit, b, stone, PROJ, ENTABLATURE.out, HEAD, crownFrom, -body, length, 6);
-    boxOut(kit, b, stone, 0, PROJ, crownFrom, ENTABLATURE.top, -crown, 0, 6);
-    boxOut(kit, b, stone, PROJ, ENTABLATURE.out + ENTABLATURE.overhang, crownFrom, ENTABLATURE.top, -crown, length, 6);
+    boxOut(kit, b, stone, 0, PROJ, HEAD, crownFrom, -body, 0);
+    boxOut(kit, b, stone, PROJ, ENTABLATURE.out, HEAD, crownFrom, -body, length);
+    boxOut(kit, b, stone, 0, PROJ, crownFrom, ENTABLATURE.top, -crown, 0);
+    boxOut(kit, b, stone, PROJ, ENTABLATURE.out + ENTABLATURE.overhang, crownFrom, ENTABLATURE.top, -crown, length);
     // The pilasters' bases and console capitals.
     const { us, width } = pilasters(b);
     for (const u of us) {
-      boxOut(kit, b, stone, PROJ, PROJ + STANDS.base, ENTABLATURE.top, UPPER.base, u - width / 2 - 0.06, u + width / 2 + 0.06, 7);
-      boxOut(kit, b, stone, PROJ, PROJ + STANDS.consoleLow, UPPER.console, UPPER.console + 0.4, u - width / 2, u + width / 2, 9);
-      boxOut(kit, b, stone, PROJ, PROJ + STANDS.consoleHigh, UPPER.console + 0.4, UPPER.frieze, u - width / 2 - 0.07, u + width / 2 + 0.07, 9);
+      boxOut(kit, b, stone, PROJ, PROJ + STANDS.base, ENTABLATURE.top, UPPER.base, u - width / 2 - 0.06, u + width / 2 + 0.06);
+      boxOut(kit, b, stone, PROJ, PROJ + STANDS.consoleLow, UPPER.console, UPPER.console + 0.4, u - width / 2, u + width / 2);
+      boxOut(kit, b, stone, PROJ, PROJ + STANDS.consoleHigh, UPPER.console + 0.4, UPPER.frieze, u - width / 2 - 0.07, u + width / 2 + 0.07);
     }
     // A panel on a moulded sill over each bay, between the pilasters.
     for (let j = 0; j + 1 < us.length; j++) {
       const a = (us[j] ?? 0) + width / 2 + 0.06;
       const e = (us[j + 1] ?? 0) - width / 2 - 0.06;
-      boxOut(kit, b, stone, PROJ, PROJ + STANDS.sill, UPPER.sill, UPPER.panel, a - 0.05, e + 0.05, 8);
-      boxOut(kit, b, stone, PROJ, PROJ + STANDS.panel, UPPER.panel, PANEL_TOP, a, e, 8);
+      boxOut(kit, b, stone, PROJ, PROJ + STANDS.sill, UPPER.sill, UPPER.panel, a - 0.05, e + 0.05);
+      boxOut(kit, b, stone, PROJ, PROJ + STANDS.panel, UPPER.panel, PANEL_TOP, a, e);
     }
     // The frieze under the cornice, round the return, with its two roundels on the return (#33).
-    boxOut(kit, b, stone, PROJ, PROJ + STANDS.frieze, UPPER.frieze, CORNICE_Y, -STANDS.frieze, length, 10);
-    boxOut(kit, b, stone, 0, PROJ, UPPER.frieze, CORNICE_Y, -STANDS.frieze, 0, 10);
+    boxOut(kit, b, stone, PROJ, PROJ + STANDS.frieze, UPPER.frieze, CORNICE_Y, -STANDS.frieze, length);
+    boxOut(kit, b, stone, 0, PROJ, UPPER.frieze, CORNICE_Y, -STANDS.frieze, 0);
     for (const f of [0.3, 0.7]) {
       const at = new Matrix4().makeTranslation(out(PROJ * f), (UPPER.frieze + CORNICE_Y) / 2, zAt(b, -STANDS.frieze));
-      kit.add(disc, stone, at.multiply(new Matrix4().makeRotationX((-b.side * Math.PI) / 2)).multiply(new Matrix4().makeScale(0.38, 0.06, 0.38)), 10);
+      kit.add(disc, stone, at.multiply(new Matrix4().makeRotationX((-b.side * Math.PI) / 2)).multiply(new Matrix4().makeScale(0.38, 0.06, 0.38)));
     }
-    kit.add(cornice(b), stone, placed(B_SOUTH_X, CORNICE_Y, b.inner, FACING.south), 10);
+    kit.add(cornice(b), stone, placed(B_SOUTH_X, CORNICE_Y, b.inner, FACING.south));
     // The coping over the block and the wall behind it, overhanging the block's front and its return; beyond the core's east face, before Hunt's wall, over the block alone.
     const back = backed(b);
-    boxOut(kit, b, stone, -OUTER_WALL, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, -STANDS.coping, back, 11);
-    if (back < length) boxOut(kit, b, stone, 0, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, back, length, 11);
+    boxOut(kit, b, stone, -OUTER_WALL, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, -STANDS.coping, back);
+    if (back < length) boxOut(kit, b, stone, 0, PROJ + STANDS.coping, PARAPET_Y, COPING_TOP_Y, back, length);
   }
 }

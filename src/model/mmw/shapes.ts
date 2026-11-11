@@ -56,9 +56,9 @@ export function inwardLoop([x0, z0, x1, z1]: readonly [number, number, number, n
 }
 
 /** Adds UNIT_BOX spanning the world corners; zero-size boxes are skipped. */
-export function addBox(kit: Kit, material: Material, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, order?: number): void {
+export function addBox(kit: Kit, material: Material, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): void {
   if (Math.abs(x1 - x0) < 1e-6 || Math.abs(y1 - y0) < 1e-6 || Math.abs(z1 - z0) < 1e-6) return;
-  kit.add(UNIT_BOX, material, boxMatrix(x0, y0, z0, x1, y1, z1), order);
+  kit.add(UNIT_BOX, material, boxMatrix(x0, y0, z0, x1, y1, z1));
 }
 
 /**
@@ -110,13 +110,13 @@ export function onFacade(line: FacadeLine, along: number, y: number, out = 0, sx
 }
 
 /** Adds a geometry modelled facing +Z at a facade position. */
-export function addOnFacade(kit: Kit, geometry: BufferGeometry, material: Material, line: FacadeLine, along: number, y: number, out = 0, order?: number): void {
-  kit.add(geometry, material, onFacade(line, along, y, out), order);
+export function addOnFacade(kit: Kit, geometry: BufferGeometry, material: Material, line: FacadeLine, along: number, y: number, out = 0): void {
+  kit.add(geometry, material, onFacade(line, along, y, out));
 }
 
 /** A box on a facade: `a0..a1` along the line, `y0..y1` up, `o0..o1` out from the face (negative is into the wall). */
-export function addFacadeBox(kit: Kit, material: Material, line: FacadeLine, a0: number, a1: number, y0: number, y1: number, o0: number, o1: number, order?: number): void {
+export function addFacadeBox(kit: Kit, material: Material, line: FacadeLine, a0: number, a1: number, y0: number, y1: number, o0: number, o1: number): void {
   const [xa, za] = onLine(line, a0, o0);
   const [xb, zb] = onLine(line, a1, o1);
-  addBox(kit, material, Math.min(xa, xb), y0, Math.min(za, zb), Math.max(xa, xb), y1, Math.max(za, zb), order);
+  addBox(kit, material, Math.min(xa, xb), y0, Math.min(za, zb), Math.max(xa, xb), y1, Math.max(za, zb));
 }

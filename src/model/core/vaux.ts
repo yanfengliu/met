@@ -17,8 +17,6 @@ export const vauxSteps: readonly StepDef[] = [
     year: '1874–1877',
     title: 'Dig the foundations and basement',
     detail: 'Strip footings under every wall of the first building, pads for the iron columns and the basement floor, laid from the park side east.',
-    motion: { kind: 'rise' },
-    stagger: 'z',
     build: vauxFoundations,
   },
   {
@@ -26,8 +24,6 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Raise the red-brick walls',
     detail: 'The long side walls rise bay by bay on the rhythm of the central hall, with their pointed arches, and the east wall closes the block.',
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: vauxWalls,
   },
   {
@@ -35,8 +31,6 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Build the west front and its entrance',
     detail: 'The park front: five tall arched openings over a rusticated ground storey, the entrance on the axis, with granite bands and a cornice. It survives inside the Lehman Wing.',
-    motion: { kind: 'grow' },
-    stagger: 'order',
     build(kit) {
       westFrontWall(kit);
       westFrontTrim(kit);
@@ -47,8 +41,6 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: "Set Radford's iron frame and the floors",
     detail: 'Cast-iron columns carry the main and second floors; the iron staircases at the west end climb to the upper galleries.',
-    motion: { kind: 'drop' },
-    stagger: 'y',
     build: vauxIronFrame,
   },
   {
@@ -56,12 +48,6 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Glaze the windows and set the granite trim',
     detail: 'Windows fill the west front’s outer arches and the ground storey; granite heads and bands finish the fronts and side walls; brick fills the east arches round their corridors.',
-    // A fixed drop by order: the side walls' bands in rising courses (1 to 4), then the heads (5), the west windows by their distance off the axis,
-    // the east front's trim with the brick round its corridors (12) and the oculus glass (20). Each head's light and dark pieces share an order and the
-    // distance, so they move as one, as the east brick does with the band and apron in front of it; 1.9 m keeps each ground window, starting over its
-    // place, under the main floor (4.11 m), where the doorways over it begin (core/vaux-fronts.test.ts).
-    motion: { kind: 'drop', distance: 1.9 },
-    stagger: 'order',
     build(kit) {
       westFrontWindows(kit);
       westFrontHeads(kit);
@@ -73,8 +59,6 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Frame the central hall',
     detail: 'The hall between the two pavilions gets its end walls with arches and round windows, and an iron frame of posts and trusses for its raised roof.',
-    motion: { kind: 'grow' },
-    stagger: 'y',
     build: vauxHall,
   },
   {
@@ -82,8 +66,6 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Partition the skylit upper galleries',
     detail: 'Picture galleries on the second floor, today European Paintings, each under a laylight frame.',
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: vauxGalleries,
   },
   {
@@ -91,8 +73,6 @@ export const vauxSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Close the roofs round the gallery skylights',
     detail: 'Flat roofs with a ridge skylight over each gallery, and the raised lead roof over the central hall. The building opens on 30 March 1880.',
-    motion: { kind: 'drop' },
-    stagger: 'z',
     build: vauxRoof,
   },
 ];
