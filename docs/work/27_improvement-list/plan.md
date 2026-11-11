@@ -52,7 +52,9 @@ What follows for this plan:
 - A landed on 2026-11-11 at `eacc0fb`. B is on hold since then: it rewrites `src/build/`, which the owner's permission settings block for that session, and that session has asked the owner whether to go on or stop at A. It asked that this plan's page and model work not be held for B meanwhile; it will say which way B goes. Until it does, nothing here starts in `src/build`, `src/walk/walk-mode.ts` or the steps' `kit.add` lines.
 - Later on 2026-11-11 the owner said yes and B started, from origin's main at `0f79be9`, unit 29's landing A included. Until B lands this plan's work keeps out of `src/build/**`, `src/walk/walk-mode.ts`, `collision.ts`, `door-world.ts`, `src/viewer/doors.ts`, `art-label.ts` (unit 29's two comment lines excepted), `floor-view.ts`, `src/main.ts`, and every step's `motion:` and `stagger:` lines and the `order` argument of `kit.add` and `kit.addTagged` under `src/model`. The two workers running then (unit 28, and unit 29's landing A2) were told, and that session was told what each of them touches near its list: A2's tests that call the walk world and `evaluate`, and unit 28's repairs in `src/model/hunt/roof.ts` and `walls.ts`. What lands before B is carried by B's codemods; what lands after merges B and re-runs them from `tmp/wu26-codemods/` in that session's worktree.
 
-Shared: `tmp/gate.sh` for verify, e2e, shots and sweeps; `tmp/land.sh` for the landing slot; one `MET_PORT` per worktree (5340 the coordinator, 5341 lighting, 5342 artworks).
+Shared: `tmp/gate.sh` for verify, e2e, shots and sweeps; `tmp/land.sh` for the landing slot; one `MET_PORT` per worktree (5340 the coordinator, 5341 lighting, 5342 artworks, 5343 the timing gate).
+
+The gate itself, work unit 30 (`docs/work/30_timing-gate/plan.md`): on 2026-11-11 the owner chose to split the timing budgets out of `npm run verify` ("Split them"), after runs on trees that changed nothing a frame runs failed on timing checks alone while several sessions loaded the machine. A worker ("timing-gate", branch `worktree-agent-a6ce13e3955fa859e`) builds it; every landing of this plan after it runs `npm run budgets` as that unit's rule says.
 
 ### Limits the sweep found that bear on the items
 
@@ -108,11 +110,11 @@ To go on, a worker is started again on each branch, by resuming the same agent o
 
 ## Implementation steps
 
-- [ ] 1. Interior lighting: unit 28, worker "lighting" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5341. The worker is stopped with its work kept at the snapshot `463fb0e` (Blocked, above): built, by its last words type-checked and linted, not gated, not handed back.
+- [ ] 1. Interior lighting: unit 28, worker "lighting" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5341. Stopped at the snapshot `463fb0e` by the usage limit (Blocked, above) and resumed the same day; at `768528b` on its branch it is moving the occlusion prepass onto the model's batches. Not handed back.
 - [ ] 2. First impression: after unit 26's milestone B.
 - [ ] 3. Wayfinding: after unit 26's milestone B.
 - [ ] 4. Surface detail: after item 1.
-- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing A, the four landmarks' cards, is on origin's main (2026-11-11) after two review rounds and the coordinator's own gate run at `d9323d8`. Landing A2 is open: review 1's findings F10 to F15 and the temple's date to 10 BCE (unit 29's plan). Landing B (more forms) and landing C (paintings at 16×16) follow. The worker is stopped (Blocked, above).
+- [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing A, the four landmarks' cards, is on origin's main (2026-11-11) after two review rounds and the coordinator's own gate run at `d9323d8`. Landing A2 (review 1's findings F10 to F15 and the temple's date to 10 BCE) was handed back at `b88746c` and is merged on the coordinator's branch, not landed: four gate runs failed on one timing check each, every functional check passing, and it lands on the first green run after work unit 30 (unit 29's plan). Landing B (more forms) was dispatched on 2026-11-11 on top of A2, to the same worker; landing C (paintings at 16×16) follows it.
 - [ ] 6. Touch and weaker devices: after unit 26's milestone B. A run on a phone or a weaker GPU cannot be made from this machine.
 - [x] 7. The build replay as a story: dropped, see Scope.
 - [ ] 8. Surroundings and sky: after item 1, as environment.
