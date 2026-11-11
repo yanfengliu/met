@@ -2,10 +2,11 @@
  * Shared helpers for the control tests. Tests drive the page only through real input (clicks, drags, keys); they read state from the read-only
  * `window.__met` and the canvas pixels, and never write either. Nothing here names a step or chapter: facts come from `window.__met`.
  */
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { PerspectiveCamera, Vector3 } from 'three';
 
+import { budgetsAsserted } from '../../scripts/budgets.js';
 import type { MetFacts } from '../../src/viewer/facts.js';
 
 export type Facts = Omit<MetFacts, 'benchmark'>;
@@ -234,13 +235,36 @@ export async function walkingBudget(page: Page, run = false): Promise<WalkingBud
   return { interval: sorted[Math.floor(sorted.length / 2)] ?? Number.NaN, work, gpu };
 }
 
+/**
+ * Holds a timing budget (docs/design/spec.md, Budgets; work unit 30): `check` is the budget's assertion, and nothing else. With MET_BUDGETS=1, as
+ * `npm run budgets` sets it (scripts/budgets.ts), it asserts as any check does; unset, as in `npm run verify`, a budget it finds broken is printed, named,
+ * and the test goes on, since how long a frame or a build takes depends on what else the machine is doing. Only an assertion's failure is caught there:
+ * anything else `check` throws fails the test. Either way the test must carry the tag `@budget`, which `npm run budgets` runs (`--grep @budget`), so
+ * that no budget is held where it would never be asserted.
+ */
+export function budgetCheck(name: string, check: () => void): void {
+  const info = test.info();
+  if (!info.tags.includes('@budget')) throw new Error(`The budget "${name}" is held in "${info.title}", which is not tagged @budget, so npm run budgets would never assert it: give the test { tag: '@budget' }.`);
+  if (budgetsAsserted()) {
+    check();
+    return;
+  }
+  try {
+    check();
+  } catch (error) {
+    // Playwright's assertion errors carry their matcher's result; any other error is the test's own.
+    if (!(error instanceof Error) || !('matcherResult' in error)) throw error;
+    console.log(`${name}: over its budget, not asserted, since MET_BUDGETS is not 1 (npm run budgets asserts it): ${error.message.replace(/\s*\n\s*/g, ' ')}`);
+  }
+}
+
 /** The 60-frames-a-second budget a walking frame keeps on this machine: work and a GPU-synced render under 16.7 ms, the interval within 10% of it. */
 export function expectWalkingBudget(budget: WalkingBudget, where: string): void {
   const report = `walking ${where}: frame interval median ${budget.interval.toFixed(2)} ms, work median ${budget.work.toFixed(2)} ms, render with GPU sync ${budget.gpu.toFixed(2)} ms`;
   console.log(report);
-  expect(budget.work, report).toBeLessThan(16.7);
-  expect(budget.gpu, report).toBeLessThan(16.7);
-  expect(budget.interval, report).toBeLessThan(16.7 * 1.1);
+  budgetCheck('a walking frame’s median work', () => { expect(budget.work, report).toBeLessThan(16.7); });
+  budgetCheck('a walking frame’s GPU-synced render', () => { expect(budget.gpu, report).toBeLessThan(16.7); });
+  budgetCheck('a walking frame’s median interval', () => { expect(budget.interval, report).toBeLessThan(16.7 * 1.1); });
 }
 
 /** Drags across the canvas with the primary button from its centre, `steps` moves of (dx, dy) pixels each, as a quick flick. */

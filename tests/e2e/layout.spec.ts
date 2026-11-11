@@ -15,11 +15,13 @@
  * headless Chrome on this machine, so it covers loading the modules (with every geometry they build on import), the model's build, starting the
  * renderer and the first five frames. That makes it an upper bound on geometry build time, not a measure of it; perf.buildMs, the model's build
  * alone, is reported beside it and misses geometry built at import.
+ * The 4 s is a timing budget, asserted only under `npm run budgets`, which runs its test, tagged `@budget`, with MET_BUDGETS=1; `npm run verify` measures
+ * and prints it (./helpers.ts `budgetCheck`, work unit 30). The triangles and meshes, which no clock changes, are asserted in both.
  */
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { cameraGap, changedCells, lumaGrid, open, openMenu, settle, settledCamera, watchErrors } from './helpers.js';
+import { budgetCheck, cameraGap, changedCells, lumaGrid, open, openMenu, settle, settledCamera, watchErrors } from './helpers.js';
 import type { Facts } from './helpers.js';
 
 const VIEWPORTS = [
@@ -206,15 +208,16 @@ test('the build replay is gone for good: the default page and its old links show
   errors.expectClean();
 });
 
-test('the whole sequence builds within the 4 s budget, from navigation to ready', async ({ page }) => {
+test('the whole sequence builds within the 4 s budget, from navigation to ready', { tag: '@budget' }, async ({ page }) => {
   const errors = watchErrors(page);
   const f = await open(page);
   const ready = f.perf.readyMs;
   if (ready === null) throw new Error('perf.readyMs is null after __shotReady: the page never marked met:ready, so the budget was not measured.');
   const build = f.perf.buildMs;
+  console.log(`the whole sequence: ready ${ready.toFixed(0)} ms after navigation, the model's build ${build.toFixed(0)} ms of it`);
   // The ready interval contains the model's build, so it cannot be shorter; if it were, the two clocks would not be the ones this test means.
   expect(ready, `ready ${ready.toFixed(0)} ms after navigation, the model's build ${build.toFixed(0)} ms`).toBeGreaterThan(build);
-  expect(ready, `ready ${ready.toFixed(0)} ms after navigation (the model's build ${build.toFixed(0)} ms of it)`).toBeLessThan(4000);
+  budgetCheck('the build, from navigation to ready', () => { expect(ready, `ready ${ready.toFixed(0)} ms after navigation (the model's build ${build.toFixed(0)} ms of it)`).toBeLessThan(4000); });
   expect(f.stats.triangles).toBeLessThanOrEqual(3_000_000);
   expect(f.stats.meshes).toBeLessThanOrEqual(900);
   errors.expectClean();

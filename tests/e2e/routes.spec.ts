@@ -22,7 +22,8 @@
  *   into to rest on its floor and out of again; and the Sphinx of Hatshepsut and Ruth Gleaning, each approached at a walk until its card shows within
  *   6 m and turned away. At each the card and the prompt follow the one look target, and the walker never leaves the ground (F55).
  * - Unthrottled, the walking frame budget at R3's end in the Temple of Dendur hall and at R4's in the Leon Levy and Shelby White Court, walking on and
- *   running back.
+ *   running back: a timing budget, asserted only under `npm run budgets`, which runs these two tests, tagged `@budget`, with MET_BUDGETS=1; `npm run
+ *   verify` measures and prints it (./helpers.ts `budgetCheck`, work unit 30).
  * Red proofs: docs/learning/gate-proofs.md, "The walk through real input".
  * Bound: a held key is let go once the page sees the eye past a line, up to a frame's travel after it crosses (0.2 m at a walk and 0.5 m at a run, frames
  * capped at 0.1 s), and the walker goes on for its coast (0.14 m at a walk) and for as long as the release takes to reach the page. Where it rests is
@@ -427,7 +428,7 @@ test.describe('the walk through real input', () => {
   });
 
   for (const [where, route, facing] of [['in the Temple of Dendur hall at R3’s end', ROUTE_R3, MINUS_Z], ['in the Leon Levy and Shelby White Court at R4’s end', ROUTE_R4, MINUS_X]] as const) {
-    test(`the walking frame budget ${where}, walking on and running back, with the look target on`, async ({ page }) => {
+    test(`the walking frame budget ${where}, walking on and running back, with the look target on`, { tag: '@budget' }, async ({ page }) => {
       test.skip(throttleRate() > 1, 'the frame budget is this machine’s, unthrottled');
       test.setTimeout(45_000);
       const [x, z] = route.points.at(-1) ?? [0, 0];

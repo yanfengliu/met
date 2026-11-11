@@ -9,7 +9,8 @@
  *   it never shows beside the door prompt (review 7, F30). At
  *   1280×720 a walking frame with the card showing keeps the 60 frames a second budget (the median work a frame and the mean GPU-synced render under
  *   16.7 ms, the median frame interval under 18.37 ms: ./helpers.ts `expectWalkingBudget`), and the link, clicked, opens the object's page in a new
- *   tab, its request stopped in the test's browser so nothing leaves the machine.
+ *   tab, its request stopped in the test's browser so nothing leaves the machine. The frame budget is asserted only under `npm run budgets`, which runs
+ *   the test at 1280×720, tagged `@budget`, with MET_BUDGETS=1; `npm run verify` measures and prints it (./helpers.ts `budgetCheck`, work unit 30).
  * - Orbit view, at gallery 600's preset (`int-european-paintings-600`): a drag that starts on the painting shows no card; a click on it shows the
  *   card, moving neither the camera nor the preset in view, as does a press that travels 4 px, under CLICK_SLOP (5 px), both pixels checked by a cast
  *   through the finished model in the test process; a click on a wall hides it; Esc hides it; the card sits above the walk strip, right of the floor
@@ -63,7 +64,7 @@ for (const viewport of VIEWPORTS) {
     test.use({ viewport });
     test.setTimeout(120_000);
 
-    test('walking: the card shows while the eye looks at the Triumph of Marius within 6 m, and hides when it looks away', async ({ page }) => {
+    test('walking: the card shows while the eye looks at the Triumph of Marius within 6 m, and hides when it looks away', { tag: viewport.width === 1280 ? '@budget' : [] }, async ({ page }) => {
       const errors = watchErrors(page);
       const requests = recordRequests(page);
       await noPointerLock(page);
