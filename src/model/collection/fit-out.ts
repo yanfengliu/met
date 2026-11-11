@@ -67,14 +67,15 @@ export interface FitOutPiece {
 
 /**
  * Every fit-out piece and the steps that build it, for the tests that hold its tags, its card and the way to it. The temple and its gate are one
- * record, built by two steps: the gate is looked at from the terrace before it, the temple from the forecourt on its dais.
+ * record, built by two steps: the gate is looked at from the terrace before it, the temple from the forecourt on its dais, whose flagstones are
+ * laid 4 cm over the dais (roche-north/sackler.ts `temple`; a walker set down there rests on them, src/model/collection/fit-out-labels.test.ts).
  */
 export const FIT_OUT_PIECES: readonly FitOutPiece[] = [
   {
     id: FIT_OUT.templeOfDendur,
     parts: [
       { name: 'the gate of the Temple of Dendur', step: 'dendur-gate', floor: PLATFORM_Y },
-      { name: 'the Temple of Dendur', step: 'dendur-temple', floor: DAIS_Y },
+      { name: 'the Temple of Dendur', step: 'dendur-temple', floor: DAIS_Y + 0.04 },
     ],
   },
   { id: FIT_OUT.diana, parts: [{ name: 'Diana on her pedestal', step: 'engelhard-sculpture', floor: MAIN_FLOOR_Y }] },

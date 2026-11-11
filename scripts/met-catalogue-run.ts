@@ -32,13 +32,29 @@ export interface Clock {
   sleep(ms: number): Promise<void>;
 }
 
-/** The API or its CDN refused this client (HTTP 403 or 429): the run stops, writes nothing and says when to retry, and with which command. */
+/**
+ * The API or its CDN refused this client (HTTP 403 or 429): the run stops, writes nothing and says when to retry, and with which command. The
+ * fetcher's block also carries its parts, what was refused and the time to retry as text, so the run can say them again with the command that can
+ * succeed (`blockedWith`); an error made of a message alone carries none.
+ */
 export class BlockedError extends Error {
   override readonly name = 'BlockedError';
+  readonly refused: string | undefined;
+  readonly retry: string | undefined;
+
+  constructor(message: string, refused?: string, retry?: string) {
+    super(message);
+    this.refused = refused;
+    this.retry = retry;
+  }
 }
 
-/** The script's argument for a run of the fit-out pieces' records alone. */
+/** A block's whole message: what was refused, then when to retry and with which command. */
+const blockedText = (refused: string, retry: string, command: string): string => `${refused} Retry after ${retry} with ${command}; the cache lets the rerun start where this one stopped.`;
+
+/** The script's argument for a run of the fit-out pieces' records alone, and the command of the whole run, which takes none. */
 export const FIT_OUT_FLAG = '--fit-out';
+const WHOLE_RUN = 'npm run met-catalogue';
 
 /** How the script was asked to run. */
 export interface Mode {
@@ -56,7 +72,7 @@ export function modeOf(args: readonly string[]): Mode | { readonly problem: stri
   const unknown = args.filter((a) => a !== FIT_OUT_FLAG);
   if (unknown.length > 0) return { problem: `met-catalogue: unknown argument ${unknown.map((a) => `"${a}"`).join(', ')}; run it with no argument for every entry, or with ${FIT_OUT_FLAG} for the fit-out pieces' records alone.` };
   const fitOutOnly = args.includes(FIT_OUT_FLAG);
-  return { fitOutOnly, rerun: fitOutOnly ? `npm run met-catalogue -- ${FIT_OUT_FLAG}` : 'npm run met-catalogue' };
+  return { fitOutOnly, rerun: fitOutOnly ? `${WHOLE_RUN} -- ${FIT_OUT_FLAG}` : WHOLE_RUN };
 }
 
 /** How long to wait before retrying after a block when the response says nothing: the survey of 2026-10-25 saw a 403 block clear within 8 minutes. */
@@ -160,10 +176,9 @@ export class Fetcher {
       }
       const at = new Date(this.options.clock.now());
       if (response.status === 403 || response.status === 429) {
-        const retry = retryAt(response.headers.get('retry-after'), at);
-        throw new BlockedError(
-          `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${isoOf(at)} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept. Retry after ${isoOf(retry)} with ${this.options.rerun}; the cache lets the rerun start where this one stopped.`,
-        );
+        const retry = isoOf(retryAt(response.headers.get('retry-after'), at));
+        const refused = `The Met's servers refused request ${String(this.requests)} of this run with HTTP ${String(response.status)} at ${isoOf(at)} (${url}): ${response.status === 429 ? 'too many requests' : 'blocked by its CDN, Imperva'}. Nothing was written, so the catalogue is unchanged, and every response cached so far is kept.`;
+        throw new BlockedError(blockedText(refused, retry, this.options.rerun), refused, retry);
       }
       if (response.status !== 200) throw new Error(`GET ${url} answered HTTP ${String(response.status)} at ${at.toISOString()}; check the object ID in src/model/collection/picks.ts.`);
       const entry: Cached = { url, status: 200, fetched: at.toISOString(), contentType: response.headers.get('content-type') ?? '', body: new Uint8Array(await response.arrayBuffer()) };
@@ -240,14 +255,15 @@ function differs(what: string, holds: string | number, fromPick: boolean, chosen
 }
 
 /**
- * How a kept placeholder's entry differs from what its pick's own choices give, which need no record to tell: its kind, its display and each
- * dimension against the pick's overrides, set, changed or dropped, and its gallery against the space's galleries and the pick's override
+ * How a kept placeholder's entry differs from what its pick's own choices give, which need no record to tell: its kind, its display, its date and
+ * each dimension against the pick's overrides, set, changed or dropped, and its gallery against the space's galleries and the pick's override
  * (rules.catalogueEntry and rules.checkGallery apply the same). None when a whole run would take the same choices from the pick.
  */
 function staleBy(entry: PlaceholderEntry, pick: Pick, space: SpacePicks): string[] {
   return [
     ...differs('kind', entry.kind, entry.kindFrom === 'pick', pick.kind?.value),
     ...differs('display', entry.display, entry.displayFrom === 'pick', pick.display?.value),
+    ...differs('date', entry.date, entry.dateFrom === 'pick', pick.date?.value),
     ...(['h', 'w', 'd'] as const).flatMap((axis) => differs(`size.${axis}`, entry.size[axis], entry.sizeFrom[axis] === 'pick', pick.size?.[axis])),
     ...(space.galleries.includes(entry.gallery) || pick.gallery?.value === entry.gallery ? [] : [`its gallery ${JSON.stringify(entry.gallery)} is neither one of its space's (${space.galleries.join(', ')}) nor its pick's override`]),
   ];
@@ -256,8 +272,15 @@ function staleBy(entry: PlaceholderEntry, pick: Pick, space: SpacePicks): string
 /**
  * The committed catalogue's placeholder entries, for a run that keeps them, and what is wrong if a whole run would not write them from today's
  * picks: they are not the picks' own in the picks' order, or one of them is not what its pick's overrides give (work unit 29, review 0, F3).
+ * `stale` says it found such a difference, which only a whole run mends.
  */
-function keptPlaceholders(run: Run, problems: string[]): PlaceholderEntry[] {
+function keptPlaceholders(run: Run, problems: string[]): { readonly kept: PlaceholderEntry[]; readonly stale: boolean } {
+  const found = problems.length;
+  const kept = keptEntries(run, problems);
+  return { kept, stale: problems.length > found };
+}
+
+function keptEntries(run: Run, problems: string[]): PlaceholderEntry[] {
   const kept = (run.kept?.entries ?? []).filter((e): e is PlaceholderEntry => e.display !== 'fit-out');
   const picked = run.spaces.flatMap((space) => space.picks.map((pick) => ({ space, pick })));
   const want = picked.map(({ space, pick }) => keyOf(space.id, pick.id));
@@ -281,21 +304,36 @@ function keptPlaceholders(run: Run, problems: string[]): PlaceholderEntry[] {
 }
 
 /**
+ * A block met when the run had already found `problems` (work unit 29, review 1, F11): the block with those problems listed, since a rerun stops on
+ * them too, and with the command that can succeed. A run with --fit-out whose kept placeholders are not what the picks give (`stale`) can only
+ * refuse again, so its block names the whole run in place of its own command. With no problem found, the block as the fetcher threw it.
+ */
+function blockedWith(block: BlockedError, problems: readonly string[], stale: boolean): BlockedError {
+  if (problems.length === 0) return block;
+  const { refused, retry } = block;
+  const list = `${String(problems.length)} problem(s):\n${problems.map((p) => `- ${p}`).join('\n')}`;
+  if (!stale || refused === undefined || retry === undefined) return new BlockedError(`${block.message} Before the block the run had found what the rerun will stop on until it is dealt with, ${list}`, refused, retry);
+  const whole = `${refused} Retry after ${retry} with ${WHOLE_RUN}, the whole run, and not with ${FIT_OUT_FLAG} again: before the block the run had found that the placeholders that flag keeps are not what the picks give, so a run with it can only refuse. The cache keeps what this run fetched.`;
+  return new BlockedError(`${whole} What the run had found, ${list}`, refused, retry);
+}
+
+/**
  * Fetches and builds every entry, the placeholders' and then the fit-out pieces', writes the file once and returns 0; with any problem (a pick, a
  * malformed record, a gallery mismatch, a missing height) it lists them all, writes nothing and returns 1. A block (BlockedError) is thrown at once,
- * before any write. With `run.kept` it builds the fit-out records alone and writes the kept placeholders' entries again as they are.
+ * before any write, with the problems found before it and the command that can succeed (`blockedWith`). With `run.kept` it builds the fit-out
+ * records alone and writes the kept placeholders' entries again as they are.
  */
 export async function runCatalogue(run: Run): Promise<number> {
   const { rules } = run;
   const problems = pickProblems(run.spaces);
-  const placeholders: PlaceholderEntry[] = run.kept === undefined ? [] : keptPlaceholders(run, problems);
+  const { kept: placeholders, stale }: { readonly kept: PlaceholderEntry[]; readonly stale: boolean } = run.kept === undefined ? { kept: [], stale: false } : keptPlaceholders(run, problems);
   const fitOut: FitOutEntry[] = [];
   /** Runs one pick's fetch and build; a block stops the run, any other failure is listed with the rest. */
   const attempt = async (build: () => Promise<void>): Promise<void> => {
     try {
       await build();
     } catch (error) {
-      if (error instanceof BlockedError) throw error;
+      if (error instanceof BlockedError) throw blockedWith(error, problems, stale);
       problems.push(error instanceof Error ? error.message : String(error));
     }
   };

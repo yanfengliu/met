@@ -81,6 +81,26 @@ describe('the catalogue', () => {
     expect(CATALOGUE_SOURCE.sampler).toMatch(/sampler \d+/);
   });
 
+  it('keeps each record’s date as its own text, but where its pick replaces it: marked, the pick’s text, and today the Temple of Dendur’s alone', () => {
+    const all: readonly CatalogueEntry[] = CATALOGUE;
+    const problems: string[] = [];
+    for (const { pick } of [...picks, ...fitOutPicks]) {
+      const e = all.find((entry) => entry.id === pick.id);
+      if (e === undefined) continue;
+      const where = String(e.id);
+      // The mark and the pick's date go together, both ways, as a kind's and a dimension's do; an entry kept from before its pick changed differs here.
+      if ((e.dateFrom === 'pick') !== (pick.date !== undefined)) problems.push(`${where}: date marked ${String(e.dateFrom)}, pick ${JSON.stringify(pick.date)}`);
+      if (pick.date === undefined) continue;
+      if (e.date !== pick.date.value) problems.push(`${where}: date ${e.date}, the pick says ${pick.date.value}`);
+      if (pick.date.replaces.trim() === '' || pick.date.replaces === pick.date.value) problems.push(`${where}: its pick's date replaces "${pick.date.replaces}", which is nothing or itself`);
+      if (pick.date.reason.trim().length < 20) problems.push(`${where}: its pick replaces the record's date without saying why`);
+    }
+    expect(problems).toEqual([]);
+    // One date is a pick's, by the owner's decision of 2026-11-11 (docs/research/collection.md, The temple's date); the other 97 are the records' own.
+    expect(all.filter((e) => e.dateFrom !== undefined).map((e) => [e.id, e.date, e.dateFrom])).toEqual([[547802, 'completed by 10 BCE', 'pick']]);
+    expect(fitOutPicks.find(({ pick }) => pick.id === 547802)?.pick.date?.replaces).toBe('completed by 10 CE');
+  });
+
   it('names a gallery of its space, or the one its pick overrides to', () => {
     const all: readonly CatalogueEntry[] = CATALOGUE;
     for (const { space, pick } of [...picks, ...fitOutPicks]) {
@@ -151,7 +171,9 @@ describe('the catalogue', () => {
       if (e === undefined) continue;
       const where = `${String(e.id)} (${e.title.slice(0, 40)})`;
       // No kind, kindFrom, displayFrom, colour, colourFrom, grid, image, pedestal or framed: a key beyond the record's own would be one of them.
-      if (Object.keys(e).join(' ') !== KEYS.join(' ')) problems.push(`${where}: keys ${Object.keys(e).join(', ')}`);
+      // The one mark it may add stands beside the date, where its pick replaces the record's.
+      const keys = KEYS.flatMap((k) => (k === 'date' && pick.date !== undefined ? ['date', 'dateFrom'] : [k]));
+      if (Object.keys(e).join(' ') !== keys.join(' ')) problems.push(`${where}: keys ${Object.keys(e).join(', ')}`);
       if (pick.kind !== undefined || pick.display !== undefined) problems.push(`${where}: its pick sets a kind or a display, which only a placeholder has`);
       for (const axis of ['h', 'w', 'd'] as const) {
         const v = e.size[axis];

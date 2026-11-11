@@ -11,7 +11,7 @@
  *   card, since the gate, one artwork with the temple and built by another step, is still drawn; dragged under the gate, the card goes.
  * The places, the aims and the click points are src/model/collection/fit-out-testing.ts's, which a unit test holds against the finished model. The
  * card's text is compared with the catalogue's record and, written out here, with what The Met's record said when it was fetched (2026-11-11), so a
- * card that showed another record, or a record that changed unseen, fails.
+ * card that showed another record, or a record that changed unseen, fails; the temple's date alone is its pick's, 10 BCE for the record's 10 CE.
  * Red (2026-11-11): with Diana's figure added untagged, as it was before work unit 29, the click on her fails as the live page did: the label stays null.
  * Bound: 1280×720; the card's layout at both sizes, its link's click and the locked pointer are ./labels.spec.ts's own tests on the Triumph of Marius,
  * the same card. Nothing here writes the page's state; clicks and drags are real input.
@@ -21,7 +21,7 @@ import type { Page } from '@playwright/test';
 import { Vector3 } from 'three';
 
 import { fitOutEntryOf } from '../../src/model/collection/fit-out.js';
-import { DENDUR_FEET, EYE, FIT_OUT_VIEWS } from '../../src/model/collection/fit-out-testing.js';
+import { DENDUR_FEET, EYE, FIT_OUT_VIEWS, spawnText } from '../../src/model/collection/fit-out-testing.js';
 import type { FitOutView } from '../../src/model/collection/fit-out-testing.js';
 import { ART_CREDIT, cardContent } from '../../src/ui/art-card.js';
 import { cameraGap, facts, open, openMenu, press, settle, settledCamera, watchErrors } from './helpers.js';
@@ -29,7 +29,7 @@ import type { Camera } from './helpers.js';
 import { drag, onCanvas, pixelOf, recordRequests, surfaceAt } from './labels-helpers.js';
 import { still, walking } from './route-walk.js';
 
-/** What a landmark's card says, as The Met's record gave it on 2026-11-11: the maker is null where the record names no artist and no culture. */
+/** What a landmark's card says, as The Met's record gave it on 2026-11-11 (or its pick, for a date): the maker is null where the record names no artist and no culture. */
 interface CardText {
   readonly title: string;
   readonly maker: string | null;
@@ -61,8 +61,9 @@ export const LANDMARKS: readonly Landmark[] = [
   {
     name: 'the Temple of Dendur',
     view: viewOf('the Temple of Dendur, from its forecourt'),
-    // The record names no maker; its date reads "completed by 10 CE", which the card shows as given.
-    card: { title: 'The Temple of Dendur', maker: null, date: 'completed by 10 CE', medium: 'Aeolian sandstone', gallery: 'Gallery 131', size: 'H 640.1 × W 640.1 × D 1249.7 cm' },
+    // The record names no maker. Its date reads "completed by 10 CE"; the card shows the pick's "completed by 10 BCE" in its place, as the owner
+    // decided on 2026-11-11 (docs/research/collection.md, The temple's date).
+    card: { title: 'The Temple of Dendur', maker: null, date: 'completed by 10 BCE', medium: 'Aeolian sandstone', gallery: 'Gallery 131', size: 'H 640.1 × W 640.1 × D 1249.7 cm' },
   },
 ];
 
@@ -97,14 +98,18 @@ const labelOf = (landmark: Landmark): { id: string; title: string } => ({ id: St
 export async function walkToCard(page: Page, landmark: Landmark): Promise<void> {
   const errors = watchErrors(page);
   const requests = recordRequests(page);
-  const { feet, aim, id } = landmark.view;
-  const loaded = await open(page, `walk=1&spawn=${[...feet, ...aim].map((n) => n.toFixed(4)).join(',')}`);
+  const { feet, id } = landmark.view;
+  // The place as src/model/collection/fit-out-labels.test.ts sets the walker down at it: where the walker rests there is held on the finished model.
+  const loaded = await open(page, `walk=1&spawn=${spawnText(landmark.view)}`);
   expect(loaded.warnings, `${landmark.name}: the page's warnings`).toEqual([]);
   await walking(page);
   const at = await still(page);
-  // The walker stands where the view says, its eye over the floor the view names.
+  // The walker stands where the view says: at its feet in plan, its eye 1.6 m over them, or under that by no more than the view says its floor
+  // is sunk, as the walker set down there rests on the finished model. 2 mm is for the frames `still` compares.
   expect(Math.hypot(at.eye[0] - feet[0], at.eye[2] - feet[2]), `${landmark.name}: metres across from the place`).toBeLessThan(0.01);
-  expect(Math.abs(at.eye[1] - (feet[1] + EYE)), `${landmark.name}: metres off the eye's height over its floor`).toBeLessThan(0.03);
+  const over = at.eye[1] - (feet[1] + EYE);
+  const sunk = landmark.view.sunk ?? 0;
+  expect(over <= 0.002 && over >= -sunk - 0.002, `${landmark.name}: the eye stands ${over.toFixed(4)} m from its height over the view's feet, on a floor sunk by at most ${String(sunk)} m`).toBe(true);
   await page.waitForFunction((want) => window.__met?.label?.id === want, String(id), { polling: 'raf', timeout: 5000 });
   const f = await facts(page);
   expect(f.label).toEqual(labelOf(landmark));
