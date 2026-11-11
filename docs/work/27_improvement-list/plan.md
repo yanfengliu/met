@@ -35,11 +35,20 @@ Excluded: the stated non-goals (AGENTS.md): no imported meshes, scans or photo t
 
 Another session removes the build replay in the worktree `remove-build-replay` (work unit 26). Seen there on 2026-11-11, uncommitted on `2bfa83f`: changes to `src/ui/*`, `src/main.ts`, `src/viewer/facts.ts` and `src/viewer/query.ts`, and `src/build/player.ts`, `src/ui/timeline-bar.ts` and `src/ui/label.ts` deleted.
 
-Until unit 26 is on origin's main, this plan's work stays out of `src/ui/**`, `src/main.ts`, `src/build/**`, `src/viewer/facts.ts`, `src/viewer/query.ts`, the e2e specs for the replay, controls, menus and layout, and the replay parts of `docs/design/spec.md`, `README.md` and `AGENTS.md`. So no unit here adds a URL parameter or a `window.__met` fact before then. Items 2, 3 and 6 and the page part of item 10 wait for it.
+Until unit 26 is on origin's main, this plan's work stays out of `src/ui/**`, `src/main.ts`, `src/build/**`, `src/viewer/facts.ts`, `src/viewer/query.ts`, the e2e specs for the replay, controls, menus and layout, and the replay parts of `docs/design/spec.md`, `README.md` and `AGENTS.md`. So no unit here adds a URL parameter or a `window.__met` fact before then. Which items wait for which of its milestones is under "What follows for this plan" below.
 
 One exception, granted to unit 29 on 2026-11-11: three lines of `src/ui/art-card.test.ts` change (the catalogue's count and the list of records that name no maker), because `src/main.ts` builds the cards from `CATALOGUE` and is not to be touched, so the landmarks' records must join the catalogue. The other session was told.
 
-Messages queued to that session on 2026-11-11, none answered yet: the split with three questions (its other files, whether the build-step API and the `?shot=1` contract stay, when it lands); that main's registry holds lines 27 to 29 before its line 26; and the exception above.
+That session answered on 2026-11-11. It lands in two milestones:
+- A, expected within about two hours of the answer: the page without the replay (`src/main.ts`, `src/ui/**`, `src/viewer/facts.ts`, `query.ts`, `camera-rig.ts`; in `viewer.ts` only the bottom inset and the `rig.resize` call), `StepDef` without `focus` and `weight` (33 model files, `collection/place.ts`, `spaces-a.ts`, `spaces-b.ts`), `scripts/capture.ts` without the chapter and mid-build shots and without `t=`, every e2e spec and `helpers.ts` stripped of replay checks, and the docs (the spec, AGENTS.md, the README, the local rule that the build process is the product, retired at the owner's request). It does not touch `src/ui/art-card.test.ts`, the render path, `environment.ts`, `sun.ts` or `index.html`.
+- B, a few hours after A: the timeline built once at rest (`src/build/timeline.ts`, `batch.ts`, `kit.ts`, `types.ts`; `motion.ts`, `stagger.ts` and `player.ts` deleted), `src/walk/walk-mode.ts`, `collision.ts`, `door-world.ts`, `src/viewer/doors.ts`, `art-label.ts`, `floor-view.ts`, `src/main.ts`, and by codemod every step's `motion:` and `stagger:` lines and the `order` argument of about 470 `kit.add` and `kit.addTagged` calls, with the tests that pass a `t`.
+
+What stays, by its word: the step arrays and `COMPOSITION`, `StepDef`'s id, chapter, title, detail, year and build, `kit.add`, `kit.addTagged` and `kit.light`, the tags, the `?shot=1` contract and `window.__met.stats`.
+
+What follows for this plan:
+- A model change that lands before B is carried by that session's codemods; one that lands after B re-runs them from `tmp/wu26-codemods/` in the main checkout. So unit 29's first landing should land before B.
+- When A lands, each worker merges origin's main and gates the merged tree before handing back.
+- The page items (2, 3, 6) and the model items that add steps and pieces (9, 11) start after B, since they live in the files B rewrites.
 
 Shared: `tmp/gate.sh` for verify, e2e, shots and sweeps; `tmp/land.sh` for the landing slot; one `MET_PORT` per worktree (5340 the coordinator, 5341 lighting, 5342 artworks).
 
@@ -88,16 +97,16 @@ Decisions the owner made on 2026-11-11, each from a question with its options la
 ## Implementation steps
 
 - [ ] 1. Interior lighting: unit 28, worker "lighting" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5341.
-- [ ] 2. First impression: waits for unit 26.
-- [ ] 3. Wayfinding: waits for unit 26.
+- [ ] 2. First impression: after unit 26's milestone B.
+- [ ] 3. Wayfinding: after unit 26's milestone B.
 - [ ] 4. Surface detail: after item 1.
 - [ ] 5. Artworks: unit 29, worker "artworks" dispatched 2026-11-11 from `06b3124`, `MET_PORT` 5342, on landing A (the landmarks' cards). Landing B (more forms) and landing C (paintings at 16×16) follow.
-- [ ] 6. Touch and weaker devices: waits for unit 26. A run on a phone or a weaker GPU cannot be made from this machine.
+- [ ] 6. Touch and weaker devices: after unit 26's milestone B. A run on a phone or a weaker GPU cannot be made from this machine.
 - [x] 7. The build replay as a story: dropped, see Scope.
 - [ ] 8. Surroundings and sky: after item 1, as environment.
-- [ ] 9. Shell galleries: after item 4.
-- [ ] 10. Project presentation: the page part and AGENTS.md's exception wait for unit 26.
-- [ ] 11. Fidelity leftovers, all four groups: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh cap (130 of 130) bounds the Medieval hall and gallery 600.
+- [ ] 9. Shell galleries: after item 4 and unit 26's milestone B.
+- [ ] 10. Project presentation: after unit 26's milestone A, which rewrites the README and AGENTS.md; `index.html` is free now.
+- [ ] 11. Fidelity leftovers, all four groups, after unit 26's milestone B: the Medieval hall first, since its four findings were already put to the owner; each group gets its own work unit when it starts. The core's mesh cap (130 of 130) bounds the Medieval hall and gallery 600.
 
 ## Outcome
 
