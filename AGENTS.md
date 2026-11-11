@@ -60,7 +60,7 @@ Node 24 (`.nvmrc`), npm, Vite, strict TypeScript, Vitest, ESLint and Playwright 
 
 Each gate below is one line on what it checks. Read more when the work reaches it: a gate's bounds and reproducing inputs in its test file's header, its red proofs there or in [gate-proofs.md](docs/learning/gate-proofs.md), the behaviour it holds in [spec.md](docs/design/spec.md), its findings in its work unit's reviews (`docs/work/`).
 
-`npm run verify` is the pre-commit gate: the five commands below, in this order.
+`npm run verify` is the gate for a tree that is handed back or lands: the five commands below, in this order.
 
 - `npm test`: Vitest over `src/**/*.test.ts` and `scripts/**/*.test.ts`, including `src/repo-conventions.test.ts`, which fails on a file over 500 lines under `src/`, `scripts/` or `tests/`, on an `import.meta.env` or `process.env` read under `src/`, and on an AGENTS.md over 30,000 bytes with CRLF line endings. Every test has 60 s (`vitest.config.ts`). Off GitHub's runner (`CI` not `true`), a passed test that takes over a sixth of its timeout fails the run, as does one whose time or timeout Vitest does not give (`scripts/test-headroom.ts`, whose header says why).
 - `npm run typecheck`: `tsc --noEmit`, strict plus `noUncheckedIndexedAccess`, over `src/`, `scripts/`, `tests/` and the root configs.
