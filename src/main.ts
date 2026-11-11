@@ -20,7 +20,8 @@ import { GeometryBvhs } from './walk/bvh-cache.js';
 import { SPAWNS, startOf } from './walk/spawns.js';
 import type { Spawn } from './walk/spawns.js';
 import { WalkMode } from './walk/walk-mode.js';
-import { ARTWORK_QUERY, ArtLabel, artworkInstances } from './viewer/art-label.js';
+import { ARTWORK_QUERY, ArtLabel } from './viewer/art-label.js';
+import { artworkPiecesIn } from './viewer/art-pieces.js';
 import { bindClick } from './viewer/click.js';
 import { DoorLayer } from './viewer/doors.js';
 import type { DoorDrawn } from './viewer/doors.js';
@@ -92,12 +93,9 @@ function boot(): void {
   const walk = new WalkMode({ canvas: viewer.renderer.domElement, rig, steps: timeline.steps, floorY: viewer.env.groundY, bvhs, hit: (ray, query) => picker.hit(ray, query), doors }, (message) => { console.warn(message); });
   // The artworks' cards (docs/design/spec.md, Collection: Labels): the look target's artwork while walking, the one a click meets in the orbit view.
   const cards = new Map<string, ArtCardContent>(CATALOGUE.map((entry) => [String(entry.id), cardContent(entry)]));
-  // A click's card keeps to what the camera draws of its artwork, every piece of it (src/viewer/art-label.ts): each mesh's step finds the pieces.
-  const stepOfMesh = new Map(timeline.steps.flatMap((s) => s.meshes.map((m) => [m, s] as const)));
-  const artLabel = new ArtLabel((hit, id) => {
-    const step = stepOfMesh.get(hit.mesh);
-    return step === undefined ? [{ mesh: hit.mesh, instance: hit.instance }] : artworkInstances(step, id);
-  });
+  // A click's card keeps to what the camera draws of its artwork, every piece of it (src/viewer/art-label.ts), in whichever steps build them: the
+  // Temple of Dendur and its gate are one artwork in two steps (src/viewer/art-pieces.ts).
+  const artLabel = new ArtLabel(artworkPiecesIn(timeline.steps));
   /** What the camera draws, for the card's check: the section cut (a floor view's included) and the camera's layers. */
   const drawnView = { cut: viewer.cut, layers: rig.camera.layers };
   /** The card the last frame showed, for the chrome and `window.__met.label`. */
