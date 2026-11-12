@@ -122,10 +122,13 @@ describe('every piece of an artwork across the build’s steps', () => {
 
   it('keeps the two-step artwork’s card while the camera draws either step’s pieces, whichever was clicked, where the met piece’s step alone would lose it', () => {
     const { timeline, picker, lower, upper } = scene();
-    /** A label as the page's, and one under the rule the page had: the pieces of the met piece's own step alone. */
+    /** A label as the page's, and one under the rule the page had, as its closure was: the pieces of the met piece's own step, or that piece alone. */
     const labels = (): { label: ArtLabel; old: ArtLabel } => ({
       label: new ArtLabel(artworkPiecesIn(timeline.steps)),
-      old: new ArtLabel((hit, id) => artworkInstances(timeline.steps.find((s) => s.meshes.includes(hit.mesh)) ?? lower, id)),
+      old: new ArtLabel((hit, id) => {
+        const step = timeline.steps.find((s) => s.meshes.includes(hit.mesh));
+        return step === undefined ? [{ mesh: hit.mesh, instance: hit.instance }] : artworkInstances(step, id);
+      }),
     });
     const shown = (label: ArtLabel, view: DrawnView): string | null => {
       label.frame(false, view);

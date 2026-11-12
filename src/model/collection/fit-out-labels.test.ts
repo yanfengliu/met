@@ -11,17 +11,26 @@
  * - what is not the object carries no card: a look at the flagstones of the temple's forecourt, at the base course under the temple, at the rail
  *   before the gate and at a lamp of the court meets an untagged surface within an artwork's reach, and finds no artwork;
  * - the card the page then shows is the record's own (src/ui/art-card.ts `cardContent`, as src/main.ts builds its cards from the catalogue): each
- *   piece's title, maker, date, medium, gallery, size and link, written out here from The Met's records as fetched on 2026-11-11.
- * Every piece has a view of each of its parts, and each view names the part's step, so a part without a view fails here. Each view's feet stand,
- * to 3 cm, on the floor the finished model holds under them (the highest surface straight down under a footprint), and that floor lies within a
- * step of the level ./fit-out.ts names for the part: the floor is read from the built pieces, not from the constants the views are written with.
+ *   piece's title, maker, date, medium, gallery, size and link, written out here from The Met's records as fetched on 2026-11-11, but for the
+ *   temple's date, which its pick corrects to 10 BCE.
+ * Every piece has a view of each of its parts, and each view names the part's step, so a part without a view fails here. Each view is a place to
+ * stand by the walker's own rule, not by one of this test's (review 0, F7; review 1, F10): walk mode's walker, set down at the view's feet as the
+ * page's `spawn=x,y,z,tx,ty,tz` sets it down and checked as walk mode checks it, stays there at rest, its feet at the view's own height and at the
+ * level ./fit-out.ts names for the part, to a millimetre, or under it by no more than the view says its floor is sunk (the forecourt's flagstones,
+ * up to 2 cm). On 2026-11-11 the walker rests at the height written for five of the six views, under Diana's two on the rims of a joint of the
+ * paving that the line through the feet falls into, 5 cm down, and 1.7 cm under it on the forecourt's flagstone. A view moved 0.10 m past the
+ * dais's edge, and one raised half a metre with its part's level, are each shown to be refused, the walker resting elsewhere.
  * Red (2026-11-11, each mutation made and undone): Diana's figure added untagged, as it was (the look up at her finds nothing, and the click on her
  * from the court's preset meets an untagged piece at 13.61 m); the court's lamps tagged as Diana, and the gate's rail and the forecourt's flagstones
  * as the temple (each is then met as an artwork within reach); the temple view's feet and its part's level both raised half a metre, which agree
- * with each other (the built floor is then 0.52 m under the feet).
+ * with each other (the walker rests 0.517 m under them); and the temple view's feet moved 0.10 m past the dais's north edge, which the check of
+ * review 0's repair passed, the highest of nine lines down round the feet still meeting the forecourt (the walker rests on the terrace, 0.790 m
+ * under the feet and 0.251 m to the side).
  * Bound: one eye and one camera per view, which are not shown to be ones the walker reaches (src/model/reach.test.ts walks to each part and looks at
  * it); the pixels of a real click and the card's element are the browser's (tests/e2e/labels.spec.ts). The picker holds the timeline's pieces alone,
- * without the door layer's stand-ins, as ./labels.test.ts's does: no door stands on these rays.
+ * without the door layer's stand-ins, as ./labels.test.ts's does: no door stands on these rays. The walker's world is the finished model's solid
+ * pieces, the doors' closed leaves among them and no door layer over them (src/walk/collision.ts `collisionMeshes`), as
+ * ../roche-north/walk.test.ts builds it: no door stands by these places.
  */
 import { Layers, Ray, Vector3 } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -34,19 +43,32 @@ import { ARTWORK_QUERY } from '../../viewer/art-label.js';
 import { ModelPicker } from '../../viewer/pick.js';
 import type { PickHit } from '../../viewer/pick.js';
 import { GeometryBvhs } from '../../walk/bvh-cache.js';
+import { CollisionWorld, collisionMeshes } from '../../walk/collision.js';
 import { LOOK_REACH, lookTarget } from '../../walk/look.js';
+import { placeOf, spawnYaw } from '../../walk/spawns.js';
+import { MOTION, NO_INPUT, Walker } from '../../walk/walker.js';
+import type { Settled } from '../../walk/walker.js';
 import { MAIN_FLOOR_Y } from '../frame.js';
 import { DIANA } from '../roche-north/figures.js';
-import { DAIS_Y, GATE_RAIL, PLATFORM_Y, TEMPLE_AXIS_X, TEMPLE_BASE } from '../roche-north/plan.js';
+import { DAIS, DAIS_Y, GATE_RAIL, PLATFORM_Y, TEMPLE_AXIS_X, TEMPLE_BASE } from '../roche-north/plan.js';
 import { FIT_OUT, FIT_OUT_PIECES, fitOutEntryOf } from './fit-out.js';
-import { EYE, FIT_OUT_VIEWS, orbitPosition } from './fit-out-testing.js';
+import { EYE, FIT_OUT_VIEWS, orbitPosition, spawnText } from './fit-out-testing.js';
+import type { FitOutView } from './fit-out-testing.js';
 
 let picker: ModelPicker;
 let timeline: Timeline;
+/** What the walker collides with in the finished model, built as walk mode builds it and the other walk tests do (../roche-north/walk.test.ts). */
+let world: CollisionWorld;
+/** The workspace ground under everything, as the page's and those tests'. */
+let floorY: number;
 
 beforeAll(() => {
   timeline = new Timeline(SEQUENCE);
-  picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), Math.min(0, timeline.bounds.min.y) - 0.5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
+  const bvhs = new GeometryBvhs();
+  floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
+  picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
+  world = new CollisionWorld(bvhs);
+  world.build(collisionMeshes(timeline.steps));
 }, 120_000);
 
 const v = (p: Vec3): Vector3 => new Vector3(...p);
@@ -54,36 +76,70 @@ const eyeOf = (feet: Vec3): Vector3 => new Vector3(feet[0], feet[1] + EYE, feet[
 /** The step that built the piece a ray met. */
 const stepOf = (hit: PickHit | null): string | null => timeline.steps.find((s) => hit !== null && s.meshes.includes(hit.mesh))?.def.id ?? null;
 const told = (hit: PickHit | null): string => (hit === null ? 'nothing' : `${hit.tag === null ? 'an untagged piece' : `${hit.tag.kind} ${hit.tag.id}`} of step ${String(stepOf(hit))} at ${hit.distance.toFixed(2)} m`);
+/** A walker set down on a level floor rests at its height; this much, metres, is allowed for arithmetic alone. */
+const AT_REST = 1e-3;
+/** The level ./fit-out.ts names for the part `view` shows: the floor a visitor stands on before it. */
+const levelOf = (view: FitOutView): number => FIT_OUT_PIECES.find((p) => p.id === view.id)?.parts.find((part) => part.step === view.step)?.floor ?? Number.NaN;
+
 /**
- * The floor the finished model holds under `feet`: the highest surface met straight down from the eye's height, at the feet and 0.15 m around
- * them, as a walker's footprint rests on it. One ray alone can fall into the joint between two paving slabs (it does under Diana's views, onto the
- * concrete 5 cm below), and the forecourt's flagstones differ in height by a centimetre or two.
+ * Walk mode's own walker where the page is asked to start at `view` (`walk=1&spawn=<spawnText(view)>`, as tests/e2e/labels-landmarks.ts asks): the
+ * place read as the page reads it (src/walk/spawns.ts `placeOf`), the walker set down there and checked against the world as walk mode does it
+ * (src/walk/walk-mode.ts `placeAt` and `settle`: `Walker.place`, which drops the feet onto the first surface below them and lifts them out of a
+ * joint narrower than the body onto its rims, then `Walker.settle` with every piece new to it), and left alone for half a second of its physics.
  */
-function floorUnder(feet: Vec3): number {
-  let top = Number.NEGATIVE_INFINITY;
-  for (const dx of [-0.15, 0, 0.15]) {
-    for (const dz of [-0.15, 0, 0.15]) {
-      const eye = new Vector3(feet[0] + dx, feet[1] + EYE, feet[2] + dz);
-      const met = picker.hit(new Ray(eye, new Vector3(0, -1, 0)));
-      if (met !== null) top = Math.max(top, eye.y - met.distance);
-    }
+function setDown(view: FitOutView): { readonly walker: Walker; readonly settled: Settled } {
+  const spawn = placeOf(spawnText(view));
+  if (spawn === null) throw new Error(`${view.name}: its feet and aim name no place for spawn=.`);
+  const walker = new Walker(world, floorY);
+  walker.place(spawn.feet[0], spawn.feet[1], spawn.feet[2], spawnYaw(spawn), (spawn.pitch * Math.PI) / 180);
+  const settled = walker.settle(0);
+  for (let k = 0; k < 0.5 / MOTION.fixedStep; k += 1) walker.update(MOTION.fixedStep, NO_INPUT);
+  return { walker, settled };
+}
+
+/**
+ * What is wrong with `view` as a place to stand, or null: the walker set down at its feet must stay there, at rest on the ground, and its feet must
+ * be at the view's own height and at `level`, the one its part names, each to AT_REST, or under it by no more than the view says its floor is sunk.
+ * No rule of this test's stands in for the walker's: a place past a floor's edge, where the walker falls, is no place to stand (review 1, F10).
+ */
+function unsupported(view: FitOutView, level: number): string | null {
+  const { walker, settled } = setDown(view);
+  const { feet } = walker;
+  const wrong: string[] = [];
+  if (settled !== 'kept') wrong.push(settled === 'lost' ? 'walk mode’s check after placing it finds it nowhere to stand' : 'walk mode’s check after placing it moves it');
+  if (!walker.onGround || walker.velocity.length() > AT_REST) wrong.push(walker.onGround ? 'it is still moving' : 'it is off the ground');
+  const aside = Math.hypot(feet.x - view.feet[0], feet.z - view.feet[2]);
+  if (aside > AT_REST) wrong.push(`${aside.toFixed(3)} m to the side`);
+  for (const [name, height] of [['the view’s feet', view.feet[1]], ['the level its part names', level]] as const) {
+    if (feet.y > height + AT_REST || feet.y < height - (view.sunk ?? 0) - AT_REST) wrong.push(`${Math.abs(feet.y - height).toFixed(3)} m ${feet.y < height ? 'under' : 'over'} ${name} at ${height.toFixed(3)} m`);
   }
-  return top;
+  return wrong.length === 0 ? null : `${view.name}: the walker set down at its feet rests at (${feet.x.toFixed(3)}, ${feet.y.toFixed(3)}, ${feet.z.toFixed(3)}): ${wrong.join(', ')}`;
 }
 
 describe('labelling every fit-out piece in the finished model', () => {
-  it('has a view of every built part of every fit-out piece, its feet on the floor the finished model holds there, at the level its part names', () => {
+  it('has a view of every built part of every fit-out piece, where walk mode’s own walker, set down at its feet, rests on the level its part names', () => {
     const parts = FIT_OUT_PIECES.flatMap((piece) => piece.parts.map((part) => `${String(piece.id)} ${part.step}`)).sort();
     expect([...new Set(FIT_OUT_VIEWS.map((view) => `${String(view.id)} ${view.step}`))].sort()).toEqual(parts);
-    // The floor is read from the built pieces, not from the constants the views are written with (review 0, F7): the view's feet stand on it to
-    // 3 cm, as the walker placed there does (tests/e2e/labels-landmarks.ts), and it lies within a step, 5 cm, of the level ./fit-out.ts names for
-    // the part, which the reach gate looks for standing places on (src/model/reach.test.ts).
-    for (const view of FIT_OUT_VIEWS) {
-      const level = FIT_OUT_PIECES.find((p) => p.id === view.id)?.parts.find((part) => part.step === view.step)?.floor ?? Number.NaN;
-      const built = floorUnder(view.feet);
-      expect(Math.abs(built - view.feet[1]), `${view.name}: its feet at ${view.feet[1].toFixed(3)} m, the built floor under them at ${built.toFixed(3)} m`).toBeLessThanOrEqual(0.03);
-      expect(Math.abs(built - level), `${view.name}: the built floor at ${built.toFixed(3)} m, its part's level at ${level.toFixed(3)} m`).toBeLessThanOrEqual(0.05);
-    }
+    expect(FIT_OUT_VIEWS.flatMap((view) => unsupported(view, levelOf(view)) ?? [])).toEqual([]);
+  });
+
+  it('takes no view for a place to stand whose walker rests elsewhere: one just past a floor’s edge, and one raised over its floor with its part’s level', () => {
+    const temple = FIT_OUT_VIEWS.find((view) => view.step === 'dendur-temple');
+    if (temple === undefined) throw new Error('No view of the temple.');
+    const [x, y, z] = temple.feet;
+    const level = levelOf(temple);
+    expect(unsupported(temple, level), 'the forecourt view as it is').toBeNull();
+    const resting = setDown(temple).walker.feet.y;
+    // 0.10 m past the dais's north edge, at the forecourt's own height, with the terrace 0.79 m lower beyond it: lines 0.15 m back still meet the
+    // forecourt, which the highest of nine such lines took for the floor under the feet (review 1, F10). The walker falls to the terrace.
+    const past: FitOutView = { ...temple, name: 'the forecourt view moved past the dais’s edge', feet: [DAIS.maxX + 0.1, y, z] };
+    expect(setDown(past).walker.feet.y, 'the walker set down 0.10 m past the edge rests on the terrace').toBeCloseTo(PLATFORM_Y, 6);
+    expect(unsupported(past, level)).toContain(`${(y - PLATFORM_Y).toFixed(3)} m under the view’s feet at ${y.toFixed(3)} m, ${(level - PLATFORM_Y).toFixed(3)} m under the level its part names at ${level.toFixed(3)} m`);
+    // Its feet and its part's level both half a metre over the forecourt, which agree with each other: the walker drops onto the flagstones it rests
+    // on from the view as it is.
+    const raised: FitOutView = { ...temple, name: 'the forecourt view raised half a metre', feet: [x, y + 0.5, z] };
+    expect(setDown(raised).walker.feet.y, 'the walker set down half a metre up rests on the flagstones').toBeCloseTo(resting, 6);
+    expect(unsupported(raised, level + 0.5)).toContain(`${(y + 0.5 - resting).toFixed(3)} m under the view’s feet at ${(y + 0.5).toFixed(3)} m, ${(level + 0.5 - resting).toFixed(3)} m under the level its part names at ${(level + 0.5).toFixed(3)} m`);
   });
 
   it('finds each part as the walking eye’s look target, within an artwork’s reach, from the floor before it', () => {
@@ -147,14 +203,15 @@ describe('labelling every fit-out piece in the finished model', () => {
     }
   });
 
-  it('shows each piece’s card from its record: title, maker, date, medium, gallery, size and link, as The Met gave them', () => {
+  it('shows each piece’s card from its record: title, maker, date, medium, gallery, size and link, as The Met gave them, but the temple’s date', () => {
     const cards = FIT_OUT_PIECES.map((piece) => {
       const { id, title, maker, date, medium, gallery, size, url } = cardContent(fitOutEntryOf(piece.id));
       return [id, title, maker, date, medium, gallery, size, url];
     });
     expect(cards).toEqual([
-      // The record names no artist and no culture, so the card shows its date alone; "completed by 10 CE" is the record's own objectDate string.
-      ['547802', 'The Temple of Dendur', null, 'completed by 10 CE', 'Aeolian sandstone', 'Gallery 131', 'H 640.1 × W 640.1 × D 1249.7 cm', 'https://www.metmuseum.org/art/collection/search/547802'],
+      // The record names no artist and no culture, so the card shows its date alone. That date is the pick's, "completed by 10 BCE", in place of the
+      // record's "completed by 10 CE" (the owner's decision of 2026-11-11; docs/research/collection.md, The temple's date).
+      ['547802', 'The Temple of Dendur', null, 'completed by 10 BCE', 'Aeolian sandstone', 'Gallery 131', 'H 640.1 × W 640.1 × D 1249.7 cm', 'https://www.metmuseum.org/art/collection/search/547802'],
       ['11998', 'Diana', 'Augustus Saint-Gaudens', '1892–93, cast 1928', 'Bronze, gilt', 'Gallery 700', 'H 258.4 × W 135.9 × D 35.9 cm', 'https://www.metmuseum.org/art/collection/search/11998'],
       // "Fravrile" is the record's spelling; the depths of the loggia and of the screen are the model's, which the card names as estimated.
       ['133', 'Architectural Elements from Laurelton Hall, Oyster Bay, New York', 'Louis C. Tiffany', 'ca. 1905', 'Limestone, ceramic, and Fravrile glass', 'Gallery 701', 'H 640.1 × W 701 × D 533 cm, depth estimated', 'https://www.metmuseum.org/art/collection/search/133'],

@@ -40,7 +40,7 @@ export interface DrawnView {
   readonly layers: Layers;
 }
 
-/** The instances of `step` that carry artwork `id`'s tag: every piece of the artwork (src/model/collection/place.ts tags them all). */
+/** The instances of `step` that carry artwork `id`'s tag: one step's pieces of the artwork (./art-pieces.ts gathers every step's for the page). */
 export function artworkInstances(step: BuiltStep, id: string): ArtInstance[] {
   const out: ArtInstance[] = [];
   step.meshes.forEach((mesh, m) => {
@@ -92,7 +92,7 @@ export class ArtLabel {
   private walking = false;
 
   /**
-   * `piecesOf` gives every piece of the artwork `id` whose piece a click met (`artworkInstances` over the hit mesh's step); by default, the piece met.
+   * `piecesOf` gives every piece of the artwork `id` whose piece a click met (the page's gathers every step's: ./art-pieces.ts); by default, the piece met.
    */
   constructor(private readonly piecesOf: (hit: PickHit, id: string) => readonly ArtInstance[] = (hit) => [{ mesh: hit.mesh, instance: hit.instance }]) {}
 

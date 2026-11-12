@@ -1,8 +1,9 @@
 /**
- * Test helpers for the fit-out pieces of the collection (imported only by tests: ./fit-out-labels.test.ts and tests/e2e/labels-landmarks.ts): for each
- * built part (./fit-out.ts `FIT_OUT_PIECES`), where a visitor stands before it and the point of it the eye looks at, and an orbit camera that sees
- * it with a point of it a click is made on. Positions are world metres from the model's own sources, each named, never from the floor map directly.
- * ./fit-out-labels.test.ts shows every view's rays meet the part in the finished model, so the browser tests stand where the model was checked.
+ * Test helpers for the fit-out pieces of the collection (imported only by tests: ./fit-out-labels.test.ts, ./fit-out-card.test.ts and
+ * tests/e2e/labels-landmarks.ts): for each built part (./fit-out.ts `FIT_OUT_PIECES`), where a visitor stands before it and the point of it the
+ * eye looks at, and an orbit camera that sees it with a point of it a click is made on. Positions are world metres from the model's own sources,
+ * each named, never from the floor map directly. ./fit-out-labels.test.ts shows, in the finished model, that walk mode's own walker set down at
+ * every view's feet rests there and that the view's rays meet the part, so the browser tests stand where the model was checked.
  */
 import type { Vec3 } from '../../build/types.js';
 import { PRESETS } from '../../viewer/presets.js';
@@ -23,6 +24,11 @@ export interface FitOutView {
   readonly name: string;
   /** Where the visitor's feet stand, on the floor before the part, within an artwork's 6 m reach of `aim`. */
   readonly feet: Vec3;
+  /**
+   * How far under the feet's level the floor there may lie, metres, where the floor is not level: each of the forecourt's worn flagstones is sunk by
+   * up to 2 cm (roche-north/temple.ts `flagstones`). Left out for a level floor, on which the walker rests at the feet's own height.
+   */
+  readonly sunk?: number;
   /** The point of the part the eye looks at, from `EYE` over the feet. */
   readonly aim: Vec3;
   /** An orbit camera that sees the part: a camera preset's, by its id, where one shows it; else a camera of the tests' own in the same hall. */
@@ -71,6 +77,7 @@ export const FIT_OUT_VIEWS: readonly FitOutView[] = [
     step: 'dendur-temple',
     name: 'the Temple of Dendur, from its forecourt',
     feet: [TEMPLE_AXIS_X + 2.75, DAIS_Y + 0.04, TEMPLE_FRONT_Z + 3],
+    sunk: 0.02,
     aim: [TEMPLE_AXIS_X + 2.75, DAIS_Y + 0.04 + EYE, TEMPLE_FRONT_Z],
     orbit: { preset: 'int-dendur-se' },
     click: [TEMPLE_AXIS_X - TEMPLE_WIDTH / 2, TEMPLE_FOOT_Y + 2, TEMPLE_Z - 2],
@@ -119,6 +126,14 @@ export const FIT_OUT_VIEWS: readonly FitOutView[] = [
     click: [3, F + 4.87, SCREEN_Z - 0.16],
   },
 ];
+
+/**
+ * The place of `view` as the page's `spawn=` takes it (docs/design/spec.md, Query contract: `x,y,z,tx,ty,tz`, the feet and the point looked at): what
+ * the browser tests ask the page for, and what ./fit-out-labels.test.ts reads back through src/walk/spawns.ts `placeOf` to set the walker down.
+ */
+export function spawnText(view: FitOutView): string {
+  return [...view.feet, ...view.aim].map((n) => n.toFixed(4)).join(',');
+}
 
 /** The orbit camera's position of `view`: its preset's, which must be an explicit camera, or its own. */
 export function orbitPosition(view: FitOutView): Vec3 {

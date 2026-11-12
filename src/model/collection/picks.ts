@@ -2,6 +2,7 @@
  * The objects on view chosen for each space (docs/research/collection.md, Picks): The Met's object IDs, from the read-only survey of 2026-10-25
  * (worker met-api), each confirmed on view in that space by its record's GalleryNumber. scripts/met-catalogue.ts reads this file and writes catalogue.ts;
  * the spaces' steps place what it lists. Five to twelve objects a space. An override says what it changes and why; the script checks every one.
+ * A date override also says which text of the record it replaces, and the script refuses it once the record gives another.
  * A space's `fitOut` lists its fit-out pieces that are themselves objects of the collection, each confirmed by its record (2026-11-11): the space's
  * own build steps make them, so no placeholder is built and the catalogue keeps the record alone, for the piece's card (fit-out.ts). The record's
  * measurements give the size; a dimension it lacks is given here as the model builds it, with its reason, and the card names it as estimated.
@@ -22,8 +23,18 @@ export const SPACES: readonly SpacePicks[] = [
       { id: 551893 },
       { id: 551894, size: { w: 0.6, reason: 'the record gives no width; its pair, 551893, from the same base of the obelisk, is 0.6 m across' } },
     ],
-    // The Temple of Dendur itself, with its gate: one record (roche-north/temple.ts).
-    fitOut: [{ id: 547802 }],
+    // The Temple of Dendur itself, with its gate: one record (roche-north/temple.ts). Its card's date is corrected, by the owner's decision of
+    // 2026-11-11 ("Correct to 10 BCE"); every other object's date is the record's own (docs/research/collection.md, The temple's date).
+    fitOut: [
+      {
+        id: 547802,
+        date: {
+          value: 'completed by 10 BCE',
+          replaces: 'completed by 10 CE',
+          reason: 'the record’s own objectBeginDate and objectEndDate are both −10, that is 10 BCE, and only its objectDate text says CE; the owner decided on 2026-11-11 that the card reads 10 BCE',
+        },
+      },
+    ],
   },
   {
     id: 'greek-roman-court',
