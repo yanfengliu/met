@@ -310,6 +310,8 @@ test.describe('walk mode', () => {
   });
 
   test('walking holds 60 frames a second with the look target on, on the plaza, in the Great Hall and at the top of the Grand Staircase; the collision builds within 2 s', { tag: '@budget' }, async ({ page }) => {
+    // About 5 s here (4.7 to 9.2 s in the runs of 2026-11-11, frames slowed by plants among them); nine times that for a loaded machine (review 0, F10).
+    test.setTimeout(45_000);
     const f = await open(page, '');
     await page.keyboard.press('KeyF');
     const ready = await walking(page);

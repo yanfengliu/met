@@ -390,11 +390,13 @@ test.describe('the doors', () => {
     const metres = steps.reduce((sum, d) => sum + d, 0);
     console.log(`two door cycles walked, facing into the Great Hall: ${String(cycles.drawn)} frames drawn in ${((cycles.to - cycles.from) / 1000).toFixed(2)} s, the eye moving in ${String(moving)} of ${String(steps.length)}, ${metres.toFixed(2)} m walked, the door out of sight at rest at ${String(cycles.unseen)} turns; ${String(walkWork.length)} callbacks timed, slowest ${slowestWalking.toFixed(2)} ms of work`);
     budgetCheck('the slowest walking frame through two door cycles', slowestWalking, () => { expect(slowestWalking, 'the slowest walking frame through two door cycles').toBeLessThan(16.7); });
-    // How many frames the two cycles span depends on the frame rate too (review 0, F3); with no frame recorded, the share below is NaN and fails either way.
+    // How many frames the two cycles span, and that they were walking frames (the share in which the eye moved, the metres walked), are conditions of the
+    // timing above and hang on the frame rate and the input's latency at the turns, so they are budgets too (review 0, F3 and F10). With no frame recorded the
+    // share is NaN, which fails either way. Where the walk turns round its speed passes through nought, so a frame or so a turn moves the eye less than 0.5 mm
+    // (Bound, in the header).
     budgetCheck('walking frames recorded through two door cycles', steps.length, () => { expect(steps.length, 'walking frames recorded through the cycles').toBeGreaterThan(120); });
-    // Where the walk turns round its speed passes through nought, so a frame or so a turn moves the eye less than 0.5 mm (Bound, in the header).
-    expect(moving / steps.length, 'the share of those frames in which the eye moved more than 0.5 mm').toBeGreaterThan(0.95);
-    expect(metres, 'metres walked through the cycles').toBeGreaterThan(3);
+    budgetCheck('the share of the cycles’ frames in which the eye moved', moving / steps.length, () => { expect(moving / steps.length, 'the share of those frames in which the eye moved more than 0.5 mm').toBeGreaterThan(0.95); });
+    budgetCheck('the metres walked through two door cycles', metres, () => { expect(metres, 'metres walked through the cycles').toBeGreaterThan(3); });
     // Back where the cycles began, E opens it again (its leaves are solid: walking through them is ./routes.spec.ts's).
     await looksAt(page, MIDDLE, 'E Open');
     await page.keyboard.press('KeyE');

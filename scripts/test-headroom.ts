@@ -5,7 +5,7 @@
  * A test of 2.3 to 2.8 s here took 3.2 to 6.4 s there and timed out at Vitest's 5 s default; within a sixth of its timeout here, a test would take under half of it on the slowest run measured there.
  * With that default back, the check named 6 of 650 tests (2026-10-28).
  * A test's time is a timing budget, which depends on what else the machine is doing (work unit 30): a test over a sixth of its timeout fails the run only when the budgets are asserted (`MET_BUDGETS=1`, as `npm run budgets` sets it, `scripts/budgets.ts`), and `npm run verify` prints it and goes on; a passed test whose time or timeout Vitest does not give fails the run either way, since then no headroom is read at all.
- * Bound: it reads each test's own time (`TestCase.diagnostic().duration`, its hooks included, the module's collection not) on the machine that runs it, and predicts the runner by the ratio measured, not by running there; `vitest.config.ts` leaves it out on the runner, whose bound is the timeout itself.
+ * Bound: it reads each test's own time (`TestCase.diagnostic().duration`, its hooks included, the module's collection not) on the machine that runs it, and predicts the runner by the ratio measured, not by running there; `vitest.config.ts` leaves it out on the runner, whose bound is the timeout itself, unless `MET_BUDGETS=1` asks for the timing budgets there too.
  */
 import type { Reporter, TestCase, Vitest } from 'vitest/node';
 

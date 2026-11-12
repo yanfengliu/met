@@ -11,6 +11,8 @@
  * AGENTS.md's rule for it (nothing else heavy running) leave to the person who runs it.
  */
 import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /** The variable that asserts the timing budgets. */
 export const BUDGETS_SWITCH = 'MET_BUDGETS';
@@ -60,7 +62,19 @@ export function runBudgets(exec: (command: string, env: NodeJS.ProcessEnv) => nu
   return failed.length === 0 ? 0 : 1;
 }
 
-if (import.meta.main) {
+/**
+ * Whether the module at `moduleUrl` is the script `argv` runs, its second entry, as `node scripts/budgets.ts` makes it (review 0, F9). Not `import.meta.main`,
+ * which Node gives only from 24.2 while .nvmrc and engines allow 24.0: there a guard on it would run nothing and exit 0. Windows paths compare without case.
+ */
+export function isEntry(argv: readonly string[], moduleUrl: string, platform: NodeJS.Platform = process.platform): boolean {
+  const script = argv[1];
+  if (script === undefined || script === '') return false;
+  const run = resolve(script);
+  const here = fileURLToPath(moduleUrl);
+  return platform === 'win32' ? run.toLowerCase() === here.toLowerCase() : run === here;
+}
+
+if (isEntry(process.argv, import.meta.url)) {
   // One command string through the shell, as npm itself runs scripts; its status is the command's, or 1 if it was ended by a signal.
   process.exit(runBudgets((command, env) => spawnSync(command, { shell: true, stdio: 'inherit', env }).status ?? 1));
 }

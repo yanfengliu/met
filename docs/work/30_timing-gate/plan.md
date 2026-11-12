@@ -9,7 +9,7 @@ Updated: 2026-11-11
 
 `npm run verify` holds two kinds of check: what the code and the page do, and how long they take. The second kind depends on what else the machine is doing. On 2026-11-11, with five sessions busy, gate runs on trees that changed nothing a frame runs kept failing on one timing check, a different one each time: a door swing's slowest frame (19.1 ms and 17.7 ms against 16.7), the walking frame budget (16.89 ms against 16.7), and the unit-test headroom check (`scripts/window-station.test.ts`, 10.9 s against 10 s). Every functional check passed each time (`docs/work/29_artwork-cards-and-forms/plan.md`, landing A2). Work units 23 and 25 record the same under load (19.5, 17.7 and 16.78 ms). The same day work unit 26's first `npm run verify` of its milestone B failed once on a door swing's budget (`doors.spec.ts`, the swing test), at 42.6 ms of work with two review lanes running, then passed three runs alone. The owner chose on 2026-11-11 to split them ("Split them").
 
-Outcome: `npm run verify` checks behaviour, and passes or fails the same whatever else the machine is doing. A new gate, `npm run budgets`, holds every timing budget, is run alone on a quiet machine, and is required before landing a change that can alter what a frame, the build or a test costs.
+Outcome: `npm run verify` checks behaviour and asserts no timing budget, so no budget can fail it on a busy machine; functional checks can still meet load (the findings in Outcome). A new gate, `npm run budgets`, holds every timing budget, is run alone on a quiet machine, and is required before landing a change that can alter what a frame, the build or a test costs.
 
 ## Scope
 
