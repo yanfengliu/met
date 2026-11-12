@@ -1,12 +1,12 @@
 /**
- * The walk's collision with the doors (docs/design/spec.md, Doors: Walking): the static world (./collision.ts, built once per build, with every door's
+ * The walk's collision with the doors (docs/design/spec.md, Doors: Walking): the static world (./collision.ts, built once, with every door's
  * leaves left out) and, for each door, a small world of its leaves' parts (a leaf's metal or panels, and its glass), posed where the door layer
  * (src/viewer/doors.ts) turns them about their hinges, a locked door's closed.
  * Each door's swing moves on in the walker's own fixed steps, before the body moves (`advance`). The way from where a door stands to where the step takes it
  * is tried against the body in poses no point of a leaf moves more than MARGIN apart along its arc: a door whose leaves would come inside the body holds
  * where it stands and waits, opening and closing alike, and its swing starts again from rest once the way is clear. A leaf turning away from a walker who
  * touches it goes on, so a walker pushing on a leaf that opens away follows it.
- * A leaf is a wall: never ground (`groundBelow`), and no part of the check of the walker after a build (`crossings`, src/walk/walker.ts `settle`), so the
+ * A leaf is a wall: never ground (`groundBelow`), and no part of the check of the walker's place (`crossings`, src/walk/walker.ts `settle`), so the
  * walker is never lifted onto a door's top edge. Instead, after each such check, a door whose leaves meet the walker takes at once the first pose clear of
  * it of: open away from it, open toward it, closed (`release`); with none clear it opens away, and the walker is pushed out level (walker.ts `standClear`).
  * Bound: the body is the walker's whole capsule, feet to head; the leaves' matrices are rigid. Every pose a door takes, and so every pose drawn, keeps its
@@ -38,23 +38,23 @@ export interface MovingDoors {
   readonly parts: readonly { readonly door: string; readonly geometry: BufferGeometry }[];
   /** Part k's world matrix with its door `angle` radians open (positive toward its back), into `out`; a locked door's part stays where it is. */
   partMatrix(k: number, angle: number, out: Matrix4): Matrix4;
-  /** Door `id`'s angle now, radians (0 for a locked door), or null while its step is incomplete and it is no part of the world. */
+  /** Door `id`'s angle now, radians (0 for a locked door), or null for a door it does not know. */
   angleOf(id: string): number | null;
   /** The angles door `id` rests at open, the one away from `from` (world metres) first: one for a door that opens one way, two for either, none for a locked door. */
   openAngles(id: string, from: Vector3): readonly number[];
-  /** Moves the built doors' swings on by `seconds`; a door for which `clear(id, from, to)` is false holds where it stands and waits. */
+  /** Moves the doors' swings on by `seconds`; a door for which `clear(id, from, to)` is false holds where it stands and waits. */
   advance(seconds: number, clear: (id: string, from: number, to: number) => boolean): void;
   /** Puts door `id` at `angle` radians at once, still. */
   set(id: string, angle: number): void;
 }
 
 /**
- * The walk's world over `steps` at `t` as walk mode builds it (src/walk/walk-mode.ts): the static world of the steps complete at `t` without the moving
- * doors' closed leaves, and those doors where `doors` stands them now. For tests and tools that walk the model as the page does.
+ * The walk's world over `steps` as walk mode builds it (src/walk/walk-mode.ts): the static world of the steps without the moving doors' closed
+ * leaves, and those doors where `doors` stands them now. For tests and tools that walk the model as the page does.
  */
-export function walkWorld(steps: readonly BuiltStep[], t: number, doors: MovingDoors | null, cache: GeometryBvhs): DoorWorld {
+export function walkWorld(steps: readonly BuiltStep[], doors: MovingDoors | null, cache: GeometryBvhs): DoorWorld {
   const walls = new CollisionWorld(cache);
-  walls.build(collisionMeshes(steps, t, doors?.leafMeshes));
+  walls.build(collisionMeshes(steps, doors?.leafMeshes));
   const world = new DoorWorld(walls, doors, cache);
   world.refresh();
   return world;
@@ -82,7 +82,7 @@ export class DoorWorld implements WalkWorld {
   private readonly b = new Vector3();
 
   constructor(
-    /** The static world: every complete step's solid pieces but the doors' leaves (`leafMeshes`). */
+    /** The static world: every step's solid pieces but the doors' leaves (`leafMeshes`). */
     readonly walls: CollisionWorld,
     private readonly doors: MovingDoors | null,
     cache: GeometryBvhs,
@@ -120,12 +120,12 @@ export class DoorWorld implements WalkWorld {
     return this.walls.groundBelow(x, y, z, length, hit);
   }
 
-  /** The static world's: a door's leaf is no part of the check after a build, which `release` makes for the doors. */
+  /** The static world's: a door's leaf is no part of the check of the walker's place, which `release` makes for the doors. */
   crossings(x: number, z: number, bottom: number, top: number): readonly LineCrossings[] {
     return this.walls.crossings(x, z, bottom, top);
   }
 
-  /** Poses each door's world where the door layer stands the door now, or takes it out while its step is incomplete. */
+  /** Poses each door's world where the door layer stands the door now, or takes it out for a door the layer does not know (or with no layer). */
   refresh(): void {
     for (const door of this.bodies) this.pose(door, this.doors?.angleOf(door.id) ?? null);
   }

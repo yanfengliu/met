@@ -1,10 +1,10 @@
 /**
  * The section cut's cap pass (src/viewer/section-cut.ts): the back faces, in the cut colour, of the pieces the cut passes through, and of no other.
  * Each capped mesh has a stand-in in the pass's own scene that shares its geometry and holds only the instances whose current bounds the plane
- * crosses (bottom under it, top over it), chosen again before each draw, so a piece still arriving is judged where it is. A piece wholly under
+ * crosses (bottom under it, top over it), chosen again before each draw, so a door's moving leaf is judged where it is. A piece wholly under
  * the cut keeps its own colour however close its faces lie, which the cap's depth bias would otherwise let its back faces beat where the depth
  * buffer is coarse (work unit 1, review 3, U10: the Hunt galleries' 5 cm lead roof under a 27.4 m cut, seen with a near plane of 3 cm).
- * Reads the model's meshes and writes only its own stand-ins, so the timeline's state is never touched.
+ * Reads the model's meshes and writes only its own stand-ins, so the timeline's meshes are never touched.
  * Bound: a piece counts by the bounds of its geometry's box at its matrix, so a piece the cut passes through only in that box's empty corners is capped.
  */
 import { InstancedMesh, Scene } from 'three';

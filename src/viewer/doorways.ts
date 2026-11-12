@@ -2,7 +2,7 @@
  * The doorways of the closed doors, for the picker alone (docs/design/spec.md, Doors: Use; work unit 2, review 17, F46). A door's leaves stand 4 mm off
  * their frame and sill, and a pair's meet 8 mm apart (src/model/lib/window.ts `LEAF_GAP`), so the eye's one ray can pass between them: from the plaza
  * spawn, walked straight at the middle door, it looked through the meeting line and found no door. Each door has a box over its closed leaves and those
- * gaps, in its unit's frame, which stands while the door is built and closed where it stands (a locked door whenever it is built) and is gone while it
+ * gaps, in its unit's frame, which stands while the door is closed where it stands (a locked door always) and is gone while it
  * opens, stands open or closes, so the eye looks through the doorway a door opened. The boxes are one InstancedMesh for the page to register with the
  * hit query alone (src/viewer/pick.ts `register` with `zoom: false`; src/viewer/doors.ts `registerWith`), tagged with their doors: it is in no scene, so
  * no camera draws it, and the zoom's pick passes it, heading only for what is drawn (work unit 2, review 18, F50); nothing else reads it: no shadow, no cap

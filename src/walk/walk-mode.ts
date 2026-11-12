@@ -1,9 +1,9 @@
 /**
- * Walk mode on the page (docs/design/spec.md, Walk mode): the walker (./walker.ts) against the collision world (./collision.ts) of the steps complete
- * at the current t, looking through the page's camera.
- * Entering prepares the world on the next frame, after the status line has been drawn ("Preparing walk mode"), and puts the walker at the spawn
- * asked for, else where it last stood in this page, else at the default spawn. While walking, the world is rebuilt whenever the set of complete
- * steps changes, and after every build the walker's place is checked against it (src/walk/walker.ts, `settle`); the orbit controls are off.
+ * Walk mode on the page (docs/design/spec.md, Walk mode): the walker (./walker.ts) against the collision world (./collision.ts) of the whole model,
+ * looking through the page's camera.
+ * Entering prepares the world on the next frame, after the status line has been drawn ("Preparing walk mode"): it is built the first time, and the
+ * walker is put at the spawn asked for, else where it last stood in this page, else at the default spawn, and its place is checked against the world
+ * (src/walk/walker.ts, `settle`), a new place against every piece; the orbit controls are off.
  * Looking (work unit 14): entering by a mouse or the keyboard asks for pointer lock, and the locked mouse turns the walker as it moves, no button
  * held; where the browser gives no lock (no user gesture, as at load with `walk=1`), a click of the view asks again. A drag with an unlocked mouse, a
  * finger or a pen turns the view the way the pointer moves, as the locked mouse does. Losing the lock while walking leaves walk mode: the browser
@@ -11,8 +11,8 @@
  * status line's hint shows how to look, move and leave until the visitor first walks or jumps, at most `HINT_SECONDS`. Every walking frame, and afresh
  * whenever something reads it, the look target (./look.ts) is found along the eye's ray; `onLookTarget` is the one hook that hears it change, for
  * doors and labels alike. The doors that open collide where the door layer stands them, their swings moved on in the walker's own physics steps
- * (./door-world.ts), and after every check of the walker's place a door whose leaves a build left in the walker is put clear of it. The walk mode
- * reads the scene and never writes it.
+ * (./door-world.ts), and after every check of the walker's place a door whose leaves stand in the walker is put clear of it. The walk mode reads the
+ * scene and never writes it.
  */
 import { Vector3 } from 'three';
 
@@ -20,7 +20,7 @@ import type { BuiltStep } from '../build/timeline.js';
 import type { Vec3 } from '../build/types.js';
 import type { CameraRig } from '../viewer/camera-rig.js';
 import type { GeometryBvhs } from './bvh-cache.js';
-import { CollisionWorld, collisionMeshes, completeSteps, instancesBefore } from './collision.js';
+import { CollisionWorld, collisionMeshes } from './collision.js';
 import type { CollisionStats } from './collision.js';
 import { DoorWorld } from './door-world.js';
 import type { MovingDoors } from './door-world.js';
@@ -76,9 +76,9 @@ export interface WalkFacts {
   readonly look: Vec3 | null;
   readonly onGround: boolean;
   readonly pointerLocked: boolean;
-  /** Milliseconds of the last collision build (BVHs of geometries met for the first time included), or null before the first. */
+  /** Milliseconds of the collision build (BVHs of geometries met for the first time included), or null before it. */
   readonly bvhMs: number | null;
-  /** What the last build holds: the complete steps it was built for, their solid instances and triangles. */
+  /** What the build holds: the steps it was built from, their solid instances and triangles. */
   readonly collision: { readonly steps: number; readonly instances: number; readonly triangles: number } | null;
   /** Median milliseconds of the page's work per walking frame over the last 120 (physics, the look target, camera and the render call), or null. */
   readonly frameMs: number | null;
@@ -110,9 +110,7 @@ export class WalkMode {
   private waited = 0;
   private pending: Spawn | null = null;
   private placed = false;
-  private builtFor = -1;
-  /** The complete steps the walker's place was last checked against (`settle`): pieces of later steps are new to it. */
-  private settledFor = 0;
+  /** The collision world's build, once it is built: the world never changes after. */
   private stats: CollisionStats | null = null;
   private spawnId: string | null = null;
   private orbitFov = 45;
@@ -210,8 +208,8 @@ export class WalkMode {
   }
 
   /** Builds and places at once, without waiting a frame for the status line (capture mode). */
-  prepareNow(t: number): void {
-    if (this.on && this.prepare) this.build(t);
+  prepareNow(): void {
+    if (this.on && this.prepare) this.build();
   }
 
   /**
@@ -249,20 +247,17 @@ export class WalkMode {
   }
 
   /**
-   * One frame of `seconds` at timeline position `t` with the physical keys `held`: prepares, rebuilds the world when the complete steps changed,
-   * moves the walker, poses the camera and finds the look target. Returns whether the view changed.
+   * One frame of `seconds` with the physical keys `held`: prepares, moves the walker, poses the camera and finds the look target. Returns whether the
+   * view changed.
    */
-  frame(seconds: number, t: number, held: ReadonlySet<string>): boolean {
+  frame(seconds: number, held: ReadonlySet<string>): boolean {
     if (!this.on) return false;
     if (this.prepare) {
       if (this.waited === 0) {
         this.waited = 1;
         return true;
       }
-      this.build(t);
-    } else if (completeSteps(t, this.host.steps.length) !== this.builtFor) {
-      this.rebuild(t);
-      this.settle(this.settledFor);
+      this.build();
     }
     const input = walkInput(held);
     // The hint goes at the first step, or when its time is up.
@@ -308,7 +303,7 @@ export class WalkMode {
       onGround: walking && this.walker.onGround,
       pointerLocked: this.locked,
       bvhMs: this.stats?.ms ?? null,
-      collision: this.stats === null ? null : { steps: this.builtFor, instances: this.stats.instances, triangles: this.stats.triangles },
+      collision: this.stats === null ? null : { steps: this.host.steps.length, instances: this.stats.instances, triangles: this.stats.triangles },
       frameMs: times.length === 0 ? null : (times[Math.floor(times.length / 2)] ?? null),
       target: target === null ? null : { kind: target.kind, id: target.id, distance: target.distance },
     };
@@ -329,44 +324,37 @@ export class WalkMode {
     return lookTarget(hit, this.walker.eye(this.targetEye), this.walker.look(this.targetLook));
   }
 
-  private build(t: number): void {
-    if (completeSteps(t, this.host.steps.length) !== this.builtFor || this.stats === null) this.rebuild(t);
+  private build(): void {
+    // The world is the whole model's and never changes, so it is built once.
+    this.stats ??= this.world.build(collisionMeshes(this.host.steps, this.host.doors?.leafMeshes));
     this.doorWorld.refresh();
     const spawn = this.pending;
     if (spawn !== null) {
       this.placeAt(spawn);
       this.pending = null;
       // A new place: every piece is new to it.
-      this.settle(0);
+      this.settle(true);
     } else {
-      // Where it last stood, against what the build added since.
-      this.settle(this.settledFor);
+      // Where it last stood, which the same world held: only what lies over it, or a door's leaves since swung into it, can move it.
+      this.settle(false);
     }
     this.prepare = false;
     this.hintLeft = HINT_SECONDS;
     this.lastEye.set(Number.NaN, 0, 0);
   }
 
-  private rebuild(t: number): void {
-    this.stats = this.world.build(collisionMeshes(this.host.steps, t, this.host.doors?.leafMeshes));
-    this.builtFor = completeSteps(t, this.host.steps.length);
-    this.doorWorld.refresh();
-  }
-
   /**
-   * Checks the walker against the world just built (src/walk/walker.ts, `settle`): pieces of the steps completed after the first `known` can embed it, and
-   * anything can bury it. With no surface over it to stand on, it goes to the nearest spawn. Then a door whose leaves stand in it is put clear of it,
-   * and where no pose of the door is, the walker is pushed out of the leaf (./door-world.ts `release`).
+   * Checks the walker against the world (src/walk/walker.ts, `settle`): every piece can embed it at a `fresh` place, and anything can bury it. With no
+   * surface over it to stand on, it goes to the nearest spawn. Then a door whose leaves stand in it is put clear of it, and where no pose of the door is,
+   * the walker is pushed out of the leaf (./door-world.ts `release`).
    */
-  private settle(known: number): void {
-    const from = this.builtFor > known ? instancesBefore(this.host.steps, known, this.host.doors?.leafMeshes) : this.world.instances;
-    if (this.walker.settle(from) === 'lost') {
+  private settle(fresh: boolean): void {
+    if (this.walker.settle(fresh ? 0 : this.world.instances) === 'lost') {
       const { x, y, z } = this.walker.feet;
       this.placeAt(nearestSpawn(x, y, z));
       this.walker.settle(0);
     }
     if (this.doorWorld.release(this.walker.feet)) this.walker.standClear();
-    this.settledFor = this.builtFor;
   }
 
   private placeAt(spawn: Spawn): void {

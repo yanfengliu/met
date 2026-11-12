@@ -1,10 +1,10 @@
 /**
- * The collection placed in the finished model (docs/design/spec.md, Collection): the whole sequence's Timeline at t = N, and apart from it the model
+ * The collection placed in the finished model (docs/design/spec.md, Collection): the whole sequence's Timeline, and apart from it the model
  * without the collection's steps, as a collision world (solid pieces, three-mesh-bvh) and a picker (drawn pieces). Every artwork's every piece (object,
- * plinth, vitrine, frame) is checked by its real bounds, as its step's mesh draws it at t = N: each piece the kit was given (collectStep, its order
- * naming its artwork) is bound to the one drawn instance of the same geometry and material role whose float32 matrix equals its own, and the checks
+ * plinth, vitrine, frame) is checked by its real bounds, as its step's mesh draws it: each piece the kit was given (collectStep, its tag naming its
+ * artwork) is bound to the one drawn instance of the same geometry and material role whose float32 matrix equals its own, and the checks
  * read that instance's matrix:
- * - it stands at t = N: its step is complete, every mesh of it drawn in full, every drawn instance one piece, and the pieces those the placements give;
+ * - it stands: every mesh of its step drawn in full, every drawn instance one piece, and the pieces those the placements give;
  * - a standing artwork's floor, under its footprint's middle and corners, is the level its placement names, within 12 mm (no float, no sinking);
  * - a hung one has a wall behind its back, within 4 cm, at its middle and corners;
  * - no other solid piece passes through any of its pieces (vertical lines 0.1 m apart over each piece, crossings and insides, a sheet having none:
@@ -111,7 +111,7 @@ const ZONES: readonly Zone[] = [
   }),
 ];
 
-/** One piece of an artwork as its step's mesh draws it at t = N. */
+/** One piece of an artwork as its step's mesh draws it. */
 interface DrawnPiece {
   readonly geometry: BufferGeometry;
   readonly role: ArtPiece['role'];
@@ -136,7 +136,7 @@ function roleOf(material: Material | Material[], def: CollectionStepDef): ArtPie
 }
 
 /**
- * A collection step's artworks as its meshes draw them at t = N: each piece the kit was given (collectStep; its order names its artwork) takes the
+ * A collection step's artworks as its meshes draw them: each piece the kit was given (collectStep; its tag names its artwork) takes the
  * one drawn instance, not yet taken, of its geometry and role whose matrix is its own to float32. The problems name a piece no instance draws and an
  * instance that is no piece.
  */
@@ -145,18 +145,20 @@ function drawnArtworks(step: BuiltStep, def: CollectionStepDef): { readonly artw
   const drawn = step.meshes.flatMap((mesh) => Array.from({ length: mesh.count }, (_, slot) => ({ mesh, slot, role: roleOf(mesh.material, def), taken: false })));
   const byOrder = new Map<number, DrawnPiece[]>();
   collectStep(step.def).pieces.forEach((piece, k) => {
+    // Its artwork, by the tag kit.addTagged gave it (src/model/collection/artwork-tags.test.ts holds every piece's tag its own object's).
+    const order = def.placements.findIndex((p) => String(p.id) === piece.tag?.id);
     const role = roleOf(piece.material, def);
     const own = piece.matrix.elements;
     const match = drawn.find((d) => !d.taken && d.mesh.geometry === piece.geometry && d.role === role && own.every((v, i) => d.mesh.instanceMatrix.array[d.slot * 16 + i] === Math.fround(v)));
     if (match === undefined || role === 'unknown') {
-      problems.push(`${def.id}: piece ${String(k)} (artwork ${String(piece.order)}, ${role}) is drawn by no instance holding its matrix at t = N`);
+      problems.push(`${def.id}: piece ${String(k)} (artwork ${String(order)}, ${role}) is drawn by no instance holding its matrix`);
       return;
     }
     match.taken = true;
-    byOrder.set(piece.order, [...(byOrder.get(piece.order) ?? []), { geometry: match.mesh.geometry, role, matrix: new Matrix4().fromArray(match.mesh.instanceMatrix.array, match.slot * 16), mesh: match.mesh }]);
+    byOrder.set(order, [...(byOrder.get(order) ?? []), { geometry: match.mesh.geometry, role, matrix: new Matrix4().fromArray(match.mesh.instanceMatrix.array, match.slot * 16), mesh: match.mesh }]);
   });
   for (const d of drawn) if (!d.taken) problems.push(`${def.id}: instance ${String(d.slot)} of mesh ${d.mesh.name} is none of the pieces the kit was given`);
-  for (const order of byOrder.keys()) if (def.placements[order] === undefined) problems.push(`${def.id}: pieces of order ${String(order)}, which is no placement's`);
+  for (const order of byOrder.keys()) if (def.placements[order] === undefined) problems.push(`${def.id}: pieces of artwork ${String(order)}, which is no placement's`);
   return { artworks: def.placements.map((placement, index) => ({ def, index, id: placement.id, pieces: byOrder.get(index) ?? [] })), problems };
 }
 
@@ -165,13 +167,12 @@ let world: CollisionWorld;
 let picker: ModelPicker;
 /** Which step each instance of the collision world belongs to, for messages. */
 let owners: string[];
-/** Every artwork as drawn at t = N, and what binding the drawn instances to the kit's pieces found wrong. */
+/** Every artwork as drawn, and what binding the drawn instances to the kit's pieces found wrong. */
 let ARTWORKS: readonly Artwork[] = [];
 let unbound: readonly string[] = [];
 
 beforeAll(() => {
   timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   const bound = DEFS.map((def) => {
     const step = timeline.steps.find((s) => s.def.id === def.id);
     return step === undefined ? { artworks: [], problems: [`${def.id}: not in the sequence`] } : drawnArtworks(step, def);
@@ -182,7 +183,7 @@ beforeAll(() => {
   const rest = timeline.steps.filter((s) => !ids.has(s.def.id));
   const bvhs = new GeometryBvhs();
   world = new CollisionWorld(bvhs);
-  const meshes = collisionMeshes(rest, rest.length);
+  const meshes = collisionMeshes(rest);
   world.build(meshes);
   const stepOf = new Map<InstancedMesh, string>(rest.flatMap((s) => s.meshes.map((m) => [m, s.def.id] as const)));
   owners = meshes.flatMap((m) => Array.from({ length: m.count }, () => stepOf.get(m) ?? '?'));
@@ -253,7 +254,7 @@ describe('a piece meeting an artwork along a vertical line', () => {
   });
 });
 
-describe('the collection at t = N', () => {
+describe('the collection in the finished model', () => {
   it('places every pick once, in its own space’s step, and builds each step in full', () => {
     const placed = DEFS.flatMap((d) => d.placements.map((p) => `${d.space}:${String(p.id)}`)).sort();
     const picked = SPACES.flatMap((s) => s.picks.map((p) => `${s.id}:${String(p.id)}`)).sort();
@@ -267,12 +268,12 @@ describe('the collection at t = N', () => {
       }
       const pieces = stepArtworks(def).pieces.reduce((n, p) => n + p.length, 0);
       if (step.pieceCount !== pieces) problems.push(`${def.id}: ${String(step.pieceCount)} pieces, expected ${String(pieces)}`);
-      for (const mesh of step.meshes) if (!mesh.visible || mesh.count !== mesh.instanceMatrix.count) problems.push(`${mesh.name}: ${String(mesh.count)} of ${String(mesh.instanceMatrix.count)} drawn at t = N`);
+      for (const mesh of step.meshes) if (!mesh.visible || mesh.count !== mesh.instanceMatrix.count) problems.push(`${mesh.name}: ${String(mesh.count)} of ${String(mesh.instanceMatrix.count)} drawn`);
     }
     expect(problems).toEqual([]);
   });
 
-  it('draws at t = N exactly the pieces the kit was given, and those are the pieces the placements and the catalogue give', () => {
+  it('draws exactly the pieces the kit was given, and those are the pieces the placements and the catalogue give', () => {
     const problems = [...unbound];
     for (const art of ARTWORKS) {
       const left = [...art.pieces];

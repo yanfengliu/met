@@ -12,8 +12,6 @@ export const northWallsRaisedStep: StepDef = {
   year: '1978–1980',
   title: "Raise the Morgan wing's walls for the new wings",
   detail: 'The Sackler and American wings rise against the Morgan wing; its north and park walls go up to their roofs, closing the Temple of Dendur hall and the Engelhard Court.',
-  motion: { kind: 'grow' },
-  stagger: 'order',
   build: (kit) => {
     buildRaisedWalls(kit, NORTH_RAISES);
   },
@@ -26,8 +24,6 @@ export const southWallsRaisedStep: StepDef = {
   year: '1982–1990',
   title: "Raise the south link's walls for the new wings",
   detail: 'The Rockefeller and Kravis wings rise higher than the south link; its south and park walls go up past their roofs to close their upper galleries.',
-  motion: { kind: 'grow' },
-  stagger: 'order',
   build: (kit) => {
     buildRaisedWalls(kit, SOUTH_RAISES);
   },

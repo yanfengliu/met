@@ -91,9 +91,9 @@ function pier(): BufferGeometry {
 /** Both rows of piers, the nave shafts turned to the nave. */
 export function hallPiers(kit: Kit): void {
   const geometry = pier();
-  HALL_PIER_Z.forEach((z, i) => {
-    kit.add(geometry, palette.limestone, placed(-HALL_PIER_X, L1, z, FACING.north), i);
-    kit.add(geometry, palette.limestone, placed(HALL_PIER_X, L1, z, FACING.south), i);
+  HALL_PIER_Z.forEach((z) => {
+    kit.add(geometry, palette.limestone, placed(-HALL_PIER_X, L1, z, FACING.north));
+    kit.add(geometry, palette.limestone, placed(HALL_PIER_X, L1, z, FACING.south));
   });
 }
 
@@ -102,19 +102,19 @@ export function hallArcades(kit: Kit): void {
   const span = SIDE_BAY - HALL_PIER;
   const panel = openWall({ width: SIDE_BAY, height: L2 - L1, thickness: HALL_NAVE_WALL, holes: [{ head: 'pointed', y: 0, width: span, height: HALL_ARCADE_SPRING + HALL_ARCADE_RISE, rise: HALL_ARCADE_RISE }], openEnds: true });
   const ring = voussoirRing({ head: 'pointed', span, rise: HALL_ARCADE_RISE, band: 0.32, count: 15, projection: 0.07, parity: 'all' });
-  BAY_CENTRES.forEach((z, i) => {
+  BAY_CENTRES.forEach((z) => {
     for (const [x, out] of [
       [-HALL_PIER_X, -1],
       [HALL_PIER_X, 1],
     ] as const) {
       const face = x + (out * HALL_NAVE_WALL) / 2;
       const facing = out < 0 ? FACING.south : FACING.north;
-      kit.add(panel, palette.limestone, placed(face, L1, z, facing), i);
-      kit.add(ring, palette.limestone, placed(face, L1 + HALL_ARCADE_SPRING, z, facing), i);
-      kit.add(ring, palette.limestone, placed(x - (out * HALL_NAVE_WALL) / 2, L1 + HALL_ARCADE_SPRING, z, out < 0 ? FACING.north : FACING.south), i);
+      kit.add(panel, palette.limestone, placed(face, L1, z, facing));
+      kit.add(ring, palette.limestone, placed(face, L1 + HALL_ARCADE_SPRING, z, facing));
+      kit.add(ring, palette.limestone, placed(x - (out * HALL_NAVE_WALL) / 2, L1 + HALL_ARCADE_SPRING, z, out < 0 ? FACING.north : FACING.south));
     }
   });
-  for (const x of [-NAVE_INNER_X, NAVE_INNER_X]) addBox(kit, palette.limestone, x, L2 - 0.35, VAUX_HALL_WEST_Z, x - Math.sign(x) * 0.16, L2, VAUX_HALL_EAST_Z, 6);
+  for (const x of [-NAVE_INNER_X, NAVE_INNER_X]) addBox(kit, palette.limestone, x, L2 - 0.35, VAUX_HALL_WEST_Z, x - Math.sign(x) * 0.16, L2, VAUX_HALL_EAST_Z);
 }
 
 /**
@@ -170,33 +170,33 @@ export function hallClerestoryVault(kit: Kit): void {
     openEnds: true,
   });
   const win = windowUnit({ width: CLERESTORY.width, height: CLERESTORY.height, shape: 'arch', cols: 2, rows: 3 });
-  BAY_CENTRES.forEach((z, i) => {
+  BAY_CENTRES.forEach((z) => {
     for (const [out, facing] of [
       [-1, FACING.south],
       [1, FACING.north],
     ] as const) {
       const face = out * NAVE_OUTER_X;
-      kit.add(panel, palette.limestone, placed(face, L2, z, facing), i);
-      kit.add(skin, core.vauxBrick, placed(face + out * 0.04, ROOF_Y, z, facing), i);
+      kit.add(panel, palette.limestone, placed(face, L2, z, facing));
+      kit.add(skin, core.vauxBrick, placed(face + out * 0.04, ROOF_Y, z, facing));
       const w = placed(face - out * 0.3, HALL_CLERESTORY_SILL_Y, z, facing);
-      kit.add(win.frame, palette.metalDark, w, i + 1);
-      kit.add(win.bars, palette.metalDark, w, i + 1);
-      kit.add(win.glass, palette.glass, w, i + 1);
+      kit.add(win.frame, palette.metalDark, w);
+      kit.add(win.bars, palette.metalDark, w);
+      kit.add(win.glass, palette.glass, w);
     }
   });
   // The short ends of the nave walls between the last piers and the end walls.
   for (const out of [-1, 1]) {
-    addBox(kit, palette.limestone, out * NAVE_INNER_X, L2, VAUX_HALL_WEST_Z, out * NAVE_OUTER_X, HALL_NAVE_ROOF_EAVES_Y, HALL_PIER_Z[0], 0);
-    addBox(kit, palette.limestone, out * NAVE_INNER_X, L2, HALL_PIER_Z[6], out * NAVE_OUTER_X, HALL_NAVE_ROOF_EAVES_Y, VAUX_HALL_EAST_Z, 0);
+    addBox(kit, palette.limestone, out * NAVE_INNER_X, L2, VAUX_HALL_WEST_Z, out * NAVE_OUTER_X, HALL_NAVE_ROOF_EAVES_Y, HALL_PIER_Z[0]);
+    addBox(kit, palette.limestone, out * NAVE_INNER_X, L2, HALL_PIER_Z[6], out * NAVE_OUTER_X, HALL_NAVE_ROOF_EAVES_Y, VAUX_HALL_EAST_Z);
   }
   const vault = groinBay(NAVE_INNER_X, SIDE_BAY, 0.25);
-  BAY_CENTRES.forEach((z, i) => {
-    kit.add(vault, core.hallPlaster, placed(0, HALL_VAULT_SPRING_Y, z), 8 + i);
+  BAY_CENTRES.forEach((z) => {
+    kit.add(vault, core.hallPlaster, placed(0, HALL_VAULT_SPRING_Y, z));
   });
   const rib = voussoirRing({ head: 'round', span: 2 * (NAVE_INNER_X - 0.42), band: 0.42, count: 21, projection: 0.6, parity: 'all', back: true });
   HALL_PIER_Z.forEach((z, i) => {
     const zz = i === 0 ? z + 0.1 : i === HALL_PIER_Z.length - 1 ? z - 0.7 : z - 0.3;
-    kit.add(rib, palette.limestone, placed(0, HALL_VAULT_SPRING_Y, zz), 14 + i);
+    kit.add(rib, palette.limestone, placed(0, HALL_VAULT_SPRING_Y, zz));
   });
   endWallLinings(kit);
   aisleLinings(kit);
@@ -215,14 +215,14 @@ function endWallLinings(kit: Kit): void {
     [VAUX_HALL_WEST_Z + t, FACING.east, 1],
     [VAUX_HALL_EAST_Z - t, FACING.west, -1],
   ] as const) {
-    kit.add(upper, core.hallPlaster, placed(0, ROOF_Y, z, facing), 21);
+    kit.add(upper, core.hallPlaster, placed(0, ROOF_Y, z, facing));
     // The doorway's moulded archivolt, and a balcony: a solid stone parapet on corbels across the opening at the second floor.
-    kit.add(archivolt, palette.limestone, placed(0, L1 + END_DOOR.height - END_DOOR.width / 2, z, facing), 22);
+    kit.add(archivolt, palette.limestone, placed(0, L1 + END_DOOR.height - END_DOOR.width / 2, z, facing));
     const z0 = z;
     const z1 = z + dir * 0.9;
-    addBox(kit, palette.limestone, -3.3, L2 - 0.25, Math.min(z0, z1), 3.3, L2, Math.max(z0, z1), 22);
-    addBox(kit, palette.limestone, -3.3, L2, z1 - dir * 0.15, 3.3, L2 + 1.0, z1, 22);
-    for (const x of [-2.6, -0.9, 0.9, 2.6]) addBox(kit, palette.limestone, x - 0.18, L2 - 0.8, Math.min(z0, z1), x + 0.18, L2 - 0.25, Math.max(z0, z1 - dir * 0.3), 22);
+    addBox(kit, palette.limestone, -3.3, L2 - 0.25, Math.min(z0, z1), 3.3, L2, Math.max(z0, z1));
+    addBox(kit, palette.limestone, -3.3, L2, z1 - dir * 0.15, 3.3, L2 + 1.0, z1);
+    for (const x of [-2.6, -0.9, 0.9, 2.6]) addBox(kit, palette.limestone, x - 0.18, L2 - 0.8, Math.min(z0, z1), x + 0.18, L2 - 0.25, Math.max(z0, z1 - dir * 0.3));
   }
 }
 
@@ -237,6 +237,6 @@ function aisleLinings(kit: Kit): void {
       const z = ((SIDE_LINES[i] ?? 0) + (SIDE_LINES[i + 1] ?? 0)) / 2;
       return [z - 1.4, z + 1.4] as const;
     });
-    for (const [z0, z1] of runsBetween(VAUX_HALL_WEST_Z, VAUX_HALL_EAST_Z, gaps)) addBox(kit, palette.limestone, x, L1, z0, x + (side === 'south' ? 0.05 : -0.05), L2 - SLAB, z1, 3);
+    for (const [z0, z1] of runsBetween(VAUX_HALL_WEST_Z, VAUX_HALL_EAST_Z, gaps)) addBox(kit, palette.limestone, x, L1, z0, x + (side === 'south' ? 0.05 : -0.05), L2 - SLAB, z1);
   }
 }

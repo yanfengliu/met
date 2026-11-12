@@ -51,8 +51,6 @@ export const drivesStep: StepDef = {
   chapter: 'site',
   title: 'Cut the north and south drives',
   detail: 'The service drive along the north face and the garage loop on the south fall to 2.2 m below the avenue, between stone walls.',
-  motion: { kind: 'rise', distance: 0.6 },
-  stagger: '-z',
   build(kit) {
     pave(kit, 'driveNorth');
     pave(kit, 'driveSouth');

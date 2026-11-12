@@ -78,8 +78,7 @@ export function eastOpenings(): readonly EastOpening[] {
  * The brick filling an inner arch's opening round its corridor: flush with the east face under the window's sill, where the apron stands, and set
  * back above it a centimetre deeper than the arches' blind heads, so the arch reads blind round the corridor as it did before; 1 cm short of the
  * wall's inner face, so in gallery 304 it reads as a panel set in the opening. Set with the east front's trim (vauxEastTrim, in the openings step),
- * so it arrives with the floor band and apron in front of it, at their order. While it drops, its upper pieces pass through the wall over the
- * opening and the foot of the head's niche: the centimetre keeps their faces behind the wall's and the niche's, out of their planes (review 6, F54).
+ * so the floor band and apron stand in front of it. The centimetre keeps its faces out of the wall's and the head niche's planes (review 6, F54).
  */
 function eastInfill(kit: Kit, s: number): void {
   const [c0, c1] = eastCorridor(s);
@@ -87,9 +86,9 @@ function eastInfill(kit: Kit, s: number): void {
   const [b0, b1] = s > 0 ? [o0, c0] : [c1, o1];
   const inner = INNER_EAST_Z + INFILL_CLEAR;
   const back = EAST_Z - HEAD_DEPTH - INFILL_CLEAR;
-  addBox(kit, core.vauxBrick, b0, L1, inner, b1, SILL_Y, EAST_Z, 12);
-  addBox(kit, core.vauxBrick, b0, SILL_Y, inner, b1, EAST_CORRIDOR_TOP_Y, back, 12);
-  addBox(kit, core.vauxBrick, o0, EAST_CORRIDOR_TOP_Y, inner, o1, LINTEL_Y, back, 12);
+  addBox(kit, core.vauxBrick, b0, L1, inner, b1, SILL_Y, EAST_Z);
+  addBox(kit, core.vauxBrick, b0, SILL_Y, inner, b1, EAST_CORRIDOR_TOP_Y, back);
+  addBox(kit, core.vauxBrick, o0, EAST_CORRIDOR_TOP_Y, inner, o1, LINTEL_Y, back);
 }
 
 /**
@@ -114,10 +113,10 @@ export function vauxEastWall(kit: Kit): void {
   holes.push({ ...outer, y: sill - DOOR_THRESHOLD, height: outer.height + DOOR_THRESHOLD });
   const east = openWall({ width: 2 * A_HALF, height: PARAPET_Y - base, thickness: OUTER_WALL, holes });
   const frame = placed(0, base, EAST_Z, FACING.east);
-  kit.add(east, core.vauxBrick, frame, 12);
+  kit.add(east, core.vauxBrick, frame);
   const inner: Hole = { head: 'round', x: 0, y: sill, width: 2 * GALLERY_600_DOOR_HALF_WIDTH, height: GALLERY_600_DOOR_CROWN };
-  kit.add(holeLining(outer, inner, OUTER_WALL), core.granite, frame, 12);
-  addBox(kit, core.granite, -lined, L2 - DOOR_THRESHOLD, INNER_EAST_Z, lined, L2, EAST_Z, 12);
+  kit.add(holeLining(outer, inner, OUTER_WALL), core.granite, frame);
+  addBox(kit, core.granite, -lined, L2 - DOOR_THRESHOLD, INNER_EAST_Z, lined, L2, EAST_Z);
 }
 
 /** Granite trim of the east front: the main floor's and the impost band, the windows' aprons, the jambs' inner order, and the four heads; and the brick round the corridors. */
@@ -125,7 +124,7 @@ export function vauxEastTrim(kit: Kit): void {
   for (const s of [-1, 1]) eastInfill(kit, s);
   const proud = 0.08;
   const box = (x0: number, x1: number, y0: number, y1: number, depth: number): void => {
-    addBox(kit, core.granite, x0, y0, EAST_Z, x1, y1, EAST_Z + depth, 12);
+    addBox(kit, core.granite, x0, y0, EAST_Z, x1, y1, EAST_Z + depth);
   };
   const passages = [0, -OUTER_X, OUTER_X].map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
   const corridors = [-1, 1].map(eastCorridor);
@@ -146,8 +145,8 @@ export function vauxEastTrim(kit: Kit): void {
       // cut by the second-floor door.
       const cut = !window && s > 0 ? secondCut(s) : undefined;
       const at = placed(x, SPRING_Y, EAST_Z, FACING.east);
-      kit.add(lightHead('east', cut), core.granite, at, 12);
-      kit.add(darkHead('east', cut), core.graniteDark, at, 12);
+      kit.add(lightHead('east', cut), core.granite, at);
+      kit.add(darkHead('east', cut), core.graniteDark, at);
     }
   }
 }

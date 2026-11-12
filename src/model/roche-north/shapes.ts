@@ -2,7 +2,7 @@
  * Geometry helpers of the Roche north area: one cached geometry per distinct shape (docs/design/spec.md, Batching), placed by matrices.
  * - `UNIT_BOX` is a closed 1 m cube centred on the origin; `boxAt` scales it onto a world box, so every plain block of a step batches into one mesh per material.
  * - `prismY` extrudes a plan outline (X, Z) upward; `prismZ` extrudes an elevation outline (X, Y) along Z. Both are closed solids, so the section cut reads them as solid.
- * - `merge` joins fixed parts (a facade's storey, its windows) into one cached geometry, so a composite that never moves apart costs one mesh per material; parts
+ * - `merge` joins fixed parts (a facade's storey, its windows) into one cached geometry, so a composite costs one mesh per material; parts
  *   that are all sheets (a window's glass) make a sheet (../lib/sheet.ts).
  * Shapes made here are local to this folder; parts the library has (columns, glazing, stairs, fittings) come from src/model/lib/.
  */
@@ -55,9 +55,9 @@ export function boxMatrix(min: Vec3, max: Vec3): Matrix4 {
 }
 
 /** Adds a block spanning the world corners `min`..`max` (each axis must have positive extent). */
-export function boxAt(kit: Kit, material: Material, min: Vec3, max: Vec3, order?: number): void {
+export function boxAt(kit: Kit, material: Material, min: Vec3, max: Vec3): void {
   if (!(max[0] > min[0] && max[1] > min[1] && max[2] > min[2])) throw new Error(`boxAt: the box (${min.join(', ')}) to (${max.join(', ')}) has no volume; pass min below max on every axis.`);
-  kit.add(UNIT_BOX, material, boxMatrix(min, max), order);
+  kit.add(UNIT_BOX, material, boxMatrix(min, max));
 }
 
 /** A translation, optionally turned about +Y by `turn` radians and scaled uniformly. */

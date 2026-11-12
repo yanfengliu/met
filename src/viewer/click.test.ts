@@ -12,7 +12,7 @@
  *   with one finger lifted then a tap, an out-and-back drag, the right-button pan, a pen, two buttons pressed and let go in turn, a mouse click while a
  *   finger whose capture was lost is down, and a finger's drag after one whose capture was lost was released over another element. Each makes the
  *   clicks worked out by hand and ends with the zoom's factors, the camera and its target where a rig with no click bound ends, sent the same events
- *   less a click's own moves; it reports a user move (which turns the follow camera off and clears the preset in view) only where it moves the view,
+ *   less a click's own moves; it reports a user move (which clears the preset in view) only where it moves the view,
  *   and none from a click's press to its release.
  *   Red with the gate of 86bdf0c (the taps and the pen turned the camera 0.37 to 0.59 m and reported user moves, review 6, F25), of e06cc70 (the
  *   sub-slop pinch's first factor 44/39 (1.128) for 40/39 (1.026), review 7, F29) and of 1fd3a50 (the drag then a pinch zoomed first by 136/39

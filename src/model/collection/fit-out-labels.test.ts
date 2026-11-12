@@ -1,6 +1,6 @@
 /**
  * Every fit-out piece of the collection can be labelled in the finished model (docs/design/spec.md, Collection: Fit-out pieces and Labels): the whole
- * sequence's Timeline at t = N, the page's picker over it (src/viewer/pick.ts, with the timeline's tags) and, for each built part of each piece
+ * sequence's Timeline, the page's picker over it (src/viewer/pick.ts, with the timeline's tags) and, for each built part of each piece
  * (./fit-out.ts `FIT_OUT_PIECES`), the views of ./fit-out-testing.ts:
  * - on foot: from an eye 1.6 m over the view's feet, on the part's floor, looking at the view's aim, the walking eye's look target (src/walk/look.ts)
  *   is that artwork, within its 6 m reach: the gate from the terrace, the temple from its forecourt, Diana by her pedestal at the eye's height and by
@@ -46,7 +46,6 @@ let timeline: Timeline;
 
 beforeAll(() => {
   timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), Math.min(0, timeline.bounds.min.y) - 0.5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
 }, 120_000);
 

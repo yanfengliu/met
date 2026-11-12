@@ -78,27 +78,27 @@ function glassPoint(s: number, z: number): [number, number, number] {
 }
 
 function foundations(kit: Kit): void {
-  const footing = (a: P2, b: P2, k: number): void => {
-    kit.add(UNIT_BOX, mat.concrete, wallAlong(a, b, FOOTING_Y, GROUND_FLOOR_Y - SLAB, 2.0), k);
+  const footing = (a: P2, b: P2): void => {
+    kit.add(UNIT_BOX, mat.concrete, wallAlong(a, b, FOOTING_Y, GROUND_FLOOR_Y - SLAB, 2.0));
   };
-  footing([X0, Z_EAST], [X0, Z_WEST], 0);
-  footing([X0, Z_WEST], [X1, Z_WEST], 1);
-  footing([X1, Z_WEST], [X1, Z_KRAVIS], 2);
-  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([X_IN, GROUND_FLOOR_Y - SLAB, Z_IN], [X1, GROUND_FLOOR_Y, Z_EAST]), 3);
+  footing([X0, Z_EAST], [X0, Z_WEST]);
+  footing([X0, Z_WEST], [X1, Z_WEST]);
+  footing([X1, Z_WEST], [X1, Z_KRAVIS]);
+  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([X_IN, GROUND_FLOOR_Y - SLAB, Z_IN], [X1, GROUND_FLOOR_Y, Z_EAST]));
 }
 
 function walls(kit: Kit): void {
   // The stone base under the glass wall, the west wall (later inside the Wallace Wing) and the north wall up to the Kravis Wing.
-  kit.add(UNIT_BOX, palette.limestone, wallAlong([X0, Z_EAST], [X0, Z_IN], GROUND_FLOOR_Y - SLAB, RF_GLASS_FOOT_Y, OUTER_WALL), 0);
+  kit.add(UNIT_BOX, palette.limestone, wallAlong([X0, Z_EAST], [X0, Z_IN], GROUND_FLOOR_Y - SLAB, RF_GLASS_FOOT_Y, OUTER_WALL));
   // The west wall stops 1 m short of the south face: photo ref-park-south shows a dark reveal between the glass and the stone block west of it.
-  kit.add(UNIT_BOX, palette.limestone, wallAlong([X0 + 1.0, Z_WEST], [X1, Z_WEST], GROUND_FLOOR_Y - SLAB, PARAPET_Y, OUTER_WALL), 1);
-  kit.add(UNIT_BOX, palette.limestone, wallAlong([X1, Z_WEST], [X1, Z_KRAVIS], GROUND_FLOOR_Y - SLAB, PARAPET_Y, OUTER_WALL), 2);
+  kit.add(UNIT_BOX, palette.limestone, wallAlong([X0 + 1.0, Z_WEST], [X1, Z_WEST], GROUND_FLOOR_Y - SLAB, PARAPET_Y, OUTER_WALL));
+  kit.add(UNIT_BOX, palette.limestone, wallAlong([X1, Z_WEST], [X1, Z_KRAVIS], GROUND_FLOOR_Y - SLAB, PARAPET_Y, OUTER_WALL));
 }
 
 function floors(kit: Kit): void {
   // Main floor out to the glass; second floor set back 5.5 m from the south face (map: floor 2 starts at X −144.9), leaving the hall behind the glass two storeys high.
-  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([X0 + 0.4, MAIN_FLOOR_Y - SLAB, Z_IN], [X1, MAIN_FLOOR_Y, Z_EAST]), 0);
-  kit.add(UNIT_BOX, palette.wood, boxAt([-144.9, ROCHE_SECOND_FLOOR_Y - SLAB, Z_IN], [X1, ROCHE_SECOND_FLOOR_Y, Z_EAST]), 1);
+  kit.add(UNIT_BOX, palette.stoneFloor, boxAt([X0 + 0.4, MAIN_FLOOR_Y - SLAB, Z_IN], [X1, MAIN_FLOOR_Y, Z_EAST]));
+  kit.add(UNIT_BOX, palette.wood, boxAt([-144.9, ROCHE_SECOND_FLOOR_Y - SLAB, Z_IN], [X1, ROCHE_SECOND_FLOOR_Y, Z_EAST]));
 }
 
 /** Main-floor galleries (map, rectangular rooms only): Oceania along the glass, Africa and the Americas behind. */
@@ -152,11 +152,11 @@ const UPPER_ROOMS: readonly Room[] = [
 function galleries(kit: Kit): void {
   const main = { y0: MAIN_FLOOR_Y, y1: ROCHE_SECOND_FLOOR_Y - SLAB, openingHeight: 4.2 };
   const upper = { y0: ROCHE_SECOND_FLOOR_Y, y1: RF_ROOF_Y - DECK, openingHeight: 3.6 };
-  clipEdges(sharedEdges(MAIN_ROOMS), [X_IN, Z_IN, X1 - OUTER_WALL, Z_EAST]).forEach((edge, k) => {
-    for (const m of partitionBoxes(edge, main)) kit.add(UNIT_BOX, palette.plaster, m, k);
+  clipEdges(sharedEdges(MAIN_ROOMS), [X_IN, Z_IN, X1 - OUTER_WALL, Z_EAST]).forEach((edge) => {
+    for (const m of partitionBoxes(edge, main)) kit.add(UNIT_BOX, palette.plaster, m);
   });
-  clipEdges(sharedEdges(UPPER_ROOMS), [-144.9, Z_IN, X1 - OUTER_WALL, Z_EAST]).forEach((edge, k) => {
-    for (const m of partitionBoxes(edge, upper)) kit.add(UNIT_BOX, palette.plaster, m, 100 + k);
+  clipEdges(sharedEdges(UPPER_ROOMS), [-144.9, Z_IN, X1 - OUTER_WALL, Z_EAST]).forEach((edge) => {
+    for (const m of partitionBoxes(edge, upper)) kit.add(UNIT_BOX, palette.plaster, m);
   });
 }
 
@@ -179,52 +179,52 @@ function roof(kit: Kit): void {
     [RIDGE_X0 + 0.2, Z_EAST - 0.2],
   ]);
   const deckX0 = RF_GLASS_TOP_X - 0.6;
-  kit.add(prism([[deckX0, Z_IN], [X1, Z_IN], [X1, Z_EAST], [deckX0, Z_EAST]], holes, RF_ROOF_Y - DECK, RF_ROOF_Y), mat.roof, at(0, 0, 0), 0);
+  kit.add(prism([[deckX0, Z_IN], [X1, Z_IN], [X1, Z_EAST], [deckX0, Z_EAST]], holes, RF_ROOF_Y - DECK, RF_ROOF_Y), mat.roof, at(0, 0, 0));
   // The white stone fascia that caps the glass wall's top edge (photo ref-park-south).
-  kit.add(UNIT_BOX, palette.limestone, boxAt([RF_GLASS_TOP_X - 0.15, RF_ROOF_Y - DECK, Z_IN], [RF_GLASS_TOP_X + 0.75, PARAPET_Y, Z_EAST]), 1);
+  kit.add(UNIT_BOX, palette.limestone, boxAt([RF_GLASS_TOP_X - 0.15, RF_ROOF_Y - DECK, Z_IN], [RF_GLASS_TOP_X + 0.75, PARAPET_Y, Z_EAST]));
 }
 
 function skylights(kit: Kit): void {
   for (let k = 0; k < RIDGES; k++) {
     // The library skylight's ridge runs along its local Z: turn it a quarter so the ridge runs north–south.
     const m = at((RIDGE_X0 + RIDGE_X1) / 2, RF_ROOF_Y, ridgeCentreZ(k)).multiply(new Matrix4().makeRotationY(Math.PI / 2));
-    kit.add(RIDGE.frame, mat.steel, m, k);
-    kit.add(RIDGE.glass, mat.glass, m, k);
+    kit.add(RIDGE.frame, mat.steel, m);
+    kit.add(RIDGE.glass, mat.glass, m);
     const under = at((RIDGE_X0 + RIDGE_X1) / 2, RF_ROOF_Y - DECK - 0.15, ridgeCentreZ(k)).multiply(new Matrix4().makeRotationY(Math.PI / 2));
-    kit.add(LAYLIGHT.frame, mat.steel, under, k);
-    kit.add(LAYLIGHT.glass, mat.laylight, under, k);
+    kit.add(LAYLIGHT.frame, mat.steel, under);
+    kit.add(LAYLIGHT.glass, mat.laylight, under);
   }
-  leanTo(kit, RIDGES);
+  leanTo(kit);
 }
 
 /** The eleventh ridge's north slope (LEAN): curbs, rafters every ridge bay, a pane, glass ends, and its laylight. */
-function leanTo(kit: Kit, order: number): void {
+function leanTo(kit: Kit): void {
   const { z0, z1, low, high } = LEAN;
   const x0 = RIDGE_X0;
   const x1 = RIDGE_X1;
-  kit.add(UNIT_BOX, palette.limestone, boxAt([x0, RF_ROOF_Y, z0 - 0.1], [x1, low, z0 + 0.1]), order);
-  for (const x of [x0, x1]) kit.add(UNIT_BOX, palette.limestone, boxAt([x - 0.1, RF_ROOF_Y, z0 - 0.1], [x + 0.1, low, z1]), order);
+  kit.add(UNIT_BOX, palette.limestone, boxAt([x0, RF_ROOF_Y, z0 - 0.1], [x1, low, z0 + 0.1]));
+  for (const x of [x0, x1]) kit.add(UNIT_BOX, palette.limestone, boxAt([x - 0.1, RF_ROOF_Y, z0 - 0.1], [x + 0.1, low, z1]));
   const a: [number, number, number] = [x0, low, z0];
   const b: [number, number, number] = [x1, low, z0];
   const c: [number, number, number] = [x1, high, z1];
   const d: [number, number, number] = [x0, high, z1];
   const up: [number, number, number] = [0, Math.cos((35 * Math.PI) / 180), -Math.sin((35 * Math.PI) / 180)];
-  kit.add(UNIT_BOX, mat.steel, bar(a, b, 0.12, 0.2, up), order);
-  kit.add(UNIT_BOX, mat.steel, bar(d, c, 0.12, 0.2, up), order);
+  kit.add(UNIT_BOX, mat.steel, bar(a, b, 0.12, 0.2, up));
+  kit.add(UNIT_BOX, mat.steel, bar(d, c, 0.12, 0.2, up));
   const bays = 24;
   for (let j = 0; j <= bays; j++) {
     const x = x0 + ((x1 - x0) * j) / bays;
-    kit.add(UNIT_BOX, mat.steel, bar([x, low, z0], [x, high, z1], 0.07, 0.12, up), order);
+    kit.add(UNIT_BOX, mat.steel, bar([x, low, z0], [x, high, z1], 0.07, 0.12, up));
   }
   const lift = (p: [number, number, number]): [number, number, number] => [p[0] + up[0] * 0.03, p[1] + up[1] * 0.03, p[2] + up[2] * 0.03];
-  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(lift(a), lift(b), lift(c)), order);
-  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(lift(a), lift(c), lift(d)), order);
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(lift(a), lift(b), lift(c)));
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix(lift(a), lift(c), lift(d)));
   // The ends: upright glass triangles from the curb to the high edge.
-  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x0, low, z0], [x0, high, z1], [x0, low, z1]), order);
-  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x1, low, z0], [x1, low, z1], [x1, high, z1]), order);
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x0, low, z0], [x0, high, z1], [x0, low, z1]));
+  kit.add(UNIT_TRIANGLE, mat.glass, paneMatrix([x1, low, z0], [x1, low, z1], [x1, high, z1]));
   const under = at((x0 + x1) / 2, RF_ROOF_Y - DECK - 0.15, (LEAN.z0 + 0.1 + Z_EAST - 0.2) / 2).multiply(new Matrix4().makeRotationY(Math.PI / 2));
-  kit.add(LEAN_LAYLIGHT.frame, mat.steel, under, order);
-  kit.add(LEAN_LAYLIGHT.glass, mat.laylight, under, order);
+  kit.add(LEAN_LAYLIGHT.frame, mat.steel, under);
+  kit.add(LEAN_LAYLIGHT.glass, mat.laylight, under);
 }
 
 function glassWall(kit: Kit): void {
@@ -259,20 +259,18 @@ function glassWall(kit: Kit): void {
 
 
 export const rockefellerSteps: readonly StepDef[] = [
-  { id: 'rockefeller-foundations', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing foundations', detail: 'Footings and the ground-floor plate of the wing at the south end, built for the arts of Africa, Oceania and the Americas.', motion: { kind: 'rise' }, stagger: 'order', build: foundations },
-  { id: 'rockefeller-walls', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing limestone walls', detail: 'A stone base along the south face for the glass wall, and limestone walls to the west and north, the west one inside the later Wallace Wing.', motion: { kind: 'grow' }, stagger: 'order', build: walls },
-  { id: 'rockefeller-floors', chapter: CHAPTER, year: YEAR, title: 'Main and second floors', detail: 'The main floor runs out to the glass; the second floor stops 5.5 m short of it, so the hall behind the glass is two storeys high.', motion: { kind: 'rise' }, stagger: 'order', build: floors },
-  { id: 'rockefeller-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries on two floors', detail: 'Gallery walls of the Oceania hall and the African and American galleries, and above them the nineteenth-century European paintings.', motion: { kind: 'grow' }, stagger: 'order', build: galleries },
-  { id: 'rockefeller-roof', chapter: CHAPTER, year: YEAR, title: 'Roof deck over the paintings galleries', detail: 'The roof over the second floor, open in ten long bays for skylights, and the stone fascia along the top of the south face.', motion: { kind: 'drop' }, stagger: 'order', build: roof },
-  { id: 'rockefeller-skylights', chapter: CHAPTER, year: YEAR, title: 'Ridge skylights over the galleries', detail: 'Glass ridges running north–south over the second-floor galleries of nineteenth-century European paintings, with laylights under them.', motion: { kind: 'drop' }, stagger: 'z', build: skylights },
+  { id: 'rockefeller-foundations', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing foundations', detail: 'Footings and the ground-floor plate of the wing at the south end, built for the arts of Africa, Oceania and the Americas.', build: foundations },
+  { id: 'rockefeller-walls', chapter: CHAPTER, year: YEAR, title: 'Rockefeller Wing limestone walls', detail: 'A stone base along the south face for the glass wall, and limestone walls to the west and north, the west one inside the later Wallace Wing.', build: walls },
+  { id: 'rockefeller-floors', chapter: CHAPTER, year: YEAR, title: 'Main and second floors', detail: 'The main floor runs out to the glass; the second floor stops 5.5 m short of it, so the hall behind the glass is two storeys high.', build: floors },
+  { id: 'rockefeller-galleries', chapter: CHAPTER, year: YEAR, title: 'Galleries on two floors', detail: 'Gallery walls of the Oceania hall and the African and American galleries, and above them the nineteenth-century European paintings.', build: galleries },
+  { id: 'rockefeller-roof', chapter: CHAPTER, year: YEAR, title: 'Roof deck over the paintings galleries', detail: 'The roof over the second floor, open in ten long bays for skylights, and the stone fascia along the top of the south face.', build: roof },
+  { id: 'rockefeller-skylights', chapter: CHAPTER, year: YEAR, title: 'Ridge skylights over the galleries', detail: 'Glass ridges running north–south over the second-floor galleries of nineteenth-century European paintings, with laylights under them.', build: skylights },
   {
     id: 'rockefeller-glass-wall',
     chapter: CHAPTER,
     year: YEAR,
     title: 'The sloping south glass wall',
     detail: 'A wall of glass 61 m long and 18 m high on the slope, leaning back at 70°. Rebuilt 2021–25 to the same look: triple glazed, fritted, opaque top row.',
-    motion: { kind: 'slide', from: [-8, 0, 0] },
-    stagger: 'z',
     build: glassWall,
   },
 ];

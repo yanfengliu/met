@@ -49,8 +49,6 @@ export const orderSteps: readonly StepDef[] = [
     year: '1899',
     title: 'Set the four column pedestals',
     detail: 'A pedestal for each pair of columns stands on the landing: a base course, a plain die and a moulded cap, with a small die between the bases for the niche sculpture.',
-    motion: { kind: 'rise' },
-    stagger: 'x',
     build(kit) {
       const cap = capMoulding();
       PAIR_X.forEach((x) => {
@@ -69,8 +67,6 @@ export const orderSteps: readonly StepDef[] = [
     year: '1900',
     title: 'Raise the eight Corinthian columns',
     detail: 'Eight fluted Corinthian columns, 12.75 m tall, rise in four coupled pairs, each with a fluted pilaster on the wall behind it.',
-    motion: { kind: 'rise' },
-    stagger: 'x',
     build(kit) {
       const column = columnParts({
         diameter: HUNT_COLUMN_DIAMETER_LOWER,
@@ -79,16 +75,15 @@ export const orderSteps: readonly StepDef[] = [
         detail: 'medium',
       });
       const pilaster = pilasterParts({ width: PILASTER_W, height: HUNT_COLUMN_HEIGHT, projection: PILASTER_P, detail: 'medium' });
-      COLUMN_X.forEach((x, i) => {
-        const order = i;
+      COLUMN_X.forEach((x) => {
         const m = at(x, PEDESTAL_TOP_Y, COLUMN_Z);
-        if (column.base !== undefined) kit.add(column.base, palette.limestone, m, order);
-        kit.add(column.shaft, palette.limestone, m, order);
-        kit.add(column.capital, palette.limestone, m, order);
+        if (column.base !== undefined) kit.add(column.base, palette.limestone, m);
+        kit.add(column.shaft, palette.limestone, m);
+        kit.add(column.capital, palette.limestone, m);
         const p = at(x, PEDESTAL_TOP_Y, WALL_Z);
-        if (pilaster.base !== undefined) kit.add(pilaster.base, palette.limestone, p, order);
-        kit.add(pilaster.shaft, palette.limestone, p, order);
-        kit.add(pilaster.capital, palette.limestone, p, order);
+        if (pilaster.base !== undefined) kit.add(pilaster.base, palette.limestone, p);
+        kit.add(pilaster.shaft, palette.limestone, p);
+        kit.add(pilaster.capital, palette.limestone, p);
       });
     },
   },

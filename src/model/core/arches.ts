@@ -165,7 +165,7 @@ function buildWall(width: number, height: number, thickness: number, holes: read
   b.planar(mirror(outline), through.map((l) => mirror(l.outline)), new Vector3(0, 0, -thickness), new Vector3(-1, 0, 0), new Vector3(0, 1, 0));
   b.box([-W, 0, -thickness], [W, height, 0], ['+z', '-z', '-y', ...(openEnds ? ['+x', '-x'] : [])]);
   // The bottom face looks down, with each door's opening left out (behind a blind one, only its niche), so every vertical line through the wall crosses
-  // it an even number of times and the walk's settle and the section cut read it as a closed solid (docs/design/spec.md, Walk mode: When the build moves).
+  // it an even number of times and the walk's settle and the section cut read it as a closed solid (docs/design/spec.md, Walk mode: Settling).
   const bottom = (x0: number, x1: number, z0: number): void => {
     if (x1 > x0) b.polygon([new Vector3(x0, 0, -thickness), new Vector3(x1, 0, -thickness), new Vector3(x1, 0, z0), new Vector3(x0, 0, z0)]);
   };

@@ -17,15 +17,13 @@ export const terrainStep: StepDef = {
   chapter: 'site',
   title: 'Shape the ground',
   detail: 'The park rises 2 to 9 m west of the avenue; the street band is graded and the footprint excavated to the ground floor.',
-  motion: { kind: 'grow' },
-  stagger: 'order',
   build(kit) {
     const g = groundGeometry();
-    kit.add(g.grass, palette.grass, IDENTITY, 0);
-    kit.add(g.bare, siteMaterials.bareGround, IDENTITY, 0);
-    kit.add(g.walls, siteMaterials.wallStone, IDENTITY, 0);
-    kit.add(g.curbs, siteMaterials.granite, IDENTITY, 0);
-    kit.add(g.cuts, siteMaterials.excavation, IDENTITY, 0);
+    kit.add(g.grass, palette.grass, IDENTITY);
+    kit.add(g.bare, siteMaterials.bareGround, IDENTITY);
+    kit.add(g.walls, siteMaterials.wallStone, IDENTITY);
+    kit.add(g.curbs, siteMaterials.granite, IDENTITY);
+    kit.add(g.cuts, siteMaterials.excavation, IDENTITY);
   },
 };
 
@@ -34,7 +32,6 @@ export const padStep: StepDef = {
   chapter: 'site',
   title: 'Lay the building pad',
   detail: 'A concrete pad marks the footprint of every wing to come, below the ground floor of the 1902 front.',
-  motion: { kind: 'rise', distance: 1.5 },
   build(kit) {
     kit.add(groundGeometry().pad, siteMaterials.pad, IDENTITY);
   },

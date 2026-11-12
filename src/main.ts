@@ -59,9 +59,6 @@ function boot(): void {
   const timeline = new Timeline(steps);
   performance.mark('met:build-end');
   const buildMs = performance.measure('met:build', 'met:build-start', 'met:build-end').duration;
-  // The page shows the finished building, every step complete (docs/design/spec.md, Product).
-  const finished = timeline.n;
-  timeline.evaluate(finished);
 
   installStyles();
   const app = document.createElement('div');
@@ -75,7 +72,7 @@ function boot(): void {
   // `capsMesh`); of the others, every one closed along vertical lines, it draws the pieces the cut passes through (src/viewer/cap-pass.ts).
   const meshes = timeline.steps.flatMap((s) => s.meshes);
   const capped = meshes.filter(capsMesh);
-  // The door layer (src/viewer/doors.ts): once a door's step is complete, stand-ins turned about their hinges draw its leaves in place of the timeline's
+  // The door layer (src/viewer/doors.ts): stand-ins turned about their hinges draw the leaves of each door that opens in place of the timeline's
   // closed ones, which it hides by their layer mask; the cap pass and the picker take the stand-ins too.
   const doors = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, query.doors ?? 'closed');
   capped.push(...doors.meshes.filter((m) => !Array.isArray(m.material) && capsMesh(m)));
@@ -255,7 +252,7 @@ function boot(): void {
     if (query.cam === null && namedView === null) frameFloor();
   }
   // The doors stand at their state before the walker is placed, at once: so with shot=1 from the first frame (Doors). Marked for the order's check.
-  doors.sync(finished, 0, true);
+  doors.sync(0, true);
   performance.mark('met:doors-set');
   if (query.walk) {
     // A spawn's id, or a place of the query's own (src/walk/spawns.ts `startOf`).
@@ -263,7 +260,7 @@ function boot(): void {
     if (start.warning !== null) warnings.push(start.warning);
     enterWalk(start.spawn);
     // Capture mode shows the walker's view from its first frame.
-    if (query.shot) walk.prepareNow(finished);
+    if (query.shot) walk.prepareNow();
     if (query.shot) performance.mark('met:walk-placed');
   }
   rig.onUserMove = () => {
@@ -299,13 +296,13 @@ function boot(): void {
     last = now;
     // The doors swing (Doors): every frame of a swing draws again, and redraws the shadows when what moved casts one. While walking they swing in the
     // walker's physics steps instead, against the walker (Doors: Walking).
-    const doorChange = doors.sync(finished, query.shot || walk.active ? 0 : seconds, query.shot);
+    const doorChange = doors.sync(query.shot || walk.active ? 0 : seconds, query.shot);
     if (doorChange !== 'none') {
       if (doorChange === 'shadows') viewer.markShadowsDirty();
       needsRender = true;
     }
     if (walk.active) {
-      if (walk.frame(query.shot ? 0 : seconds, finished, ui.held)) needsRender = true;
+      if (walk.frame(query.shot ? 0 : seconds, ui.held)) needsRender = true;
     } else {
       // The orbit view's movement keys move the camera and its target together, like a pan.
       const up = new Vector3(0, 1, 0).applyQuaternion(rig.camera.quaternion);

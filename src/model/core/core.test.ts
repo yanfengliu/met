@@ -120,7 +120,6 @@ describe('core steps', () => {
       id: 'weston-end-blocks',
       chapter: 'weston-tuckerman-1894',
       title: 'End blocks',
-      motion: { kind: 'grow' },
       build(kit) {
         westonEndWalls(kit);
         westonEndTrim(kit);
@@ -162,7 +161,7 @@ describe('core steps', () => {
   it('stay within the area budget with finite matrices', () => {
     const timeline = new Timeline(ALL);
     const stats = timeline.stats();
-    expect(stats.triangles, 'triangles at t = N').toBeLessThanOrEqual(BUDGET.triangles);
+    expect(stats.triangles, 'triangles drawn').toBeLessThanOrEqual(BUDGET.triangles);
     expect(stats.meshes, 'instanced meshes').toBeLessThanOrEqual(BUDGET.meshes);
     expect(stats.lights, 'step lights').toBeLessThanOrEqual(BUDGET.lights);
     const bad = timeline.steps.flatMap((s) => s.meshes).filter((m) => !Array.from(m.instanceMatrix.array).every(Number.isFinite));

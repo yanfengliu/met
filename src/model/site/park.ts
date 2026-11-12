@@ -47,14 +47,12 @@ export const rockStep: StepDef = {
   chapter: 'site',
   title: 'Expose the schist outcrops',
   detail: 'Ridges of Manhattan schist break the lawn north of the American Wing and the knoll of Cleopatra’s Needle.',
-  motion: { kind: 'rise', distance: 2 },
-  stagger: 'order',
   build(kit) {
     OUTCROPS.forEach((o, k) => {
       const ground = Math.min(parkY(o.x - o.sx / 2, o.z), parkY(o.x + o.sx / 2, o.z), parkY(o.x, o.z - o.sz / 2), parkY(o.x, o.z + o.sz / 2));
       // Sunk a third of its height into the lawn, the lowest side of its footprint deciding.
       const m = new Matrix4().makeRotationY(o.yaw).scale(new Vector3(o.sx, o.h, o.sz)).setPosition(o.x, ground - o.h / 3, o.z);
-      kit.add(ROCKS[k % ROCKS.length] ?? rockGeometry(1), siteMaterials.schist, m, k);
+      kit.add(ROCKS[k % ROCKS.length] ?? rockGeometry(1), siteMaterials.schist, m);
     });
   },
 };
@@ -192,17 +190,15 @@ export const parkTreesStep: StepDef = {
   chapter: 'site',
   title: 'Plant the park trees',
   detail: 'Trees fill the wood south of the museum, ring the lawns and line East Drive, kept clear of the facades.',
-  motion: { kind: 'grow' },
-  stagger: 'radial',
   build(kit) {
-    PARK_TREES.forEach((t, k) => {
+    PARK_TREES.forEach((t) => {
       const variant = VARIANTS[t.variant] ?? VARIANTS[0];
       if (variant === undefined) return;
       const y = terrainY(zoneAt(t.x, t.z), t.x, t.z) - 0.15;
       const m = new Matrix4().makeRotationY(t.yaw).scale(new Vector3(t.scale, t.scale, t.scale)).setPosition(t.x, y, t.z);
       const crown: Material = variant.crown;
-      kit.add(variant.shape.trunk, siteMaterials.bark, m, k);
-      kit.add(variant.shape.foliage, crown, m, k);
+      kit.add(variant.shape.trunk, siteMaterials.bark, m);
+      kit.add(variant.shape.foliage, crown, m);
     });
   },
 };

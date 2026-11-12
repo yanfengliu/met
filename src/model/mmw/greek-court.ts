@@ -52,9 +52,9 @@ const COLUMN_LINE: Rect = [PX0, PZ0, PX1, PZ1];
 const grow = ([x0, z0, x1, z1]: Rect, d: number): Rect => [x0 - d, z0 - d, x1 + d, z1 + d];
 
 function buildFloor(kit: Kit): void {
-  addBox(kit, mmwMaterials.marbleDark, CX0, LEVEL_1, CZ0, CX1, LEVEL_1 + 0.03, CZ1, 0);
+  addBox(kit, mmwMaterials.marbleDark, CX0, LEVEL_1, CZ0, CX1, LEVEL_1 + 0.03, CZ1);
   // The green field inside the peristyle, framed by a white band, and white inlay lines down the porticoes.
-  addBox(kit, mmwMaterials.marbleGreen, PX0 + 1.4, LEVEL_1 + 0.03, PZ0 + 1.4, PX1 - 1.4, LEVEL_1 + 0.04, PZ1 - 1.4, 1);
+  addBox(kit, mmwMaterials.marbleGreen, PX0 + 1.4, LEVEL_1 + 0.03, PZ0 + 1.4, PX1 - 1.4, LEVEL_1 + 0.04, PZ1 - 1.4);
   const w = 0.25;
   for (const [x0, z0, x1, z1] of [
     [PX0 + 1.0, PZ0 + 1.0, PX1 - 1.0, PZ0 + 1.0 + w],
@@ -63,26 +63,26 @@ function buildFloor(kit: Kit): void {
     [PX1 - 1.0 - w, PZ0 + 1.0, PX1 - 1.0, PZ1 - 1.0],
     [CX0 + 1.2, CZ0 + 3.4, CX1 - 1.2, CZ0 + 3.4 + 0.12],
     [CX0 + 1.2, CZ1 - 3.4 - 0.12, CX1 - 1.2, CZ1 - 3.4],
-  ] as const) addBox(kit, mmwMaterials.marbleWhite, x0, LEVEL_1 + 0.03, z0, x1, LEVEL_1 + 0.045, z1, 2);
+  ] as const) addBox(kit, mmwMaterials.marbleWhite, x0, LEVEL_1 + 0.03, z0, x1, LEVEL_1 + 0.045, z1);
 }
 
 /** The 1926 peristyle: twenty fluted Doric columns, the entablature round the court and over the end openings, and the porticoes' flat ceilings. */
 function buildPeristyle(kit: Kit): void {
   const shaft = column({ order: 'doric', diameter: DORIC_D, height: DORIC_H, fluted: true });
-  PERISTYLE.forEach(([x, z], i) => { kit.add(shaft, palette.limestone, placed(x, LEVEL_1, z), i); });
-  END_X.forEach((x, k) => {
-    SHORT_Z.forEach((z, j) => {
-      kit.add(shaft, palette.limestone, placed(x, LEVEL_1, z), 20 + k * 2 + j);
+  PERISTYLE.forEach(([x, z]) => { kit.add(shaft, palette.limestone, placed(x, LEVEL_1, z)); });
+  END_X.forEach((x) => {
+    SHORT_Z.forEach((z) => {
+      kit.add(shaft, palette.limestone, placed(x, LEVEL_1, z));
     });
   });
   const top = LEVEL_1 + DORIC_H;
   const half = 0.45;
   // The entablature's beam round the peristyle and across the end openings.
-  addBox(kit, palette.limestone, PX0 - half, top, PZ0 - half, PX1 + half, ENTABLATURE_TOP, PZ0 + half, 30);
-  addBox(kit, palette.limestone, PX0 - half, top, PZ1 - half, PX1 + half, ENTABLATURE_TOP, PZ1 + half, 30);
-  addBox(kit, palette.limestone, PX0 - half, top, PZ0 + half, PX0 + half, ENTABLATURE_TOP, PZ1 - half, 30);
-  addBox(kit, palette.limestone, PX1 - half, top, PZ0 + half, PX1 + half, ENTABLATURE_TOP, PZ1 - half, 30);
-  for (const x of END_X) addBox(kit, palette.limestone, x - half, top, -24.4, x + half, ENTABLATURE_TOP, -10.8, 30);
+  addBox(kit, palette.limestone, PX0 - half, top, PZ0 - half, PX1 + half, ENTABLATURE_TOP, PZ0 + half);
+  addBox(kit, palette.limestone, PX0 - half, top, PZ1 - half, PX1 + half, ENTABLATURE_TOP, PZ1 + half);
+  addBox(kit, palette.limestone, PX0 - half, top, PZ0 + half, PX0 + half, ENTABLATURE_TOP, PZ1 - half);
+  addBox(kit, palette.limestone, PX1 - half, top, PZ0 + half, PX1 + half, ENTABLATURE_TOP, PZ1 - half);
+  for (const x of END_X) addBox(kit, palette.limestone, x - half, top, -24.4, x + half, ENTABLATURE_TOP, -10.8);
   // Its architrave, frieze and cornice mouldings on the court side.
   const identity = new Matrix4();
   const face = grow(COLUMN_LINE, -half);
@@ -90,7 +90,7 @@ function buildPeristyle(kit: Kit): void {
     [moulding({ profile: 'architrave', path: inwardLoop(face, top), closed: true, height: 0.42, projection: 0.06 })],
     [moulding({ profile: 'cornice-plain', path: inwardLoop(face, top + 0.82), closed: true, height: 0.38, projection: 0.34 })],
   ]);
-  kit.add(lines, palette.limestone, identity, 31);
+  kit.add(lines, palette.limestone, identity);
   // The porticoes' flat ceilings, from the beam to the court's walls.
   const y0 = ENTABLATURE_TOP - 0.25;
   for (const [x0, z0, x1, z1] of [
@@ -98,7 +98,7 @@ function buildPeristyle(kit: Kit): void {
     [CX0, PZ1 + half, CX1, CZ1],
     [CX0, PZ0 - half, PX0 - half, PZ1 + half],
     [PX1 + half, PZ0 - half, CX1, PZ1 + half],
-  ] as const) addBox(kit, mmwMaterials.ceilingPlaster, x0, y0, z0, x1, ENTABLATURE_TOP, z1, 32);
+  ] as const) addBox(kit, mmwMaterials.ceilingPlaster, x0, y0, z0, x1, ENTABLATURE_TOP, z1);
 }
 
 let basinCache: { readonly stone: BufferGeometry; readonly water: BufferGeometry } | null = null;
@@ -126,8 +126,8 @@ function basin(): { readonly stone: BufferGeometry; readonly water: BufferGeomet
 /** The basin at the centre of the peristyle (P6). The court's sculpture is the collection's, set in 2007 (src/model/collection/spaces-a.ts). */
 function buildFountain(kit: Kit): void {
   const bowl = basin();
-  kit.add(bowl.stone, mmwMaterials.marbleWhite, placed(BASIN.x, LEVEL_1, BASIN.z), 0);
-  kit.add(bowl.water, palette.water, placed(BASIN.x, LEVEL_1, BASIN.z), 0);
+  kit.add(bowl.stone, mmwMaterials.marbleWhite, placed(BASIN.x, LEVEL_1, BASIN.z));
+  kit.add(bowl.water, palette.water, placed(BASIN.x, LEVEL_1, BASIN.z));
 }
 
 let gridCache: BufferGeometry | null = null;
@@ -164,35 +164,34 @@ function buildUpperStorey(kit: Kit): void {
   const y0 = ENTABLATURE_TOP;
   const y1 = LEVEL_2_FRONT - SLAB;
   // Walls between the entablature and the second floor, straddling the well's line like the second floor's own.
-  addBox(kit, palette.plaster, wx0 - t, y0, wz0 - t, wx1 + t, y1, wz0 + t, 0);
-  addBox(kit, palette.plaster, wx0 - t, y0, wz1 - t, wx1 + t, y1, wz1 + t, 0);
-  addBox(kit, palette.plaster, wx0 - t, y0, wz0 + t, wx0 + t, y1, wz1 - t, 0);
-  addBox(kit, palette.plaster, wx1 - t, y0, wz0 + t, wx1 + t, y1, wz1 - t, 0);
+  addBox(kit, palette.plaster, wx0 - t, y0, wz0 - t, wx1 + t, y1, wz0 + t);
+  addBox(kit, palette.plaster, wx0 - t, y0, wz1 - t, wx1 + t, y1, wz1 + t);
+  addBox(kit, palette.plaster, wx0 - t, y0, wz0 + t, wx0 + t, y1, wz1 - t);
+  addBox(kit, palette.plaster, wx1 - t, y0, wz0 + t, wx1 + t, y1, wz1 - t);
   // Ionic half-columns on the walls' inner faces, over the Doric columns, on a podium band: their axes on the face, half embedded.
   const ionic = column({ order: 'ionic', diameter: IONIC_D, height: IONIC_H, fluted: false, detail: 'low' });
   const podiumTop = y0 + PODIUM;
   const [fx0, fz0, fx1, fz1] = grow(ROMAN_WELL, -t);
-  let order = 10;
-  for (const x of ROW_X) for (const z of [fz0, fz1]) kit.add(ionic, palette.limestone, placed(x, podiumTop, z), order++);
-  for (const x of [fx0, fx1]) for (const z of SHORT_Z) kit.add(ionic, palette.limestone, placed(x, podiumTop, z), order++);
+  for (const x of ROW_X) for (const z of [fz0, fz1]) kit.add(ionic, palette.limestone, placed(x, podiumTop, z));
+  for (const x of [fx0, fx1]) for (const z of SHORT_Z) kit.add(ionic, palette.limestone, placed(x, podiumTop, z));
   const identity = new Matrix4();
   const face = grow(ROMAN_WELL, -t);
   const lines = merged('roman-court-upper', [
     [moulding({ profile: 'plinth', path: inwardLoop(face, y0), closed: true, height: PODIUM, projection: 0.12 })],
     [moulding({ profile: 'cornice-plain', path: inwardLoop(face, podiumTop + IONIC_H), closed: true, height: UPPER_ENTABLATURE, projection: 0.5 })],
   ]);
-  kit.add(lines, palette.limestone, identity, 30);
+  kit.add(lines, palette.limestone, identity);
   // Lattice-grilled windows midway between the half-columns on the long sides and the ends.
   const grille = latticeGrille();
   const sill = podiumTop + 0.9;
   for (let k = 0; k + 1 < ROW_X.length; k += 1) {
     const x = ((ROW_X[k] ?? 0) + (ROW_X[k + 1] ?? 0)) / 2;
-    kit.add(grille, palette.metalDark, placed(x, sill, wz0 + t, 0), 40 + k);
-    kit.add(grille, palette.metalDark, placed(x, sill, wz1 - t, Math.PI), 40 + k);
+    kit.add(grille, palette.metalDark, placed(x, sill, wz0 + t, 0));
+    kit.add(grille, palette.metalDark, placed(x, sill, wz1 - t, Math.PI));
   }
   for (const z of [(PZ0 + SHORT_Z[0]) / 2, (SHORT_Z[0] + SHORT_Z[1]) / 2, (SHORT_Z[1] + PZ1) / 2]) {
-    kit.add(grille, palette.metalDark, placed(wx0 + t, sill, z, Math.PI / 2), 50);
-    kit.add(grille, palette.metalDark, placed(wx1 - t, sill, z, -Math.PI / 2), 50);
+    kit.add(grille, palette.metalDark, placed(wx0 + t, sill, z, Math.PI / 2));
+    kit.add(grille, palette.metalDark, placed(wx1 - t, sill, z, -Math.PI / 2));
   }
 }
 
@@ -201,8 +200,8 @@ function buildSkylight(kit: Kit): void {
   const [wx0, wz0, wx1, wz1] = ROMAN_WELL;
   const glass = hippedSkylight({ width: wz1 - wz0, length: wx1 - wx0, pitch: 16, curbHeight: 0.3, bays: 10 });
   const m = placed((wx0 + wx1) / 2, SKYLIGHT_Y, (wz0 + wz1) / 2, Math.PI / 2);
-  kit.add(glass.frame, palette.metalDark, m, 0);
-  kit.add(glass.glass, palette.glass, m, 0);
+  kit.add(glass.frame, palette.metalDark, m);
+  kit.add(glass.glass, palette.glass, m);
 }
 
 
@@ -213,8 +212,6 @@ export const romanCourtSteps: readonly StepDef[] = [
     year: '1926',
     title: 'Lay the Roman court\'s marble floor',
     detail: 'The court of the south end pavilion, opened on 6 April 1926: dark polished stone with white inlay round a green marble field.',
-    motion: { kind: 'rise', distance: 1.5 },
-    stagger: 'order',
     build: buildFloor,
   },
   {
@@ -223,8 +220,6 @@ export const romanCourtSteps: readonly StepDef[] = [
     year: '1926',
     title: 'Raise the court\'s Doric peristyle',
     detail: 'Sixteen fluted Doric columns ring the court, two more stand in each end opening, under a full entablature over the porticoes\' flat ceilings.',
-    motion: { kind: 'rise' },
-    stagger: 'order',
     build: buildPeristyle,
   },
   {
@@ -233,8 +228,6 @@ export const romanCourtSteps: readonly StepDef[] = [
     year: '1926',
     title: 'Set the round basin in the peristyle',
     detail: 'A round marble basin on a low step at the centre of the peristyle, its water a hand under the rim.',
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build: buildFountain,
   },
 ];
@@ -246,8 +239,6 @@ export const greekCourt2007: readonly StepDef[] = [
     year: '2007',
     title: 'Add the Roman court\'s upper storey',
     detail: 'Kevin Roche\'s restoration, reopened 20 April 2007, raises the court a storey: Ionic half-columns over the Doric ones, framing grilled windows.',
-    motion: { kind: 'rise' },
-    stagger: 'order',
     build: buildUpperStorey,
   },
   {
@@ -256,8 +247,6 @@ export const greekCourt2007: readonly StepDef[] = [
     year: '2007',
     title: 'Glaze the raised skylight',
     detail: 'The skylight, one storey above the court since 1926, rises another storey in 2007, making a two-storey skylit hall under the hipped roof.',
-    motion: { kind: 'drop', distance: 5 },
-    stagger: 'none',
     build: buildSkylight,
   },
 ];

@@ -134,11 +134,11 @@ function wingTrim(key: number, parts: () => THREE.BufferGeometry[]): THREE.Buffe
   return made;
 }
 
-function addRun(kit: Kit, r: Run, x: number, y: number, order: number): void {
+function addRun(kit: Kit, r: Run, x: number, y: number): void {
   const place = at(x, y, 0);
-  kit.add(r.moulding, palette.limestone, place, order);
-  for (const m of r.modillions) kit.add(modillionGeometry(), palette.limestone, place.clone().multiply(m), order);
-  for (const m of r.dentils) kit.add(dentilGeometry(), palette.limestone, place.clone().multiply(m), order);
+  kit.add(r.moulding, palette.limestone, place);
+  for (const m of r.modillions) kit.add(modillionGeometry(), palette.limestone, place.clone().multiply(m));
+  for (const m of r.dentils) kit.add(dentilGeometry(), palette.limestone, place.clone().multiply(m));
 }
 
 /** One antefix of the cresting: a shell-crowned mask on a short neck, extruded 0.32 m, origin at its bottom centre on the attic cornice. */
@@ -210,13 +210,13 @@ const lionHead = lazy(() => {
 
 /** Lion heads along the cornices: every 3.9 m on the runs between the breaks, two on each break's front (S7 at 1:1; about 0.7 m across in S9). */
 const LION_SCALE = new THREE.Matrix4().makeScale(1.4, 1.4, 1.4);
-function lionHeads(kit: Kit, order: number): void {
+function lionHeads(kit: Kit): void {
   const y = CORNICE_TOP_Y - 0.33;
   const half = (PAIR_X[2] - PAIR_X[1]) / 2 - BREAK_HALF;
   for (const cx of [(PAIR_X[0] + PAIR_X[1]) / 2, 0, (PAIR_X[2] + PAIR_X[3]) / 2]) {
-    for (const dx of [-3.9, 0, 3.9]) if (Math.abs(dx) < half) kit.add(lionHead(), palette.limestone, at(cx + dx, y, WALL_Z + CORNICE_P - 0.42).multiply(LION_SCALE), order);
+    for (const dx of [-3.9, 0, 3.9]) if (Math.abs(dx) < half) kit.add(lionHead(), palette.limestone, at(cx + dx, y, WALL_Z + CORNICE_P - 0.42).multiply(LION_SCALE));
   }
-  for (const px of PAIR_X) for (const dx of [-2.0, 2.0]) kit.add(lionHead(), palette.limestone, at(px + dx, y, BREAK_FACE_Z + CORNICE_P - 0.42).multiply(LION_SCALE), order);
+  for (const px of PAIR_X) for (const dx of [-2.0, 2.0]) kit.add(lionHead(), palette.limestone, at(px + dx, y, BREAK_FACE_Z + CORNICE_P - 0.42).multiply(LION_SCALE));
 }
 
 const scroll = lazy(() => {
@@ -258,21 +258,19 @@ export const entablatureSteps: readonly StepDef[] = [
     year: '1900',
     title: 'Set the entablature and its breaks',
     detail: 'The entablature breaks forward over each column pair and wraps the corners; between the breaks a modillioned cornice runs over the arches and the medallions.',
-    motion: { kind: 'drop', distance: 5 },
-    stagger: 'x',
     build(kit) {
       const p = pieces();
-      addRun(kit, p.outerSouth, 0, COLUMN_TOP_Y, 0);
-      addRun(kit, p.inner, PAIR_X[1], COLUMN_TOP_Y, 1);
-      addRun(kit, p.inner, PAIR_X[2], COLUMN_TOP_Y, 2);
-      addRun(kit, p.outerNorth, 0, COLUMN_TOP_Y, 3);
-      for (const x of [(PAIR_X[0] + PAIR_X[1]) / 2, 0, (PAIR_X[2] + PAIR_X[3]) / 2]) addRun(kit, p.between, x, FRIEZE_TOP_Y, 4);
-      lionHeads(kit, 4);
+      addRun(kit, p.outerSouth, 0, COLUMN_TOP_Y);
+      addRun(kit, p.inner, PAIR_X[1], COLUMN_TOP_Y);
+      addRun(kit, p.inner, PAIR_X[2], COLUMN_TOP_Y);
+      addRun(kit, p.outerNorth, 0, COLUMN_TOP_Y);
+      for (const x of [(PAIR_X[0] + PAIR_X[1]) / 2, 0, (PAIR_X[2] + PAIR_X[3]) / 2]) addRun(kit, p.between, x, FRIEZE_TOP_Y);
+      lionHeads(kit);
       // The wings: a string course over the rusticated base, the band and dentilled cornice the caryatids carry, starting on the McKim, Mead & White
       // links' cornice top, and the plain crowning cornice at the end pavilions' parapet height (E43, E41; mmw/dims.ts).
-      for (const [x0, x1, order] of [
-        [EXT_SOUTH_X, -PAVILION_HALF, 0],
-        [PAVILION_HALF, EXT_NORTH_X, 3],
+      for (const [x0, x1] of [
+        [EXT_SOUTH_X, -PAVILION_HALF],
+        [PAVILION_HALF, EXT_NORTH_X],
       ] as const) {
         const line = (y: number): V3[] => [
           [x0, y, EXT_FACE_Z],
@@ -287,9 +285,9 @@ export const entablatureSteps: readonly StepDef[] = [
           order1.moulding,
           crown.moulding,
         ]);
-        kit.add(trim, palette.limestone, new THREE.Matrix4(), order);
-        if (order1.dentil !== undefined) for (const m of order1.dentils) kit.add(order1.dentil, palette.limestone, m, order);
-        if (crown.modillion !== undefined) for (const m of crown.modillions) kit.add(crown.modillion, palette.limestone, m, order);
+        kit.add(trim, palette.limestone, new THREE.Matrix4());
+        if (order1.dentil !== undefined) for (const m of order1.dentils) kit.add(order1.dentil, palette.limestone, m);
+        if (crown.modillion !== undefined) for (const m of crown.modillions) kit.add(crown.modillion, palette.limestone, m);
       }
     },
   },
@@ -299,8 +297,6 @@ export const entablatureSteps: readonly StepDef[] = [
     year: '1901',
     title: 'Build the attic and its cresting',
     detail: 'A plain attic storey rises over the cornice to a dentilled cornice, crowned by a cresting of masks and shells between scrolls.',
-    motion: { kind: 'grow' },
-    stagger: 'x',
     build(kit) {
       const corniceBottom = ATTIC_TOP_Y - ATTIC_CORNICE_H;
       box(kit, palette.limestone, [-PAVILION_HALF, CORNICE_TOP_Y, ATTIC_BACK_Z], [PAVILION_HALF, corniceBottom, WALL_Z]);
@@ -334,17 +330,15 @@ export const entablatureSteps: readonly StepDef[] = [
     year: '1902',
     title: 'Hoist the four uncarved blocks',
     detail: 'Over each column pair a plinth and a stepped pile of rough limestone wait on the breaks: blocks left for sculpture groups of four great periods of art that were never carved.',
-    motion: { kind: 'drop', distance: 6 },
-    stagger: 'x',
     build(kit) {
       const depth = HUNT_BLOCK_DEPTH;
       const z0 = WALL_Z + 0.15;
       const pile = roughPile(5.3, depth - 0.25, HUNT_BLOCK_TOP_Y - HUNT_BLOCK_PLINTH_TOP_Y, 5);
-      PAIR_X.forEach((x, i) => {
-        box(kit, palette.limestone, [x - 3.2, CORNICE_TOP_Y, z0], [x + 3.2, HUNT_BLOCK_PLINTH_TOP_Y - 0.25, z0 + depth + 0.2], i);
-        box(kit, palette.limestone, [x - 3.32, HUNT_BLOCK_PLINTH_TOP_Y - 0.25, z0 - 0.05], [x + 3.32, HUNT_BLOCK_PLINTH_TOP_Y, z0 + depth + 0.3], i);
-        kit.add(pile, palette.limestone, at(x, HUNT_BLOCK_PLINTH_TOP_Y, z0 + depth / 2 + 0.05), i);
-        box(kit, palette.limestone, [x - 0.85, HUNT_BLOCK_TOP_Y, z0 + 0.9], [x + 0.85, HUNT_BLOCK_TOP_Y + 0.9, z0 + depth - 0.6], i);
+      PAIR_X.forEach((x) => {
+        box(kit, palette.limestone, [x - 3.2, CORNICE_TOP_Y, z0], [x + 3.2, HUNT_BLOCK_PLINTH_TOP_Y - 0.25, z0 + depth + 0.2]);
+        box(kit, palette.limestone, [x - 3.32, HUNT_BLOCK_PLINTH_TOP_Y - 0.25, z0 - 0.05], [x + 3.32, HUNT_BLOCK_PLINTH_TOP_Y, z0 + depth + 0.3]);
+        kit.add(pile, palette.limestone, at(x, HUNT_BLOCK_PLINTH_TOP_Y, z0 + depth / 2 + 0.05));
+        box(kit, palette.limestone, [x - 0.85, HUNT_BLOCK_TOP_Y, z0 + 0.9], [x + 0.85, HUNT_BLOCK_TOP_Y + 0.9, z0 + depth - 0.6]);
       });
     },
   },

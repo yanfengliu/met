@@ -58,8 +58,8 @@ export function westFrontWall(kit: Kit): void {
 }
 
 /** A granite band across the front from y0 to y1, standing `proud` in front of the wall face (from `back` out), split round the gaps (world X ranges). */
-function band(kit: Kit, y0: number, y1: number, order: number, gaps: readonly (readonly [number, number])[] = [], proud = PROUD, back = 0): void {
-  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, gaps)) addBox(kit, core.granite, x0, y0, WEST_Z - back - proud, x1, y1, WEST_Z - back, order);
+function band(kit: Kit, y0: number, y1: number, gaps: readonly (readonly [number, number])[] = [], proud = PROUD, back = 0): void {
+  for (const [x0, x1] of runsBetween(-A_HALF, A_HALF, gaps)) addBox(kit, core.granite, x0, y0, WEST_Z - back - proud, x1, y1, WEST_Z - back);
 }
 
 /** The ground storey's rustication: each course a face 6 cm proud and over it a block 4 cm prouder, short of the joint above it. */
@@ -72,33 +72,33 @@ function rustication(kit: Kit): void {
       const w = (x === 0 ? DOOR_WIDTH : GROUND_WIDTH) / 2;
       return y0 < h1 - 1e-6 && y1 > h0 + 1e-6 ? [[x - w, x + w]] : [];
     });
-    band(kit, y0, y1, 1, gaps, 0.06);
-    band(kit, y0, y1 - JOINT, 1, gaps, 0.04, 0.06);
+    band(kit, y0, y1, gaps, 0.06);
+    band(kit, y0, y1 - JOINT, gaps, 0.04, 0.06);
   }
 }
 
-/** Granite bands and rustication, the jambs' inner order, the string course, cornice and coping, in rising courses; the arches' heads come with the openings. */
+/** Granite bands and rustication, the jambs' inner order, the string course, cornice and coping; the arches' heads come with the openings. */
 export function westFrontTrim(kit: Kit): void {
-  band(kit, WALL_BASE_Y, RUST_Y0, 0, [], 0.12);
+  band(kit, WALL_BASE_Y, RUST_Y0, [], 0.12);
   rustication(kit);
   const doors = FRONT_ARCH_X.filter(doorway).map((x): [number, number] => [x - CLEAR / 2, x + CLEAR / 2]);
-  band(kit, L1 - 0.2, L1 + 0.12, 2, doors);
+  band(kit, L1 - 0.2, L1 + 0.12, doors);
   // The impost band runs across the whole front, over each opening as its lintel (#53, #60, #61).
-  band(kit, LINTEL_Y, SPRING_Y, 4);
+  band(kit, LINTEL_Y, SPRING_Y);
   for (const x of FRONT_ARCH_X) {
     const sill = doorway(x) ? L1 : SILL_Y;
     // A window stands over a light granite apron (#53, #61).
-    if (!doorway(x)) addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, L1 + 0.12, WEST_Z - 0.05, x + VAUX_ARCH_SPAN / 2, sill, WEST_Z, 3);
+    if (!doorway(x)) addBox(kit, core.granite, x - VAUX_ARCH_SPAN / 2, L1 + 0.12, WEST_Z - 0.05, x + VAUX_ARCH_SPAN / 2, sill, WEST_Z);
     // The inner order runs down the jambs to the sill or the floor (#61).
     for (const side of [-1, 1]) {
       const edge = x + side * (CLEAR / 2);
-      addBox(kit, core.granite, edge, sill, WEST_Z - ORDER_PROUD, edge + side * VAUX_INNER_ORDER, LINTEL_Y, WEST_Z, 4);
+      addBox(kit, core.granite, edge, sill, WEST_Z - ORDER_PROUD, edge + side * VAUX_INNER_ORDER, LINTEL_Y, WEST_Z);
     }
   }
-  band(kit, STRING_Y, STRING_Y + VAUX_BAND, 6);
+  band(kit, STRING_Y, STRING_Y + VAUX_BAND);
   const cornice = moulding({ profile: 'cornice-plain', path: [[-A_HALF, 0, 0], [A_HALF, 0, 0]], height: 0.8, projection: 0.6 });
-  kit.add(cornice, core.granite, placed(0, CORNICE_Y, WEST_Z, FACING.west), 8);
-  addBox(kit, core.granite, -A_HALF, PARAPET_Y, WEST_Z - 0.1, A_HALF, COPING_TOP_Y, WEST_Z + WEST_WALL, 9);
+  kit.add(cornice, core.granite, placed(0, CORNICE_Y, WEST_Z, FACING.west));
+  addBox(kit, core.granite, -A_HALF, PARAPET_Y, WEST_Z - 0.1, A_HALF, COPING_TOP_Y, WEST_Z + WEST_WALL);
 }
 
 /**
@@ -109,8 +109,8 @@ export function westFrontTrim(kit: Kit): void {
 export function westFrontHeads(kit: Kit): void {
   for (const x of FRONT_ARCH_X) {
     const at = placed(x, SPRING_Y, WEST_Z, FACING.west);
-    kit.add(lightHead('west'), core.granite, at, 5);
-    kit.add(darkHead('west'), core.graniteDark, at, 5);
+    kit.add(lightHead('west'), core.granite, at);
+    kit.add(darkHead('west'), core.graniteDark, at);
   }
 }
 
@@ -118,11 +118,11 @@ export function westFrontHeads(kit: Kit): void {
 export function westFrontWindows(kit: Kit): void {
   const disc = cylinder(20);
   for (const z of [VAUX_HALL_WEST_Z - VAUX_HALL_WALL / 2, VAUX_HALL_EAST_Z + VAUX_HALL_WALL / 2]) {
-    kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(VAUX_OCULUS, 0.03, VAUX_OCULUS)), 20);
+    kit.add(disc, palette.glass, new Matrix4().makeTranslation(0, VAUX_OCULUS_Y, z).multiply(new Matrix4().makeRotationX(Math.PI / 2)).multiply(new Matrix4().makeScale(VAUX_OCULUS, 0.03, VAUX_OCULUS)));
   }
   const main = windowUnit({ width: CLEAR, height: LINTEL_Y - SILL_Y, cols: 2, rows: 2, frame: 0.1 });
   const ground = windowUnit({ width: GROUND_WIDTH, height: VAUX_GROUND_HEIGHT, cols: 2, rows: 2 });
-  // Each window's frame and bars as one piece, as they arrive together (the core's mesh budget).
+  // Each window's frame and bars as one piece (the core's mesh budget).
   const metal = (name: string, parts: { readonly frame: BufferGeometry; readonly bars: BufferGeometry }): BufferGeometry =>
     memo(`vauxWindowMetal:${name}:${parts.frame.uuid}:${parts.bars.uuid}`, () => {
       const b = new MeshBuilder();
@@ -135,12 +135,11 @@ export function westFrontWindows(kit: Kit): void {
   for (const x of FRONT_ARCH_X) {
     if (x === 0) continue;
     const at = (y: number) => placed(x, y, WEST_Z + 0.4, FACING.west);
-    const order = Math.abs(x);
     if (!doorway(x)) {
-      kit.add(mainMetal, palette.metalDark, at(SILL_Y), order);
-      kit.add(main.glass, palette.glassDark, at(SILL_Y), order);
+      kit.add(mainMetal, palette.metalDark, at(SILL_Y));
+      kit.add(main.glass, palette.glassDark, at(SILL_Y));
     }
-    kit.add(groundMetal, palette.metalDark, at(LG + VAUX_GROUND_SILL), order);
-    kit.add(ground.glass, palette.glassDark, at(LG + VAUX_GROUND_SILL), order);
+    kit.add(groundMetal, palette.metalDark, at(LG + VAUX_GROUND_SILL));
+    kit.add(ground.glass, palette.glassDark, at(LG + VAUX_GROUND_SILL));
   }
 }

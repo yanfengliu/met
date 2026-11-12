@@ -1,6 +1,6 @@
 /**
  * The Valladolid choir screen's open gate against the walker (src/model/core/choir-screen.ts; the owner's call, 2026-10-28), headless, through the
- * page's path on the real sequence at t = N: the whole sequence's Timeline, the page's door layer over it (src/viewer/doors.ts) and the walk's world as
+ * page's path on the real sequence: the whole sequence's Timeline, the page's door layer over it (src/viewer/doors.ts) and the walk's world as
  * walk mode builds it (src/walk/door-world.ts `walkWorld`), with the walk mode's own walker (src/walk/walker.ts) stepped at 60 frames a second. From
  * 4 m west of the screen the walker walks east through the gate to more than 3 m past it and back, on the hall's axis and 0.63 m either side of
  * it, a body's radius and 5 cm inside the gate's jambs at 1.03 m (`GATE_CLEAR`, the opening the owner chose), on the hall's floor all the way. The
@@ -43,10 +43,9 @@ let floorY: number;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   const layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'closed');
-  layer.sync(timeline.n, 0, true);
-  world = walkWorld(timeline.steps, timeline.n, layer, new GeometryBvhs());
+  layer.sync(0, true);
+  world = walkWorld(timeline.steps, layer, new GeometryBvhs());
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
 }, 120_000);
 

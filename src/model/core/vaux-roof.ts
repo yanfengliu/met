@@ -35,13 +35,13 @@ export function vauxRoof(kit: Kit): void {
   ];
   roofWithSkylights(kit, 'a', open);
   // Lead over the tops of the side walls, which the wings' roofs meet, and over the end walls beside the nave.
-  for (const x of [-A_HALF, A_HALF - PARTY_WALL]) addBox(kit, palette.roofLead, x, ROOF_Y, INNER_WEST_Z, x + PARTY_WALL, ROOF_Y + 0.05, INNER_EAST_Z, 1);
+  for (const x of [-A_HALF, A_HALF - PARTY_WALL]) addBox(kit, palette.roofLead, x, ROOF_Y, INNER_WEST_Z, x + PARTY_WALL, ROOF_Y + 0.05, INNER_EAST_Z);
   for (const [z0, z1] of [
     [HALL_WEST_FACE, VAUX_HALL_WEST_Z],
     [VAUX_HALL_EAST_Z, HALL_EAST_FACE],
   ] as const) {
-    addBox(kit, palette.roofLead, AX0, ROOF_Y, z0, -NAVE_OUTER_X, ROOF_Y + 0.05, z1, 1);
-    addBox(kit, palette.roofLead, NAVE_OUTER_X, ROOF_Y, z0, AX1, ROOF_Y + 0.05, z1, 1);
+    addBox(kit, palette.roofLead, AX0, ROOF_Y, z0, -NAVE_OUTER_X, ROOF_Y + 0.05, z1);
+    addBox(kit, palette.roofLead, NAVE_OUTER_X, ROOF_Y, z0, AX1, ROOF_Y + 0.05, z1);
   }
   const z0 = HALL_WEST_FACE - 0.15;
   const z1 = HALL_EAST_FACE + 0.15;
@@ -54,7 +54,7 @@ export function vauxRoof(kit: Kit): void {
     const axis = ridge.clone().sub(eave).normalize();
     const normal = new Vector3(side * axis.y, -side * axis.x, 0);
     const lift = normal.clone().multiplyScalar(THICKNESS / 2);
-    kit.add(UNIT_BOX, palette.roofLead, barMatrix(eave.clone().add(lift), ridge.clone().add(lift), z1 - z0, THICKNESS, normal), 2);
+    kit.add(UNIT_BOX, palette.roofLead, barMatrix(eave.clone().add(lift), ridge.clone().add(lift), z1 - z0, THICKNESS, normal));
   }
-  kit.add(UNIT_BOX, palette.roofLead, barMatrix(new Vector3(0, NAVE_RIDGE_Y + 0.2, z0), new Vector3(0, NAVE_RIDGE_Y + 0.2, z1), 0.42, 0.3, new Vector3(0, 1, 0)), 3);
+  kit.add(UNIT_BOX, palette.roofLead, barMatrix(new Vector3(0, NAVE_RIDGE_Y + 0.2, z0), new Vector3(0, NAVE_RIDGE_Y + 0.2, z1), 0.42, 0.3, new Vector3(0, 1, 0)));
 }

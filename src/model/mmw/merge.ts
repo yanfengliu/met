@@ -1,5 +1,5 @@
 /**
- * Merged geometries: parts that always arrive together in one material (a window's frame and bars, a pilaster with its attic pier, an archivolt with its keystone,
+ * Merged geometries: parts that are always added together in one material (a window's frame and bars, a pilaster with its attic pier, an archivolt with its keystone,
  * a front's three swept mouldings) become one geometry, so each costs one instanced mesh instead of several (the area's budget is 160 meshes).
  * Cached by key: the same key always returns the same object, which keeps instancing intact. Parts that are all sheets (glass panes) make a sheet
  * (../lib/sheet.ts); every other merge is of closed solids.

@@ -70,8 +70,6 @@ export const fitoutSteps: readonly StepDef[] = [
     year: '1902',
     title: 'Light and furnish the Great Hall',
     detail: 'Flowers fill the four pedimented niches of the centre piers, bronze lanterns hang in the end bays under the balcony, and warm light fills the hall.',
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build(kit) {
       const vase = urn({ height: 1.0, flowers: false, detail: 'low' });
       for (const [z, out] of [
@@ -80,15 +78,15 @@ export const fitoutSteps: readonly StepDef[] = [
       ] as const) {
         for (const x of [-8.64, 8.64]) {
           const zz = z + out * (HALL_NICHE.depth / 2);
-          kit.add(vase.urn, palette.limestone, at(x, MAIN + HALL_NICHE.sill, zz), 0);
-          kit.add(nicheFlowers(), hunt.flowers, at(x, MAIN + HALL_NICHE.sill + 0.85, zz), 0);
+          kit.add(vase.urn, palette.limestone, at(x, MAIN + HALL_NICHE.sill, zz));
+          kit.add(nicheFlowers(), hunt.flowers, at(x, MAIN + HALL_NICHE.sill + 0.85, zz));
         }
       }
       for (const s of [-1, 1]) {
         for (const z of [NAVE_MID_Z - 2.0, NAVE_MID_Z + 2.0]) {
           const m = at(s * 28.2, SECOND - SLAB, z);
-          kit.add(lanternFrame(), palette.bronze, m, 1);
-          kit.add(lanternGlobe(), hunt.lanternGlow, m, 1);
+          kit.add(lanternFrame(), palette.bronze, m);
+          kit.add(lanternGlobe(), hunt.lanternGlow, m);
         }
       }
       for (const x of [-13, 13]) {
@@ -108,16 +106,14 @@ export const greatHallDesk1970Steps: readonly StepDef[] = [
     year: '1970',
     title: 'Set the round information desk',
     detail: "Kevin Roche's 1970 renovation put a round information desk on the axis of the nave, a tall flower arrangement rising from the urn at its centre.",
-    motion: { kind: 'pop' },
-    stagger: 'order',
     build(kit) {
       // P1 shows the desk on the camera's line down the middle of the nave.
       const z = NAVE_MID_Z;
-      kit.add(deskBody(), hunt.hallStone, at(0, MAIN, z), 0);
-      kit.add(deskTop(), palette.wood, at(0, MAIN, z), 0);
+      kit.add(deskBody(), hunt.hallStone, at(0, MAIN, z));
+      kit.add(deskTop(), palette.wood, at(0, MAIN, z));
       const vase = urn({ height: 1.3, flowers: false, detail: 'medium' });
-      kit.add(vase.urn, palette.limestone, at(0, MAIN + 1.7, z), 1);
-      kit.add(deskFlowers(), hunt.flowers, scaled(0, MAIN + 1.7 + 1.15, z, 1, 1, 1), 2);
+      kit.add(vase.urn, palette.limestone, at(0, MAIN + 1.7, z));
+      kit.add(deskFlowers(), hunt.flowers, scaled(0, MAIN + 1.7 + 1.15, z, 1, 1, 1));
     },
   },
 ];

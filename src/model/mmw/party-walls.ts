@@ -115,7 +115,7 @@ function plan(p: Party): readonly [number, number, number, number] {
  * A run of the wall from `y0` up to `y1` with `passages` cut through it, as one wall of the parts library: turned so its front is the outer face, on the line.
  * In the wall's own frame x then runs toward +X or +Z for an outer face looking +Z or −X, and the other way for −Z or +X.
  */
-function addOpenedWall(kit: Kit, p: Party, passages: readonly Passage[], y0: number, y1: number, order: number): void {
+function addOpenedWall(kit: Kit, p: Party, passages: readonly Passage[], y0: number, y1: number): void {
   const alongX = p.out === '-z' || p.out === '+z';
   const lo = alongX ? Math.min(p.x0, p.x1) : Math.min(p.z0, p.z1);
   const hi = alongX ? Math.max(p.x0, p.x1) : Math.max(p.z0, p.z1);
@@ -124,28 +124,28 @@ function addOpenedWall(kit: Kit, p: Party, passages: readonly Passage[], y0: num
   const sign = p.out === '+z' || p.out === '-x' ? 1 : -1;
   const openings = passages.map((s) => ({ x: sign * ((s.a + s.b) / 2 - mid), y: s.y0 - y0, width: Math.abs(s.b - s.a), height: s.y1 - s.y0 }));
   const geometry = wall({ width: hi - lo, height: y1 - y0, thickness: PARTY_WALL, openings });
-  kit.add(geometry, palette.limestone, alongX ? placed(mid, y0, p.z0, turn) : placed(p.x0, y0, mid, turn), order);
+  kit.add(geometry, palette.limestone, alongX ? placed(mid, y0, p.z0, turn) : placed(p.x0, y0, mid, turn));
 }
 
 /** A run of the wall from `y0` up to a dark coping 0.3 m deep at `top`, overhanging 5 cm, with any of its passages that fall in that height. */
-function addWall(kit: Kit, p: Party, y0: number, top: number, order: number): void {
+function addWall(kit: Kit, p: Party, y0: number, top: number): void {
   const [x0, x1, z0, z1] = plan(p);
   const passages = (p.passages ?? []).filter((s) => s.y0 < top - 0.3 && s.y1 > y0);
-  if (passages.length === 0) addBox(kit, palette.limestone, x0, y0, z0, x1, top - 0.3, z1, order);
-  else addOpenedWall(kit, p, passages, y0, top - 0.3, order);
-  addBox(kit, palette.limestoneDark, x0 - 0.05, top - 0.3, z0 - 0.05, x1 + 0.05, top, z1 + 0.05, order);
+  if (passages.length === 0) addBox(kit, palette.limestone, x0, y0, z0, x1, top - 0.3, z1);
+  else addOpenedWall(kit, p, passages, y0, top - 0.3);
+  addBox(kit, palette.limestoneDark, x0 - 0.05, top - 0.3, z0 - 0.05, x1 + 0.05, top, z1 + 0.05);
 }
 
 /** The party walls, rising from the outer walls' foot to the parapet, with a dark coping. */
-export function buildPartyWalls(kit: Kit, walls: readonly Party[], firstOrder: number): void {
-  walls.forEach((p, i) => {
-    addWall(kit, p, WALL_FOOT_Y, p.top, firstOrder + i);
+export function buildPartyWalls(kit: Kit, walls: readonly Party[]): void {
+  walls.forEach((p) => {
+    addWall(kit, p, WALL_FOOT_Y, p.top);
   });
 }
 
 /** The raised walls, from the old coping up to the new one; the old coping stays in the wall as a band. */
 export function buildRaisedWalls(kit: Kit, raises: readonly Raise[]): void {
-  raises.forEach(({ wall, top }, i) => {
-    addWall(kit, wall, wall.top, top, i);
+  raises.forEach(({ wall, top }) => {
+    addWall(kit, wall, wall.top, top);
   });
 }

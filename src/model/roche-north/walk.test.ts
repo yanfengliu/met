@@ -1,5 +1,5 @@
 /**
- * The Temple of Dendur hall walked by the walk mode's walker (docs/design/spec.md, Walk mode; work unit 2, M1): the whole sequence's collision at t = N,
+ * The Temple of Dendur hall walked by the walk mode's walker (docs/design/spec.md, Walk mode; work unit 2, M1): the whole sequence's collision,
  * built as the page builds it, the walker stepped at 60 frames a second. No trap: put in the pool anywhere, the walker walks out onto the walkway
  * beside it without a jump, and walking off the walkway into the pool drops it one step, which it climbs back. The gate, as the real building has it
  * (interior.md, The gate's front and the forecourt): on its axis from the terrace the walker stops at the low rail before the gate's riser, never on it;
@@ -27,9 +27,8 @@ let floorY: number;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   world = new CollisionWorld(new GeometryBvhs());
-  world.build(collisionMeshes(timeline.steps, timeline.n));
+  world.build(collisionMeshes(timeline.steps));
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
 });
 

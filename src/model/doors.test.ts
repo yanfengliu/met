@@ -4,9 +4,9 @@
  * none for the locked ones, and the doors take at most 20 meshes and draws, the layer's stand-ins and doorways counted (17 together; review 0, F9);
  * no leaf of the entrance's doors casts a shadow, so their swings ask for no shadow pass (review 5, F23), and Weston's leaves, at its porch's front, cast
  * one, so its swing asks for one at every frame, as the orbit view swings it and at every physics step of the walk, where E opens it (work unit 18;
- * src/model/core/materials.ts `westonDoorWood`; red with the walk's steps reporting the frame alone, `DoorLayer.note`: work unit 18, review 0, F1); with the layer attached and the doors used between
- * random positions, the timeline's state stays byte for byte a timeline's without it (work unit 2, review 0, F1); and the walk mode's own walker, walked at each locked door
- * from 2.5 m in front at t = N through the page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors'
+ * src/model/core/materials.ts `westonDoorWood`; red with the walk's steps reporting the frame alone, `DoorLayer.note`: work unit 18, review 0, F1); with the layer attached and the doors used and
+ * swung in between, the timeline's meshes stay byte for byte a timeline's without it (work unit 2, review 0, F1); and the walk mode's own walker, walked at each locked door
+ * from 2.5 m in front through the page's own collision path (`walkWorld`: the static world without the doors' leaves and the locked doors'
  * pieces held shut in the door world), stops against its leaves (red with the locked doors' parts left out of the door world: 4.52 m past the north
  * link door's leaves; review 17, F47), as it does in a static world of every solid piece, where without the leaves it walks on through. Weston's door
  * against the walker: src/model/core/weston-door.test.ts.
@@ -51,7 +51,7 @@ const piecesOf = new Map<string, (readonly [InstancedMesh, number])[]>();
 const stepsOf = new Map<string, Set<string>>();
 
 /**
- * Where to stand before door `id`, by its first piece at t = N (each slot then holds its final matrix): 2.5 m out in front of the middle of its leaves'
+ * Where to stand before door `id`, by its first piece (its slot holds the piece's matrix): 2.5 m out in front of the middle of its leaves'
  * front face, its front (the unit's +Z) laid level, and that face's middle.
  */
 function before(id: string): { start: Vector3; front: Vector3; face: Vector3 } {
@@ -67,7 +67,6 @@ function before(id: string): { start: Vector3; front: Vector3; face: Vector3 } {
 
 beforeAll(() => {
   timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf);
   for (const step of timeline.steps) {
     step.meshes.forEach((mesh, m) => {
@@ -94,8 +93,8 @@ describe('the model’s doors', () => {
 
   it('builds the door layer over the real timeline: stand-ins for the doors that open, none for the locked, within 20 meshes and draws', () => {
     expect(layer.facts().map((d) => [d.id, d.locked]).sort()).toEqual(DOORS.map((d) => [d.id, d.locked]).sort());
-    layer.sync(timeline.n, 0, true);
-    expect(layer.facts().every((d) => d.built && d.state === 'closed')).toBe(true);
+    layer.sync(0, true);
+    expect(layer.facts().every((d) => d.state === 'closed')).toBe(true);
     const drawnBy = new Map<string, number>();
     for (const mesh of layer.meshes) {
       for (let i = 0; i < mesh.count; i += 1) {
@@ -114,7 +113,7 @@ describe('the model’s doors', () => {
   });
 
   it('asks no shadow pass for the entrance’s swings, whose leaves cast none (review 5, F23), and one at every frame of Weston’s, whose leaves cast one (work unit 18)', () => {
-    layer.sync(timeline.n, 0, true);
+    layer.sync(0, true);
     const opening = DOORS.filter((d) => !d.locked).map((d) => d.id);
     expect(opening).toEqual(['hunt-entrance-south', 'hunt-entrance-middle', 'hunt-entrance-north', 'weston']);
     for (const id of opening) for (const mesh of meshesOf.get(id) ?? []) expect(mesh.castShadow, `${id}'s closed leaves`).toBe(id === 'weston');
@@ -127,11 +126,11 @@ describe('the model’s doors', () => {
       const what = frame === 'moved' ? 'the frame, not the shadows' : 'the frame and the shadows';
       expect(layer.use(id, from), `${id} opens`).toBe(true);
       const frames: string[] = [];
-      for (let k = 0; k < 50 && layer.facts().some((d) => d.state === 'opening'); k += 1) frames.push(layer.sync(timeline.n, 1 / 60));
+      for (let k = 0; k < 50 && layer.facts().some((d) => d.state === 'opening'); k += 1) frames.push(layer.sync(1 / 60));
       expect(new Set(frames), `every frame of ${id}'s swing: ${what}`).toEqual(new Set([frame]));
       expect(frames.length).toBeGreaterThan(30);
       layer.use(id, null);
-      layer.sync(timeline.n, 0, true);
+      layer.sync(0, true);
       layer.takeChange();
       expect(layer.use(id, from), `${id} opens again, walking`).toBe(true);
       const steps: string[] = [];
@@ -143,35 +142,30 @@ describe('the model’s doors', () => {
       expect(steps.length).toBeGreaterThan(60);
       layer.set(id, 0);
       expect(layer.takeChange(), `${id} set shut at once while walking: ${what}`).toBe(frame);
-      layer.sync(timeline.n, 0, true);
+      layer.sync(0, true);
     }
   });
 
-  it('leaves the real timeline’s state byte for byte as a timeline’s without the layer, with the doors used between random positions (review 0, F1)', () => {
+  it('leaves the real timeline’s meshes byte for byte as a timeline’s without the layer, with the doors used and swung in between (review 0, F1)', () => {
     const own = new Timeline(SEQUENCE);
     const doors = new DoorLayer(own.steps, (i) => own.restingPieces(i), DOORS, doorLeavesOf, 'open');
     const alone = new Timeline(SEQUENCE);
     const rand = random(11);
-    const hunt = own.steps.findIndex((s) => s.def.id === 'hunt-windows');
     for (let k = 0; k < 8; k += 1) {
-      // Around the Hunt doors' step, where the layer swaps the closed leaves and the stand-ins, and anywhere.
-      const t = k % 2 === 0 ? Math.max(0, hunt + 1 + (rand() - 0.5) * 2) : rand() * own.n;
-      own.evaluate(t);
-      doors.sync(t, rand() * 0.4);
+      doors.sync(rand() * 0.4);
       for (const d of DOORS) doors.use(d.id, new Vector3(rand() * 4 - 2, 5.7, rand() * 8 - 4));
-      doors.sync(t, rand() * 0.4);
-      alone.evaluate(t);
-      expect(firstDifference(snapshot(own), snapshot(alone)), `t ${t.toFixed(3)}`).toBeNull();
+      doors.sync(rand() * 0.4);
+      expect(firstDifference(snapshot(own), snapshot(alone)), `round ${String(k)}`).toBeNull();
     }
   });
 
   it('stops the walker at each locked door through the page’s own collision path, and at its leaves alone in a static world, which it walks through without them (review 17, F47)', () => {
-    const solid = collisionMeshes(timeline.steps, timeline.n);
+    const solid = collisionMeshes(timeline.steps);
     const floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
     // The page's path: the static world without any door's leaves, and each locked door's pieces held shut in the door world (src/walk/door-world.ts).
     const own = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf);
-    own.sync(timeline.n, 0, true);
-    const page = walkWorld(timeline.steps, timeline.n, own, new GeometryBvhs());
+    own.sync(0, true);
+    const page = walkWorld(timeline.steps, own, new GeometryBvhs());
     // The geometry alone: every solid piece in one static world, the leaves among them.
     const whole = new CollisionWorld(new GeometryBvhs());
     whole.build(solid);
@@ -208,9 +202,9 @@ describe('the model’s doors', () => {
   it('is the look target where a pair’s leaves meet: the entrance’s middle door before a walker from the plaza spawn with W alone, and each locked door on its axis, which says Locked (review 17, F46 and F48)', () => {
     const floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
     const own = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf);
-    own.sync(timeline.n, 0, true);
+    own.sync(0, true);
     const bvhs = new GeometryBvhs();
-    const world = walkWorld(timeline.steps, timeline.n, own, bvhs);
+    const world = walkWorld(timeline.steps, own, bvhs);
     // The page's hit query (src/main.ts): the timeline's pieces, and the door layer's stand-ins and doorways registered with their tags.
     const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), bvhs, floorY, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));
     own.registerWith(picker);

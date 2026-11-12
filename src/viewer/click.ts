@@ -2,7 +2,7 @@
  * A click on the orbit view (docs/design/spec.md, Collection: Labels): a press of the primary button, a pen or one finger that travels less than
  * `CLICK_SLOP` pixels (src/walk/walk-mode.ts, walk mode's click) before it is released, the travel summed over its moves as walk mode sums it.
  * A click moves nothing: its moves are held, in the document's capture phase, from every listener after it, the orbit controls' and the zoom's among
- * them, so the camera, the follow camera and the preset in view stay as they were. Every other press goes through as if nothing were there. The gate
+ * them, so the camera and the preset in view stay as they were. Every other press goes through as if nothing were there. The gate
  * is a small state machine over the pointers down on the canvas (review 10, F36, after F25 and F29; review 11, F37 and F38):
  * - idle, nothing down: a press of the primary button, a pen or a finger while the orbit view is on starts pressing; any other press starts passing;
  * - pressing, one pointer below the slop: its moves are held, only the latest kept; its release below the slop in the orbit view is a click, the

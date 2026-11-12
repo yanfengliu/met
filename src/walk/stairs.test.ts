@@ -42,11 +42,10 @@ let floorY: number;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   // The doors stand open (doors=open), so the walk passes the central doorway as a visitor does once the door is opened.
   const doors = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'open');
-  doors.sync(timeline.n, 0, true);
-  world = walkWorld(timeline.steps, timeline.n, doors, new GeometryBvhs());
+  doors.sync(0, true);
+  world = walkWorld(timeline.steps, doors, new GeometryBvhs());
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
 });
 

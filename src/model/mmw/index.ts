@@ -2,7 +2,7 @@
  * McKim, Mead & White steps, composed into chapters by src/build/sequence.ts. Owner: the McKim, Mead & White modelling worker.
  * Each array's steps must name the chapter given in its comment (src/build/sequence.test.ts checks it); no other file needs editing to add steps.
  * Within the chapter the order is constructional: the north campaign (1906–1913) and then the south (1914–1926), each from foundations to cornice,
- * with their courts' interiors, and the roofs and skylights last so the build shows the interiors before the roofs close over them.
+ * with their courts' interiors, and the roofs and skylights last.
  */
 import type { StepDef } from '../../build/types.js';
 import { armorCollectionStep, greekCourtCollectionStep } from '../collection/spaces-a.js';

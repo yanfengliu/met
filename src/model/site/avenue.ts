@@ -106,8 +106,6 @@ export const fifthAvenueStep: StepDef = {
   chapter: 'site',
   title: 'Pave Fifth Avenue',
   detail: 'One way south, 14 m from curb to curb, with granite curbs and gutters, lane lines and the crosswalks at 80th to 84th Street.',
-  motion: { kind: 'rise', distance: 0.5 },
-  stagger: 'x',
   build(kit) {
     tileZones(kit, ['road', 'mouth'], palette.asphalt);
     gutters(kit);
@@ -138,8 +136,6 @@ export const sidewalksStep: StepDef = {
   chapter: 'site',
   title: 'Lay the Met-side sidewalks',
   detail: 'Concrete sidewalks along the park and across the frontage to the facade line, and the low stone wall at the park edge.',
-  motion: { kind: 'rise', distance: 0.4 },
-  stagger: 'x',
   build(kit) {
     tileZones(kit, ['walkWest'], siteMaterials.sidewalk);
     parkWall(kit);
@@ -151,8 +147,6 @@ export const eastSidewalkStep: StepDef = {
   chapter: 'site',
   title: 'Lay the far sidewalk',
   detail: 'The east sidewalk of Fifth Avenue to the building line opposite, cut by the mouths of 80th to 84th Street.',
-  motion: { kind: 'rise', distance: 0.4 },
-  stagger: 'x',
   build(kit) {
     tileZones(kit, ['walkEast'], siteMaterials.sidewalk);
   },

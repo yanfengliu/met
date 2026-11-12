@@ -1,7 +1,7 @@
 /**
  * The Petrie Court's columned doorways against the walker (src/model/roche-south/kravis.ts COURT_DOORWAYS; work unit 25, on the owner's choice of
  * 2026-11-06): the café's opening onto the court and the first, seventh and eighth doors into gallery 549, each two bays either side of a round column.
- * Headless, through the page's path on the real sequence at t = N: the whole sequence's Timeline, the page's door layer over it (src/viewer/doors.ts)
+ * Headless, through the page's path on the real sequence: the whole sequence's Timeline, the page's door layer over it (src/viewer/doors.ts)
  * and the walk's world as walk mode builds it (src/walk/door-world.ts `walkWorld`), with the walk mode's own walker (src/walk/walker.ts) stepped at 60
  * frames a second. From 2.5 m out in the court the walker walks south through the middle of each bay to more than 2 m behind the wall, into the café or
  * gallery 549, and back north into the court, on the main floor all the way and keeping to its line. The lanes are numbers, the middle of each bay
@@ -52,10 +52,9 @@ let floorY: number;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   const layer = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'closed');
-  layer.sync(timeline.n, 0, true);
-  world = walkWorld(timeline.steps, timeline.n, layer, new GeometryBvhs());
+  layer.sync(0, true);
+  world = walkWorld(timeline.steps, layer, new GeometryBvhs());
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
 }, 120_000);
 

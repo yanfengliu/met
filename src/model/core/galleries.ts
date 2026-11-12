@@ -42,7 +42,7 @@ export function galleryWalls(kit: Kit, block: BlockId): void {
   for (const run of GALLERY_RUNS) {
     for (const r of runRects(run, block)) {
       if (block === 'a' && nearHallEnds(r)) continue;
-      addBox(kit, palette.plaster, r[0], L2, r[1], r[2], GALLERY_CEILING_Y, r[3], Math.round(r[1]));
+      addBox(kit, palette.plaster, r[0], L2, r[1], r[2], GALLERY_CEILING_Y, r[3]);
     }
   }
 }
@@ -53,13 +53,13 @@ export function galleryWalls(kit: Kit, block: BlockId): void {
  */
 export function mainFloorWalls(kit: Kit, block: BlockId): void {
   for (const run of MAIN_FLOOR_RUNS) {
-    for (const r of runRects(run, block)) addBox(kit, palette.plaster, r[0], L1, r[1], r[2], L2 - SLAB, r[3], Math.round(r[1]));
+    for (const r of runRects(run, block)) addBox(kit, palette.plaster, r[0], L1, r[1], r[2], L2 - SLAB, r[3]);
   }
 }
 
 /** Laylight frames of a block's galleries. */
 export function laylightFrames(kit: Kit, block: BlockId): void {
-  for (const g of galleriesIn(block)) laylightFrame(kit, g, Math.round(g.rect[1]));
+  for (const g of galleriesIn(block)) laylightFrame(kit, g);
 }
 
 /** Brick walls round a block's light wells, from the main floor to just above the roof. */
@@ -68,10 +68,10 @@ export function lightWellWalls(kit: Kit, block: BlockId): void {
   for (const [x0, z0, x1, z1] of LIGHT_WELLS[block]) {
     const y0 = L1;
     const y1 = ROOF_Y + 0.5;
-    addBox(kit, palette.brick, x0 - t, y0, z0 - t, x1 + t, y1, z0, 0);
-    addBox(kit, palette.brick, x0 - t, y0, z1, x1 + t, y1, z1 + t, 1);
-    addBox(kit, palette.brick, x0 - t, y0, z0, x0, y1, z1, 2);
-    addBox(kit, palette.brick, x1, y0, z0, x1 + t, y1, z1, 3);
+    addBox(kit, palette.brick, x0 - t, y0, z0 - t, x1 + t, y1, z0);
+    addBox(kit, palette.brick, x0 - t, y0, z1, x1 + t, y1, z1 + t);
+    addBox(kit, palette.brick, x0 - t, y0, z0, x0, y1, z1);
+    addBox(kit, palette.brick, x1, y0, z0, x1 + t, y1, z1);
   }
 }
 
@@ -85,15 +85,14 @@ export function slabRects(block: BlockId, holes: readonly Rect[] = []): Rect[] {
 export function roofWithSkylights(kit: Kit, block: BlockId, holes: readonly Rect[] = []): void {
   const galleries = galleriesIn(block);
   const openings = galleries.flatMap((g) => (g.opening === null ? [] : [g.opening]));
-  for (const r of slabRects(block, [...openings, ...holes])) addBox(kit, palette.roofLead, r[0], GALLERY_CEILING_Y, r[1], r[2], ROOF_Y, r[3], Math.round(r[1]));
-  for (const g of galleries) skylightFrames(kit, g, Math.round(g.rect[1]) + 1);
+  for (const r of slabRects(block, [...openings, ...holes])) addBox(kit, palette.roofLead, r[0], GALLERY_CEILING_Y, r[1], r[2], ROOF_Y, r[3]);
+  for (const g of galleries) skylightFrames(kit, g);
 }
 
 /** The renewed glass of a block's skylights and laylights (2023). */
 export function skylightAndLaylightGlass(kit: Kit, block: BlockId): void {
   for (const g of galleriesIn(block)) {
-    const order = Math.round(g.rect[1]);
-    skylightGlass(kit, g, order);
-    laylightGlass(kit, g, order);
+    skylightGlass(kit, g);
+    laylightGlass(kit, g);
   }
 }

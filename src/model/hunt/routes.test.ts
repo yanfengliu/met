@@ -1,5 +1,5 @@
 /**
- * The public routes of plan docs/work/1_first-person-walk (M2, M2b), walked by the walk mode's own walker, headless: the whole sequence's Timeline at t = N,
+ * The public routes of plan docs/work/1_first-person-walk (M2, M2b), walked by the walk mode's own walker, headless: the whole sequence's Timeline,
  * its collision world built as the page builds it with the doors open (`doors=open`; src/walk/door-world.ts `walkWorld`, over three-mesh-bvh BVHs), and src/walk/walker.ts stepped at
  * 60 frames a second as the page steps it, running, turned each frame toward the next point of the route (routes.ts). R1 runs from the plaza through
  * the central doors into the Great Hall, R2 up the Grand Staircase to the second floor, R3 from the Great Hall through the Egyptian galleries into the
@@ -70,12 +70,11 @@ let floorY: number;
 
 beforeAll(() => {
   const timeline = new Timeline(SEQUENCE);
-  timeline.evaluate(timeline.n);
   // The doors stand open (doors=open): R1 passes the central doorway as a visitor does once the door is opened (src/walk/door-world.test.ts walks
   // into the closed door, opens it and closes it behind).
   const doors = new DoorLayer(timeline.steps, (i) => timeline.restingPieces(i), DOORS, doorLeavesOf, 'open');
-  doors.sync(timeline.n, 0, true);
-  world = walkWorld(timeline.steps, timeline.n, doors, new GeometryBvhs());
+  doors.sync(0, true);
+  world = walkWorld(timeline.steps, doors, new GeometryBvhs());
   floorY = Math.min(0, timeline.bounds.min.y) - 0.5;
 });
 

@@ -49,7 +49,6 @@ function step(id: string, pieces: readonly Piece[]): StepDef {
     id,
     chapter: CHAPTERS[0].id,
     title: id,
-    motion: { kind: 'pop' },
     build(kit: Kit) {
       for (const p of pieces) {
         const matrix = new Matrix4().compose(new Vector3(p.x, p.y, -3.05), new Quaternion(), new Vector3(3, 3, 0.1));
@@ -70,7 +69,6 @@ function scene(): { timeline: Timeline; picker: ModelPicker; lower: BuiltStep; u
     step('lower', [{ x: 0, y: 1.5, material: bronze, tag: art('7') }, { x: 10, y: 1.5, material: bronze, tag: art('8') }, { x: 20, y: 1.5, material: bronze, tag: { kind: 'door', id: 'weston' } }, { x: 30, y: 1.5, material: stone }]),
     step('upper', [{ x: 0, y: 4.5, material: bronze, tag: art('7') }, { x: 0, y: 7.5, material: stone, tag: art('7') }, { x: 30, y: 4.5, material: stone }]),
   ]);
-  timeline.evaluate(timeline.n);
   const [lower, upper] = timeline.steps;
   if (lower === undefined || upper === undefined) throw new Error('The two steps were not built.');
   const picker = new ModelPicker(timeline.steps.flatMap((s) => s.meshes), new GeometryBvhs(), -5, { enabled: false, height: 0 }, new Layers(), (mesh, i) => timeline.tagOf(mesh, i));

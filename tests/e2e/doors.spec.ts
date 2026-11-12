@@ -237,7 +237,7 @@ test.describe('the doors', () => {
   test('the entrance: E Open, E swings it into the building; E Close on an open leaf, a locked click closes it', async ({ page }) => {
     const errors = watchErrors(page);
     const { facts: f, at } = await atTheEntrance(page);
-    expect(f.doors.map((d) => [d.id, d.state, d.built])).toEqual(expect.arrayContaining([[MIDDLE, 'closed', true]]));
+    expect(f.doors.map((d) => [d.id, d.state])).toEqual(expect.arrayContaining([[MIDDLE, 'closed']]));
     expect(at.eye[2], 'standing before the doors').toBeGreaterThan(DOOR_Z + 0.6);
     expect(at.eye[2]).toBeLessThan(DOOR_Z + 1.9);
     // Looking at the right leaf, a little to the right of the line where the pair meet.
@@ -277,7 +277,7 @@ test.describe('the doors', () => {
     await lockedClick(page);
     await settle(page);
     await settle(page);
-    expect(await doorFacts(page, 'mmw-north-link')).toEqual({ id: 'mmw-north-link', state: 'closed', angle: 0, locked: true, built: true });
+    expect(await doorFacts(page, 'mmw-north-link')).toEqual({ id: 'mmw-north-link', state: 'closed', angle: 0, locked: true });
     expect(changedCells(shut, await lumaGrid(page)), 'nothing moved').toEqual([]);
     errors.expectClean();
   });

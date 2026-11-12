@@ -3,8 +3,8 @@
  * object ID). Walking, the look target decides (src/walk/look.ts): the card shows while the eye looks at an artwork within its reach and hides as soon as
  * it looks at anything else. In the orbit view a click decides: one whose ray (`ARTWORK_QUERY` through src/viewer/pick.ts `ModelPicker.hit`) meets an
  * artwork shows that artwork's card, any other click hides it, and so do Esc and a camera preset (review 6, F26). The card also hides once the camera
- * draws none of the artwork's pieces, as the picker counts a drawn piece: the build has taken them away, the section cut or a floor view's cut has
- * removed them, or they are on no layer the camera draws (F27). Entering walk mode hides it. Leaving keeps the look target's card, as the orbit view's,
+ * draws none of the artwork's pieces, as the picker counts a drawn piece: the section cut or a floor view's cut has removed them, or they are on no
+ * layer the camera draws (F27). Entering walk mode hides it. Leaving keeps the look target's card, as the orbit view's,
  * the card a click on that artwork shows (work unit 14): a locked pointer cannot click the link, and Esc leaves walk mode, so Esc and then a click on
  * the link open the object's page. Walk mode tells null on leaving before the next frame, so a null heard while walking holds the artwork until
  * `frame` knows whether walk mode was left (keep it) or the eye looked away (drop it); a preset's dismissal drops it too.
@@ -64,7 +64,7 @@ function boundsOf(geometry: BufferGeometry): Box3 {
   return bounds;
 }
 
-/** Whether the camera draws some of `piece`: its mesh shown and on a drawn layer, its instance arrived, and, with the cut on, part of it under the cut. */
+/** Whether the camera draws some of `piece`: its mesh shown and on a drawn layer, its instance drawn, and, with the cut on, part of it under the cut. */
 export function drawnPiece(piece: ArtInstance, view: DrawnView): boolean {
   const { mesh, instance } = piece;
   if (!mesh.visible || instance >= mesh.count || !mesh.layers.test(view.layers)) return false;

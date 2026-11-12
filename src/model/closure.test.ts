@@ -1,7 +1,7 @@
 /**
  * The pieces the walk and the section cut read, each closed along vertical lines or a declared sheet (docs/design/spec.md, Build-step API: Solids and
- * sheets), on the real sequence at t = N. A piece that a vertical line crosses an odd number of times has no inside along it: the walk's settle never
- * finds a walker built into it there (Walk mode: When the build moves), and a cut through it there shows what lies under it (View menu). Work unit 3's
+ * sheets), on the real sequence's finished model. A piece that a vertical line crosses an odd number of times has no inside along it: the walk's settle never
+ * finds a walker built into it there (Walk mode: Settling), and a cut through it there shows what lies under it (View menu). Work unit 3's
  * review 2 found two such builders (F13, F14), work unit 5 closed them, and work unit 6 closed every other.
  * Pieces: every piece of every mesh the walk collides with (src/walk/collision.ts `collisionMeshes`, the doors' closed leaves among them) or the cut caps
  * (src/viewer/section-cut.ts `capsMesh`, as src/main.ts picks them), as its step's mesh draws it, and each door's leaves apart, as the door layer's
@@ -77,7 +77,7 @@ import { inwardAlong, partVolumes } from './lib/facing.js';
 import { isSheet } from './lib/sheet.js';
 import { doorLeavesOf } from './lib/window.js';
 
-/** Declared sheets at t = N by step and material (`step/material`); see the header. */
+/** Declared sheets in the finished model by step and material (`step/material`); see the header. */
 const SHEETS: Readonly<Record<string, number>> = {
   // Glass: lib/glazing.ts's panes, roche-south/shapes.ts UNIT_TRIANGLE, core/skylights.ts, the McKim, Mead & White roofs' ridges, the plaza poles' lenses.
   'american-roofs/rn-clearGlass': 10,
@@ -170,11 +170,10 @@ interface Shape {
 }
 
 const timeline = new Timeline(SEQUENCE);
-timeline.evaluate(timeline.n);
-const walked = collisionMeshes(timeline.steps, timeline.n);
+const walked = collisionMeshes(timeline.steps);
 const walkedSet = new Set<InstancedMesh>(walked);
 
-/** Every piece the walk or the cut reads at t = N, as shapes, and the sheets by step and material. */
+/** Every piece the walk or the cut reads in the finished model, as shapes, and the sheets by step and material. */
 function read(): { shapes: Shape[]; sheets: Map<string, number> } {
   const found = new Map<string, Shape>();
   const sheets = new Map<string, number>();

@@ -4,9 +4,9 @@
  * inside the viewport, unclipped and clear of every other control, with the View menu closed and open; the walk strip stands at the bottom right, and the
  * open View menu's panel fits the viewport's width, ends above the strip and scrolls each of its controls into view.
  * The build replay is gone for good (work unit 26; the owner, 2026-11-11: "I don't need the animation of how the building came into being... we should
- * remove it."): the default page and the old links that opened the replay (`t=0`, `step=1`, `replay=1`, `autoplay=1`) show the finished building, every
- * door built, in the orbit view at the default preset, with no warning, the same camera and the same canvas as the default page, none of the replay's
- * controls in the DOM and none of its facts in `window.__met`; the default page stays still without input, and the replay's old keys (Space,
+ * remove it."): the default page and the old links that opened the replay (`t=0`, `step=1`, `replay=1`, `autoplay=1`) show the finished building in the
+ * orbit view at the default preset, with no warning, the same camera and the same canvas as the default page, none of the replay's controls in the DOM
+ * and none of its facts in `window.__met`, the doors' `built` among them; the default page stays still without input, and the replay's old keys (Space,
  * Shift+Space, the arrows, Home and End) change nothing in the orbit view. Also the build-time budget (docs/design/spec.md, Budgets: all geometry in
  * under 4 s).
  * Bound: boxes are compared as rectangles from layout, so a control hidden under a translucent sibling with no overlap of boxes is not caught; the old
@@ -154,28 +154,27 @@ for (const viewport of VIEWPORTS) {
 
 /** The build replay's controls by data-testid, as the page had them until work unit 26; its chapters' items were `chapter-<id>` and `chapter-summary-<id>`. */
 const REPLAY_CONTROLS = ['chapter-menu', 'chapter-menu-button', 'replay-toggle', 'timeline-bar', 'step-label', 'step-detail', 'scrubber', 'chapter-mark', 'btn-start', 'btn-step-back', 'btn-play-backward', 'btn-play', 'btn-step-forward', 'btn-end', 'speed-0.5', 'speed-1', 'speed-2', 'speed-4', 'bar-toggle', 'replay-close', 'follow-toggle'];
-/** The build replay's facts in `window.__met`, and its steps' fields for playback and the follow camera. */
+/** The build replay's facts in `window.__met`, its steps' fields for playback and the follow camera, and the doors' fact of their step's completion. */
 const REPLAY_FACTS = ['n', 't', 'mode', 'direction', 'speed', 'follow', 'replay', 'followGoal'];
 const REPLAY_STEP_FACTS = ['weight', 'focus'];
+const REPLAY_DOOR_FACTS = ['built'];
 
 /**
  * What is left of the build replay, one message each: a control of its in the DOM (by data-testid, named or by its chapters', transport buttons' and
- * speeds' prefixes), an element of its bar's classes, a fact of its in `window.__met` or in one of its steps.
+ * speeds' prefixes), an element of its bar's classes, a fact of its in `window.__met`, in one of its steps or in one of its doors.
  */
 async function replayRemnants(page: Page): Promise<string[]> {
-  return page.evaluate(([controls, keys, stepKeys]) => {
+  return page.evaluate(([controls, keys, stepKeys, doorKeys]) => {
     const found = Array.from(document.querySelectorAll<HTMLElement>('[data-testid]')).map((e) => e.dataset['testid'] ?? '').filter((id) => controls.includes(id) || /^(chapter|btn|speed)-/.test(id)).map((id) => `control ${id}`);
     const bar = document.querySelectorAll('.met-bar, .met-scrubber').length;
     const m = window.__met;
     if (m === undefined) return [...found, 'no window.__met'];
     const facts = keys.filter((k) => k in m).map((k) => `window.__met.${k}`);
     const steps = m.steps.flatMap((s, i) => stepKeys.filter((k) => k in s).map((k) => `window.__met.steps[${String(i)}].${k}`));
-    return [...found, ...(bar > 0 ? [`${String(bar)} elements of the timeline bar's classes`] : []), ...facts, ...steps];
-  }, [REPLAY_CONTROLS, REPLAY_FACTS, REPLAY_STEP_FACTS] as const);
+    const doors = m.doors.flatMap((d) => doorKeys.filter((k) => k in d).map((k) => `window.__met.doors[${d.id}].${k}`));
+    return [...found, ...(bar > 0 ? [`${String(bar)} elements of the timeline bar's classes`] : []), ...facts, ...steps, ...doors];
+  }, [REPLAY_CONTROLS, REPLAY_FACTS, REPLAY_STEP_FACTS, REPLAY_DOOR_FACTS] as const);
 }
-
-/** Doors not built: the finished building has every one built. */
-const unbuilt = (f: Facts): string[] => f.doors.filter((d) => !d.built).map((d) => d.id);
 
 test('the build replay is gone for good: the default page and its old links show the finished building, none of its controls or facts, and its old keys change nothing', async ({ page }) => {
   // Five page loads: 5.8 s here (2026-11-11); the deadline, ten times that, covers a loaded machine.
@@ -183,7 +182,6 @@ test('the build replay is gone for good: the default page and its old links show
   const errors = watchErrors(page);
   const f = await open(page);
   expect([f.walk.mode, f.view, f.warnings], 'the default page: the mode, the preset in view and the warnings').toEqual(['orbit', 'aerial-ne', []]);
-  expect(unbuilt(f), 'the default page: doors not built').toEqual([]);
   expect(await replayRemnants(page), 'the build replay on the default page').toEqual([]);
   const cam = await settledCamera(page);
   const built = await lumaGrid(page);
@@ -200,7 +198,6 @@ test('the build replay is gone for good: the default page and its old links show
   for (const query of ['t=0', 'step=1', 'replay=1', 'autoplay=1']) {
     const old = await open(page, query);
     expect([old.walk.mode, old.view, old.warnings], `${query}: the mode, the preset in view and the warnings`).toEqual(['orbit', 'aerial-ne', []]);
-    expect(unbuilt(old), `${query}: doors not built`).toEqual([]);
     expect(await replayRemnants(page), `${query}: the build replay`).toEqual([]);
     expect(cameraGap(await settledCamera(page), cam), `${query}: metres from the default page's camera`).toBeLessThan(1e-3);
     expect(changedCells(built, await lumaGrid(page)), `${query}: canvas cells that differ from the default page's`).toEqual([]);

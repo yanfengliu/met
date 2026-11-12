@@ -1,12 +1,10 @@
 /**
  * The door layer (src/viewer/doors.ts; docs/design/spec.md, Doors) on fixture steps built by the real timeline from real door units
- * (src/model/lib/window.ts `doorUnit`): it hides a built door's closed leaves by their layer mask alone and draws each leaf at the piece's matrix times its
- * turn about its hinge; across random histories with doors used in between, the timeline's own state is byte for byte a timeline's without the layer
- * (review 0, F1); the stand-ins share the closed leaves' materials, so the section cut clips them alike, are met by the zoom's pick and the hit query
- * where they stand and not where the closed leaves stood, are capped where the cut passes through them, open or part open, and hold bounds over every
- * pose (F3); the lifecycle: unusable while its step is incomplete, the timeline's closed leaf taking over at once while the door keeps its state,
- * reset when the step is taken away, the default taken when the step completes, into the building with no walker, never past a lock (F4); and each door
- * reported as its meshes draw it, read back from the stand-ins' matrices rather than from its state (review 8, F32); a closed door's doorway, a box for the
+ * (src/model/lib/window.ts `doorUnit`): it hides a door's closed leaves by their layer mask alone and draws each leaf at the piece's matrix times its
+ * turn about its hinge; with doors used in between, the timeline's own meshes are byte for byte a timeline's without the layer (review 0, F1); the
+ * stand-ins share the closed leaves' materials, so the section cut clips them alike, are met by the zoom's pick and the hit query where they stand and
+ * not where the closed leaves stood, are capped where the cut passes through them, open or part open, and hold bounds over every pose (F3); the state
+ * at load, closed or open with `doors=open`, into the building with no walker, never past a lock (F4); and each door reported as its meshes draw it, read back from the stand-ins' matrices rather than from its state (review 8, F32); a closed door's doorway, a box for the
  * picker alone in no scene, met through the gaps between and round its leaves but not on its frame, and gone at an opening door's first turn (review 17,
  * F46); and a door's piece the resting pieces leave out refused (F47).
  * Bound: no WebGL; the cap pass's choice and the picks are checked on the meshes, not on pixels (tests/e2e/doors.spec.ts looks at pixels).
@@ -17,13 +15,14 @@ import { describe, expect, it } from 'vitest';
 
 import { CHAPTERS } from '../build/chapters.js';
 import { firstDifference, random, snapshot } from '../build/testing.js';
+
 import { Timeline } from '../build/timeline.js';
 import type { PieceTag, StepDef } from '../build/types.js';
 import { doorLeavesOf, doorUnit } from '../model/lib/window.js';
 import { GeometryBvhs } from '../walk/bvh-cache.js';
 import { CapPass } from './cap-pass.js';
 import { DoorLayer, SWING_SECONDS, ease, hingeTurn } from './doors.js';
-import type { DoorChange, DoorDef } from './doors.js';
+import type { DoorDef } from './doors.js';
 import { ModelPicker } from './pick.js';
 import { SectionCut, cappedBySection } from './section-cut.js';
 
@@ -53,7 +52,7 @@ const SHUT = new Matrix4().makeTranslation(-10, 0, 0);
 const box = (cx: number, cy: number, cz: number, sx: number, sy: number, sz: number): Matrix4 => new Matrix4().compose(new Vector3(cx, cy, cz), new Quaternion(), new Vector3(sx, sy, sz));
 
 function step(id: string, build: StepDef['build']): StepDef {
-  return { id, chapter: CHAPTERS[0].id, title: id, motion: { kind: 'rise' }, stagger: 'order', build };
+  return { id, chapter: CHAPTERS[0].id, title: id, build };
 }
 
 /** Ground; the doors (the glazed `front` at the origin facing +Z with a wall 3 m behind it, the glazed `side`, the locked panelled `shut`); a later step. */
@@ -72,9 +71,8 @@ const STEPS: readonly StepDef[] = [
   }),
   step('later', (kit) => { kit.add(cube, stone, box(0, 0.5, 20, 1, 1, 1)); }),
 ];
-/** The doors' step's index and the position where it is complete. */
+/** The doors' step's index. */
 const DOORS_STEP = 1;
-const BUILT = DOORS_STEP + 1;
 
 function fixture(start: 'open' | 'closed' = 'closed'): { timeline: Timeline; layer: DoorLayer } {
   const timeline = new Timeline(STEPS);
@@ -100,20 +98,14 @@ function drawn(layer: DoorLayer, id: string): { mesh: InstancedMesh; matrix: Mat
   );
 }
 
-/** Brings the layer to `t` after `seconds`, as the page's frame does after evaluating the timeline. */
-function at(timeline: Timeline, layer: DoorLayer, t: number, seconds = 0, instant = false): DoorChange {
-  timeline.evaluate(t);
-  return layer.sync(t, seconds, instant);
-}
-
 const facts = (layer: DoorLayer, id: string): ReturnType<DoorLayer['facts']>[number] | undefined => layer.facts().find((d) => d.id === id);
 
 describe('the door layer', () => {
-  it('hides a built door’s closed leaves by their layer mask only and draws each leaf at the piece’s matrix times its turn about its hinge', () => {
+  it('hides a door’s closed leaves by their layer mask only and draws each leaf at the piece’s matrix times its turn about its hinge', () => {
     const { timeline, layer } = fixture();
     const front = doorMeshes(timeline, 'front');
     expect(front.map((m) => m.material)).toEqual([bronze, glass]);
-    at(timeline, layer, BUILT);
+    layer.sync(0);
     expect(front.map((m) => m.layers.mask), 'the closed leaves are on no layer').toEqual([0, 0]);
     expect(doorMeshes(timeline, 'shut').map((m) => m.layers.mask), 'a locked door is never hidden').toEqual([1]);
     expect(front.every((m) => m.visible && m.count === m.instanceMatrix.count), 'the timeline still shows them as it would').toBe(true);
@@ -123,8 +115,8 @@ describe('the door layer', () => {
     for (const d of drawn(layer, 'front')) expect(d.matrix.equals(new Matrix4()), 'closed: the piece’s own matrix').toBe(true);
     // Opened from in front, a full swing later: each leaf a quarter turn into the back, against its jamb.
     expect(layer.use('front', new Vector3(0, 1.6, 3))).toBe(true);
-    at(timeline, layer, BUILT, SWING_SECONDS);
-    expect(facts(layer, 'front')).toEqual({ id: 'front', state: 'open', angle: 90, locked: false, built: true });
+    layer.sync(SWING_SECONDS);
+    expect(facts(layer, 'front')).toEqual({ id: 'front', state: 'open', angle: 90, locked: false });
     const leaves = drawn(layer, 'front');
     expect(leaves).toHaveLength(4);
     // Each leaf turns about its hinge-side edge on its back face, 4 mm in from its jamb: the left at X −W + 0.004, the right at W − 0.004.
@@ -149,53 +141,50 @@ describe('the door layer', () => {
     for (const { matrix } of leaves) expect(expected.some((m) => m.elements.every((e, k) => Math.abs(e - (matrix.elements[k] ?? Number.NaN)) < 1e-6)), 'a leaf’s matrix is its hinge edge’s quarter turn, in float32').toBe(true);
     // The side door, turned to face −X, opens the same way in its own frame.
     expect(layer.use('side', new Vector3(6, 1.6, 0)), 'from in front of it, at −X').toBe(true);
-    at(timeline, layer, BUILT, SWING_SECONDS);
+    layer.sync(SWING_SECONDS);
     expect(Math.min(...drawn(layer, 'side').map(({ box: b }) => b.min.x)), 'into its back, +X of its front, from its back face’s line').toBeCloseTo(10 - ZC + T / 2, 5);
   });
 
   it('opens away from the walker, eased over SWING_SECONDS, and closes or turns back from where it stands', () => {
-    const { timeline, layer } = fixture();
-    at(timeline, layer, BUILT);
+    const { layer } = fixture();
+    layer.sync(0);
     expect(layer.prompt('front')).toBe('E Open');
     expect(layer.use('front', new Vector3(0, 1.6, -2)), 'from behind').toBe(true);
     expect(layer.prompt('front')).toBe('E Close');
-    at(timeline, layer, BUILT, SWING_SECONDS / 2);
+    layer.sync(SWING_SECONDS / 2);
     expect(facts(layer, 'front')?.state).toBe('opening');
     expect(facts(layer, 'front')?.angle, 'half the time, half the turn (eased), toward the front').toBeCloseTo(-90 * ease(0.5), 9);
-    at(timeline, layer, BUILT, SWING_SECONDS / 4);
+    layer.sync(SWING_SECONDS / 4);
     expect(facts(layer, 'front')?.angle).toBeCloseTo(-90 * ease(0.75), 9);
     // Turned back mid-swing: closing from where it stands, over the part of SWING_SECONDS that turn takes.
     expect(layer.use('front', new Vector3(0, 1.6, -2))).toBe(true);
     expect(layer.prompt('front')).toBe('E Open');
     const from = facts(layer, 'front')?.angle ?? 0;
-    at(timeline, layer, BUILT, (SWING_SECONDS * Math.abs(from)) / 90 / 2);
+    layer.sync((SWING_SECONDS * Math.abs(from)) / 90 / 2);
     expect(facts(layer, 'front')?.state).toBe('closing');
     expect(facts(layer, 'front')?.angle).toBeCloseTo(from * (1 - ease(0.5)), 9);
-    at(timeline, layer, BUILT, SWING_SECONDS);
+    layer.sync(SWING_SECONDS);
     expect(facts(layer, 'front')).toMatchObject({ state: 'closed', angle: 0 });
     for (const d of drawn(layer, 'front')) expect(d.matrix.equals(new Matrix4())).toBe(true);
     // From in front it opens into the back.
     layer.use('front', new Vector3(0.3, 1.6, 4));
-    at(timeline, layer, BUILT, SWING_SECONDS);
+    layer.sync(SWING_SECONDS);
     expect(facts(layer, 'front')?.angle).toBe(90);
     // Nothing moves without a swing under way.
-    expect(at(timeline, layer, BUILT, 1)).toBe('none');
+    expect(layer.sync(1)).toBe('none');
   });
 
   it('reports each door as its meshes draw it, read back from the stand-ins’ matrices, not from its state (review 8, F32)', () => {
-    const { timeline, layer } = fixture();
+    const { layer } = fixture();
     const angleOf = (id: string): number | null | undefined => layer.drawn().find((d) => d.id === id)?.angle;
-    at(timeline, layer, DOORS_STEP + 0.5);
-    expect(layer.drawn().map((d) => d.angle), 'while the step is incomplete, the timeline’s closed leaves').toEqual([null, null, null]);
-    at(timeline, layer, BUILT);
-    expect(angleOf('front'), 'built and closed: its stand-ins at 0°').toBeCloseTo(0, 4);
+    expect(angleOf('front'), 'closed: its stand-ins at 0°').toBeCloseTo(0, 4);
     expect(angleOf('shut'), 'locked: its own closed leaves').toBeNull();
     layer.use('front', new Vector3(0, 1.6, 4));
     expect(facts(layer, 'front')?.state, 'asked to open').toBe('opening');
     expect(angleOf('front'), 'but not yet drawn turned').toBeCloseTo(0, 4);
-    at(timeline, layer, BUILT, SWING_SECONDS / 2);
+    layer.sync(SWING_SECONDS / 2);
     expect(angleOf('front'), 'mid-swing, the angle the stand-ins’ matrices hold').toBeCloseTo(facts(layer, 'front')?.angle ?? Number.NaN, 3);
-    at(timeline, layer, BUILT, SWING_SECONDS);
+    layer.sync(SWING_SECONDS);
     expect(angleOf('front')).toBeCloseTo(90, 3);
     // Matrices written past the layer are what is drawn, and what is reported: the front door's slots put back at its closed matrix (the identity) by hand.
     for (const mesh of layer.meshes) for (let i = 0; i < mesh.count; i += 1) if (layer.tagOf(mesh, i)?.id === 'front') mesh.instanceMatrix.array.set(new Matrix4().elements, i * 16);
@@ -203,69 +192,41 @@ describe('the door layer', () => {
     expect(facts(layer, 'front')?.angle, 'while the door’s state still says open').toBe(90);
   });
 
-  it('is the timeline’s closed leaf while its step is incomplete, keeps its state until the step is taken away, and takes its default on completion', () => {
-    const { timeline, layer } = fixture();
-    const front = doorMeshes(timeline, 'front');
-    at(timeline, layer, 1.5);
-    expect(facts(layer, 'front')).toEqual({ id: 'front', state: 'closed', angle: 0, locked: false, built: false });
-    expect(layer.use('front', new Vector3(0, 1.6, 3)), 'unusable while arriving').toBe(false);
-    expect(layer.prompt('front')).toBeNull();
-    expect(front.map((m) => m.layers.mask)).toEqual([1, 1]);
-    expect(layer.meshes.every((m) => m.count === 0 && !m.visible), 'no stand-in drawn').toBe(true);
-    at(timeline, layer, BUILT);
-    layer.use('front', new Vector3(0, 1.6, 3));
-    at(timeline, layer, BUILT, SWING_SECONDS / 2);
-    // Scrubbed back into the step mid-swing: the closed leaf takes over at once; the door keeps the state its swing was heading for.
-    expect(at(timeline, layer, 1.6), 'the fixture’s bronze casts: the shadows too').toBe('shadows');
-    expect(front.map((m) => m.layers.mask)).toEqual([1, 1]);
-    expect(drawn(layer, 'front')).toEqual([]);
-    expect(facts(layer, 'front')).toEqual({ id: 'front', state: 'open', angle: 90, locked: false, built: false });
-    expect(layer.use('front', new Vector3(0, 1.6, 3))).toBe(false);
-    // Complete again: open at once, no swing.
-    at(timeline, layer, BUILT + 0.5);
-    expect(front.map((m) => m.layers.mask)).toEqual([0, 0]);
-    expect(facts(layer, 'front')).toMatchObject({ state: 'open', angle: 90, built: true });
-    expect(at(timeline, layer, BUILT + 0.5, 0.1), 'and still').toBe('none');
-    // Taken away (f = 0) and built again: its default, closed.
-    at(timeline, layer, 0.4);
-    expect(facts(layer, 'front')).toMatchObject({ state: 'closed', angle: 0, built: false });
-    at(timeline, layer, BUILT);
-    expect(facts(layer, 'front')).toMatchObject({ state: 'closed', angle: 0, built: true });
-  });
-
-  it('opens with doors=open into the building when its step completes, at once in capture mode, and never opens a locked door', () => {
-    const { timeline, layer } = fixture('open');
-    at(timeline, layer, 1.5);
-    expect(facts(layer, 'front')?.angle).toBe(0);
-    at(timeline, layer, BUILT, 0.1);
-    expect(facts(layer, 'front')?.state, 'swinging open as the step completes').toBe('opening');
-    at(timeline, layer, BUILT, SWING_SECONDS);
+  it('heads open into the building at load with doors=open, there at once with an instant sync, as the page’s first sync is, or over a swing with time, and never opens a locked door', () => {
+    const { layer } = fixture('open');
+    expect(facts(layer, 'front'), 'at load, before any sync: heading open').toMatchObject({ state: 'opening', angle: 0 });
+    expect(layer.sync(0.1), 'the fixture’s bronze casts: the shadows too').toBe('shadows');
+    expect(facts(layer, 'front')?.state, 'swinging open').toBe('opening');
+    layer.sync(SWING_SECONDS);
     expect(facts(layer, 'front'), 'with no walker, into the back').toMatchObject({ state: 'open', angle: 90 });
     const shot = fixture('open');
-    at(shot.timeline, shot.layer, shot.timeline.n, 0, true);
+    shot.layer.sync(0, true);
     expect(shot.layer.facts().map((d) => [d.id, d.state, d.angle])).toEqual([['front', 'open', 90], ['side', 'open', 90], ['shut', 'closed', 0]]);
-    expect(at(shot.timeline, shot.layer, shot.timeline.n, 0, true), 'standing, nothing left to change').toBe('none');
+    expect(shot.layer.sync(0, true), 'standing, nothing left to change').toBe('none');
+    // Closed at load: nothing to change, and every door that opens is drawn by its stand-ins, the timeline's leaves hidden.
+    const closed = fixture();
+    expect(closed.layer.sync(0, true)).toBe('none');
+    expect(closed.layer.facts().map((d) => d.state)).toEqual(['closed', 'closed', 'closed']);
+    expect(doorMeshes(closed.timeline, 'front').map((m) => m.layers.mask)).toEqual([0, 0]);
     // Locked: no prompt but Locked, no use, no stand-in, its piece never hidden, whatever the query.
     expect(shot.layer.prompt('shut')).toBe('Locked');
     expect(shot.layer.use('shut', new Vector3(-10, 1.6, 3))).toBe(false);
     expect(shot.layer.use('nowhere', new Vector3())).toBe(false);
     expect(shot.layer.prompt('nowhere')).toBeNull();
-    expect(facts(shot.layer, 'shut')).toEqual({ id: 'shut', state: 'closed', angle: 0, locked: true, built: true });
+    expect(facts(shot.layer, 'shut')).toEqual({ id: 'shut', state: 'closed', angle: 0, locked: true });
     expect(doorMeshes(shot.timeline, 'shut').map((m) => m.layers.mask)).toEqual([1]);
   });
 
-  it('leaves the timeline’s state byte for byte as a timeline’s without the layer, across random histories with doors used in between (review 0, F1)', () => {
+  it('leaves the timeline’s meshes byte for byte as a timeline’s without the layer, with doors used and swung in between (review 0, F1)', () => {
     const { timeline, layer } = fixture();
     const alone = new Timeline(STEPS);
     const rand = random(29);
     const ids = ['front', 'side', 'shut'];
     for (let k = 0; k < 60; k += 1) {
-      const t = rand() < 0.3 ? Math.round(rand() * 3) : rand() * 3;
-      at(timeline, layer, t, rand() * 0.5);
+      layer.sync(rand() * 0.5, rand() < 0.1);
       if (rand() < 0.5) layer.use(ids[Math.floor(rand() * 3)] ?? 'front', new Vector3(rand() * 4 - 2, 1.6, rand() * 8 - 4));
-      layer.sync(t, rand() * 0.3);
-      alone.evaluate(t);
-      expect(firstDifference(snapshot(timeline), snapshot(alone)), `t ${t.toFixed(3)} after ${String(k)} steps`).toBeNull();
+      layer.sync(rand() * 0.3);
+      expect(firstDifference(snapshot(timeline), snapshot(alone)), `after ${String(k)} steps`).toBeNull();
     }
   });
 
@@ -279,7 +240,7 @@ describe('the door layer', () => {
       expect(timeline.materials.has(material), 'a timeline material').toBe(true);
       expect(material.clippingPlanes?.[0]).toBe(cut.plane);
     }
-    at(timeline, layer, BUILT);
+    layer.sync(0);
     for (const mesh of layer.meshes) {
       const sphere = mesh.boundingSphere;
       if (sphere === null || mesh.geometry.boundingBox === null) throw new Error('A stand-in has no bounds.');
@@ -314,9 +275,6 @@ describe('the door layer', () => {
     };
     // The front door's leaves meet 8 mm apart at X 0 and keep 4 mm off its jambs (X ±W): rays there pass between them.
     const gaps = [0, W - 0.002, -10];
-    at(timeline, layer, DOORS_STEP + 0.5);
-    expect(doorway.count, 'none while the doors’ step is incomplete').toBe(0);
-    at(timeline, layer, BUILT);
     expect(doorway.parent, 'in no scene: no camera draws it').toBeNull();
     expect(layer.root.children).not.toContain(doorway);
     expect(layer.meshes, 'nor is it a stand-in, for the cap pass').not.toContain(doorway);
@@ -335,20 +293,20 @@ describe('the door layer', () => {
     expect(meets(W + 0.01)).toEqual([null, null, expect.closeTo(3, 6)]);
     // Opening, it goes at the first turn of the leaves: the eye looks through the doorway a door opened. Closed again, it is back.
     layer.use('front', new Vector3(0, 1.6, 3));
-    at(timeline, layer, BUILT, SWING_SECONDS / 20);
+    layer.sync(SWING_SECONDS / 20);
     expect(facts(layer, 'front')?.state).toBe('opening');
     expect(meets(0), 'opening').toEqual([null, null, expect.closeTo(3 + 3 - 0.1, 6)]);
-    at(timeline, layer, BUILT, SWING_SECONDS);
+    layer.sync(SWING_SECONDS);
     expect(meets(0), 'open').toEqual([null, null, expect.closeTo(3 + 3 - 0.1, 6)]);
     expect(meets(-10)[0], 'the locked door’s stands').toBe('shut');
     layer.use('front', new Vector3(0, 1.6, 3));
-    at(timeline, layer, BUILT, SWING_SECONDS);
+    layer.sync(SWING_SECONDS);
     expect(meets(0)[0], 'closed again').toBe('front');
   });
 
   it('is met by the zoom’s pick and the hit query where its leaves stand, not where they stood, and capped where the cut passes through them, open or part open (review 0, F3)', () => {
     const { timeline, layer } = fixture();
-    at(timeline, layer, BUILT);
+    layer.sync(0);
     const meshes = [...timeline.steps.flatMap((s) => s.meshes), ...layer.meshes];
     const cut = { enabled: false, height: 0 };
     const picker = new ModelPicker(meshes, new GeometryBvhs(), -1, cut, new Layers(), (mesh, i) => timeline.tagOf(mesh, i) ?? layer.tagOf(mesh, i));
@@ -359,7 +317,7 @@ describe('the door layer', () => {
     expect(picker.hit(through, doorQuery)?.tag).toEqual(tag('front'));
     // Open into the back: the zoom passes the doorway to the wall behind it, and the hit query finds no door there.
     layer.use('front', new Vector3(0, 1.6, 3));
-    at(timeline, layer, BUILT, SWING_SECONDS);
+    layer.sync(SWING_SECONDS);
     expect(picker.distance(through), 'through the opening the leaves left').toBeCloseTo(3 + 3 - 0.1, 6);
     expect(picker.hit(through, doorQuery)).toBeNull();
     // A ray across the opening, behind the frame, meets the left leaf where it now stands: its pane, across the ray half a thickness in from its hinge
@@ -380,7 +338,7 @@ describe('the door layer', () => {
     for (const angle of [90, 45]) {
       if (angle === 45) {
         layer.use('front', new Vector3(0, 1.6, 3));
-        at(timeline, layer, BUILT, SWING_SECONDS / 2);
+        layer.sync(SWING_SECONDS / 2);
       }
       const open = facts(layer, 'front')?.angle ?? 0;
       expect(open, `${String(angle)}°: open or part open`).toBeGreaterThan(20);

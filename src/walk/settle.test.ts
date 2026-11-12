@@ -1,13 +1,13 @@
 /**
- * The walker when the build moves under it (src/walk/walker.ts `settle`; docs/design/spec.md, Walk mode: When the build moves), on fixtures built from
- * real pieces through the page's own collision path: box steps built by the timeline, evaluated at one t and then another, the collision rebuilt for each
- * as walk mode rebuilds it, and the walker settled against the pieces the second build added (`instancesBefore`), as walk mode settles it.
+ * The walker checked against pieces added to its world (src/walk/walker.ts `settle`; docs/design/spec.md, Walk mode: Settling), on fixtures built from
+ * real pieces through the page's own collision path: box steps built by the timeline, the collision built from the first steps and then again from more,
+ * and the walker settled against the pieces the second build added (`instanceCount`), as `settle(from)` takes them; the page itself builds its world once.
  * Two cases run the real sequence: the Grand Staircase's flights built where a walker stands (review of work unit 1, U1 part two), and Weston's facade
  * built through a walker in its pavilion's brick (work unit 3, review 2, F14).
- * The cases: on the workspace ground at once at t = 0, buried by a floor built over it and lifted onto it, dropped when it goes, lifted out of a
- * 1.2 m wall built through it, onto a desk built in a room rather than the roof, past a surface with too little room, lost in a piece with no
- * walkable top, the nearest spawn, and on the real sequence Weston's facade built through a walker in its pavilion's brick, which lifts it onto the
- * coping: red with `openWall`'s bottom face left out, the walker kept in the brick.
+ * The cases: on the workspace ground at once with nothing built, buried by a floor built over it and lifted onto it, dropped when the floor is left out,
+ * lifted out of a 1.2 m wall built through it, onto a desk built in a room rather than the roof, past a surface with too little room, lost in a piece
+ * with no walkable top, the nearest spawn, and on the real sequence Weston's facade built through a walker in its pavilion's brick, which lifts it onto
+ * the coping: red with `openWall`'s bottom face left out, the walker kept in the brick.
  * A floor's joint under the centre (work unit 4's F-owner-8, work unit 13): tiles 6 cm deep on a slab with 8 mm joints, as the Medieval Sculpture Hall's,
  * where the walker is set down on a joint and where two cross, on the tiles, and walks 9 m or more along a joint on them; is lifted onto the tiles laid
  * round it on the slab, and onto them when the whole floor is built over it; and, a control, still steps down into a channel 1.2 m wide, set down,
@@ -17,7 +17,7 @@
  * The rims it stands on (work unit 13, review 0): between two seats 0.32 m up, whose undersides the X probes meet, it stays on the floor, set down,
  * settled, checked as a spawn is and walking; between two plinths 0.45 m high, higher than a step, set down or settled, too; blocks under the X probes
  * and a ceiling 1.8 m up leave it on the tiles by the diagonal probes; no rim too steep to stand on lifts it; a walker that walked from the channel onto
- * a joint keeps to the slab when a step completes 15 m off; and set down at 1 m over a deck of sheets whose seam its centre passes through, it stands
+ * a joint keeps to the slab when a step is added 15 m off; and set down at 1 m over a deck of sheets whose seam its centre passes through, it stands
  * on the deck, and walks along the seam on it, while a gap 1.2 m wide drops it. Red with the walker of 36ca301: the seats' undersides lifted it to
  * 0.32 m, set down or settled, and a check as for a spawn on to their tops, 0.45 m; the joint under the blocks left it on the slab 6 cm down; the deck
  * left it on the workspace ground 2 m down. Red too with the rims read over `place`'s whole drop (the plinths' and the seats' tops, 0.45 m), with
@@ -40,10 +40,10 @@
  * 10.875 m up stands on it, not on plinths 0.45 m high on it, which the read about the height asked reaches (F12; red at c2a9bcc and f6fa16a, whose
  * branch test let rounding take the floor for more than a step under: on the plinths at 1.2 m from 0.75 m).
  * Bound: fixtures are closed boxes and the deck's sheets, their joints along X and Z, as the hall's. Every piece of the model is closed along vertical
- * lines or a declared sheet (src/model/closure.test.ts); a sheet has no inside, so the build does not lift a walker out of one, which
+ * lines or a declared sheet (src/model/closure.test.ts); a sheet has no inside, so `settle` does not lift a walker out of one, which
  * src/walk/crossings.test.ts checks, and a probe's hit on a sheet is not told from its underside, as a closed piece's is by its inside.
  * A walker that walks into a groove at the level of its floor keeps to that floor, as the walking step keeps to the ground it stands on.
- * Walk mode's own wiring (spawns, re-entering, the bar's controls) is in tests/e2e/walk-build.spec.ts.
+ * Walk mode's own wiring (the spawns, entering and leaving) is in tests/e2e/walk.spec.ts.
  */
 import { BoxGeometry, BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
@@ -59,7 +59,7 @@ import { MeshBuilder } from '../model/lib/builder.js';
 import { sheet } from '../model/lib/sheet.js';
 import { workspaceGroundY } from '../viewer/environment.js';
 import { GeometryBvhs } from './bvh-cache.js';
-import { CollisionWorld, collisionMeshes, instancesBefore } from './collision.js';
+import { CollisionWorld, collisionMeshes, instanceCount } from './collision.js';
 import { SPAWNS, nearestSpawn } from './spawns.js';
 import { BODY, NO_INPUT, Walker } from './walker.js';
 import type { Settled } from './walker.js';
@@ -75,20 +75,19 @@ function block(kit: Kit, min: readonly [number, number, number], max: readonly [
   kit.add(cube, stone, new Matrix4().compose(centre, new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), turn), size));
 }
 
-const step = (id: string, build: (kit: Kit) => void): StepDef => ({ id, chapter: CHAPTERS[0].id, title: id, motion: { kind: 'rise' }, build });
+const step = (id: string, build: (kit: Kit) => void): StepDef => ({ id, chapter: CHAPTERS[0].id, title: id, build });
 const floor = step('floor', (kit) => { block(kit, [-20, -0.2, -20], [20, 0, 20]); });
 
 /**
- * A walker over the world of `steps` built at `t`, its workspace ground at FLOOR_Y or where `floorOf` puts it for the timeline; `to` builds the world again
- * at another t and settles the walker as walk mode does.
+ * A walker over the world built from the first `t` of `steps`, its workspace ground at FLOOR_Y or where `floorOf` puts it for the timeline; `to` builds
+ * the world again from the first `t` steps and settles the walker against the pieces the new build added (none, if it holds no more), as `settle(from)` takes them.
  */
 function site(steps: readonly StepDef[], t: number, floorOf: (timeline: Timeline) => number = () => FLOOR_Y): { walker: Walker; to: (t: number) => Settled } {
   const timeline = new Timeline(steps);
   const world = new CollisionWorld(new GeometryBvhs());
   let complete = 0;
   const build = (at: number): number => {
-    timeline.evaluate(at);
-    world.build(collisionMeshes(timeline.steps, at));
+    world.build(collisionMeshes(timeline.steps.slice(0, at)));
     const known = complete;
     complete = Math.floor(at);
     return known;
@@ -99,7 +98,7 @@ function site(steps: readonly StepDef[], t: number, floorOf: (timeline: Timeline
     walker,
     to: (at) => {
       const known = build(at);
-      return walker.settle(complete > known ? instancesBefore(timeline.steps, known) : world.instances);
+      return walker.settle(complete > known ? instanceCount(timeline.steps.slice(0, known)) : world.instances);
     },
   };
 }
@@ -108,7 +107,7 @@ function rest(walker: Walker, seconds: number): void {
   for (let i = 0; i < Math.round(seconds * 60); i += 1) walker.update(1 / 60, NO_INPUT);
 }
 
-describe('the walker when the build moves under it', () => {
+describe('the walker checked against pieces added to its world', () => {
   it('stands on the workspace ground at once where nothing is built, and on the floor once it is built over it', () => {
     const { walker, to } = site([floor], 0);
     walker.place(0, 0, 0, 0);
@@ -119,7 +118,7 @@ describe('the walker when the build moves under it', () => {
     expect(walker.onGround).toBe(true);
   });
 
-  it('falls when the floor under it goes, and stands on it again when it comes back', () => {
+  it('falls when the floor under it is left out of the world, and stands on it again when it is put back', () => {
     const { walker, to } = site([floor], 1);
     walker.place(0, 0, 0, 0);
     expect(to(0), 'nothing over it').toBe('kept');
@@ -426,13 +425,13 @@ describe('the rims a walker set down or settled stands on (work unit 13, review 
     expect(walker.feet.y, 'set down in the groove').toBeCloseTo(0, 6);
   });
 
-  it('moves a walker it keeps only for pieces built under its probes: walked from the channel onto a joint, it keeps to the slab when another step completes', () => {
+  it('moves a walker it keeps only for pieces built under its probes: walked from the channel onto a joint, it keeps to the slab when another step is added', () => {
     const { walker, to } = site([slab, tiles, far], 2);
     // Yaw π/2 faces −X: west out of the channel along the joint on Z −5.6, where walking keeps to the ground it stands on.
     walker.place(3.4, -0.06, -5.6, Math.PI / 2);
     along(walker, 1);
     expect([walker.feet.x, walker.feet.y], 'on the joint, on the slab').toEqual([expect.closeTo(1.5, 0), expect.closeTo(-0.06, 6)]);
-    expect(to(3), 'a step completed 15 m off').toBe('kept');
+    expect(to(3), 'a step added 15 m off').toBe('kept');
     expect(walker.feet.y).toBeCloseTo(-0.06, 6);
   });
 

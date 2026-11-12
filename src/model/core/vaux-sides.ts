@@ -87,15 +87,15 @@ export function vauxSideWalls(kit: Kit): void {
     for (let i = 0; i + 1 < SIDE_LINES.length; i++) {
       const z0 = SIDE_LINES[i] ?? 0;
       const z1 = SIDE_LINES[i + 1] ?? 0;
-      kit.add(sideBay(isHall(i), DOOR_BAYS[side].includes(i)), core.vauxBrick, placed(x, WALL_BASE_Y, (z0 + z1) / 2, facing), i + 1);
+      kit.add(sideBay(isHall(i), DOOR_BAYS[side].includes(i)), core.vauxBrick, placed(x, WALL_BASE_Y, (z0 + z1) / 2, facing));
     }
     const inner = side === 'south' ? x + PARTY_WALL : x - PARTY_WALL;
-    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, INNER_WEST_Z, inner, WALL_BASE_Y + height, SIDE_LINES[0] ?? 0, 0);
+    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, INNER_WEST_Z, inner, WALL_BASE_Y + height, SIDE_LINES[0] ?? 0);
     // Beyond the last bay to the east wall, the floor map's second-floor door into gallery 603 or 633 (EAST_END_DOOR_Z to the wall's inner face).
     const last = SIDE_LINES[SIDE_LINES.length - 1] ?? 0;
-    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, last, inner, WALL_BASE_Y + height, EAST_END_DOOR_Z, SIDE_LINES.length);
-    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, EAST_END_DOOR_Z, inner, L2, INNER_EAST_Z, SIDE_LINES.length);
-    addBox(kit, core.vauxBrick, x, L2 + SECOND_DOOR.height, EAST_END_DOOR_Z, inner, WALL_BASE_Y + height, INNER_EAST_Z, SIDE_LINES.length);
+    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, last, inner, WALL_BASE_Y + height, EAST_END_DOOR_Z);
+    addBox(kit, core.vauxBrick, x, WALL_BASE_Y, EAST_END_DOOR_Z, inner, L2, INNER_EAST_Z);
+    addBox(kit, core.vauxBrick, x, L2 + SECOND_DOOR.height, EAST_END_DOOR_Z, inner, WALL_BASE_Y + height, INNER_EAST_Z);
   }
 }
 
@@ -111,8 +111,8 @@ const HALL_BAYS = [3, 4, 5, 6, 7, 8] as const;
  */
 export function vauxSideArcadeTrim(kit: Kit): void {
   for (const [side, x, facing, out] of SIDES) {
-    const face = (z0: number, z1: number, y0: number, y1: number, back: number, proud: number, order: number): void => {
-      addBox(kit, core.granite, x + out * back, y0, z0, x + out * (back + proud), y1, z1, order);
+    const face = (z0: number, z1: number, y0: number, y1: number, back: number, proud: number): void => {
+      addBox(kit, core.granite, x + out * back, y0, z0, x + out * (back + proud), y1, z1);
     };
     const doors = HALL_BAYS.filter((i) => DOOR_BAYS[side].includes(i));
     for (let j = 0; j < 10; j++) {
@@ -121,28 +121,28 @@ export function vauxSideArcadeTrim(kit: Kit): void {
       const small = y0 < SMALL.head - 1e-6 && y1 > SMALL.sill + 1e-6;
       const gaps = small ? HALL_BAYS.map((i): [number, number] => [bayZ(i) - SMALL.width / 2, bayZ(i) + SMALL.width / 2]) : [];
       for (const [z0, z1] of runsBetween(HALL_Z0, HALL_Z1, gaps)) {
-        face(z0, z1, y0, y1, 0, 0.06, 1);
-        face(z0, z1, y0, y1 - JOINT, 0.06, 0.04, 1);
+        face(z0, z1, y0, y1, 0, 0.06);
+        face(z0, z1, y0, y1 - JOINT, 0.06, 0.04);
       }
     }
     const doorGaps = doors.map((i): [number, number] => [bayZ(i) - CLEAR / 2, bayZ(i) + CLEAR / 2]);
-    for (const [z0, z1] of runsBetween(HALL_Z0, HALL_Z1, doorGaps)) face(z0, z1, RUST_Y1, L1 + 0.12, 0, 0.08, 2);
-    face(HALL_Z0, HALL_Z1, LINTEL_Y, SPRING_Y, 0, 0.08, 4);
+    for (const [z0, z1] of runsBetween(HALL_Z0, HALL_Z1, doorGaps)) face(z0, z1, RUST_Y1, L1 + 0.12, 0, 0.08);
+    face(HALL_Z0, HALL_Z1, LINTEL_Y, SPRING_Y, 0, 0.08);
     for (const i of HALL_BAYS) {
       const door = doors.includes(i);
       const z = bayZ(i);
-      if (!door) face(z - VAUX_ARCH_SPAN / 2, z + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0, 0.05, 3);
+      if (!door) face(z - VAUX_ARCH_SPAN / 2, z + VAUX_ARCH_SPAN / 2, L1 + 0.12, SILL_Y, 0, 0.05);
       for (const s of [-1, 1]) {
         const edge = z + s * (CLEAR / 2);
-        face(Math.min(edge, edge + s * VAUX_INNER_ORDER), Math.max(edge, edge + s * VAUX_INNER_ORDER), door ? L1 : SILL_Y, LINTEL_Y, 0, ORDER_PROUD, 4);
+        face(Math.min(edge, edge + s * VAUX_INNER_ORDER), Math.max(edge, edge + s * VAUX_INNER_ORDER), door ? L1 : SILL_Y, LINTEL_Y, 0, ORDER_PROUD);
       }
     }
     // Each hall bay's head as two pieces placed at its bay; a door bay's head is cut by its second-floor door, which takes the stones it crosses.
     for (const i of HALL_BAYS) {
       const cut = doors.includes(i) ? SECOND_CUT : undefined;
       const at = placed(x, SPRING_Y, bayZ(i), facing);
-      kit.add(lightHead('side', cut), core.granite, at, 5);
-      kit.add(darkHead('side', cut), core.graniteDark, at, 5);
+      kit.add(lightHead('side', cut), core.granite, at);
+      kit.add(darkHead('side', cut), core.graniteDark, at);
     }
   }
 }

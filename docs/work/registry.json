@@ -124,6 +124,10 @@
     {
       "id": 30,
       "theme": "timing-gate"
+    },
+    {
+      "id": 31,
+      "theme": "first-impression-and-wayfinding"
     }
   ]
 }

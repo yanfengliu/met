@@ -6,16 +6,16 @@
  * - no step but a part's own carries a fit-out piece's tag, every fit-out record of the catalogue is built by some step, and every artwork tag in the
  *   whole sequence names a catalogue entry, a placeholder's in a collection step and a fit-out record's in its own steps, so the page has a card for
  *   whatever a look or a click can meet;
- * - at t = N every instance the fit-out steps draw holds the tag of the piece the kit was given at its matrix;
+ * - every instance the fit-out steps draw holds the tag of the piece the kit was given at its matrix;
  * - the tags split no mesh and change no scene: with every artwork's tag taken off, the whole sequence makes the same meshes in the same order
- *   (geometry, material, instance count), the same pieces, triangles and lights, and the same scene byte for byte at every t sampled, the steps of the
- *   fit-out pieces in mid-arrival among them. So the core area, whose budget is 130 meshes (src/model/core/core.test.ts), keeps the count it had;
+ *   (geometry, material, instance count), the same pieces, triangles and lights, and the same scene byte for byte. So the core area, whose budget is 130
+ *   meshes (src/model/core/core.test.ts), keeps the count it had;
  * - `artworkKit` adds each piece as the plain kit would, tagged, keeps a tag the builder gives itself and refuses an object with no fit-out record;
  *   and `entryOf` (place.ts), the placeholders' one way to a catalogue entry, refuses each fit-out record, so no collection step can place one.
  * Red (2026-11-11, each mutation made and undone): the court's lamps added through Diana's kit (her step's tagged pieces are then of glass and
  * verdigris too, and nothing of it is untagged); the gate's rail and the forecourt's flagstones added through the temple's kit (metalDark and
- * rn-oldPaving among the tagged); `artworkKit` dropping the order it is given (its own test); `entryOf` handing a fit-out record on (its test, and
- * the typecheck, since a FitOutEntry is no PlaceholderEntry); and, with the engine's batching stood in for by one
+ * rn-oldPaving among the tagged); `artworkKit` dropping the order it was given (its own test, before work unit 26); `entryOf` handing a fit-out record
+ * on (its test, and the typecheck, since a FitOutEntry is no PlaceholderEntry); and, with the engine's batching stood in for by one
  * that keeps each artwork's pieces apart as a door's are, no line of src/build changed: the sequence makes 911 meshes where the build without the
  * tags makes 744, and src/model/core/core.test.ts fails at 159 meshes of its 130.
  * Bound: which pieces are the object's is the builder's choice, stated here by material; that a visitor reaches each part and that its card shows is
@@ -63,10 +63,10 @@ function untagged(step: StepDef): StepDef {
     ...step,
     build(kit: Kit) {
       step.build({
-        add: (geometry, material, matrix, order) => { kit.add(geometry, material, matrix, order); },
-        addTagged: (geometry, material, matrix, tag, order) => {
-          if (tag.kind === 'artwork') kit.add(geometry, material, matrix, order);
-          else kit.addTagged(geometry, material, matrix, tag, order);
+        add: (geometry, material, matrix) => { kit.add(geometry, material, matrix); },
+        addTagged: (geometry, material, matrix, tag) => {
+          if (tag.kind === 'artwork') kit.add(geometry, material, matrix);
+          else kit.addTagged(geometry, material, matrix, tag);
         },
         light: (light) => { kit.light(light); },
       });
@@ -135,8 +135,7 @@ describe('the fit-out pieces’ tags', () => {
     expect(problems).toEqual([]);
   });
 
-  it('gives every instance the fit-out steps draw at t = N the tag of the piece at its matrix', () => {
-    tagged.evaluate(tagged.n);
+  it('gives every instance the fit-out steps draw the tag of the piece at its matrix', () => {
     const problems: string[] = [];
     for (const built of tagged.steps.filter((s) => s.def.id in PARTS)) {
       const given = collectStep(built.def).pieces.map((p) => pieceKey(p.geometry.uuid, p.material, p.matrix.elements, artworkOf(p.tag) ?? 'none')).sort();
@@ -145,28 +144,21 @@ describe('the fit-out pieces’ tags', () => {
         for (let slot = 0; slot < mesh.count; slot += 1) drawn.push(pieceKey(mesh.geometry.uuid, materialOf(mesh), mesh.instanceMatrix.array.slice(slot * 16, slot * 16 + 16), artworkOf(tagged.tagOf(mesh, slot)) ?? 'none'));
       }
       drawn.sort();
-      if (drawn.length !== given.length) problems.push(`${built.def.id}: ${String(drawn.length)} instances drawn at t = N for ${String(given.length)} pieces`);
+      if (drawn.length !== given.length) problems.push(`${built.def.id}: ${String(drawn.length)} instances drawn for ${String(given.length)} pieces`);
       const missing = given.filter((g, i) => drawn[i] !== g);
       if (missing.length > 0) problems.push(`${built.def.id}: ${String(missing.length)} pieces whose tag no drawn instance at their matrix holds`);
     }
     expect(problems).toEqual([]);
   });
 
-  it('splits no mesh and changes no scene: with the artworks’ tags taken off, the sequence makes the same meshes, pieces and triangles, and the same scene at every t sampled', () => {
+  it('splits no mesh and changes no scene: with the artworks’ tags taken off, the sequence makes the same meshes, pieces and triangles, and the same scene', () => {
     expect(tagged.stats(), 'steps, pieces, meshes, triangles and lights').toEqual(plain.stats());
     // A geometry across two builds of the sequence: some steps make theirs afresh at each build, so it is told by its size, not by its identity.
     const geometryKey = (geometry: BufferGeometry): string => `${String(geometry.getAttribute('position').count)} vertices, ${String(geometry.getIndex()?.count ?? 0)} indices`;
     const shape = (timeline: Timeline): string[] => timeline.steps.flatMap((s) => s.meshes.map((mesh) => `${mesh.name}: ${geometryKey(mesh.geometry)}, ${materialKey(materialOf(mesh))} ×${String(mesh.instanceMatrix.count)}`));
     expect(shape(tagged), 'each step’s meshes in order: geometry, material and instance count').toEqual(shape(plain));
     expect(plain.steps.every((s) => s.tags.every((list) => list === null || list.every((tag) => artworkOf(tag) === null))), 'the untagged build keeps no artwork’s tag').toBe(true);
-    // The empty site, the finished building, and each fit-out step part-way through its arrival and just complete.
-    const at = tagged.steps.filter((s) => s.def.id in PARTS).flatMap((s) => [s.index + 0.3, s.index + 0.6, s.index + 1]);
-    expect(at.length).toBe(3 * Object.keys(PARTS).length);
-    for (const t of [0, ...at, tagged.n]) {
-      tagged.evaluate(t);
-      plain.evaluate(t);
-      expect(firstDifference(snapshot(tagged), snapshot(plain)), `t ${String(t)}`).toBeNull();
-    }
+    expect(firstDifference(snapshot(tagged), snapshot(plain)), 'the scene, byte for byte').toBeNull();
   });
 });
 
@@ -174,22 +166,21 @@ describe('artworkKit', () => {
   const cube: BufferGeometry = new BoxGeometry(1, 1, 1);
   const stone = new MeshStandardMaterial({ name: 'stone' });
   const at = (x: number): Matrix4 => new Matrix4().makeTranslation(x, 0, 0);
-  const step = (build: (kit: Kit) => void): StepDef => ({ id: 'fixture', chapter: 'site', title: 'fixture', motion: { kind: 'rise' }, build });
+  const step = (build: (kit: Kit) => void): StepDef => ({ id: 'fixture', chapter: 'site', title: 'fixture', build });
 
-  it('adds each piece as the plain kit would, with the artwork’s tag, and keeps the order given or the call’s index', () => {
+  it('adds each piece as the plain kit would, with the artwork’s tag', () => {
     const through = collectStep(step((kit) => {
       const diana = artworkKit(kit, FIT_OUT.diana);
       kit.add(cube, stone, at(0));
       diana.add(cube, stone, at(1));
-      diana.add(cube, stone, at(2), 7);
+      diana.add(cube, stone, at(2));
     })).pieces;
     const direct = collectStep(step((kit) => {
       kit.add(cube, stone, at(0));
       kit.add(cube, stone, at(1));
-      kit.add(cube, stone, at(2), 7);
+      kit.add(cube, stone, at(2));
     })).pieces;
-    expect(through.map((p) => [p.geometry === cube, p.material === stone, p.matrix.elements[12], p.order])).toEqual(direct.map((p) => [p.geometry === cube, p.material === stone, p.matrix.elements[12], p.order]));
-    expect(through.map((p) => p.order)).toEqual([0, 1, 7]);
+    expect(through.map((p) => [p.geometry === cube, p.material === stone, p.matrix.elements[12]])).toEqual(direct.map((p) => [p.geometry === cube, p.material === stone, p.matrix.elements[12]]));
     expect(through.map((p) => p.tag)).toEqual([null, artworkTag(FIT_OUT.diana), artworkTag(FIT_OUT.diana)]);
   });
 

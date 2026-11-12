@@ -21,8 +21,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     year: '1884',
     title: 'Lay the south wing foundations',
     detail: "Footings and the basement floor of Weston's south wing, against the south side of the 1880 building.",
-    motion: { kind: 'rise' },
-    stagger: '-x',
     build: (kit) => {
       wingFoundations(kit, 'b');
     },
@@ -33,8 +31,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     year: '1884–1888',
     title: 'Raise the south wing walls',
     detail: 'Brick walls on a stone base, bay by bay along the park front and the east side, with stone pilasters, a string course and a cornice.',
-    motion: { kind: 'grow' },
-    stagger: '-x',
     build: (kit) => {
       for (const e of B) {
         elevationWalls(kit, e);
@@ -48,8 +44,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     year: '1888',
     title: "Build Weston's south facade",
     detail: 'The new main front: an entrance pavilion with its porch and balcony between arched bays, and two projecting end blocks on granite columns. It survives as the north wall of the Petrie Court.',
-    motion: { kind: 'grow' },
-    stagger: 'order',
     build: (kit) => {
       westonWalls(kit);
       westonEndWalls(kit);
@@ -64,8 +58,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     year: '1889',
     title: 'Lay the north wing foundations',
     detail: "Footings and the basement floor of the north wing, against the 1880 building's north side.",
-    motion: { kind: 'rise' },
-    stagger: 'x',
     build: (kit) => {
       wingFoundations(kit, 'c');
     },
@@ -76,8 +68,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     year: '1889–1894',
     title: 'Raise the north wing walls',
     detail: 'The north wing repeats the south wing: brick bays on a stone base, pilasters, string course and cornice on its west, north and east sides.',
-    motion: { kind: 'grow' },
-    stagger: 'x',
     build: (kit) => {
       for (const e of C) {
         elevationWalls(kit, e);
@@ -90,8 +80,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Lay the wings’ main and second floors',
     detail: 'Floor plates for both wings round the two light wells, and the north wing’s main stair to the picture galleries.',
-    motion: { kind: 'drop' },
-    stagger: 'y',
     build: wingFloors,
   },
   {
@@ -99,8 +87,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Glaze the windows and the south entrance',
     detail: 'Windows in both wings, the arched windows and the square-headed entrance door of the south front, and the copper railing of its porch’s balcony.',
-    motion: { kind: 'pop' },
-    stagger: 'z',
     build: (kit) => {
       for (const e of ELEVATIONS) elevationWindows(kit, e);
       westonOpenings(kit);
@@ -111,8 +97,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Partition the rooms and picture galleries',
     detail: 'Main-floor rooms and the skylit second-floor picture galleries on the floor map’s grid, with the light wells’ walls and laylight frames.',
-    motion: { kind: 'grow' },
-    stagger: 'z',
     build: (kit) => {
       for (const block of ['b', 'c'] as const) {
         mainFloorWalls(kit, block);
@@ -127,8 +111,6 @@ export const westonTuckermanSteps: readonly StepDef[] = [
     chapter: CHAPTER,
     title: 'Roof the wings round their gallery skylights',
     detail: 'Flat roofs with a ridge skylight over each picture gallery, open over the two light wells.',
-    motion: { kind: 'drop' },
-    stagger: 'z',
     build: (kit) => {
       roofWithSkylights(kit, 'b');
       roofWithSkylights(kit, 'c');

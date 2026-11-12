@@ -129,8 +129,8 @@ function middleWalls(): BufferGeometry {
 
 /** The facade's brick walls: the two arched bays and the pavilion, and the plain wall behind the strips and the end blocks, footing to parapet. */
 export function westonWalls(kit: Kit): void {
-  kit.add(middleWalls(), palette.brick, new Matrix4(), 0);
-  for (const [a0, a1] of FILLS) elevationBox(kit, SOUTH, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, OUTER_WALL, 0);
+  kit.add(middleWalls(), palette.brick, new Matrix4());
+  for (const [a0, a1] of FILLS) elevationBox(kit, SOUTH, palette.brick, a0, a1, WALL_BASE_Y, PARAPET_Y, 0, OUTER_WALL);
 }
 
 /** A disc `d` across and `t` deep standing out of the south face at (y, z): a roundel. */
@@ -178,14 +178,14 @@ export function westonTrim(kit: Kit): void {
   const porch0 = CENTRE_Z - PORCH_REACH.pedestals;
   const porch1 = CENTRE_Z + PORCH_REACH.pedestals;
   // The base course, to the end blocks' own, which return round them, and on the bit of wall beyond the west block.
-  elevationBox(kit, e, stone, ends[0] + 0.12, ends[1] - 0.12, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
-  elevationBox(kit, e, stone, WEST_Z, WESTON_WEST_END_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0, 0);
-  elevationBox(kit, e, stone, ends[0], ends[1], L1 - 0.45, L1, 0.14, 0, 0);
+  elevationBox(kit, e, stone, ends[0] + 0.12, ends[1] - 0.12, WALL_BASE_Y, LG + 0.6, 0.12, 0);
+  elevationBox(kit, e, stone, WEST_Z, WESTON_WEST_END_Z, WALL_BASE_Y, LG + 0.6, 0.12, 0);
+  elevationBox(kit, e, stone, ends[0], ends[1], L1 - 0.45, L1, 0.14, 0);
   for (const [a0, a1] of [
     [ends[0], porch0],
     [porch1, ends[1]],
   ] as const) {
-    elevationBox(kit, e, stone, a0, a1, L1, L1 + WESTON_DADO, 0.1, 0, 1);
+    elevationBox(kit, e, stone, a0, a1, L1, L1 + WESTON_DADO, 0.1, 0);
   }
   const band = { y0: L1 + WESTON_LOWER_HEAD, y1: L1 + WESTON_LOWER_HEAD + 0.75, cornice: L1 + PORCH_REACH.corniceFrom, soffit: L1 + PORCH_REACH.soffit };
   const ret = END_ENTABLATURE_RETURN;
@@ -203,7 +203,7 @@ export function westonTrim(kit: Kit): void {
       for (const [a, c, back] of parts) {
         if (c - a <= 1e-6) continue;
         const end = CENTRE_Z + s * (WESTON_END_FROM - back);
-        elevationBox(kit, e, stone, Math.min(near, end), Math.max(near, end), a, c, 0.16, 0, 3);
+        elevationBox(kit, e, stone, Math.min(near, end), Math.max(near, end), a, c, 0.16, 0);
       }
     }
   }
@@ -212,7 +212,7 @@ export function westonTrim(kit: Kit): void {
     let k = 0;
     for (let y = L1 + WESTON_DADO; y + 0.5 < CORNICE_Y; y += 0.58, k++) {
       const half = k % 2 === 0 ? QUOIN : 0.33;
-      elevationBox(kit, e, stone, edge - half, edge + half, y, y + 0.54, 0.12, 0, 2 + Math.round((y - L1) / 1.5));
+      elevationBox(kit, e, stone, edge - half, edge + half, y, y + 0.54, 0.12, 0);
     }
   }
   // Beside the porch, on the pavilion's brick, a strip of quoins each side, long and short blocks in turn from the dado up to just under the head band,
@@ -222,35 +222,35 @@ export function westonTrim(kit: Kit): void {
     for (let y = L1 + WESTON_DADO; y + 0.5 < L1 + WESTON_LOWER_HEAD; y += 0.58, k++) {
       const near = CENTRE_Z + s * BESIDE_PORCH;
       const far = near + s * (k % 2 === 0 ? 0.9 : 0.62);
-      elevationBox(kit, e, stone, Math.min(near, far), Math.max(near, far), y, y + 0.54, 0.12, 0, 2 + Math.round((y - L1) / 1.5));
+      elevationBox(kit, e, stone, Math.min(near, far), Math.max(near, far), y, y + 0.54, 0.12, 0);
     }
   }
   const spring = L2 + WESTON_ARCH_SPRING;
   const crown = spring + WESTON_ARCH_SPAN / 2;
   BAYS.forEach((c) => {
-    for (const x of MAIN_X) kit.add(disc, stone, roundelMatrix(L1 + WESTON_DADO / 2, z(c, x), 0.7, 0.16), 1);
+    for (const x of MAIN_X) kit.add(disc, stone, roundelMatrix(L1 + WESTON_DADO / 2, z(c, x), 0.7, 0.16));
     // Stone piers between the windows, from the dado to the head band.
     for (const k of [-1, 0, 1]) {
       const x = k * (MAIN_WINDOW.width + PIER);
-      elevationBox(kit, e, stone, z(c, x) - 0.25, z(c, x) + 0.25, L1 + WESTON_DADO, L1 + WESTON_LOWER_HEAD, 0.08, 0, 2);
+      elevationBox(kit, e, stone, z(c, x) - 0.25, z(c, x) + 0.25, L1 + WESTON_DADO, L1 + WESTON_LOWER_HEAD, 0.08, 0);
     }
-    elevationBox(kit, e, stone, z(c, -WESTON_ARCH_SPAN / 2) - 0.25, z(c, -WESTON_ARCH_SPAN / 2), spring - 0.3, spring, 0.12, 0, 6);
-    elevationBox(kit, e, stone, z(c, WESTON_ARCH_SPAN / 2), z(c, WESTON_ARCH_SPAN / 2) + 0.25, spring - 0.3, spring, 0.12, 0, 6);
+    elevationBox(kit, e, stone, z(c, -WESTON_ARCH_SPAN / 2) - 0.25, z(c, -WESTON_ARCH_SPAN / 2), spring - 0.3, spring, 0.12, 0);
+    elevationBox(kit, e, stone, z(c, WESTON_ARCH_SPAN / 2), z(c, WESTON_ARCH_SPAN / 2) + 0.25, spring - 0.3, spring, 0.12, 0);
     // The keystone's console, up to the cornice (#33).
-    elevationBox(kit, e, stone, z(c, -0.28), z(c, 0.28), crown + 0.2, CORNICE_Y, 0.2, 0, 8);
+    elevationBox(kit, e, stone, z(c, -0.28), z(c, 0.28), crown + 0.2, CORNICE_Y, 0.2, 0);
   });
-  kit.add(arches(), stone, new Matrix4(), 7);
-  kit.add(cornices(), stone, new Matrix4(), 10);
+  kit.add(arches(), stone, new Matrix4());
+  kit.add(cornices(), stone, new Matrix4());
   // The doorway's reveals and soffit, lined through the wall behind the porch, on its threshold.
-  kit.add(holeLining(DOOR_LINED, DOOR_OPENING, OUTER_WALL), stone, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south), 4);
-  addBox(kit, stone, B_SOUTH_X, L1 - DOOR.threshold, CENTRE_Z - DOOR_LINED.width / 2, B_SOUTH_X + OUTER_WALL, L1, CENTRE_Z + DOOR_LINED.width / 2, 4);
+  kit.add(holeLining(DOOR_LINED, DOOR_OPENING, OUTER_WALL), stone, placed(B_SOUTH_X, WALL_BASE_Y, CENTRE_Z, FACING.south));
+  addBox(kit, stone, B_SOUTH_X, L1 - DOOR.threshold, CENTRE_Z - DOOR_LINED.width / 2, B_SOUTH_X + OUTER_WALL, L1, CENTRE_Z + DOOR_LINED.width / 2);
   for (const x of [-3.6, 3.6]) {
-    kit.add(disc, stone, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 1.25, 0.12), 8);
-    kit.add(disc, palette.brick, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 0.85, 0.16), 8);
+    kit.add(disc, stone, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 1.25, 0.12));
+    kit.add(disc, palette.brick, roundelMatrix(L2 + 3.6, z(CENTRE_Z, x), 0.85, 0.16));
   }
   // The coping over the middle section, to the end blocks', which overhang their returns, and over the bit of wall beyond the west end block.
-  elevationBox(kit, e, stone, ends[0] + 0.08, ends[1] - 0.08, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
-  elevationBox(kit, e, stone, WEST_Z, WESTON_WEST_END_Z, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL, 11);
+  elevationBox(kit, e, stone, ends[0] + 0.08, ends[1] - 0.08, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL);
+  elevationBox(kit, e, stone, WEST_Z, WESTON_WEST_END_Z, PARAPET_Y, COPING_TOP_Y, 0.08, OUTER_WALL);
 }
 
 /** Windows of the facade and the pavilion, the entrance door in the porch's doorway, and the railing of the porch's balcony (weston-porch.ts). */
@@ -261,21 +261,21 @@ export function westonOpenings(kit: Kit): void {
   const big = windowUnit({ width: w.width, height: w.spring - w.sill + w.width / 2, shape: 'arch', cols: 4, rows: 3 });
   const door = doorUnit({ width: DOOR.width, height: DOOR.height, fanlight: false, swing: 'back' });
   const x = B_SOUTH_X + 0.3;
-  const put = (parts: { frame: BufferGeometry; glass?: BufferGeometry; bars?: BufferGeometry }, zz: number, y: number, order: number): void => {
+  const put = (parts: { frame: BufferGeometry; glass?: BufferGeometry; bars?: BufferGeometry }, zz: number, y: number): void => {
     const m = placed(x, y, zz, FACING.south);
-    kit.add(parts.frame, palette.metalDark, m, order);
-    if (parts.bars) kit.add(parts.bars, palette.metalDark, m, order);
-    if (parts.glass) kit.add(parts.glass, palette.glassDark, m, order);
+    kit.add(parts.frame, palette.metalDark, m);
+    if (parts.bars) kit.add(parts.bars, palette.metalDark, m);
+    if (parts.glass) kit.add(parts.glass, palette.glassDark, m);
   };
-  BAYS.forEach((c, i) => {
-    for (const gx of GROUND_X) put(ground, z(c, gx), GROUND_WINDOW.sill, i);
-    for (const mx of MAIN_X) put(main, z(c, mx), MAIN_WINDOW.sill, i);
-    put(arched, c, L2 + ARCH_SILL, i);
+  BAYS.forEach((c) => {
+    for (const gx of GROUND_X) put(ground, z(c, gx), GROUND_WINDOW.sill);
+    for (const mx of MAIN_X) put(main, z(c, mx), MAIN_WINDOW.sill);
+    put(arched, c, L2 + ARCH_SILL);
   });
-  for (const px of [-3.6, 3.6]) put(ground, z(CENTRE_Z, px), GROUND_WINDOW.sill, 5);
-  put(big, CENTRE_Z, L2 + w.sill, 5);
+  for (const px of [-3.6, 3.6]) put(ground, z(CENTRE_Z, px), GROUND_WINDOW.sill);
+  put(big, CENTRE_Z, L2 + w.sill);
   const dm = placed(WESTON_DOOR.x, L1, CENTRE_Z, FACING.south);
-  kit.add(door.frame, palette.metalDark, dm, 5);
-  kit.addTagged(door.leaf, core.westonDoorWood, dm, doorTag('weston'), 5);
+  kit.add(door.frame, palette.metalDark, dm);
+  kit.addTagged(door.leaf, core.westonDoorWood, dm, doorTag('weston'));
   westonRailing(kit);
 }

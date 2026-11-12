@@ -1,6 +1,6 @@
 /**
  * Which hits of a vertical line with one piece's triangles are crossings, for the walk's line query (./collision.ts `crossings`; docs/design/spec.md,
- * Walk mode: When the build moves). Hits at one height that face one way and lie on one edge or one corner of their triangles, by the places of its
+ * Walk mode: Settling). Hits at one height that face one way and lie on one edge or one corner of their triangles, by the places of its
  * ends, count once, as a line through an edge or a corner that triangles of one surface share meets each of them. Every other hit counts on its own,
  * so two faces back to back (one part's top under the bottom of the part on it) are two crossings, and a closed piece is crossed an even number of
  * times (src/model/closure.test.ts). Where hits at one height facing one way lie on edges that are not one, as where the edges of two overlapping parts'

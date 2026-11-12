@@ -1,6 +1,6 @@
 /**
  * `snapshot` (src/viewer/facts.ts), which every value of `window.__met` goes through: a detached copy, frozen all the way down.
- * Bound: plain data; that main.ts publishes through it, and that a write to the page's facts cannot reach the follow camera, is in tests/e2e/camera.spec.ts.
+ * Bound: plain data; that main.ts publishes through it, and that a write to the page's facts cannot reach the page's framing, is in tests/e2e/camera.spec.ts.
  */
 import { describe, expect, it } from 'vitest';
 

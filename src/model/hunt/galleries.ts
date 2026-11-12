@@ -37,7 +37,7 @@ const SIDE = 1.2;
 type Door = number | readonly [number, number];
 
 /** A partition from (x0, z0) to (x1, z1) (one of them constant) between y0 and y1, with a gap for each of `doors`. */
-function partition(kit: Kit, a: readonly [number, number], b: readonly [number, number], y0: number, y1: number, doors: readonly Door[], order: number): void {
+function partition(kit: Kit, a: readonly [number, number], b: readonly [number, number], y0: number, y1: number, doors: readonly Door[]): void {
   const alongX = Math.abs(a[1] - b[1]) < 1e-6;
   const lo = alongX ? Math.min(a[0], b[0]) : Math.min(a[1], b[1]);
   const hi = alongX ? Math.max(a[0], b[0]) : Math.max(a[1], b[1]);
@@ -45,8 +45,8 @@ function partition(kit: Kit, a: readonly [number, number], b: readonly [number, 
   let start = lo;
   const piece = (s: number, e: number): void => {
     if (e - s < 0.05) return;
-    if (alongX) box(kit, palette.plaster, [s, y0, a[1] - WALL / 2], [e, y1, a[1] + WALL / 2], order);
-    else box(kit, palette.plaster, [a[0] - WALL / 2, y0, s], [a[0] + WALL / 2, y1, e], order);
+    if (alongX) box(kit, palette.plaster, [s, y0, a[1] - WALL / 2], [e, y1, a[1] + WALL / 2]);
+    else box(kit, palette.plaster, [a[0] - WALL / 2, y0, s], [a[0] + WALL / 2, y1, e]);
   };
   for (const [g0 = 0, g1 = 0] of gaps) {
     piece(start, g0);
@@ -62,48 +62,45 @@ export const gallerySteps: readonly StepDef[] = [
     year: '1902',
     title: 'Fit out the galleries of the wing',
     detail: "The second-floor galleries and the rooms behind the Great Hall: floor plates over the wings and the ranges round the staircase, and walls on the map's room lines.",
-    motion: { kind: 'grow' },
-    stagger: '-z',
     build(kit) {
       const y0 = SECOND - SLAB;
       const front = EXT_FACE_Z - EXT_WALL_T;
       // Second-floor plates: the wings, the ranges behind the hall (the Vélez Blanco patio open to the roof), the cross hall's floor.
-      box(kit, palette.limestoneDark, [EXT_SOUTH_X + SIDE, y0, HALL_WEST_WALL_Z], [-HALL_END_WALL_X, SECOND, front], 0);
-      box(kit, palette.limestoneDark, [HALL_END_WALL_X, y0, HALL_WEST_WALL_Z], [EXT_NORTH_X - SIDE, SECOND, front], 0);
-      box(kit, palette.limestoneDark, [EXT_SOUTH_X + SIDE, y0, BACK_Z], [-23.63, SECOND, HALL_WEST_WALL_Z], 1);
-      box(kit, palette.limestoneDark, [-23.63, y0, BACK_Z], [-GALLERY_OUTER_X, SECOND, -56.89], 1);
-      box(kit, palette.limestoneDark, [-23.63, y0, -41.16], [-GALLERY_OUTER_X, SECOND, HALL_WEST_WALL_Z], 1);
-      box(kit, palette.limestoneDark, [-GALLERY_OUTER_X, y0, BACK_Z], [-STAIR_HALF - 0.8, SECOND, HALL_WEST_WALL_Z], 1);
-      box(kit, palette.limestoneDark, [STAIR_HALF + 0.8, y0, BACK_Z], [EXT_NORTH_X - SIDE, SECOND, HALL_WEST_WALL_Z], 1);
-      box(kit, palette.limestoneDark, [-STAIR_HALF - 0.8, y0, BACK_Z], [STAIR_HALF + 0.8, SECOND, CROSS_HALL_FRONT_Z - 0.8], 1);
+      box(kit, palette.limestoneDark, [EXT_SOUTH_X + SIDE, y0, HALL_WEST_WALL_Z], [-HALL_END_WALL_X, SECOND, front]);
+      box(kit, palette.limestoneDark, [HALL_END_WALL_X, y0, HALL_WEST_WALL_Z], [EXT_NORTH_X - SIDE, SECOND, front]);
+      box(kit, palette.limestoneDark, [EXT_SOUTH_X + SIDE, y0, BACK_Z], [-23.63, SECOND, HALL_WEST_WALL_Z]);
+      box(kit, palette.limestoneDark, [-23.63, y0, BACK_Z], [-GALLERY_OUTER_X, SECOND, -56.89]);
+      box(kit, palette.limestoneDark, [-23.63, y0, -41.16], [-GALLERY_OUTER_X, SECOND, HALL_WEST_WALL_Z]);
+      box(kit, palette.limestoneDark, [-GALLERY_OUTER_X, y0, BACK_Z], [-STAIR_HALF - 0.8, SECOND, HALL_WEST_WALL_Z]);
+      box(kit, palette.limestoneDark, [STAIR_HALF + 0.8, y0, BACK_Z], [EXT_NORTH_X - SIDE, SECOND, HALL_WEST_WALL_Z]);
+      box(kit, palette.limestoneDark, [-STAIR_HALF - 0.8, y0, BACK_Z], [STAIR_HALF + 0.8, SECOND, CROSS_HALL_FRONT_Z - 0.8]);
       // Main floor and second floor partitions on the map's room lines.
       const floors: readonly (readonly [number, number])[] = [
         [MAIN, y0],
         [SECOND, GALLERY_ROOF_Y - 0.4],
       ];
       floors.forEach(([lo, hi], f) => {
-        const order = 2 + f;
         const wingTop = Math.min(hi, WING_ROOF_Y - 0.4);
-        partition(kit, [HALL_END_WALL_X, -10.95], [45.4, -10.95], lo, wingTop, [0.5], order);
-        partition(kit, [HALL_END_WALL_X, -24.4], [EXT_NORTH_X - SIDE, -24.4], lo, wingTop, [0.3, 0.75], order);
+        partition(kit, [HALL_END_WALL_X, -10.95], [45.4, -10.95], lo, wingTop, [0.5]);
+        partition(kit, [HALL_END_WALL_X, -24.4], [EXT_NORTH_X - SIDE, -24.4], lo, wingTop, [0.3, 0.75]);
         // The wings' inner partitions take the map's doors on the main floor (dims.ts WING_DOORS_*), the way on into the McKim, Mead & White wings.
-        partition(kit, [45.4, front], [45.4, -24.4], lo, wingTop, f === 0 ? WING_DOORS_NORTH : [0.5], order);
-        partition(kit, [-45.6, -13.65], [-HALL_END_WALL_X, -13.65], lo, wingTop, [0.5], order);
-        partition(kit, [-45.6, -21.6], [-HALL_END_WALL_X, -21.6], lo, wingTop, [0.5], order);
-        partition(kit, [-45.6, front], [-45.6, HALL_WEST_WALL_Z], lo, wingTop, f === 0 ? WING_DOORS_SOUTH : [0.2, 0.62], order);
-        for (const x of [-GALLERY_OUTER_X, GALLERY_OUTER_X]) partition(kit, [x, HALL_WEST_WALL_Z], [x, BACK_Z], lo, hi, [0.2, 0.55, 0.85], order);
-        partition(kit, [-28.67, -37.72], [-28.67, -57.53], lo, hi, [0.5], order);
-        partition(kit, [-28.67, -37.72], [-GALLERY_OUTER_X, -37.72], lo, hi, [0.5], order);
-        partition(kit, [-28.67, -57.53], [-GALLERY_OUTER_X, -57.53], lo, hi, [0.5], order);
-        partition(kit, [44.38, HALL_WEST_WALL_Z], [44.38, -65.65], lo, hi, [0.3, 0.7], order);
+        partition(kit, [45.4, front], [45.4, -24.4], lo, wingTop, f === 0 ? WING_DOORS_NORTH : [0.5]);
+        partition(kit, [-45.6, -13.65], [-HALL_END_WALL_X, -13.65], lo, wingTop, [0.5]);
+        partition(kit, [-45.6, -21.6], [-HALL_END_WALL_X, -21.6], lo, wingTop, [0.5]);
+        partition(kit, [-45.6, front], [-45.6, HALL_WEST_WALL_Z], lo, wingTop, f === 0 ? WING_DOORS_SOUTH : [0.2, 0.62]);
+        for (const x of [-GALLERY_OUTER_X, GALLERY_OUTER_X]) partition(kit, [x, HALL_WEST_WALL_Z], [x, BACK_Z], lo, hi, [0.2, 0.55, 0.85]);
+        partition(kit, [-28.67, -37.72], [-28.67, -57.53], lo, hi, [0.5]);
+        partition(kit, [-28.67, -37.72], [-GALLERY_OUTER_X, -37.72], lo, hi, [0.5]);
+        partition(kit, [-28.67, -57.53], [-GALLERY_OUTER_X, -57.53], lo, hi, [0.5]);
+        partition(kit, [44.38, HALL_WEST_WALL_Z], [44.38, -65.65], lo, hi, [0.3, 0.7]);
         // On the second floor a door on the 1880 east front's second-floor door on this side, the map's door on Z −65.61 (frame.ts EAST_FRONT_SECOND_DOOR_*).
         const door = [EAST_FRONT_SECOND_DOOR_X - EAST_FRONT_SECOND_DOOR_WIDTH / 2, EAST_FRONT_SECOND_DOOR_X + EAST_FRONT_SECOND_DOOR_WIDTH / 2] as const;
-        partition(kit, [GALLERY_OUTER_X, -65.65], [44.38, -65.65], lo, hi, f === 1 ? [door, 0.5] : [0.5], order);
+        partition(kit, [GALLERY_OUTER_X, -65.65], [44.38, -65.65], lo, hi, f === 1 ? [door, 0.5] : [0.5]);
       });
       // Second floor only: the Balcony Lounge and the shop's walls on the north, gallery 690's on the south.
-      partition(kit, [20.12, HALL_WEST_WALL_Z], [20.12, -55.16], SECOND, GALLERY_ROOF_Y - 0.4, [0.5], 4);
-      partition(kit, [GALLERY_OUTER_X, -56.31], [25.24, -56.31], SECOND, GALLERY_ROOF_Y - 0.4, [0.4], 4);
-      partition(kit, [-39.56, -56.88], [-GALLERY_OUTER_X, -56.88], SECOND, GALLERY_ROOF_Y - 0.4, [0.5], 4);
+      partition(kit, [20.12, HALL_WEST_WALL_Z], [20.12, -55.16], SECOND, GALLERY_ROOF_Y - 0.4, [0.5]);
+      partition(kit, [GALLERY_OUTER_X, -56.31], [25.24, -56.31], SECOND, GALLERY_ROOF_Y - 0.4, [0.4]);
+      partition(kit, [-39.56, -56.88], [-GALLERY_OUTER_X, -56.88], SECOND, GALLERY_ROOF_Y - 0.4, [0.5]);
     },
   },
 ];

@@ -1,10 +1,10 @@
 /**
  * Materials of the collection (docs/design/spec.md, Collection). Every artwork of a step shares one material, so its pieces batch by form whatever their
- * colours: the material's vertex shader finds which artwork an instance is by the instance's plan position (the translation of its matrix, which no
- * motion this module's steps use moves in X or Z) in a small table of the step's artworks, and takes that artwork's colour, roughness and metalness, and
+ * colours: the material's vertex shader finds which artwork an instance is by the instance's plan position (the translation of its matrix) in a small
+ * table of the step's artworks, and takes that artwork's colour, roughness and metalness, and
  * for a painting's canvas its 8 × 8 colour grid on the front face, blended bilinearly between cell centres (four texelFetch reads, so no float
- * filtering is needed and no other row bleeds in). The table is a float DataTexture read with texelFetch; the timeline's own instance
- * colour (the arrival tint) still multiplies it. Colours are the catalogue's sRGB values, converted to linear for the table.
+ * filtering is needed and no other row bleeds in). The table is a float DataTexture read with texelFetch. Colours are the catalogue's sRGB values,
+ * converted to linear for the table.
  * Rows: 0 holds each artwork's plan position (x, z); 1 its linear colour; 2 its roughness, metalness and the first row of its grid (−1 for none);
  * from row 3, 8 rows of 8 cells per painting, top row first.
  * Bound: an instance takes the colour of the artwork nearest it in plan, so two artworks of one step must stand apart in plan (the placement test checks
