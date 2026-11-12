@@ -236,15 +236,17 @@ export async function walkingBudget(page: Page, run = false): Promise<WalkingBud
 }
 
 /**
- * Holds a timing budget (docs/design/spec.md, Budgets; work unit 30): `check` is the budget's assertion, and nothing else. With MET_BUDGETS=1, as
- * `npm run budgets` sets it (scripts/budgets.ts), it asserts as any check does; unset, as in `npm run verify`, a budget it finds broken is printed, named,
- * and the test goes on, since how long a frame or a build takes depends on what else the machine is doing. Only an assertion's failure is caught there:
- * anything else `check` throws fails the test. Either way the test must carry the tag `@budget`, which `npm run budgets` runs (`--grep @budget`), so
- * that no budget is held where it would never be asserted.
+ * Holds a timing budget (docs/design/spec.md, Budgets; work unit 30): `measured` is the budget's reading and `check` its comparison with the budget, and
+ * nothing else. With MET_BUDGETS=1, as `npm run budgets` sets it (scripts/budgets.ts), the comparison asserts as any check does; unset, as in `npm run
+ * verify`, a budget it finds broken is printed, named, and the test goes on, since how long a frame or a build takes depends on what else the machine is
+ * doing. Only an assertion's failure is caught there: anything else `check` throws fails the test. Either way the reading must be a finite number, so a
+ * budget not measured at all, its reading missing from the page or no frame timed, fails the test (review 0, F1), and the test must carry the tag
+ * `@budget`, which `npm run budgets` runs (`--grep @budget`), so that no budget is held where it would never be asserted.
  */
-export function budgetCheck(name: string, check: () => void): void {
+export function budgetCheck(name: string, measured: number, check: () => void): void {
   const info = test.info();
   if (!info.tags.includes('@budget')) throw new Error(`The budget "${name}" is held in "${info.title}", which is not tagged @budget, so npm run budgets would never assert it: give the test { tag: '@budget' }.`);
+  expect(Number.isFinite(measured), `${name}: measured, a finite number read from the page, not ${String(measured)}`).toBe(true);
   if (budgetsAsserted()) {
     check();
     return;
@@ -262,9 +264,9 @@ export function budgetCheck(name: string, check: () => void): void {
 export function expectWalkingBudget(budget: WalkingBudget, where: string): void {
   const report = `walking ${where}: frame interval median ${budget.interval.toFixed(2)} ms, work median ${budget.work.toFixed(2)} ms, render with GPU sync ${budget.gpu.toFixed(2)} ms`;
   console.log(report);
-  budgetCheck('a walking frame’s median work', () => { expect(budget.work, report).toBeLessThan(16.7); });
-  budgetCheck('a walking frame’s GPU-synced render', () => { expect(budget.gpu, report).toBeLessThan(16.7); });
-  budgetCheck('a walking frame’s median interval', () => { expect(budget.interval, report).toBeLessThan(16.7 * 1.1); });
+  budgetCheck('a walking frame’s median work', budget.work, () => { expect(budget.work, report).toBeLessThan(16.7); });
+  budgetCheck('a walking frame’s GPU-synced render', budget.gpu, () => { expect(budget.gpu, report).toBeLessThan(16.7); });
+  budgetCheck('a walking frame’s median interval', budget.interval, () => { expect(budget.interval, report).toBeLessThan(16.7 * 1.1); });
 }
 
 /** Drags across the canvas with the primary button from its centre, `steps` moves of (dx, dy) pixels each, as a quick flick. */

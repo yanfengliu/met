@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { BUDGET_RUNS, budgetsAsserted, runBudgets } from './budgets.js';
+import { BUDGET_RUNS, budgetsAsserted, budgetsRefusal, runBudgets } from './budgets.js';
 
 describe('budgetsAsserted', () => {
   it('asserts the budgets for MET_BUDGETS=1 alone, and leaves them unasserted when it is unset, empty or blank', () => {
@@ -54,5 +54,40 @@ describe('runBudgets', () => {
     const both = record([1, 3]);
     expect(both.code).toBe(1);
     expect(both.lines.at(-1)).toBe('npm run budgets: failed: the unit tests and their headroom (npm test, exit 1); the e2e tests tagged @budget (npm run test:e2e -- --grep @budget, exit 3).');
+  });
+
+  it('refuses a CPU throttle over 1 and runs nothing, naming MET_CPU_THROTTLE and why: the budgets are unthrottled and the route budget tests skip under one (review 0, F2)', () => {
+    for (const rate of ['4', '1.5', ' 2 ']) {
+      const calls: string[] = [];
+      const lines: string[] = [];
+      const code = runBudgets(
+        (command) => {
+          calls.push(command);
+          return 0;
+        },
+        { MET_CPU_THROTTLE: rate },
+        (line) => lines.push(line),
+      );
+      expect(code, `MET_CPU_THROTTLE=${rate}`).toBe(2);
+      expect(calls, `MET_CPU_THROTTLE=${rate}: runs`).toEqual([]);
+      expect(lines).toEqual([budgetsRefusal({ MET_CPU_THROTTLE: rate })]);
+      expect(lines[0]).toMatch(/^npm run budgets: MET_CPU_THROTTLE=.+ slows the page's CPU .+ this machine's, unthrottled: the route budget tests skip under a throttle, .* Unset MET_CPU_THROTTLE/);
+    }
+  });
+
+  it('runs with no throttle, or one the tests read as none: 1 or under, empty, or not a number', () => {
+    for (const env of [{}, { MET_CPU_THROTTLE: '1' }, { MET_CPU_THROTTLE: '0.5' }, { MET_CPU_THROTTLE: '' }, { MET_CPU_THROTTLE: 'abc' }]) {
+      expect(budgetsRefusal(env), JSON.stringify(env)).toBeNull();
+      const calls: string[] = [];
+      const code = runBudgets(
+        (command) => {
+          calls.push(command);
+          return 0;
+        },
+        env,
+        () => undefined,
+      );
+      expect([code, calls.length], JSON.stringify(env)).toEqual([0, 2]);
+    }
   });
 });

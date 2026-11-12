@@ -214,7 +214,7 @@ test('the whole sequence builds within the 4 s budget, from navigation to ready'
   console.log(`the whole sequence: ready ${ready.toFixed(0)} ms after navigation, the model's build ${build.toFixed(0)} ms of it`);
   // The ready interval contains the model's build, so it cannot be shorter; if it were, the two clocks would not be the ones this test means.
   expect(ready, `ready ${ready.toFixed(0)} ms after navigation, the model's build ${build.toFixed(0)} ms`).toBeGreaterThan(build);
-  budgetCheck('the build, from navigation to ready', () => { expect(ready, `ready ${ready.toFixed(0)} ms after navigation (the model's build ${build.toFixed(0)} ms of it)`).toBeLessThan(4000); });
+  budgetCheck('the build, from navigation to ready', ready, () => { expect(ready, `ready ${ready.toFixed(0)} ms after navigation (the model's build ${build.toFixed(0)} ms of it)`).toBeLessThan(4000); });
   expect(f.stats.triangles).toBeLessThanOrEqual(3_000_000);
   expect(f.stats.meshes).toBeLessThanOrEqual(900);
   errors.expectClean();

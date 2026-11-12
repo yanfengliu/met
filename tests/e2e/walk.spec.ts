@@ -314,7 +314,7 @@ test.describe('walk mode', () => {
     await page.keyboard.press('KeyF');
     const ready = await walking(page);
     console.log(`collision of the finished building: ${String(ready.bvhMs)} ms for ${String(ready.collision?.triangles)} triangles`);
-    budgetCheck('the collision’s build', () => { expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision of the finished building').toBeLessThan(2000); });
+    budgetCheck('the collision’s build', ready.bvhMs ?? Number.NaN, () => { expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision of the finished building').toBeLessThan(2000); });
     expect(ready.collision?.steps, 'every step is in the collision').toBe(f.steps.length);
     expect(ready.collision?.triangles ?? 0).toBeGreaterThan(1_000_000);
     // Walking and running from the plaza, then from the view menu's spawns in the populated interiors (the hall's desk, columns and domes; the stair's

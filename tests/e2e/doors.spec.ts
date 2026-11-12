@@ -15,8 +15,9 @@
  * Court, opening and closing, and inside its porch, closing it facing across the porch and opening it facing out, the slowest frame of each swing,
  * standing, takes under 16.7 ms of work (work unit 18; the walking frames during a swing are timed at the entrance alone). Walking up to the doors and through them is ./routes.spec.ts's.
  * Red proofs: docs/learning/gate-proofs.md, under this file.
- * Its timing budgets (a swing's slowest frame, the walk through the cycles, the render through the open doorway) are asserted only under `npm run budgets`,
- * which runs its tests tagged `@budget` with MET_BUDGETS=1; `npm run verify` measures and prints them (./helpers.ts `budgetCheck`, work unit 30).
+ * Its timing budgets (a swing's slowest frame, the walk through the cycles, the render through the open doorway, and how many frames a swing and the cycles
+ * span) are asserted only under `npm run budgets`, which runs its tests tagged `@budget` with MET_BUDGETS=1; `npm run verify` measures and prints them, and
+ * fails a test whose reading is missing or not a finite number (./helpers.ts `budgetCheck`, work unit 30).
  * Bound: each place enters walk mode at load, with no user gesture, so the pointer stays free and drags turn the view; the locked click is the
  * browser's own lock, which the headless system Chrome grants a click of the view (work unit 14). A frame's work is timed by a
  * probe that wraps `requestAnimationFrame` before the page loads and times each callback, the page's frame among them; GPU time is the page's own
@@ -228,8 +229,10 @@ async function timeSwing(page: Page, id: string, state: string, where: string): 
   const frames = await frameWork(page, from, to);
   const slowest = Math.max(...frames);
   console.log(`a swing ${where}: ${String(frames.length)} frames, slowest ${slowest.toFixed(2)} ms of work`);
-  expect(frames.length, `${where}: frames timed over the swing`).toBeGreaterThan(20);
-  budgetCheck('the slowest frame of a door’s swing', () => { expect(slowest, `${where}: the slowest frame of the swing`).toBeLessThan(16.7); });
+  // How many frames a 0.7 s swing spans depends on the frame rate, so it is a budget too (review 0, F3); the slowest of no frame, −Infinity, or of a time
+  // not a number, NaN, is no reading, which fails the test either way.
+  budgetCheck('frames timed over a door’s swing', frames.length, () => { expect(frames.length, `${where}: frames timed over the swing`).toBeGreaterThan(20); });
+  budgetCheck('the slowest frame of a door’s swing', slowest, () => { expect(slowest, `${where}: the slowest frame of the swing`).toBeLessThan(16.7); });
   return door;
 }
 
@@ -373,7 +376,7 @@ test.describe('the doors', () => {
     // a swing asks, since the entrance's leaves cast no shadow and a swing's frames redraw none (Doors: The layer).
     const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
     console.log(`render with GPU sync and a shadow pass, facing into the hall through the open doorway: ${gpu.toFixed(2)} ms`);
-    budgetCheck('a GPU-synced render through the open doorway', () => { expect(gpu).toBeLessThan(16.7); });
+    budgetCheck('a GPU-synced render through the open doorway', gpu, () => { expect(gpu).toBeLessThan(16.7); });
     await face(page, toward(at.eye, 0.62, DOOR_Z - 0.3));
     await looksAt(page, MIDDLE, 'E Close');
     expect((await timedSwing('closed', 'closing, facing into the Great Hall')).angle).toBe(0);
@@ -386,8 +389,9 @@ test.describe('the doors', () => {
     const moving = steps.filter((d) => d > 5e-4).length;
     const metres = steps.reduce((sum, d) => sum + d, 0);
     console.log(`two door cycles walked, facing into the Great Hall: ${String(cycles.drawn)} frames drawn in ${((cycles.to - cycles.from) / 1000).toFixed(2)} s, the eye moving in ${String(moving)} of ${String(steps.length)}, ${metres.toFixed(2)} m walked, the door out of sight at rest at ${String(cycles.unseen)} turns; ${String(walkWork.length)} callbacks timed, slowest ${slowestWalking.toFixed(2)} ms of work`);
-    budgetCheck('the slowest walking frame through two door cycles', () => { expect(slowestWalking, 'the slowest walking frame through two door cycles').toBeLessThan(16.7); });
-    expect(steps.length, 'walking frames recorded through the cycles').toBeGreaterThan(120);
+    budgetCheck('the slowest walking frame through two door cycles', slowestWalking, () => { expect(slowestWalking, 'the slowest walking frame through two door cycles').toBeLessThan(16.7); });
+    // How many frames the two cycles span depends on the frame rate too (review 0, F3); with no frame recorded, the share below is NaN and fails either way.
+    budgetCheck('walking frames recorded through two door cycles', steps.length, () => { expect(steps.length, 'walking frames recorded through the cycles').toBeGreaterThan(120); });
     // Where the walk turns round its speed passes through nought, so a frame or so a turn moves the eye less than 0.5 mm (Bound, in the header).
     expect(moving / steps.length, 'the share of those frames in which the eye moved more than 0.5 mm').toBeGreaterThan(0.95);
     expect(metres, 'metres walked through the cycles').toBeGreaterThan(3);
