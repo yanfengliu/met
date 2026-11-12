@@ -330,8 +330,10 @@ test.describe('walk mode', () => {
       await openMenu(page, 'view-menu');
       await press(page, `walk-spawn-${id}`);
       await page.waitForFunction((s) => window.__met?.walk.spawn === s && !window.__met.walk.preparing && window.__met.walk.eye !== null, id);
-      expectWalkingBudget(await walkingBudget(page), `from the ${id} spawn`);
+      // Read at the spawn, before the sample walks on: how far its frames carry the walker hangs on the frame rate (work unit 30, review 0, F10).
+      await settle(page);
       expect((await facts(page)).walk.target, `${id}: no door or artwork in reach of the spawn's view`).toBeNull();
+      expectWalkingBudget(await walkingBudget(page), `from the ${id} spawn`);
     }
   });
 });

@@ -49,7 +49,7 @@ export const CLICK_SLOP = 5;
  */
 export const HINT_SECONDS = 6;
 /** Walking frames whose work times `frameMs` takes the median of. */
-const FRAME_WINDOW = 120;
+export const FRAME_WINDOW = 120;
 
 export interface WalkHost {
   readonly canvas: HTMLCanvasElement;
