@@ -72,7 +72,7 @@ Kept in `npm run verify`, since none compares a duration with a budget:
 ## Implementation steps
 
 - [x] Worker: inventory, the switch, the new script, the red proofs, the documents, review 0's repairs, hand back.
-- [x] Coordinator: review, accept, land, devlog line. Three rounds (`reviews/`): review 0, both lanes, on `cb1f951`; review 1, one lane on the repairs, which rejected the walking sampler's cap and the coordinator's own floor on it (F12, F13); review 2, one lane on the coordinator's repair at `3ba46db`. Landed 2026-11-11 with `npm run verify` (741 unit tests, 93 e2e) and `npm run budgets` (every budget held) green on `3ba46db`. Review 2's F16 (the work median read one call after the sample) and F17 (one sentence of the spec) are repaired in the landing after it.
+- [x] Coordinator: review, accept, land, devlog line. Three rounds (`reviews/`): review 0, both lanes, on `cb1f951`; review 1, one lane on the repairs, which rejected the walking sampler's cap and the coordinator's own floor on it (F12, F13); review 2, one lane on the coordinator's repair at `3ba46db`. Landed 2026-11-11 with `npm run verify` (741 unit tests, 93 e2e) and `npm run budgets` (every budget held) green on `3ba46db`. Review 2's F16 (the work median read one call after the sample) and F17 (one sentence of the spec) are repaired in the landing after it: the helper reads the median inside the sampler's last frame, and the spec's paragraph says where an untagged budget shows.
 
 ## Outcome
 

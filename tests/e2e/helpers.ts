@@ -222,16 +222,16 @@ export interface WalkingBudget {
 export async function walkingBudget(page: Page, run = false): Promise<WalkingBudget> {
   if (run) await page.keyboard.down('Shift');
   await page.keyboard.down('KeyW');
-  const intervals = await page.evaluate((frames) => new Promise<number[]>((resolve) => {
+  // The page's work median is read inside the last sampled frame, so no later frame has entered its window by then (review 2, F16).
+  const { intervals, work } = await page.evaluate((frames) => new Promise<{ intervals: number[]; work: number }>((resolve) => {
     const times: number[] = [];
     const tick = (now: number): void => {
       times.push(now);
       if (times.length <= frames) requestAnimationFrame(tick);
-      else resolve(times.slice(1).map((t, i) => t - (times[i] ?? t)));
+      else resolve({ intervals: times.slice(1).map((t, i) => t - (times[i] ?? t)), work: window.__met?.walk.frameMs ?? Number.NaN });
     };
     requestAnimationFrame(tick);
   }), FRAME_WINDOW);
-  const work = await page.evaluate(() => window.__met?.walk.frameMs ?? Number.NaN);
   await page.keyboard.up('KeyW');
   if (run) await page.keyboard.up('Shift');
   const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
