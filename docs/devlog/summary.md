@@ -2,6 +2,8 @@
 
 Newest first. One dated line per behaviour-changing session; `detailed/` holds anything a later session could trip over.
 
+- 2026-11-11 (work unit 30): **The timing budgets have their own gate** — `npm run verify` now measures and prints every timing budget and asserts none, so a loaded machine no longer fails it on a slow frame; `npm run budgets` (`MET_BUDGETS=1`) asserts them all, the unit tests' headroom included, and is run through the gate lock before landing a change that can alter what a frame, the build or a test costs. Plan: `docs/work/30_timing-gate/plan.md`.
+
 - 2026-11-11 (work unit 27, item 10, first part): **The page has a name, a description and an icon** — the tab read "The Met — build" after the build replay had gone. It now reads "The Met Fifth Avenue: a procedural 3D model", a shared link shows a description that says the model is unofficial, and both pages take a hand-drawn icon of the Fifth Avenue front (`public/icon.svg`). Detail: `docs/work/27_improvement-list/plan.md`.
 
 - 2026-11-11 (work unit 29, landing A2): **The Temple of Dendur's card reads 10 BCE** — the owner's decision: a pick may give a date in place of a record's, marked `dateFrom: "pick"` and refused once the record's text changes. With it, review 1's repairs: the landmarks' test views are stood by the real walker. Detail: `docs/work/29_artwork-cards-and-forms/plan.md`.
