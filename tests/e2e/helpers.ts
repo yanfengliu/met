@@ -214,13 +214,18 @@ export interface WalkingBudget {
 /** The frames `walkingBudget` samples, and the longest it holds W for them: 120 frames at this machine's rate, 4 to 6 ms a frame unloaded, take 0.5 to 0.72 s. */
 const WALK_FRAMES = 120;
 const WALK_SAMPLE_MS = 1500;
+/**
+ * The fewest frames a reading of the walking budget rests on: half of what the sampler asks. The frame rate itself is the interval budget's to judge
+ * (18.37 ms, about 54 frames a second, 81 frames in the 1.5 s); asking for all 120 in 1.5 s would ask 80 frames a second, a budget the spec does not hold.
+ */
+const WALK_FRAMES_MIN = 60;
 
 /**
  * Holds W (with Shift when `run`) where the walker stands for 120 frames or 1.5 s, whichever comes first, so every frame walks, runs the look target and
  * renders, and reports the frame interval's median over them, how many there were, the page's median work per walking frame over the same window
  * (`window.__met.walk.frameMs`: physics, the look target, the camera and the render call) and the mean of 30 renders each synced with the GPU (`benchmark`).
  * Bound in time, a slow machine reads fewer frames and the walker goes no farther, 3 m at a walk and 7.5 m at a run at most (src/walk/walker.ts MOTION),
- * so what it walks into does not hang on the frame rate (review 0, F10); how many frames it read is the budget's.
+ * so what it walks into does not hang on the frame rate (review 0, F10); how many frames it read, at least WALK_FRAMES_MIN, is the budget's.
  */
 export async function walkingBudget(page: Page, run = false): Promise<WalkingBudget> {
   if (run) await page.keyboard.down('Shift');
@@ -271,8 +276,8 @@ export function budgetCheck(name: string, measured: number, check: () => void): 
 export function expectWalkingBudget(budget: WalkingBudget, where: string): void {
   const report = `walking ${where}: ${String(budget.frames)} frames sampled, frame interval median ${budget.interval.toFixed(2)} ms, work median ${budget.work.toFixed(2)} ms, render with GPU sync ${budget.gpu.toFixed(2)} ms`;
   console.log(report);
-  // The frames the sampler read in its time: as many as it asks where the frame rate keeps the budget (review 0, F10).
-  budgetCheck('walking frames sampled in 1.5 s', budget.frames, () => { expect(budget.frames, report).toBeGreaterThanOrEqual(WALK_FRAMES); });
+  // The frames the medians rest on: at least half of what the sampler asks (review 0, F10); the frame rate is the interval's budget to judge.
+  budgetCheck('walking frames sampled in 1.5 s', budget.frames, () => { expect(budget.frames, report).toBeGreaterThanOrEqual(WALK_FRAMES_MIN); });
   budgetCheck('a walking frame’s median work', budget.work, () => { expect(budget.work, report).toBeLessThan(16.7); });
   budgetCheck('a walking frame’s GPU-synced render', budget.gpu, () => { expect(budget.gpu, report).toBeLessThan(16.7); });
   budgetCheck('a walking frame’s median interval', budget.interval, () => { expect(budget.interval, report).toBeLessThan(16.7 * 1.1); });
