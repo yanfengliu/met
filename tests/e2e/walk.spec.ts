@@ -12,7 +12,8 @@
  * On the finished building the collision builds within 2 s, and frames keep the median work and the mean GPU-synced render under 16.7 ms and the
  * median frame interval under 18.37 ms (16.7 ms plus 10%, ./helpers.ts `expectWalkingBudget`) with the look target on: walking on the plaza, running
  * up the front steps, walking from the Great Hall and second-floor spawns, and, unthrottled, walking and then running at the ends of R3 and R4 in the
- * Temple of Dendur hall and the Leon Levy and Shelby White Court (./routes.spec.ts).
+ * Temple of Dendur hall and the Leon Levy and Shelby White Court (./routes.spec.ts). These timing budgets are asserted only under `npm run budgets`, which
+ * runs the tests tagged `@budget` with MET_BUDGETS=1; `npm run verify` measures and prints them (./helpers.ts `budgetCheck`, work unit 30).
  * Bound: the walk goes up the front steps, not through the doors (work unit 1, M2), W held until the eye has climbed 2 m and the eye read once the
  * walker stands still, so a loaded machine changes how long it takes, not where it ends, within a timeout of 60 s times the CPU throttle; frame times are this machine's (an RTX 4090 in headless Chrome);
  * "the same frame" is checked by a probe's requestAnimationFrame count at each keydown, and a run whose keys never shared a frame fails, not passes;
@@ -27,7 +28,7 @@ import type { Vec3 } from '../../src/build/types.js';
 import { LANDING_Y, MAIN_FLOOR_Y, SECOND_FLOOR_Y, STEPS_BOTTOM_Z } from '../../src/model/frame.js';
 import { spawnById } from '../../src/walk/spawns.js';
 import { CLICK_SLOP, LOOK_PER_PIXEL } from '../../src/walk/walk-mode.js';
-import { camera, distance, expectWalkingBudget, facts, open, openMenu, press, settle, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
+import { budgetCheck, camera, distance, expectWalkingBudget, facts, open, openMenu, press, settle, throttle, throttleRate, walkingBudget, watchErrors } from './helpers.js';
 import type { Camera, Facts } from './helpers.js';
 
 const EYE = 1.6;
@@ -308,12 +309,14 @@ test.describe('walk mode', () => {
     expect(await requests(), `a press that travels under ${String(CLICK_SLOP)} px is a click, which asks for pointer lock once`).toBe(1);
   });
 
-  test('walking holds 60 frames a second with the look target on, on the plaza, in the Great Hall and at the top of the Grand Staircase; the collision builds within 2 s', async ({ page }) => {
+  test('walking holds 60 frames a second with the look target on, on the plaza, in the Great Hall and at the top of the Grand Staircase; the collision builds within 2 s', { tag: '@budget' }, async ({ page }) => {
+    // About 5 s here (4.7 to 9.2 s in the runs of 2026-11-11, frames slowed by plants among them); nine times that for a loaded machine (review 0, F10).
+    test.setTimeout(45_000);
     const f = await open(page, '');
     await page.keyboard.press('KeyF');
     const ready = await walking(page);
     console.log(`collision of the finished building: ${String(ready.bvhMs)} ms for ${String(ready.collision?.triangles)} triangles`);
-    expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision of the finished building').toBeLessThan(2000);
+    budgetCheck('the collision’s build', ready.bvhMs ?? Number.NaN, () => { expect(ready.bvhMs ?? Number.POSITIVE_INFINITY, 'milliseconds to build the collision of the finished building').toBeLessThan(2000); });
     expect(ready.collision?.steps, 'every step is in the collision').toBe(f.steps.length);
     expect(ready.collision?.triangles ?? 0).toBeGreaterThan(1_000_000);
     // Walking and running from the plaza, then from the view menu's spawns in the populated interiors (the hall's desk, columns and domes; the stair's

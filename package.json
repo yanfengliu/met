@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "verify": "npm run test && npm run typecheck && npm run lint && npm run build && npm run test:e2e",
+    "budgets": "node scripts/budgets.ts",
     "shots": "node scripts/capture.ts shots",
     "sweep": "node scripts/capture.ts sweep",
     "met-catalogue": "node scripts/met-catalogue.ts",

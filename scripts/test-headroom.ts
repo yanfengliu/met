@@ -4,7 +4,8 @@
  * The Pages workflow runs `npm test` on GitHub's runner, which ran the heaviest unit tests up to 2.8 times slower than the local machine, its own speed varying twice over between runs (2026-10-28, `docs/learning/defect-register.md`).
  * A test of 2.3 to 2.8 s here took 3.2 to 6.4 s there and timed out at Vitest's 5 s default; within a sixth of its timeout here, a test would take under half of it on the slowest run measured there.
  * With that default back, the check named 6 of 650 tests (2026-10-28).
- * Bound: it reads each test's own time (`TestCase.diagnostic().duration`, its hooks included, the module's collection not) on the machine that runs it, and predicts the runner by the ratio measured, not by running there; `vitest.config.ts` leaves it out on the runner, whose bound is the timeout itself.
+ * A test's time is a timing budget, which depends on what else the machine is doing (work unit 30): a test over a sixth of its timeout fails the run only when the budgets are asserted (`MET_BUDGETS=1`, as `npm run budgets` sets it, `scripts/budgets.ts`), and `npm run verify` prints it and goes on; a passed test whose time or timeout Vitest does not give fails the run either way, since then no headroom is read at all.
+ * Bound: it reads each test's own time (`TestCase.diagnostic().duration`, its hooks included, the module's collection not) on the machine that runs it, and predicts the runner by the ratio measured, not by running there; `vitest.config.ts` leaves it out on the runner, whose bound is the timeout itself, unless `MET_BUDGETS=1` asks for the timing budgets there too.
  */
 import type { Reporter, TestCase, Vitest } from 'vitest/node';
 
@@ -38,10 +39,33 @@ export function headroomProblems(tests: readonly TestTime[]): string[] {
   return problems;
 }
 
-/** Collects every test's time and timeout, and at the run's end reports each problem and sets the exit status to 1. */
+/**
+ * What the run's end prints and whether it fails the run. Asserted (`MET_BUDGETS=1`), every problem fails it, as before work unit 30; not asserted, a test
+ * over a sixth of its timeout is printed as not asserted and fails nothing, and one whose time or timeout Vitest did not give still fails it.
+ */
+export function headroomReport(tests: readonly TestTime[], asserted: boolean): { readonly lines: readonly string[]; readonly fails: boolean } {
+  const head = (problems: readonly string[], what: string): string[] =>
+    problems.length === 0 ? [] : [`test headroom (scripts/test-headroom.ts): ${String(problems.length)} of ${String(tests.length)} tests ${what}:`, ...problems.map((problem) => `  ${problem}`)];
+  if (asserted) {
+    const problems = headroomProblems(tests);
+    return { lines: head(problems, 'fail the run'), fails: problems.length > 0 };
+  }
+  const unread = (t: TestTime): boolean => t.passed && (t.duration === undefined || t.timeout === undefined);
+  const blind = headroomProblems(tests.filter(unread));
+  const over = headroomProblems(tests.filter((t) => !unread(t)));
+  return {
+    lines: [...head(blind, 'fail the run'), ...head(over, 'take over a sixth of their timeout, not asserted since MET_BUDGETS is not 1 (npm run budgets asserts it)')],
+    fails: blind.length > 0,
+  };
+}
+
+/** Collects every test's time and timeout, and at the run's end reports each problem and, where `headroomReport` says it fails the run, sets the exit status to 1. */
 export class TestHeadroom implements Reporter {
   private vitest: Vitest | undefined;
   private tests: TestTime[] = [];
+
+  /** `asserted`: whether a test over a sixth of its timeout fails the run (MET_BUDGETS=1, `scripts/budgets.ts` `budgetsAsserted`). */
+  constructor(private readonly asserted = true) {}
 
   onInit(vitest: Vitest): void {
     this.vitest = vitest;
@@ -61,12 +85,14 @@ export class TestHeadroom implements Reporter {
   }
 
   onTestRunEnd(): void {
-    const problems = headroomProblems(this.tests);
-    if (problems.length === 0) return;
-    const report = [
-      `test headroom (scripts/test-headroom.ts): ${String(problems.length)} of ${String(this.tests.length)} tests fail the run:`,
-      ...problems.map((problem) => `  ${problem}`),
-    ].join('\n');
+    const { lines, fails } = headroomReport(this.tests, this.asserted);
+    if (lines.length === 0) return;
+    const report = lines.join('\n');
+    if (!fails) {
+      if (this.vitest) this.vitest.logger.log(report);
+      else console.log(report);
+      return;
+    }
     if (this.vitest) this.vitest.logger.error(report);
     else console.error(report);
     process.exitCode = 1;

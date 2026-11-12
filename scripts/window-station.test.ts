@@ -21,8 +21,16 @@ const ROOT = join(import.meta.dirname, '..');
 const SERVER = join(ROOT, 'tests', 'e2e', 'browser-server.ts');
 
 /**
- * The launcher's exit status, or 'deadline' when it has not ended 20 s on, under the test's own timeout, and is ended then with its job; and what the command
- * printed until then. It settles on `close`, which comes after the last output, and after a start that failed, where `exit` never comes (review 3, F8).
+ * How long a test here waits for the launcher to end: a bound on a hang, not a measure of speed. At 100% CPU (28 busy threads beside the machine's own work,
+ * 2026-11-11, work unit 30) the browser server's runs below took 40 to 60 s from the start to the launcher's end, where 20 s, the bound before, raced them.
+ */
+const HANG_MS = 120_000;
+/** A test's own timeout: its wait for the launcher and the cleanup's 10 s after it, with room. */
+const TEST_MS = 180_000;
+
+/**
+ * The launcher's exit status, or 'deadline' when it has not ended HANG_MS on, under the test's own timeout, and is ended then with its job; and what the
+ * command printed until then. It settles on `close`, which comes after the last output, and after a start that failed, where `exit` never comes (review 3, F8).
  */
 function finished(child: ChildProcess): Promise<{ readonly status: number | 'deadline' | null; readonly out: string; readonly err: string }> {
   let out = '';
@@ -40,7 +48,7 @@ function finished(child: ChildProcess): Promise<{ readonly status: number | 'dea
     const deadline = setTimeout(() => {
       child.kill();
       resolve({ status: 'deadline', out, err });
-    }, 20_000);
+    }, HANG_MS);
     child.on('close', (status) => {
       clearTimeout(deadline);
       resolve({ status, out, err });
@@ -145,7 +153,7 @@ describe('startInWindowStation', () => {
     expect(err).toBe('');
     expect(status).toBe(7);
     expect(JSON.parse(out)).toEqual(args);
-  });
+  }, TEST_MS);
 });
 
 describe('the e2e browser server in the window station', () => {
@@ -162,7 +170,7 @@ describe('the e2e browser server in the window station', () => {
     } finally {
       await cleanup();
     }
-  });
+  }, TEST_MS);
 
   it.runIf(process.platform === 'win32')('closes the browser and ends with 0 when its input ends after its endpoint, and its folder is removed', async () => {
     const { child, temp, cleanup } = startServer();
@@ -181,5 +189,5 @@ describe('the e2e browser server in the window station', () => {
     } finally {
       await cleanup();
     }
-  });
+  }, TEST_MS);
 });

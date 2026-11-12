@@ -2,10 +2,11 @@
  * Shared helpers for the control tests. Tests drive the page only through real input (clicks, drags, keys); they read state from the read-only
  * `window.__met` and the canvas pixels, and never write either. Nothing here names a step or chapter: facts come from `window.__met`.
  */
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { PerspectiveCamera, Vector3 } from 'three';
 
+import { budgetsAsserted } from '../../scripts/budgets.js';
 import type { MetFacts } from '../../src/viewer/facts.js';
 
 export type Facts = Omit<MetFacts, 'benchmark'>;
@@ -202,45 +203,79 @@ export async function choosePreset(page: Page, id: string): Promise<void> {
   await press(page, `preset-${id}`);
 }
 
-/** A walking frame's cost where the walker stands: the median frame interval, the page's median work per walking frame, a GPU-synced render (ms). */
+/** A walking frame's cost where the walker stands: the median frame interval, the page's median work per walking frame, a GPU-synced render (ms), and the frames sampled. */
 export interface WalkingBudget {
   readonly interval: number;
   readonly work: number;
   readonly gpu: number;
+  readonly frames: number;
 }
 
+/** The frames `walkingBudget` samples, and the longest it holds W for them: 120 frames at this machine's rate, 4 to 6 ms a frame unloaded, take 0.5 to 0.72 s. */
+const WALK_FRAMES = 120;
+const WALK_SAMPLE_MS = 1500;
+
 /**
- * Holds W (with Shift when `run`) for 120 frames where the walker stands, so every frame walks, runs the look target and renders, and reports the
- * frame interval's median over them, the page's median work per walking frame over the same window (`window.__met.walk.frameMs`: physics, the look
- * target, the camera and the render call) and the mean of 30 renders each synced with the GPU (`benchmark`).
+ * Holds W (with Shift when `run`) where the walker stands for 120 frames or 1.5 s, whichever comes first, so every frame walks, runs the look target and
+ * renders, and reports the frame interval's median over them, how many there were, the page's median work per walking frame over the same window
+ * (`window.__met.walk.frameMs`: physics, the look target, the camera and the render call) and the mean of 30 renders each synced with the GPU (`benchmark`).
+ * Bound in time, a slow machine reads fewer frames and the walker goes no farther, 3 m at a walk and 7.5 m at a run at most (src/walk/walker.ts MOTION),
+ * so what it walks into does not hang on the frame rate (review 0, F10); how many frames it read is the budget's.
  */
 export async function walkingBudget(page: Page, run = false): Promise<WalkingBudget> {
   if (run) await page.keyboard.down('Shift');
   await page.keyboard.down('KeyW');
-  const intervals = await page.evaluate(() => new Promise<number[]>((resolve) => {
+  const intervals = await page.evaluate(([frames, ms]) => new Promise<number[]>((resolve) => {
     const times: number[] = [];
     const tick = (now: number): void => {
       times.push(now);
-      if (times.length < 121) requestAnimationFrame(tick);
+      if (times.length <= frames && now - (times[0] ?? now) < ms) requestAnimationFrame(tick);
       else resolve(times.slice(1).map((t, i) => t - (times[i] ?? t)));
     };
     requestAnimationFrame(tick);
-  }));
+  }), [WALK_FRAMES, WALK_SAMPLE_MS] as const);
   const work = await page.evaluate(() => window.__met?.walk.frameMs ?? Number.NaN);
   await page.keyboard.up('KeyW');
   if (run) await page.keyboard.up('Shift');
   const gpu = await page.evaluate(() => window.__met?.benchmark(30) ?? Number.NaN);
   const sorted = [...intervals].sort((a, b) => a - b);
-  return { interval: sorted[Math.floor(sorted.length / 2)] ?? Number.NaN, work, gpu };
+  return { interval: sorted[Math.floor(sorted.length / 2)] ?? Number.NaN, work, gpu, frames: intervals.length };
+}
+
+/**
+ * Holds a timing budget (docs/design/spec.md, Budgets; work unit 30): `measured` is the budget's reading and `check` its comparison with the budget, and
+ * nothing else. With MET_BUDGETS=1, as `npm run budgets` sets it (scripts/budgets.ts), the comparison asserts as any check does; unset, as in `npm run
+ * verify`, a budget it finds broken is printed, named, and the test goes on, since how long a frame or a build takes depends on what else the machine is
+ * doing. Only an assertion's failure is caught there: anything else `check` throws fails the test. Either way the reading must be a finite number, so a
+ * budget not measured at all, its reading missing from the page or no frame timed, fails the test (review 0, F1), and the test must carry the tag
+ * `@budget`, which `npm run budgets` runs (`--grep @budget`), so that no budget is held where it would never be asserted.
+ */
+export function budgetCheck(name: string, measured: number, check: () => void): void {
+  const info = test.info();
+  if (!info.tags.includes('@budget')) throw new Error(`The budget "${name}" is held in "${info.title}", which is not tagged @budget, so npm run budgets would never assert it: give the test { tag: '@budget' }.`);
+  expect(Number.isFinite(measured), `${name}: measured, a finite number read from the page, not ${String(measured)}`).toBe(true);
+  if (budgetsAsserted()) {
+    check();
+    return;
+  }
+  try {
+    check();
+  } catch (error) {
+    // Playwright's assertion errors carry their matcher's result; any other error is the test's own.
+    if (!(error instanceof Error) || !('matcherResult' in error)) throw error;
+    console.log(`${name}: over its budget, not asserted, since MET_BUDGETS is not 1 (npm run budgets asserts it): ${error.message.replace(/\s*\n\s*/g, ' ')}`);
+  }
 }
 
 /** The 60-frames-a-second budget a walking frame keeps on this machine: work and a GPU-synced render under 16.7 ms, the interval within 10% of it. */
 export function expectWalkingBudget(budget: WalkingBudget, where: string): void {
-  const report = `walking ${where}: frame interval median ${budget.interval.toFixed(2)} ms, work median ${budget.work.toFixed(2)} ms, render with GPU sync ${budget.gpu.toFixed(2)} ms`;
+  const report = `walking ${where}: ${String(budget.frames)} frames sampled, frame interval median ${budget.interval.toFixed(2)} ms, work median ${budget.work.toFixed(2)} ms, render with GPU sync ${budget.gpu.toFixed(2)} ms`;
   console.log(report);
-  expect(budget.work, report).toBeLessThan(16.7);
-  expect(budget.gpu, report).toBeLessThan(16.7);
-  expect(budget.interval, report).toBeLessThan(16.7 * 1.1);
+  // The frames the sampler read in its time: as many as it asks where the frame rate keeps the budget (review 0, F10).
+  budgetCheck('walking frames sampled in 1.5 s', budget.frames, () => { expect(budget.frames, report).toBeGreaterThanOrEqual(WALK_FRAMES); });
+  budgetCheck('a walking frame’s median work', budget.work, () => { expect(budget.work, report).toBeLessThan(16.7); });
+  budgetCheck('a walking frame’s GPU-synced render', budget.gpu, () => { expect(budget.gpu, report).toBeLessThan(16.7); });
+  budgetCheck('a walking frame’s median interval', budget.interval, () => { expect(budget.interval, report).toBeLessThan(16.7 * 1.1); });
 }
 
 /** Drags across the canvas with the primary button from its centre, `steps` moves of (dx, dy) pixels each, as a quick flick. */
