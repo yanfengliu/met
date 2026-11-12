@@ -129,7 +129,7 @@ None of these compares a duration with a number, so the inventory is complete. T
 
 **APPROVE WITH FINDINGS.** The finding that matters most is F2: verify still fails under load on `mouse-look.spec.ts:221` and on the window-station deadline, while AGENTS.md and the spec now say it can't.
 
-## Findings and decisions
+## Findings and disposition
 
 Codex rejected and Claude approved with findings. The table gives each finding one ID; the lanes' own numbers are in brackets.
 
@@ -148,4 +148,10 @@ Codex rejected and Claude approved with findings. The table gives each finding o
 | F11 | Claude reads F3's floors as safe deadlines. | F3's ruling stands. | None. |
 | not taken | The new headroom tests build expected lines from the function under test (nit; Claude 8). | Not accepted as a change: another assertion pins the text, as the reviewer says. | None. |
 
-The repairs go back to the worker. A second round reads them with one lane, as the runbook gives a round of repairs: each repair that changes behaviour beside the test or proof that shows it.
+## Verification
+
+- None in this round. The reviewers read `cb1f951`, on which the worker had not yet run `npm run verify` or `npm run budgets`; the round of repairs records its runs.
+
+## Round outcome
+
+Rejected by Codex and approved with findings by Claude; ten findings accepted and returned to the worker on 2026-11-11. A second round reads the repairs with one lane, as the runbook gives a round of repairs: each repair that changes behaviour beside the test or proof that shows it.

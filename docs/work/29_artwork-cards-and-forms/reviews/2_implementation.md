@@ -56,7 +56,7 @@ The spec’s Collection section and research document accurately describe the ke
 
 APPROVE WITH FINDINGS — F16: the walking-label test still casts from the nominal eye instead of the verified walker’s eye.
 
-## Findings and decisions
+## Findings and disposition
 
 | ID | Finding | Decision | What follows |
 |---|---|---|---|
@@ -67,4 +67,11 @@ APPROVE WITH FINDINGS — F16: the walking-label test still casts from the nomin
 | F16 | The look-target check casts from the view's nominal eye, not from the eye of the walker that was stood there (minor). | Accepted. A gap in the proof, not a view that fails; the temple also has browser coverage. | Repaired in landing B's round: the walking query uses the settled walker's eye and look. |
 | F17 | `docs/research/collection.md` says a corrected date at The Met "is noticed at the next run", which a populated cache prevents (minor). | Accepted. | Repaired in landing B's round: the document says the next fresh fetch notices it, and how the cache is refreshed. |
 
-Landing A2 lands as reviewed. F16 and F17 are minor, and the same worker repairs them on top of it with landing B's round.
+## Verification
+
+- `npm run verify` on the coordinator's merged tree at `b34b968` (landing A2 with work unit 26's milestone B and the page's name and icon), through the gate lock: 724 unit tests in 84 files, typecheck, lint, build and 93 e2e tests in 7.3 minutes. The worker's own run on `b88746c`, before that merge: 795 unit tests and 93 e2e.
+- Not checked in this round: the repairs of F16 and F17, which landing B's round makes.
+
+## Round outcome
+
+Approved with two minor findings. Landing A2 landed on 2026-11-11 at `12b3cd7` as reviewed; the same worker repairs F16 and F17 on top of it with landing B's round.
