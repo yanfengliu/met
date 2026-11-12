@@ -1,6 +1,6 @@
 # Split the timing budgets out of the functional gate
 
-Status: active
+Status: complete
 Owner: claude/worktree-improvement-list (coordinator)
 Created: 2026-11-11
 Updated: 2026-11-11
@@ -67,12 +67,12 @@ Kept in `npm run verify`, since none compares a duration with a budget:
 - [ ] `npm run verify` passes three runs in a row while a second heavy job runs on the machine, and `npm run budgets` passes alone. The three loaded runs passed on `e88f548`; `npm run budgets` passed alone on `f2e576d` and, on the tree that lands, `6b37eb3`, at its second try, the first red on the functional window-station check (Outcome).
 - [x] No assertion is deleted and no number changed: the diff shows each one moved behind the switch. Review 0 added a number, the walking sampler's 1.5 s (F10), which review 1 took out again (F12), and widened a deadline that is no budget, the window-station tests' wait (F6).
 - [x] AGENTS.md says what each gate checks and when `npm run budgets` is required, and stays under its size limit; the spec and the local rules' lock list name the new gate.
-- [ ] An independent review of the exact revision, both lanes once, has no finding left that matters. Review 0, both lanes on `cb1f951` (`reviews/0_implementation.md`); its repairs are `b763520` and `21f6dca`, not yet reviewed.
+- [x] An independent review of the exact revision, both lanes once, has no finding left that matters. Both lanes read `cb1f951` (review 0); one lane read each round of repairs after it (reviews 1 to 3), the last approving `4351859` with no new finding. Left as noted and not repaired: two older fixed-time key holds in `walk.spec.ts` and `zoom.spec.ts` (review 1, F15), and the touch check tracked in work unit 27, item 6. Review 0, both lanes on `cb1f951` (`reviews/0_implementation.md`); its repairs are `b763520` and `21f6dca`, not yet reviewed.
 
 ## Implementation steps
 
 - [x] Worker: inventory, the switch, the new script, the red proofs, the documents, review 0's repairs, hand back.
-- [x] Coordinator: review, accept, land, devlog line. Three rounds (`reviews/`): review 0, both lanes, on `cb1f951`; review 1, one lane on the repairs, which rejected the walking sampler's cap and the coordinator's own floor on it (F12, F13); review 2, one lane on the coordinator's repair at `3ba46db`. Landed 2026-11-11 with `npm run verify` (741 unit tests, 93 e2e) and `npm run budgets` (every budget held) green on `3ba46db`. Review 2's F16 (the work median read one call after the sample) and F17 (one sentence of the spec) are repaired in the landing after it: the helper reads the median inside the sampler's last frame, and the spec's paragraph says where an untagged budget shows. That landing's first `npm run verify` failed in its unit stage on `scripts/window-station.test.ts`, "closes the browser and ends with 0" answering 1: the browser server's own 10 s bound on the browser's close, which the worker had found and left to the coordinator, as it had the launcher's 10 s of tries to remove its folder. Both are bounds on a hang and both are now 60 s (`tests/e2e/browser-server.ts` `CLOSE_MS`, `scripts/window-station.ps1`), so a loaded machine no longer fails the functional gate there.
+- [x] Coordinator: review, accept, land, devlog line. Three rounds (`reviews/`): review 0, both lanes, on `cb1f951`; review 1, one lane on the repairs, which rejected the walking sampler's cap and the coordinator's own floor on it (F12, F13); review 2, one lane on the coordinator's repair at `3ba46db`. Landed 2026-11-11 with `npm run verify` (741 unit tests, 93 e2e) and `npm run budgets` (every budget held) green on `3ba46db`. Review 2's F16 (the work median read one call after the sample) and F17 (one sentence of the spec) are repaired in the landing after it: the helper reads the median inside the sampler's last frame, and the spec's paragraph says where an untagged budget shows. That landing's first `npm run verify` failed in its unit stage on `scripts/window-station.test.ts`, "closes the browser and ends with 0" answering 1: the browser server's own 10 s bound on the browser's close, which the worker had found and left to the coordinator, as it had the launcher's 10 s of tries to remove its folder. Both are bounds on a hang and both are now 60 s (`tests/e2e/browser-server.ts` `CLOSE_MS`, `scripts/window-station.ps1`), so a loaded machine no longer fails the functional gate there. Both gates passed on that tree, `cd61c00` (741 unit tests, 93 e2e; every budget held), and it landed on 2026-11-11.
 
 ## Outcome
 
