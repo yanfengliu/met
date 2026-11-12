@@ -43,15 +43,15 @@ Every assertion that compares a duration with a budget, as the worker found them
 5. A GPU-synced render with a shadow pass, facing into the Great Hall through the open doorway, under 16.7 ms. `doors.spec.ts:374`, in the first test of item 4.
 6. The slowest walking frame through two door cycles under 16.7 ms. `doors.spec.ts:387`, in the same test.
 7. The unit-test headroom: a passed unit test that takes over a sixth (`HEADROOM`, 6) of its timeout fails the run, so over 10 s of Vitest's 60 s. `scripts/test-headroom.ts` (`headroomProblems` and the reporter `TestHeadroom`), wired in `vitest.config.ts` off GitHub's runner.
-8. Moved behind the switch on review (review 0, F3), two floors on how many frames fit in a fixed activity, which depend on the frame rate: more than 20 frames timed over a door's swing of 0.7 s (`SWING_SECONDS`), so over about 29 frames a second (`doors.spec.ts:229`, in `timeSwing`, with item 4), and more than 120 walking frames recorded through the two door cycles (`doors.spec.ts:388`, with item 6). Their numbers are unchanged too.
+8. Moved behind the switch on review (review 0, F3 and F10), the conditions of the frame budgets' readings, which hang on the frame rate: more than 20 frames timed over a door's swing of 0.7 s (`SWING_SECONDS`), so over about 29 frames a second (`doors.spec.ts:229`, in `timeSwing`, with item 4); through the two door cycles more than 120 walking frames recorded, the eye moving in over 95% of them and over 3 m walked (`doors.spec.ts:388-391`, with item 6); and, new on review, the 120 frames the walking sampler must read within the 1.5 s it now walks at most (`tests/e2e/helpers.ts` `walkingBudget` and `expectWalkingBudget`, with item 3), which asks about 80 frames a second over the sample where the interval's budget asks about 54. Those numbers are unchanged but the 1.5 s, which F10 asked for.
 
 Kept in `npm run verify`, since none compares a duration with a budget:
 
 - That each budget was measured at all (review 0, F1): its reading, `budgetCheck`'s `measured`, a finite number read from the page, in either mode, so a missing `walk.frameMs`, `benchmark`, `bvhMs` or `perf.readyMs`, or a swing or a walk with no frame timed (the slowest of none is −Infinity), fails the test; only the reading's comparison with its budget goes behind the switch.
 - Counts, which no clock changes: at most 3,000,000 triangles and 900 meshes (`layout.spec.ts:218-219`, `src/build/sequence.test.ts`), the collection's 110 meshes and 600,000 triangles (`src/model/collection/placement.test.ts`), the doors' 20 meshes and draws (`src/model/doors.test.ts`).
-- What a budget was measured over: `perf.readyMs` set and longer than `perf.buildMs` (`layout.spec.ts:213, 216`); the eye moving in over 95% of the walking frames through the cycles and over 3 m walked (`doors.spec.ts:390-391`), a share that a walk with no frame recorded leaves NaN, which fails; the collision's steps and triangles (`walk.spec.ts:317-318`).
+- What a budget was measured over: `perf.readyMs` set and longer than `perf.buildMs` (`layout.spec.ts:213, 216`); the collision's steps and triangles (`walk.spec.ts:317-318`).
 - A passed unit test whose time or timeout Vitest does not give still fails the run (`scripts/test-headroom.ts`), since then no headroom is read at all: it depends on Vitest's reporter API, not on the clock.
-- Deadlines: test timeouts, `waitForFunction` timeouts, `open`'s 20 s, `doorIs`'s 4 s and the like bound a wait, so a broken page fails rather than hangs; most scale with `MET_CPU_THROTTLE`.
+- Deadlines: test timeouts, `waitForFunction` timeouts, `open`'s 20 s, `doorIs`'s 4 s and the like bound a wait, so a broken page fails rather than hangs; most scale with `MET_CPU_THROTTLE`. On review (F6, F10), `scripts/window-station.test.ts`'s wait for its launcher, 20 s, which raced a loaded machine, is now 120 s, a bound on a hang, its three window-station tests given 180 s; and the walking budget's test in `walk.spec.ts` has 45 s where it had the default 30.
 - Times printed and never asserted (`src/model/reach.test.ts`'s fill, `routes.spec.ts`'s short walk), and simulated seconds under fixed time steps (`src/walk/walker.test.ts`).
 
 ### The switch
@@ -62,18 +62,24 @@ Kept in `npm run verify`, since none compares a duration with a budget:
 
 ## Acceptance criteria
 
-- [ ] An inventory in this plan of every budget: its test, its number, and that the number is unchanged.
-- [ ] With the switch off, each budget's planted defect leaves `npm run verify` green and prints the measurement; with it on, `npm run budgets` fails and names the budget. One red proof per budget, recorded in `docs/learning/gate-proofs.md`.
-- [ ] `npm run verify` passes three runs in a row while a second heavy job runs on the machine, and `npm run budgets` passes alone.
-- [ ] No assertion is deleted and no number changed: the diff shows each one moved behind the switch.
-- [ ] AGENTS.md says what each gate checks and when `npm run budgets` is required, and stays under its size limit; the spec and the local rules' lock list name the new gate.
-- [ ] An independent review of the exact revision, both lanes once, has no finding left that matters.
+- [x] An inventory in this plan of every budget: its test, its number, and that the number is unchanged.
+- [ ] With the switch off, each budget's planted defect leaves `npm run verify` green and prints the measurement; with it on, `npm run budgets` fails and names the budget. One red proof per budget, recorded in `docs/learning/gate-proofs.md`. Met in part, as the proofs show: with the switch off no budget failed a test and each printed over its budget, but `npm run verify` was green only in set 1, sets 2 and 3 red on `mouse-look.spec.ts:221` alone, a functional check; with it on, each of the nine assertions failed at its own line, the headroom failed the unit run, and of review 0's budgets the swing's floor and the walking sampler's frames failed theirs, while the door cycles' floors (frames, moving share, metres) have no plant that broke them.
+- [ ] `npm run verify` passes three runs in a row while a second heavy job runs on the machine, and `npm run budgets` passes alone. The three loaded runs passed on `e88f548`; `npm run budgets` passed alone on `f2e576d` and, on the tree that lands, `6b37eb3`, at its second try, the first red on the functional window-station check (Outcome).
+- [x] No assertion is deleted and no number changed: the diff shows each one moved behind the switch. Review 0 added a number, the walking sampler's 1.5 s (F10), and widened a deadline that is no budget, the window-station tests' wait (F6).
+- [x] AGENTS.md says what each gate checks and when `npm run budgets` is required, and stays under its size limit; the spec and the local rules' lock list name the new gate.
+- [ ] An independent review of the exact revision, both lanes once, has no finding left that matters. Review 0, both lanes on `cb1f951` (`reviews/0_implementation.md`); its repairs are `b763520` and `21f6dca`, not yet reviewed.
 
 ## Implementation steps
 
-- [ ] Worker: inventory, the switch, the new script, the red proofs, the documents, hand back.
+- [x] Worker: inventory, the switch, the new script, the red proofs, the documents, review 0's repairs, hand back.
 - [ ] Coordinator: review, accept, land, devlog line.
 
 ## Outcome
 
-Pending.
+Pending the review of the repairs and the landing. The worker's record, 2026-11-11, branch `worktree-agent-a6ce13e3955fa859e`, each run through the gate lock:
+
+- The switch, the gate and the documents: `f2e576d`. Its red proofs, three sets of planted defects on `f2e576d`, recorded at `e88f548` in `docs/learning/gate-proofs.md`, "The timing budgets".
+- Three loaded runs of `npm run verify` in a row on `e88f548`, the tree clean, each beside a second heavy job, 8 busy threads (`tmp/u30-burn.mjs`, ignored) on the machine's 32 with the other sessions busy too: all green, 803 unit tests and 93 e2e tests each, in 582, 603 and 571 s, the CPU at 90, 100 and 81% 20 s into the job. Runs 2 and 3 printed `scripts/window-station.test.ts`'s F7 test over its headroom, 11,980 and 10,454 ms, as not asserted.
+- The merge of origin/main with work unit 26's milestone B, `cb1f951`: `npm run verify` green (732 and 93, 486 s); `npm run budgets` red, the slowest walking frame through the door cycles at 24.70 ms against 16.7, the CPU at 82% from other sessions, where `verify` five minutes before read 8.60 ms. A second try was stopped on the coordinator's word, to repair review 0's findings first.
+- Review 0's repairs, `b763520` (F1 to F5) and `21f6dca` (F6, F8 to F10), their red proofs recorded at `4589d5c`. On the merge of origin/main at `9fa0fca`, `6b37eb3`, the tree that lands: `npm run verify` green, 741 unit tests and 93 e2e tests, 466 s, the CPU at 100% at its start; `npm run budgets` red at its first try, every e2e budget and the headroom held but `scripts/window-station.test.ts`'s "closes the browser and ends with 0" got status 1 at 13.2 s, the CPU at 100%; green at its second, "every budget held", 741 and 7, 87 s, the CPU at 56%.
+- Findings left as they are. `mouse-look.spec.ts:221`, a finger's tap on the Walk toggle under the mouse's lock leaving walk mode where every frame is slow, goes to `docs/work/27_improvement-list/plan.md`, item 6, the touch unit deciding what the tap should do. The window-station tests' status 1 and left folder under heavy load come from two bounds of their own, not from a crash: `tests/e2e/browser-server.ts`'s 10 s on the browser's close (`CLOSE_MS`), past which it exits 1 by design, and `scripts/window-station.ps1`'s 10 s of tries to remove the temporary folder; both bound a hang, the e2e teardown ignores the status and removes the folder itself, but a machine at 100% outlasts them, so `npm test`, in either gate, can fail on them there. Widening them is the coordinator's to decide.
