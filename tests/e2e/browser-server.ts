@@ -4,7 +4,7 @@
  *
  * Usage: node tests/e2e/browser-server.ts <channel>, an empty channel for Playwright's own Chromium. It prints one line, {"wsEndpoint":"ws://..."}, once the browser is up.
  * It ends when its standard input ends, as it does when the setup's teardown ends it or the test run exits, at any point, the browser's start included (review 0,
- * F2): before the browser is up it exits at once; after, it closes the browser, or exits if the close takes over 10 s. Either way Playwright's own exit hook kills a
+ * F2): before the browser is up it exits at once; after, it closes the browser, or exits if the close takes over 60 s. Either way Playwright's own exit hook kills a
  * browser still running, and the launcher removes the temporary folder it was given (reviews 0 and 1, F3). A browser that dies during the run ends this with a
  * message, so the tests after it fail saying why, where before a fresh worker launched a fresh browser (review 1, F6).
  * Bound: Playwright listens on localhost only and checks the Host header, but it gives the endpoint's path to any local request for /json, so while a run lasts any
@@ -16,7 +16,11 @@
 import { chromium } from '@playwright/test';
 import type { BrowserServer } from '@playwright/test';
 
-const CLOSE_MS = 10_000;
+/**
+ * How long the browser may take to close before this gives up with status 1: a bound on a hang, not a measure of speed. On a machine at 100% CPU the close
+ * took 11 to 25 s (2026-11-11, work unit 30), and the 10 s this was then failed `npm test` on a loaded machine, in the gate and out of it.
+ */
+const CLOSE_MS = 60_000;
 const channel = process.argv[2] ?? '';
 // The server once the browser is up; `end` reads it, and may run before then.
 const started: { server?: BrowserServer } = {};

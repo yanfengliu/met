@@ -142,8 +142,8 @@ try {
 $temp = $env:MET_WINDOW_STATION_TEMP
 if ($temp) {
   [MetWindowStation]::EndJob()
-  # The job's processes take a moment to end and free their files.
-  for ($try = 0; $try -lt 40 -and (Test-Path -LiteralPath $temp); $try++) {
+  # The job's processes take a moment to end and free their files: up to 60 s of tries, a bound on a hang (10 s ran out once on a machine at 100% CPU, work unit 30).
+  for ($try = 0; $try -lt 240 -and (Test-Path -LiteralPath $temp); $try++) {
     try { Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction Stop } catch { Start-Sleep -Milliseconds 250 }
   }
   if (Test-Path -LiteralPath $temp) { [Console]::Error.WriteLine("window-station.ps1: could not remove the command's temporary folder $temp.") }

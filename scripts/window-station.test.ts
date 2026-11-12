@@ -25,7 +25,7 @@ const SERVER = join(ROOT, 'tests', 'e2e', 'browser-server.ts');
  * 2026-11-11, work unit 30) the browser server's runs below took 40 to 60 s from the start to the launcher's end, where 20 s, the bound before, raced them.
  */
 const HANG_MS = 120_000;
-/** A test's own timeout: its wait for the launcher and the cleanup's 10 s after it, with room. */
+/** A test's own timeout: its wait for the launcher and the cleanup after it, with room. */
 const TEST_MS = 180_000;
 
 /**
