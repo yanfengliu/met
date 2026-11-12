@@ -132,6 +132,10 @@
     {
       "id": 32,
       "theme": "surroundings-and-sun"
+    },
+    {
+      "id": 33,
+      "theme": "parallel-functional-gate"
     }
   ]
 }
